@@ -1,41 +1,41 @@
 # First on local machine:
 #
-# cd ~/GitHub/Cornell/plasmofit/_testing
-# scp wockner-fit-cnc.R wockner-cleaned.csv lan68@cbsugreischar.biohpc.cornell.edu:/home2/lan68/plasmofit/wock-cnc/
+# cd ~/GitHub/Cornell/plasmofit-test
+# scp ./_scripts/wockner-fit.R ./_data/wockner-cleaned.csv lan68@cbsugreischar.biohpc.cornell.edu:/home2/lan68/plasmofit/wock-fit/
 #
 # Now on cluster:
 #
-# cd /home2/lan68/plasmofit/wock-cnc
+# cd /home2/lan68/plasmofit/wock-fit
 #
 # ... using an interactive job:
-# srun -N 1 -n 1 -c 12 --mem=40G --time=24:00:00 --job-name="wock-fit-cnc" --pty R --vanilla
+# srun -N 1 -n 1 -c 4 --mem=40G --array=2 --time=24:00:00 --job-name="wock-fit" --pty R --vanilla
 #
 # ... using a non-interactive job:
 #
-# cat << EOF > wockner-fit-cnc.sh
+# cat << EOF > wockner-fit.sh
 # #!/bin/bash -l
 #
 # #SBATCH --nodes=1
 # #SBATCH --ntasks=1
 # #SBATCH --array=1-4
-# #SBATCH --cpus-per-task=12
-# #SBATCH --mem=40G
+# #SBATCH --cpus-per-task=4
+# #SBATCH --mem=8G
 # #SBATCH --time=2-00:00:00
-# #SBATCH --job-name=wock-fit-cnc
-# #SBATCH --output=wock-fit-cnc-%a.out
-# #SBATCH --error=wock-fit-cnc-%a.err
+# #SBATCH --job-name=wock-fit
+# #SBATCH --output=wock-fit-%a.out
+# #SBATCH --error=wock-fit-%a.err
 # #SBATCH --mail-user=lan68@cornell.edu
 # #SBATCH --mail-type=END,FAIL
 #
-# Rscript --vanilla wockner-fit-cnc.R
+# Rscript --vanilla wockner-fit.R
 #
 # EOF
 #
-# sbatch wockner-fit-cnc.sh
+# sbatch wockner-fit.sh
 #
 # Then when back on local computer:
-# cd ~/GitHub/Cornell/plasmofit/_testing
-# scp lan68@cbsugreischar.biohpc.cornell.edu:/home2/lan68/plasmofit/wock-cnc/wock-fit-cnc-*.rds ./
+# cd ~/GitHub/Cornell/plasmofit-test
+# scp lan68@cbsugreischar.biohpc.cornell.edu:/home2/lan68/plasmofit/wock-fit/wock-fit-*.rds ./_data/
 #
 
 
@@ -55,13 +55,24 @@ suppressPackageStartupMessages({
     library(plasmofit)
 })
 
-rstan_options(threads_per_chain = max(1L, n_threads %/% 4L))
+.n_chains <- 4L
+
+rstan_options(threads_per_chain = max(1L, n_threads %/% .n_chains))
 options(mc.cores = max(1L, n_threads %/% rstan_options("threads_per_chain")))
 
 stopifnot((options()[["mc.cores"]] * rstan_options("threads_per_chain")) <= n_threads)
 
 
+# w <- c(400L, 700L, 1000L)[curr_idx]
+w <- 700L
 
+
+# Which change to make (or no change if "none"):
+change <- list(none = NA_real_,
+               sd_bs_cl = 0.5,
+               max_cl = 50,
+               center_cl = 0)[curr_idx]
+stopifnot(length(change) == 1L)
 
 
 paras_df <- read_csv("wockner-cleaned.csv", col_types = "cccdcdd") |>
@@ -75,7 +86,6 @@ paras_df <- read_csv("wockner-cleaned.csv", col_types = "cccdcdd") |>
                   \(x) factor(x, levels = unique(x))))
 
 
-
 summ_by_ts_paras_df <- paras_df |>
     group_by(id) |>
     summarize(inoc = inoc[1],
@@ -86,26 +96,6 @@ summ_by_ts_paras_df <- paras_df |>
 
 # greatest common denominator (assumes all x and y are integers)
 gcd <- function(x, y) ifelse(y == 0, x, gcd(y, x %% y))
-
-fit_cond <- function(f, max_shape) {
-    post <- as.matrix(f, pars = c("b_shape","b_offset","log10_total0",
-                                  "mu_logit_R","sigma_logit_R","eta_R",
-                                  "mu_logit_cl","sigma_logit_cl","eta_cl",
-                                  "z_sd_iRBC"))
-    lg <- plasmofit::logit
-
-    j <- grep("^b_shape",  colnames(post))
-    post[, j] <- lg((post[, j] - 2) / (max_shape - 2))
-
-    j <- grep("^b_offset", colnames(post))
-    post[, j] <- lg(post[, j])
-
-    j <- grep("^sigma_",   colnames(post))
-    post[, j] <- log(post[, j])
-
-    ev <- eigen(cor(post), only.values = TRUE)$values
-    sqrt(max(ev) / min(ev))
-}
 
 
 stan_env <- new.env()
@@ -133,8 +123,10 @@ with(stan_env, {
     n_c <- 96L
     dt_full <- Reduce(gcd, paras_df$time)
     run_check <- 0L
+    calc_log_lik <- 0L   # 1L to output pointwise log_lik for loo/waic
     center_R <- 1L
     center_cl <- 1L
+    grainsize <- 1L
 
     # Indices for grouping time series with the same for each:
     grp_init <- summ_by_ts_paras_df$inoc
@@ -146,7 +138,7 @@ with(stan_env, {
     max_shape <- 250
     max_R <- 50
     min_cl <- 35
-    max_cl <- 55
+    max_cl <- 50
 
     # Hyperparameters:
     mean_log_b_shape <- rep(2, n_grp_init)
@@ -160,29 +152,30 @@ with(stan_env, {
 
     mean_logit_cl <- logit((48 - min_cl) / (max_cl - min_cl))
     sd_logit_cl <- 1
-    sd_bs_cl <- 0.1
+    sd_bs_cl <- 0.5
 
 })
 
 
-
-stan_mod <- plasmofit:::stanmodels$archer_fit
-
-
-cr <- rep(0:1, each = 2)[curr_idx]
-cc <- rep(0:1, 2)[curr_idx]
+if (names(change) != "none") {
+    stan_env[[names(change)]] <- change[[1]]
+}
 
 
-d <- modifyList(as.list(stan_env), list(center_R = cr, center_cl = cc))
-f <- sampling(stan_mod, data = d, chains = 4, iter = 900, warmup = 700,
-              save_warmup = FALSE, control = list(adapt_delta = 0.95))
-write_rds(f, sprintf("wock-fit-cnc-%icr-%icc.rds", cr, cc))
-cat("\nget_elapsed_time(fit):\n")
+
+d <- as.list(stan_env)
+f <- sampling(plasmofit:::stanmodels$archer_fit, data = as.list(stan_env),
+              chains = .n_chains, iter = 1000L + w, warmup = w,
+              seed = 538065874,
+              save_warmup = FALSE)
+write_rds(f, sprintf("wock-fit-%s.rds", names(change)))
+cat("Finished fit with", names(change), "altered\n", sep = " ")
+cat("\nget_elapsed_time(f):\n")
 print(rstan::get_elapsed_time(f))
 cat("\n-------------------------------------\n")
-cat(cr, cc, "| leapfrog", round(mean(rstan::get_num_leapfrog_per_iteration(f)), 1),
-    "| div", sum(rstan::get_divergent_iterations(f)),
-    "| cond", round(fit_cond(f, max_shape = stan_env$max_shape), 1), "\n")
+cat(names(change), "| leapfrog", round(mean(rstan::get_num_leapfrog_per_iteration(f)), 1),
+    "| div", sum(rstan::get_divergent_iterations(f)), "\n")
+
 
 
 
@@ -279,5 +272,6 @@ summarize_fit <- function(fit, data, label,
 # div <- np$Iteration[np$Parameter == "divergent__" & np$Value == 1]
 
 # Save fit and dso-dependent output:
-res <- summarize_fit(f, d, label = sprintf("%icr-%icc", cr, cc))
-write_rds(res, sprintf("wock-fit-RES-cnc-%icr-%icc.rds", cr, cc))
+res <- summarize_fit(f, d, label = names(change))
+write_rds(res, sprintf("wock-fit-RES-%s.rds", names(change)))
+

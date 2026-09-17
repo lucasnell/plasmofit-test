@@ -11,7 +11,12 @@ suppressPackageStartupMessages({
 par_names <- c("b_shape", "b_offset", "R", "log10_total0", "cycle_length", "sd_iRBC")
 
 
-fits <- list.files("_testing", "wock-fit-.*.rds", full.names = TRUE)[c(2,3,1)] |>
+
+list.files("_data", "wock-fit-RES.*.rds", full.names = TRUE) |>
+    map_dbl(\(x) read_rds(x)[["cond"]])
+
+
+fits <- list.files("_data", "wock-fit-.*.rds", full.names = TRUE)[c(2,3,1)] |>
     map(read_rds)
 
 posts <- map(fits, \(x) rstan::extract(x, permuted = FALSE))

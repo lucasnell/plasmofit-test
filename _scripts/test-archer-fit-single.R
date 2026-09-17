@@ -193,7 +193,7 @@ stan_data_sim <- list(
     mu_cl = 45,  # mean of cycle length
     sd_cl = 5,  # stdev of cycle length
     min_cl = 35,  # minimum cycle length (required for `M` below)
-    max_cl = 55  # maximum cycle length (required to prevent `y` overflow)
+    max_cl = 50  # maximum cycle length (required to prevent `y` overflow)
 )
 
 

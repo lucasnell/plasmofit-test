@@ -81,7 +81,7 @@ with(stan_env, {
     max_shape <- 250
     max_R <- 50
     min_cl <- 35
-    max_cl <- 55
+    max_cl <- 50
 
     # Hyperparameters:
     mean_log_b_shape <- rep(2, n_grp_init)
@@ -95,7 +95,7 @@ with(stan_env, {
 
     mean_logit_cl <- logit((48 - min_cl) / (max_cl - min_cl))
     sd_logit_cl <- 1
-    sd_bs_cl <- 0.1
+    sd_bs_cl <- 0.5
 
 })
 
