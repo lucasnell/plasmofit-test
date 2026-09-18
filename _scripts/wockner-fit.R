@@ -30,7 +30,7 @@
 #
 # #SBATCH --nodes=1
 # #SBATCH --ntasks=1
-# #SBATCH --array=1-3
+# #SBATCH --array=3-7
 # #SBATCH --cpus-per-task=4
 # #SBATCH --mem=8G
 # #SBATCH --time=2-00:00:00
@@ -67,23 +67,67 @@ suppressPackageStartupMessages({
 # Configurations
 # ------------------------------------------------------------------------ #
 
-# Each entry is a set of overrides passed to archer_stan_data(). Anything not
-# named here takes the package default, which is the settled configuration:
-# max_cl = 50 and sd_bs_cl = 0.5.
+# Testing whether the cycle-length hierarchy earns its keep (see claude/
+# CLAUDE.md "Cycle-length hierarchy: comparison in progress"). archer_fit()'s
+# `model` argument (added in plasmofit's pooled-model commit ce991b1) selects
+# among Stan programs that all report `log_lik` identically, so fits from
+# different `model`s are directly comparable via archer_loo()/
+# loo::loo_compare() -- that's the whole point of this run. "settled" data
+# overrides otherwise (max_cl = 50, sd_bs_cl = 0.5); see the package's
+# archer_stan_data() docs for why.
 #
-# Those two were settled empirically. max_cl = 55 admits a second mode at the
-# bound (~54 h) that fits ~16 log units worse and wrecks R-hat; sd_bs_cl = 0.1
-# is tight enough that the prior, not the data, sets the between-trial spread,
-# and it pushes sigma_logit_cl into the funnel neck. The two older variants are
-# kept below so those claims stay reproducible rather than being folk memory.
+# `no_pool` is the baseline (current default model: R and cycle_length both
+# partially pooled per grp_R/grp_cl). `pooled_cl` collapses cycle_length to a
+# single value shared by every trial, leaving R hierarchical -- comparing the
+# two via loo directly answers whether the cycle-length hierarchy is buying
+# anything over a shared value.
+#
+# Both use default adapt_delta/max_treedepth. plasmofit's chat4 session found
+# pooled_cl sampled badly (one chain 53% divergent) on simulated 8-series
+# data at default tuning, but that was small-scale, its cause is unresolved
+# (the notes and a later conversation disagree on whether the true
+# cycle_length in that simulation was pooled or per-series), and real
+# Wockner cycle_length only varies ~44.8-45.3 h across trials -- much
+# narrower than whatever produced the simulated pathology. Check divergences/
+# R-hat in the .out file once this runs; if pooled_cl struggles here too,
+# rerun it with adapt_delta/max_treedepth raised rather than assuming it in
+# advance.
+#
+# Entries 3-6 are the cycle-length prior sensitivity check, added after the
+# first two runs showed the prior is doing more work than anyone intended.
+# `cl_prior_center` defaults to 48 h while the data sit at ~45 h, and
+# `sd_logit_cl = 1` is not weak enough for that to be ignorable: the prior
+# carries weight 0.079 on no_pool's mu_logit_cl (+0.271 h) and 0.038 on
+# pooled_cl's logit_cl (+0.153 h). See claude/CLAUDE.md, "cl_prior_center =
+# 48 is doing real work".
+#
+# Two levers on the same knob: widen the prior (weight -> 0) or move its
+# centre onto the data (centre - data -> 0). Widening is the cleaner
+# diagnostic since it presumes no answer, so it gets both models; moving the
+# centre is the confirmation that the pull is a location effect, and 42
+# brackets it by pushing the opposite way.
+#
+# Do not widen much past 2. The prior is normal on the *logit* scale against
+# hard bounds at [min_cl, max_cl]; sd_logit_cl = 3 already puts noticeable
+# mass within a few hundredths of an hour of both bounds, which is how the
+# max_cl = 55 boundary mode got in. The 3 run is here to find out whether
+# boundary attraction comes back, not because it is wanted.
+#
+# Entries 1-2 are already fit and saved; submit --array=3-7 to run only the
+# new ones. They are kept so the baseline stays reproducible.
 CONFIGS <- list(
-    settled      = list(),
-    wide_max_cl  = list(max_cl = 55),   # reintroduces the boundary mode
-    tight_sd_bs  = list(sd_bs_cl = 0.1) # prior-dominated between-trial spread
+    no_pool        = list(model = "no_pool",   data = list()),
+    pooled_cl      = list(model = "pooled_cl", data = list()),
+    np_wide_prior  = list(model = "no_pool",   data = list(sd_logit_cl = 2)),
+    pl_wide_prior  = list(model = "pooled_cl", data = list(sd_logit_cl = 2)),
+    np_center45    = list(model = "no_pool",   data = list(cl_prior_center = 45)),
+    np_center42    = list(model = "no_pool",   data = list(cl_prior_center = 42)),
+    np_wider_prior = list(model = "no_pool",   data = list(sd_logit_cl = 3))
 )
 
-# log_lik is needed for loo/waic but roughly triples the size of a stored fit,
-# so keep it on only where a model comparison is actually planned.
+# log_lik is needed for loo/waic but roughly triples the size of a stored fit.
+# Needed here since the whole point of this run is a loo comparison between
+# models -- this is also the first saved fit with it (see CLAUDE.md).
 CALC_LOG_LIK <- TRUE
 
 # Fixed, because this posterior is multimodal: without it, two runs differ by
@@ -132,12 +176,16 @@ d <- do.call(archer_stan_data,
                     grp_init = "inoc", grp_R = "trial", grp_cl = "trial",
                     grp_sd = "obs_error",
                     calc_log_lik = as.integer(CALC_LOG_LIK)),
-               cfg))
+               cfg$data))
 
-cat("config:", cfg_name, "\n")
-if (length(cfg) > 0) {
-    cat("  overrides:", paste(names(cfg), unlist(cfg), sep = " = ",
-                              collapse = ", "), "\n")
+cat("config:", cfg_name, "| model:", cfg$model, "\n")
+if (length(cfg$data) > 0) {
+    cat("  data overrides:", paste(names(cfg$data), unlist(cfg$data),
+                                   sep = " = ", collapse = ", "), "\n")
+}
+if (length(cfg$control) > 0) {
+    cat("  control:", paste(names(cfg$control), unlist(cfg$control),
+                            sep = " = ", collapse = ", "), "\n")
 }
 cat(sprintf("  %d series, %d observations, n_c = %d, dt_full = %g\n",
             d$n_ts, d$n_total_obs, d$n_c, d$dt_full))
@@ -153,8 +201,9 @@ cat(sprintf("  cycle_length in (%g, %g), prior centred at %.2f h, sd_bs_cl %g\n"
 # Fit
 # ------------------------------------------------------------------------ #
 
-f <- archer_fit(d, chains = N_CHAINS, iter = ITER, warmup = WARMUP,
-                seed = SEED, threads_per_chain = threads_per_chain)
+f <- archer_fit(d, model = cfg$model, chains = N_CHAINS, iter = ITER,
+                warmup = WARMUP, seed = SEED,
+                threads_per_chain = threads_per_chain, control = cfg$control)
 
 write_rds(f, sprintf("wock-fit-%s.rds", cfg_name))
 write_rds(d, sprintf("wock-data-%s.rds", cfg_name))
@@ -167,18 +216,55 @@ cat(cfg_name,
     "| div", sum(rstan::get_divergent_iterations(f)), "\n")
 
 
+## loo objects, saved rather than just printed: loo_compare() needs the
+## objects themselves, and recomputing them needs log_lik, which we may not
+## keep. Done first, right after f/d are saved, so the actual point of this
+## run (the loo comparison) survives even if a diagnostic below turns out
+## fragile for a model it wasn't written for.
+if (CALC_LOG_LIK && requireNamespace("loo", quietly = TRUE)) {
+    loos <- list(observation = archer_loo(f, d),
+                 trial       = archer_loo(f, d, by = "grp_cl"))
+    write_rds(loos, sprintf("wock-fit-LOO-%s.rds", cfg_name))
+    for (nm in names(loos)) {
+        k <- loo::pareto_k_values(loos[[nm]])
+        cat(sprintf("\nloo (%s): elpd %.1f (se %.1f), %d units, %d with k > 0.7\n",
+                    nm, loos[[nm]]$estimates["elpd_loo", "Estimate"],
+                    loos[[nm]]$estimates["elpd_loo", "SE"], length(k), sum(k > 0.7)))
+    }
+    cat("\nNote: leaving out a whole trial perturbs the posterior much more than\n",
+        "leaving out one observation, so high Pareto k here is expected and means\n",
+        "the approximation, not the model, is failing. A trustworthy answer at\n",
+        "that grouping needs K-fold refitting.\n", sep = "")
+}
+
+
 # ------------------------------------------------------------------------ #
 # Diagnostics that need a live DSO, so they have to happen here rather than
 # after the fit is written out and reloaded elsewhere.
+#
+# Which R/cycle_length parameters exist depends on `cfg$model`: pooled_R
+# replaces mu_logit_R/sigma_logit_R/eta_R with a single logit_R, and
+# pooled_cl does the same for cycle_length (mu_logit_cl/sigma_logit_cl/
+# eta_cl -> logit_cl). Generated quantities (R, cycle_length, b_offset, ...)
+# are identically shaped across all four models, so only the code that
+# touches parameters directly needs to branch on the model.
 # ------------------------------------------------------------------------ #
 
-PAR_BLOCK <- c("b_shape", "b_off_vec", "log10_total0",
-               "mu_logit_R", "sigma_logit_R", "eta_R",
-               "mu_logit_cl", "sigma_logit_cl", "eta_cl",
-               "z_sd_iRBC")
+r_pars_for  <- function(model) {
+    if (model %in% c("pooled_R", "pooled_both")) "logit_R"
+    else c("mu_logit_R", "sigma_logit_R", "eta_R")
+}
+cl_pars_for <- function(model) {
+    if (model %in% c("pooled_cl", "pooled_both")) "logit_cl"
+    else c("mu_logit_cl", "sigma_logit_cl", "eta_cl")
+}
+par_block_for <- function(model) {
+    c("b_shape", "b_off_vec", "log10_total0",
+      r_pars_for(model), cl_pars_for(model), "z_sd_iRBC")
+}
 
 ## one draw as a named list shaped the way unconstrain_pars expects
-draw_as_list <- function(fit, i = 1L, pars = PAR_BLOCK) {
+draw_as_list <- function(fit, pars, i = 1L) {
     dr <- rstan::extract(fit, pars = pars, permuted = TRUE)
     lapply(dr, function(x) {
         d <- dim(x)
@@ -189,42 +275,52 @@ draw_as_list <- function(fit, i = 1L, pars = PAR_BLOCK) {
 }
 
 ## seconds per gradient evaluation
-grad_time <- function(fit, n = 200L) {
-    u <- rstan::unconstrain_pars(fit, draw_as_list(fit, 1L))
+grad_time <- function(fit, model, n = 200L) {
+    u <- rstan::unconstrain_pars(fit, draw_as_list(fit, par_block_for(model), 1L))
     system.time(for (k in seq_len(n)) rstan::grad_log_prob(fit, u))[["elapsed"]] / n
 }
 
 ## condition number of the posterior correlation matrix, unconstrained scale
-fit_cond <- function(fit, max_shape) {
+fit_cond <- function(fit, max_shape, model) {
     lg <- function(p) log(p / (1 - p))
-    dr <- rstan::extract(fit, pars = PAR_BLOCK, permuted = TRUE)
+    pars <- par_block_for(model)
+    dr <- rstan::extract(fit, pars = pars, permuted = TRUE)
     bs <- lg((dr$b_shape - 2) / (max_shape - 2))
     ## unit_vector[2] is rank-deficient in storage; use the angle instead
     ang <- atan2(dr$b_off_vec[, , 2], dr$b_off_vec[, , 1])
     colnames(ang) <- paste0("b_ang[", seq_len(ncol(ang)), "]")
-    U <- cbind(bs, ang, dr$log10_total0,
-               mu_logit_R     = dr$mu_logit_R,
-               sigma_logit_R  = log(dr$sigma_logit_R),
-               dr$eta_R,
-               mu_logit_cl    = dr$mu_logit_cl,
-               sigma_logit_cl = log(dr$sigma_logit_cl),
-               dr$eta_cl,
-               dr$z_sd_iRBC)
+    ## logit_R/logit_cl are already unconstrained scalars, so they need no
+    ## further transform, unlike mu_logit_*/log(sigma_logit_*)/eta_*
+    r_block <- if ("logit_R" %in% pars) {
+        matrix(dr$logit_R, ncol = 1, dimnames = list(NULL, "logit_R"))
+    } else {
+        cbind(mu_logit_R = dr$mu_logit_R, sigma_logit_R = log(dr$sigma_logit_R), dr$eta_R)
+    }
+    cl_block <- if ("logit_cl" %in% pars) {
+        matrix(dr$logit_cl, ncol = 1, dimnames = list(NULL, "logit_cl"))
+    } else {
+        cbind(mu_logit_cl = dr$mu_logit_cl, sigma_logit_cl = log(dr$sigma_logit_cl), dr$eta_cl)
+    }
+    U <- cbind(bs, ang, dr$log10_total0, r_block, cl_block, dr$z_sd_iRBC)
     ev <- eigen(cor(U), only.values = TRUE)$values
     sqrt(max(ev) / min(ev))
 }
 
 ## do divergences concentrate where a scale parameter is small? that is the
-## signature of a funnel rather than of generic trouble
-div_by_sigma <- function(fit) {
+## signature of a funnel rather than of generic trouble. A pooled model has
+## no sigma for the parameter(s) it pools, so there may be nothing to check.
+div_by_sigma <- function(fit, model) {
     div <- as.logical(rstan::get_divergent_iterations(fit))
     if (!any(div)) return(NULL)
-    s <- as.matrix(fit, pars = c("sigma_logit_R", "sigma_logit_cl"))
+    sigma_pars <- c(if (!(model %in% c("pooled_R", "pooled_both"))) "sigma_logit_R",
+                    if (!(model %in% c("pooled_cl", "pooled_both"))) "sigma_logit_cl")
+    if (length(sigma_pars) == 0) return(NULL)
+    s <- as.matrix(fit, pars = sigma_pars)
     rbind(divergent = colMeans(s[div, , drop = FALSE]),
           ok        = colMeans(s[!div, , drop = FALSE]))
 }
 
-summarize_fit <- function(fit, data, label,
+summarize_fit <- function(fit, data, label, model,
                           par_names = c("b_shape", "b_offset", "R",
                                         "log10_total0", "cycle_length",
                                         "sd_iRBC")) {
@@ -242,6 +338,7 @@ summarize_fit <- function(fit, data, label,
     lp <- post[, , "lp__", drop = FALSE]
     list(
         label        = label,
+        model        = model,
         center_R     = data$center_R,
         center_cl    = data$center_cl,
         max_cl       = data$max_cl,
@@ -250,34 +347,15 @@ summarize_fit <- function(fit, data, label,
         lp_by_chain  = apply(lp, 2, mean),
         leapfrog     = mean(rstan::get_num_leapfrog_per_iteration(fit)),
         n_divergent  = sum(rstan::get_divergent_iterations(fit)),
-        div_sigma    = div_by_sigma(fit),
+        div_sigma    = div_by_sigma(fit, model),
         stepsize     = sapply(rstan::get_sampler_params(fit, inc_warmup = FALSE),
                               function(x) mean(x[, "stepsize__"])),
         elapsed      = rstan::get_elapsed_time(fit),
-        sec_per_grad = grad_time(fit),
-        cond         = fit_cond(fit, max_shape = data$max_shape),
+        sec_per_grad = grad_time(fit, model),
+        cond         = fit_cond(fit, max_shape = data$max_shape, model = model),
         diagnostics  = diags
     )
 }
 
-res <- summarize_fit(f, d, label = cfg_name)
+res <- summarize_fit(f, d, label = cfg_name, model = cfg$model)
 write_rds(res, sprintf("wock-fit-RES-%s.rds", cfg_name))
-
-
-## loo objects, saved rather than just printed: loo_compare() needs the objects
-## themselves, and recomputing them needs log_lik, which we may not keep.
-if (CALC_LOG_LIK && requireNamespace("loo", quietly = TRUE)) {
-    loos <- list(observation = archer_loo(f, d),
-                 trial       = archer_loo(f, d, by = "grp_cl"))
-    write_rds(loos, sprintf("wock-fit-LOO-%s.rds", cfg_name))
-    for (nm in names(loos)) {
-        k <- loo::pareto_k_values(loos[[nm]])
-        cat(sprintf("\nloo (%s): elpd %.1f (se %.1f), %d units, %d with k > 0.7\n",
-                    nm, loos[[nm]]$estimates["elpd_loo", "Estimate"],
-                    loos[[nm]]$estimates["elpd_loo", "SE"], length(k), sum(k > 0.7)))
-    }
-    cat("\nNote: leaving out a whole trial perturbs the posterior much more than\n",
-        "leaving out one observation, so high Pareto k here is expected and means\n",
-        "the approximation, not the model, is failing. A trustworthy answer at\n",
-        "that grouping needs K-fold refitting.\n", sep = "")
-}

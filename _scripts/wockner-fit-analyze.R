@@ -78,7 +78,9 @@ iwalk(res, \(r, nm) {
 # ------------------------------------------------------------------------ #
 
 fit_files <- list.files("_data", "^wock-fit-[^R].*[.]rds$", full.names = TRUE)
-fit_files <- fit_files[!str_detect(basename(fit_files), "^wock-fit-(RES|LOO)-")]
+## RES/LOO are diagnostic/loo objects, not stanfits; kfold summaries (from
+## wockner-fit-kfold.R) share the wock-fit- prefix but are plain lists
+fit_files <- fit_files[!str_detect(basename(fit_files), "^wock-fit-(RES|LOO|kfold)-")]
 
 if (length(fit_files) > 0) {
     cat("\n=== cycle_length by chain, and per-trial spread ===\n")
