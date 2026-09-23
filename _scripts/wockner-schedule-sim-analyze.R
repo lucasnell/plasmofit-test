@@ -134,29 +134,112 @@ cat(sprintf("              sigma_logit_cl %.3f\n", real$sigma))
 
 
 # ------------------------------------------------------------------------ #
-# Is the simulated correlation as extreme as the real one?
+# Recovery of the known cycle_length, and what the two prior arms say about
+# why it misses.
 #
-# Two sources of spread are being kept apart. r_draws is posterior uncertainty
-# within a replicate; the spread of r_means across replicates is how much the
-# answer moves with a fresh noise realization. With 13 trials both are wide,
-# which is the reason for running replicates at all.
+# This comes before the correlation because it is the stronger result: the
+# truth is known here, so a systematic miss is measurable rather than
+# inferred. Replicates 2 and 3 ran in both arms on the same simulated data
+# (noise seeds are shared across arms), so the arm difference is the prior and
+# nothing else.
 # ------------------------------------------------------------------------ #
 
-cat("\n=== how far the real correlation sits from the simulated ones ===\n")
-for (a in unique(tab$arm)) {
-    rr <- tab$r_means[tab$arm == a]
-    pooled <- unlist(map(res[map_chr(res, "arm") == a], "r_draws"))
-    cat(sprintf("  %-8s replicate r: %s\n", a,
-                paste(sprintf("%+.3f", rr), collapse = "  ")))
-    cat(sprintf("           pooled per-draw r: mean %+.3f, 95%% %+.3f to %+.3f\n",
-                mean(pooled), quantile(pooled, 0.025), quantile(pooled, 0.975)))
-    cat(sprintf("           P(simulated r <= real %.3f) = %.4f\n",
-                real$r_means, mean(pooled <= real$r_means)))
+lg <- function(cl, lo, hi) log((cl - lo) / (hi - cl))
+inv_lg <- function(x, lo, hi) lo + (hi - lo) / (1 + exp(-x))
+
+cat("\n=== recovery of the true cycle_length ===\n")
+rec <- tab |>
+    select(config, arm, rep, sd_logit_cl, bias) |>
+    left_join(map(res, \(r) tibble(config = r$config,
+                                   cl_mean = mean(r$per_trial$cl_mean),
+                                   true_cl = r$true_cl)) |> list_rbind(),
+              by = "config") |>
+    arrange(rep, arm)
+rec |> mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
+
+paired <- rec |> filter(rep %in% rec$rep[duplicated(rec$rep)])
+
+if (n_distinct(paired$arm) == 2L) {
+    m_def <- mean(paired$cl_mean[paired$arm == "default"])
+    m_wid <- mean(paired$cl_mean[paired$arm == "wide"])
+    tr <- paired$true_cl[1]
+    sd_def <- paired$sd_logit_cl[paired$arm == "default"][1]
+    sd_wid <- paired$sd_logit_cl[paired$arm == "wide"][1]
+    lo <- d$min_cl; hi <- d$max_cl
+    prior_ctr <- inv_lg(d$mean_logit_cl, lo, hi)
+
+    cat(sprintf("\n  paired on replicates %s\n",
+                paste(sort(unique(paired$rep)), collapse = ", ")))
+    cat(sprintf("  truth           %.3f h (logit %.4f)\n", tr, lg(tr, lo, hi)))
+    cat(sprintf("  prior centre    %.3f h (logit %.4f)\n",
+                prior_ctr, d$mean_logit_cl))
+    cat(sprintf("  sd_logit_cl %-4g %.3f h (logit %.4f), bias %+.3f h\n",
+                sd_def, m_def, lg(m_def, lo, hi), m_def - tr))
+    cat(sprintf("  sd_logit_cl %-4g %.3f h (logit %.4f), bias %+.3f h\n",
+                sd_wid, m_wid, lg(m_wid, lo, hi), m_wid - tr))
+
+    ## Normal-normal on the logit scale: posterior = w * prior + (1 - w) * MLE
+    ## with w = v / (v + sd_logit_cl^2) and the same likelihood variance v in
+    ## both arms. Two arms, two unknowns. This is an approximation on two
+    ## replicates -- read the sign and rough size, not the third digit.
+    a <- lg(m_def, lo, hi); b <- lg(m_wid, lo, hi); pr <- d$mean_logit_cl
+    root <- uniroot(\(v) (a * (v + sd_def^2) - v * pr) / sd_def^2 -
+                         (b * (v + sd_wid^2) - v * pr) / sd_wid^2,
+                    c(1e-8, 1e4))
+    v <- root$root
+    mle <- a * (v + sd_def^2) - v * pr
+    mle <- mle / 1  ## logit-scale likelihood-only location
+
+    cat(sprintf("\n  implied prior weight: %.3f at sd %g, %.3f at sd %g\n",
+                v / (v + sd_def^2), sd_def, v / (v + sd_wid^2), sd_wid))
+    cat(sprintf("  implied likelihood-only estimate: %.3f h (bias %+.3f h)\n",
+                inv_lg(mle, lo, hi), inv_lg(mle, lo, hi) - tr))
+    cat("\n  Quadrupling the prior variance barely moves the estimate, so most\n",
+        "  of the miss is the likelihood's own, not the prior pulling toward\n",
+        "  the prior centre. Explanation 1 cannot carry this.\n", sep = "")
 }
 
-cat("\n  A small P means the schedules do not manufacture a correlation as\n",
-    "  strong as the real one, leaving it to be explained on its own terms.\n",
-    "  A large P means they do, and the between-trial 'variation' is design.\n", sep = "")
+
+# ------------------------------------------------------------------------ #
+# Is the simulated correlation as extreme as the real one?
+#
+# Two statistics, kept apart, because mixing them is misleading. The
+# correlation of posterior MEANS conditions on the per-trial estimates as if
+# known. The correlation WITHIN a draw carries each trial's uncertainty and is
+# attenuated by it. A simulated value is only comparable to the real value
+# computed the same way; comparing the real point estimate against a simulated
+# per-draw distribution would guarantee an extreme-looking answer and mean
+# nothing.
+# ------------------------------------------------------------------------ #
+
+cat("\n=== correlation with obs_per_series: simulated vs real ===\n")
+
+cat(sprintf("\n  posterior means -- real %+.3f\n", real$r_means))
+for (a in unique(tab$arm)) {
+    rr <- sort(tab$r_means[tab$arm == a])
+    cat(sprintf("    %-8s n=%d: %s | most negative %+.3f\n", a, length(rr),
+                paste(sprintf("%+.3f", rr), collapse = " "), min(rr)))
+}
+n_le <- sum(tab$r_means <= real$r_means)
+cat(sprintf("    simulated replicates at least as negative as real: %d of %d\n",
+            n_le, nrow(tab)))
+
+cat(sprintf("\n  within draw -- real mean %+.3f (95%% %+.3f to %+.3f)\n",
+            mean(real$r_draws), quantile(real$r_draws, 0.025),
+            quantile(real$r_draws, 0.975)))
+for (a in unique(tab$arm)) {
+    pooled <- unlist(map(res[map_chr(res, "arm") == a], "r_draws"))
+    cat(sprintf("    %-8s mean %+.3f (95%% %+.3f to %+.3f)\n", a,
+                mean(pooled), quantile(pooled, 0.025), quantile(pooled, 0.975)))
+    cat(sprintf("             P(simulated draw <= real draw, both sampled) = %.3f\n",
+                mean(sample(pooled, 2e5, replace = TRUE) <=
+                     sample(real$r_draws, 2e5, replace = TRUE))))
+}
+
+cat(sprintf(paste0("\n  With only %d noise realizations the spread across replicates is\n",
+                   "  itself poorly pinned down. Read whether the simulated correlations\n",
+                   "  reach the real one, not a p-value.\n"),
+            n_distinct(tab$rep)))
 
 
 # ------------------------------------------------------------------------ #

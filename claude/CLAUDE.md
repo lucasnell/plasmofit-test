@@ -14,7 +14,8 @@ moved here. Older commits and some stale comments still refer to that path.
 ## The scripts
 
 Four, after consolidating seven (commit `0538cd2`), plus two added for the
-cycle-length hierarchy comparison (see below).
+cycle-length hierarchy comparison and four for the schedule-bias simulation
+(both below).
 
 | script | runs where | does what |
 |---|---|---|
@@ -26,6 +27,11 @@ cycle-length hierarchy comparison (see below).
 | `wockner-pooling-offset.R` | local | decomposes the no_pool / pooled_cl cycle-length gap from the saved fits |
 | `wockner-cl-clustering.R` | local | tests whether the per-trial cycle_length clustering is real |
 | `test-archer-fit.R` | local | simulates from known parameters, fits, checks recovery |
+| `wockner-schedule-sim.R` | cluster | simulates all 13 trials from one true `cycle_length` at the real observation times, one (prior arm, replicate) per SLURM array task |
+| `wockner-schedule-sim.sh` | cluster | sbatch wrapper for the above, `--array=1-6` |
+| `wockner-schedule-sim-analyze.R` | cluster | pools the simulation replicates and compares them against the real fit |
+| `wockner-schedule-sim-check.R` | cluster | `run_check = 1` cross-check that the simulator and the likelihood share a forward model |
+| `wockner-schedule-bias-profile.R` | cluster | maximum-likelihood `cycle_length` at the real schedules, per trial and pooled -- no prior, no hierarchy, no MCMC |
 
 The cluster workflow is in the header comment of `wockner-fit.R` (and
 `wockner-fit-kfold.R`, which follows the same pattern): `scp` the script and
@@ -105,6 +111,8 @@ comparing anything.
 | `wock-fit-RES-<config>.rds` | `summarize_fit()` output (diagnostics, needs a live DSO to produce) |
 | `wock-fit-LOO-<config>.rds` | `loo` objects, only from runs with `calc_log_lik = 1` |
 | `wock-data-<config>.rds` | the Stan data list, written alongside the fit |
+| `wock-schedsim-fit-<arm>-rep<n>.rds` | schedule-bias simulation fits |
+| `wock-schedsim-RES-<arm>-rep<n>.rds` | their summaries, read by `wockner-schedule-sim-analyze.R` |
 
 **None of the saved fits contain `log_lik`** — all of them predate it. Any
 `loo` work needs fresh fits with `calc_log_lik = 1L`.
@@ -249,7 +257,12 @@ gap, six at 46.0-46.6 h). It doesn't survive either check:
   7 carries just 0.16). The split is an artifact of reading point estimates.
 
 **But: `corr(per-trial cycle_length, observations per series) = -0.93.**
-Near-deterministic, n = 13. The sparsest-sampled trial (OZ439, 4.8 obs/series)
+That is the correlation of posterior *means*, with n = 13. Computed instead
+within each posterior draw, so that each trial's 1.15-1.51 h uncertainty is
+carried rather than conditioned away, it is **-0.52 (95% -0.85 to +0.14)** --
+the same sign, but an interval crossing zero. Quote both: the point-estimate
+version describes the systematic component and overstates how sharp the
+relationship is. The sparsest-sampled trial (OZ439, 4.8 obs/series)
 has the highest estimate (46.6 h); the densest (MMV048_PartB, 7.7) has the
 lowest (44.1 h). Related measures are far weaker -- `span_h` and `n_cycles`
 -0.40, `n_obs` -0.33, `n_series` -0.03 -- so it is specifically **how densely
@@ -258,7 +271,10 @@ the mechanism: cycle length is identified from the phase of the oscillation
 *within* a series, and adding more sparsely-sampled series doesn't add phase
 resolution the way adding observations within a series does.
 
-Three candidate explanations, not yet separated:
+Three candidate explanations. **1 is dead; 2 was tested directly and does not
+hold in the form stated here** -- see "Schedule-bias simulation" below. The
+list is kept because the reasoning for each is still what the tests were
+built against.
 
 1. **Prior pull.** Weakly identified trials drift toward the 48 h prior,
    which sits above every trial. Argues against it: per-trial posterior sds
@@ -278,13 +294,9 @@ schedules rather than biology, then the hierarchy is modelling measurement
 design, and the earn-its-keep comparison is answering a different question
 than intended.
 
-The prior-sensitivity configs (entries 3-7 in `wockner-fit.R`) now do double
-duty: if `np_wide_prior` still shows corr ~-0.93, explanation 1 is dead and
-it is 2 or 3. The decisive test for 2 is simulation: generate all 13 trials
-from a *single* true cycle length using each trial's real observation times,
-fit `no_pool`, and see whether the -0.93 correlation reappears. If it does,
-the pattern is manufactured by the schedules. `test-archer-fit.R` already has
-the simulation machinery for this.
+The decisive test for 2 was run; see the next section. The prior-sensitivity
+configs (entries 3-7 in `wockner-fit.R`) are still unsubmitted and would now
+be confirming on real data what the simulation already showed on simulated.
 
 ### `cl_prior_center = 48` is doing real work, and probably shouldn't be
 
@@ -307,6 +319,135 @@ settled-configuration history (`max_cl`, `sd_bs_cl`, `center_cl`) examined
 `cl_prior_center`. Worth a sensitivity check -- refit with `sd_logit_cl` wide
 or `cl_prior_center` at ~45 -- before any cycle-length estimate is reported
 as a number rather than used for model comparison.
+
+**Revised by the schedule-bias simulation.** On simulated data where the true
+cycle length is known, widening `sd_logit_cl` from 1 to 2 moved the estimate
+only 0.145 h, and the implied prior weight was 0.113 -- the same order as the
+0.079 above, and confirming the prior is not the main problem. The estimate
+was still +1.5 h high with the prior's influence removed. So moving
+`cl_prior_center` off 48 h would buy less than this section implies, and
+would not touch the larger, likelihood-side bias. Decide it on its own
+merits, not as a fix for the cycle-length estimate.
+
+### Schedule-bias simulation: explanation 1 is dead, 2 is not the answer either
+
+`wockner-schedule-sim.R` (+ `.sh`), analysed by
+`wockner-schedule-sim-analyze.R`, verified by `wockner-schedule-sim-check.R`.
+Six fits: two prior arms (`sd_logit_cl` 1 and 2) x three noise replicates,
+sharing noise seeds across arms so the prior comparison is paired. Outputs
+are `_data/wock-schedsim-{fit,RES}-<arm>-rep<n>.rds`.
+
+Design: simulate **every trial from one true `cycle_length`**, at the real
+observation times and group structure, then fit `no_pool` and look for the
+sampling-density correlation. There is no between-trial variation in the
+truth, so anything that appears is manufactured by the design and the prior.
+Generative parameters are the `pooled_cl` fit's posterior means, **all of
+them** -- taking `no_pool`'s parameters and overwriting `cycle_length` would
+pair per-trial phases with a pooled period, and `b_offset` is exactly where
+forcing one cycle length pushes the timing (see the section above). True
+`cycle_length` = 45.012 h.
+
+**The headline is not the correlation. It is that the model does not recover
+a cycle length it generated from.**
+
+| replicate | `sd_logit_cl` = 1 | `sd_logit_cl` = 2 |
+|---|---|---|
+| rep1 | 47.59 (+2.58) | did not converge |
+| rep2 | 46.23 (+1.22) | 46.06 (+1.04) |
+| rep3 | 47.21 (+2.19) | 47.09 (+2.08) |
+
+- **Not a solver mismatch.** The simulation generates with `mat_exp_series`
+  and the likelihood evaluates with `ew_poly_series`. `run_check = 1` puts
+  `max_rel_diff` at 5e-13 over 150 draws, so they share a forward model. This
+  check is the reason the bias can be read as a property of the design.
+- **Not the prior.** Quadrupling the prior variance moved the estimate by
+  0.145 h. That part is a direct measurement and stands.
+  - An earlier version of this section went further, extrapolating the two
+    arms through a normal-normal approximation to an "implied likelihood-only
+    estimate" of 46.52 h, i.e. +1.5 h. **That number was wrong and is
+    withdrawn.** `wockner-schedule-bias-profile.R` measured the likelihood
+    directly instead of extrapolating to it, and found no such bias (below).
+    The lesson is the obvious one: a two-point extrapolation through a
+    nonlinear transform, on two replicates, was not evidence, and labelling
+    it "read the sign, not the third digit" did not make it safe to report.
+- **The noise draw matters far more than the prior.** Within a replicate the
+  two arms agree closely; across replicates the population estimate moves
+  ~1 h. Any single simulated dataset is a weak read.
+
+**The correlation does reappear, but not demonstrably at full strength.**
+
+| | correlation of posterior means |
+|---|---|
+| real data | -0.933 |
+| simulated, `sd_logit_cl` = 1 | -0.874, -0.354, -0.186 |
+| simulated, `sd_logit_cl` = 2 | -0.893, -0.338 |
+
+Zero of five replicates reached -0.933; the closest was -0.893. On the
+within-draw statistic the real value sits at P ~ 0.16-0.19 against the
+simulated distributions. So the schedules manufacture a correlation of the
+right sign that sometimes gets close, and three noise realizations cannot
+say whether they routinely reach -0.93.
+
+**Do not mix the two correlation statistics.** Comparing the real
+*point-estimate* correlation against a simulated *per-draw* distribution
+guarantees an extreme-looking answer and means nothing; the per-draw version
+is attenuated by posterior noise. An earlier version of the analysis script
+did exactly that and reported P = 0.0000. It now reports the two separately
+and refuses to cross them.
+
+**What this changes.** The hierarchical fits are biased upward by +1.0 to
++2.6 h on data generated from a known cycle length, and widening the prior
+barely touches it. Any reported cycle-length number inherits that. But
+fixing it is not a matter of choosing a better prior, and it is not the
+observation schedules aliasing the likelihood either -- see the next section.
+
+### Where the bias is, by elimination
+
+`wockner-schedule-bias-profile.R`, output `_data/wock-schedbias-profile.rds`.
+Maximum likelihood at the real observation schedules: no prior, no hierarchy,
+no MCMC. Simulate from the known truth, maximize, see where the maximum
+lands. Cheap because all series in a trial share one trajectory (the same
+dedup `archer_fit.stan` does), so one full-grid solve per likelihood
+evaluation.
+
+**The control is what licenses the rest**: with noiseless data the maximum
+must land exactly on the truth, and it does, to 0.00e+00 h for all 13 trials.
+The first version of this script failed that control on one trial, because
+`n_full` was set to `max(ts)/dt_full` instead of
+`round(max(ts)/dt_full) + 1` (`archer_fit.stan:179`), so every trial observed
+at t = 216 indexed past the end of its trajectory and scored `1e12`
+everywhere. Without the control that would have been a fabricated row in a
+results table.
+
+| estimator | bias vs truth 45.012 h | precision |
+|---|---|---|
+| per-trial MLE, averaged over 13 trials | **-0.195 h** | 16 replicates, se ~0.22 |
+| pooled MLE, one `cycle_length` for all trials | **+0.544 h** | 8 replicates, 95% CI -0.26 to +1.34 |
+| hierarchical posterior, `sd_logit_cl = 2` | +1.56 h | paired replicates 2-3 |
+| hierarchical posterior, `sd_logit_cl = 1` | +1.71 h | paired replicates 2-3 |
+
+- **The likelihood is not biased upward at these schedules.** Per trial the
+  mean bias is indistinguishable from zero, and the pooled maximum is
+  +0.54 h with a confidence interval spanning zero (p = 0.15, n = 8). There
+  may be a small positive bias; there is certainly not a +1.5 h one.
+- **The schedules do not manufacture the correlation at the likelihood
+  level either.** `corr(per-trial MLE, obs_per_series)` is **+0.126** on the
+  means and **+0.031 (95% -0.317 to +0.477)** within a replicate. The wrong
+  sign, centred on zero. This is the cleanest test of explanation 2 run so
+  far and it comes back negative.
+- **A single trial barely identifies `cycle_length` at all.** Per-trial MLE
+  sds are 1.9-4.6 h, against per-trial *posterior* sds of 1.15-1.51 h in the
+  hierarchical fit. Most of what pins down a trial's cycle length in the
+  fitted model comes from the other trials, not from that trial's own data.
+- **So the bias is in the hierarchy, not the likelihood or the prior.**
+  Roughly: prior ~0.15 h (measured by the arm difference), likelihood
+  +0.5 h at most and not established, the remaining ~1.1 h from the
+  hierarchical structure itself. Candidate mechanisms, none tested:
+  `sigma_logit_cl` estimating ~0.41 when the truth is 0, so trials are
+  shrunk toward a population distribution that should not have width;
+  posterior mean versus maximum on a bounded, skewed parameter; and the
+  bound geometry, `[35, 50]` leaving 5 h of headroom above a truth of 45 and
+  10 h below.
 
 ## Running this on the cluster directly
 
@@ -332,24 +473,27 @@ are working *on* `biohpc`, three things change:
 
 Roughly in priority order.
 
-1. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
-   entries 3-7, `--array=3-7` (entries 1-2 are already fit). Written but
-   never submitted. Answers whether the 48 h prior is pulling the estimates,
-   and *also* discriminates explanation 1 from 2-3 for the sampling-density
-   correlation: if `np_wide_prior` still shows `corr(cl, obs_per_series)`
-   ~ -0.93, prior pull is dead. Re-run `wockner-cl-clustering.R` against
-   that fit to check.
-2. **The schedule-bias simulation.** The decisive test for whether the
-   sampling-density correlation is manufactured by the observation schedules:
-   simulate all 13 trials from a *single* true `cycle_length`, using each
-   trial's real observation times, fit `no_pool`, and see whether the -0.93
-   correlation reappears. If it does, between-trial "variation" is partly a
-   design artifact and the earn-its-keep question needs reframing.
-   `test-archer-fit.R` has the simulation machinery; `plasmofit:::
-   generate_starts()` / `plasmofit:::full_mat_exp_series()` are the
-   generators (see `plasmofit`'s `claude/chat4/CLAUDE.md` for the recipe).
-   Local/interactive, no array job.
-3. **`hold_out` masking in `plasmofit`, then Design A.** The enabling change
+1. **Find the hierarchy-induced bias.** The largest open question, and it is
+   about the estimate itself rather than about the hierarchy earning its
+   keep. On data generated from a known `cycle_length`, `no_pool`'s
+   population estimate runs +1.6 to +1.7 h high, and elimination puts only
+   ~0.15 h of that on the prior and at most ~0.5 h on the likelihood (see
+   "Where the bias is, by elimination"). The remaining ~1.1 h is the
+   hierarchical structure and has no mechanism attached to it yet. Three
+   candidates, in the order they are cheap to test:
+   - `sigma_logit_cl` estimates ~0.41 when the truth is 0. Refit the
+     simulated data with `sigma_logit_cl` fixed near 0 and see how much of
+     the bias survives. This is the cheapest discriminating test.
+   - Posterior mean versus maximum on a bounded parameter. Compare the
+     posterior *mode* of the population `cycle_length` against its mean in
+     the saved simulation fits; no refitting needed.
+   - Bound geometry: `[35, 50]` leaves 5 h above a truth of 45 and 10 h
+     below. Re-simulate with wider bounds, e.g. `[30, 60]`, and see whether
+     the bias tracks the asymmetry. Note `max_cl = 55` reintroduces the
+     boundary mode, so this needs the bounds moved, not just widened.
+   Until one of these lands, no cycle-length number should be reported as an
+   estimate of anything biological.
+2. **`hold_out` masking in `plasmofit`, then Design A.** The enabling change
    for cross-validation that does not rely on PSIS: a per-observation 0/1
    `hold_out` in `data`, with `transformed data` ordering each combo's kept
    observations first and storing a second length, so the model block's
@@ -364,15 +508,39 @@ Roughly in priority order.
    initial conditions, error scale and `eta_cl[j]` stay informed, so
    `no_pool` can adapt per trial while `pooled_cl` cannot, and cycle-length
    error shows up as accumulated phase drift exactly in the held-out window.
-4. **Design B, only if A is ambiguous.** True leave-one-trial-out K-fold,
+3. **Design B, only if A is ambiguous.** True leave-one-trial-out K-fold,
    13 folds x 2-4 models. Note it is structurally near-rigged against the
    hierarchy: for a never-seen trial, `no_pool`'s point prediction collapses
    to the population mean, the same location `pooled_cl` gives, so it can
    only win on calibration. That likely explains why trial-level `loo` put
    `pooled_cl` marginally ahead.
-5. **`cl_prior_center` decision.** Once 1 lands, decide whether the default
-   should move off 48 h. Matters for reporting a cycle-length number; mostly
-   cancels for model comparison.
-6. `test-archer-fit.R` has not been run to completion with a full-length fit;
+4. **`cl_prior_center` decision.** Decide whether the default should move
+   off 48 h. Demoted: the simulation showed the prior carries less of the
+   error than thought (weight 0.113), so this mostly does not fix anything.
+   Matters for reporting a cycle-length number; mostly cancels for model
+   comparison.
+5. `test-archer-fit.R` has not been run to completion with a full-length fit;
    it has only been smoke-tested with a short one, where recovery was good
-   (23/23 parameters inside their 95% intervals, max |z| 0.76).
+   (23/23 parameters inside their 95% intervals, max |z| 0.76). Worth
+   revisiting in light of the schedule-bias finding: that smoke test used a
+   denser design (8 observations per series, against 4-8 in Wockner).
+
+### Lower priority
+
+6. **More schedule-simulation replicates.** The correlation question is
+   limited by having only three noise realizations, not by compute. Another
+   6-9 replicates in the default arm would say whether the schedule-induced
+   correlation routinely reaches the real -0.93 or only occasionally brushes
+   it. Add seeds to `REP_SEEDS` in `wockner-schedule-sim.R` and widen the
+   array; ~2 h wall clock.
+7. **Re-run `wide-rep1` with a different fit seed.** It failed at R-hat 1.23,
+   11.5% divergences, ESS 13, chains 22 `lp__` units apart, and is excluded
+   from all the numbers above. It shares a noise seed with `default-rep1`,
+   which was also the shakiest default replicate (R-hat 1.030), so it is
+   worth knowing whether that simulated dataset is hard or the wide prior is.
+8. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
+   entries 3-7, `--array=3-7`. Written but never submitted. Demoted: these
+   were to discriminate explanation 1 from 2-3 for the sampling-density
+   correlation. The simulation has since killed 1 and found against 2, so
+   these would now be confirming on real data that the prior is not the
+   story -- worth something, no longer decisive.
