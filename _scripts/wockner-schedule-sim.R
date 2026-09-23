@@ -238,10 +238,21 @@ for (nm in names(arm$data)) d_sim[[nm]] <- arm$data[[nm]]
 # Fit
 # ------------------------------------------------------------------------ #
 
-f <- archer_fit(d_sim, model = arm$model, chains = N_CHAINS, iter = ITER,
-                warmup = WARMUP, seed = SEED_FIT, threads_per_chain = 1L)
+## SCHEDSIM_REBUILD=1 regenerates the summary from an already-saved fit,
+## for when sampling succeeded but the summary below did not. The data and
+## truth above are rebuilt deterministically from the same seeds, so the fit
+## being read is the fit those inputs produced.
+fit_path <- sprintf("_data/wock-schedsim-fit-%s.rds", cfg_name)
 
-write_rds(f, sprintf("_data/wock-schedsim-fit-%s.rds", cfg_name))
+if (identical(Sys.getenv("SCHEDSIM_REBUILD"), "1")) {
+    if (!file.exists(fit_path)) stop("no saved fit at ", fit_path)
+    cat("rebuilding summary from", fit_path, "-- not refitting\n")
+    f <- read_rds(fit_path)
+} else {
+    f <- archer_fit(d_sim, model = arm$model, chains = N_CHAINS, iter = ITER,
+                    warmup = WARMUP, seed = SEED_FIT, threads_per_chain = 1L)
+    write_rds(f, fit_path)
+}
 
 
 # ------------------------------------------------------------------------ #
@@ -291,24 +302,39 @@ per_trial <- tibble(trial = trial_names,
                     cl_sd = apply(cl_draws, 2, sd)) |>
     left_join(meta, by = "trial")
 
+## Undefined when the model has no between-trial variation to correlate:
+## pooled_cl reports n_grp_cl identical copies of one value, so the per-trial
+## spread is exactly zero and cor() is 0/0. That is a property of the model,
+## not a failure, so the correlation is reported as NA and the recovery
+## numbers above carry the arm on their own.
+has_spread <- sd(per_trial$cl_mean) > 1e-8
+
 ## Headline statistic, computed exactly as wockner-cl-clustering.R computes it
 ## on the real fit: Pearson correlation of per-trial posterior means against
 ## observations per series.
-r_means <- cor(per_trial$cl_mean, per_trial$obs_per_series)
+r_means <- if (has_spread) {
+    cor(per_trial$cl_mean, per_trial$obs_per_series)
+} else NA_real_
 
 ## The same correlation within each posterior draw. The point-estimate version
 ## above hides how much of its own sampling uncertainty it has; this does not.
-r_draws <- apply(cl_draws, 1, \(x) cor(x, per_trial$obs_per_series))
+r_draws <- apply(cl_draws, 1, \(x) if (sd(x) > 0)
+                     cor(x, per_trial$obs_per_series) else NA_real_)
 
 sig <- if (has_hier) as.numeric(rstan::extract(f, "sigma_logit_cl")[[1]]) else NA_real_
 
 cat("\n=== correlation of per-trial cycle_length with obs_per_series ===\n")
-cat(sprintf("  posterior means:  %+.3f   (real data: -0.93)\n", r_means))
-cat(sprintf("  per draw:         %+.3f  (95%% %+.3f to %+.3f), P(r < 0) = %.3f\n",
-            mean(r_draws), quantile(r_draws, 0.025), quantile(r_draws, 0.975),
-            mean(r_draws < 0)))
-cat(sprintf("  slope:            %+.3f h per obs/series\n",
-            coef(lm(cl_mean ~ obs_per_series, data = per_trial))[2]))
+if (has_spread) {
+    cat(sprintf("  posterior means:  %+.3f   (real data: -0.93)\n", r_means))
+    cat(sprintf("  per draw:         %+.3f  (95%% %+.3f to %+.3f), P(r < 0) = %.3f\n",
+                mean(r_draws), quantile(r_draws, 0.025), quantile(r_draws, 0.975),
+                mean(r_draws < 0)))
+    cat(sprintf("  slope:            %+.3f h per obs/series\n",
+                coef(lm(cl_mean ~ obs_per_series, data = per_trial))[2]))
+} else {
+    cat("  n/a: this model gives every trial the same cycle_length, so there\n")
+    cat("  is no between-trial variation to correlate against sampling density.\n")
+}
 cat(sprintf("  per-trial spread: %.2f-%.2f h (range %.2f), true value %.2f\n",
             min(per_trial$cl_mean), max(per_trial$cl_mean),
             diff(range(per_trial$cl_mean)), truth$cycle_length))

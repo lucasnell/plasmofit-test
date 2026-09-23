@@ -440,15 +440,46 @@ results table.
   sds are 1.9-4.6 h, against per-trial *posterior* sds of 1.15-1.51 h in the
   hierarchical fit. Most of what pins down a trial's cycle length in the
   fitted model comes from the other trials, not from that trial's own data.
-- **So the bias is in the hierarchy, not the likelihood or the prior.**
-  Roughly: prior ~0.15 h (measured by the arm difference), likelihood
-  +0.5 h at most and not established, the remaining ~1.1 h from the
-  hierarchical structure itself. Candidate mechanisms, none tested:
-  `sigma_logit_cl` estimating ~0.41 when the truth is 0, so trials are
-  shrunk toward a population distribution that should not have width;
-  posterior mean versus maximum on a bounded, skewed parameter; and the
-  bound geometry, `[35, 50]` leaving 5 h of headroom above a truth of 45 and
-  10 h below.
+- **The hierarchy is not where it lives either.** An earlier version of this
+  section put ~1.1 h on the hierarchical structure by subtracting an
+  unpaired likelihood figure from an unpaired posterior one. That arithmetic
+  was invalid -- replicate-to-replicate spread is ~1 h, larger than the
+  differences being separated, so only within-replicate comparisons can be
+  subtracted. Fitting `pooled_cl` to the same simulated datasets (arm
+  `no_hier`) gives the paired answer:
+
+  | replicate | `no_pool` sd 1 | `no_pool` sd 2 | `pooled_cl` | hierarchy |
+  |---|---|---|---|---|
+  | rep2 | +1.218 | +1.044 | +0.928 | +0.290 |
+  | rep3 | +2.194 | +2.077 | +1.968 | +0.226 |
+
+  The hierarchy contributes ~0.25 h and the prior (sd 1 to 2) ~0.15 h.
+  Removing the hierarchy entirely leaves +0.93 h and +1.97 h. So the bulk of
+  the bias is in the single-cycle-length fit itself, and the replicate-to-
+  replicate swing (+0.93 vs +1.97 on the same design, differing only in
+  noise) is larger than every structural effect measured.
+
+  This does not contradict the unbiased per-trial MLEs above: a pooled
+  maximum weights trials by information rather than averaging them, and its
+  own replicate spread is ~0.96 h. The paired pooled MLE on these exact two
+  datasets is what splits the remainder into likelihood and prior;
+  `wockner-schedule-bias-profile.R`'s last stage computes it.
+
+  A third arm, `tight_sigma` (`no_pool` with `sd_bs_cl = 0.001`), was meant
+  as the within-model control, since `no_hier` answers the question by
+  changing the model. It was **cancelled**: it ran ~5x slower than every
+  other arm -- a centred parameterization pinned at a near-zero scale is the
+  geometry HMC handles worst -- and was heading for 4-6 h and probably a
+  non-converged fit. The control it would have provided is instead a reading
+  of the two Stan programs: `archer_fit_pooled_cl.stan` differs from
+  `archer_fit.stan` only in the cycle-length block (a scalar `logit_cl`
+  broadcast by `rep_vector` in place of `mu_logit_cl`/`sigma_logit_cl`/
+  `eta_cl`, and the `n_grp_cl >= 2` reject dropped). Likelihood,
+  `reduce_sum`, trajectory dedup, Erlang window and generated quantities are
+  identical, and both put the same `normal(mean_logit_cl, sd_logit_cl)` prior
+  on their population location. The arm is still defined in
+  `wockner-schedule-sim.R` if it is ever wanted; note it needs
+  `center_cl = 0` to stand a chance of sampling.
 
 **Not a posterior-summary artifact.** `wockner-schedule-sim-mode.R`, output
 `_data/wock-schedsim-mode.rds`. `cycle_length` is bounded and nonlinearly
@@ -492,7 +523,12 @@ Roughly in priority order.
    "Where the bias is, by elimination"). The remaining ~1.1 h is the
    hierarchical structure and has no mechanism attached to it yet. Three
    candidates, in the order they are cheap to test:
-   - `sigma_logit_cl` estimates ~0.41 when the truth is 0. **Running**:
+   - ~~`sigma_logit_cl` estimates ~0.41 when the truth is 0.~~ **Largely
+     answered**: the `no_hier` arm (`pooled_cl`, hierarchy removed) still
+     biases +0.93 and +1.97 h on replicates 2 and 3, so the hierarchy
+     accounts for only ~0.25 h. The `tight_sigma` cross-check was cancelled
+     as redundant and pathologically slow; a reading of the two Stan
+     programs replaces it (see the section above). Original plan:
      `wockner-schedule-sim.R` arms `tight_sigma` (`sd_bs_cl = 0.001`, same
      model, hierarchy width removed) and `no_hier` (`pooled_cl`, hierarchy
      removed outright), replicates 2-3 of each, tasks 8-9 and 11-12. Two

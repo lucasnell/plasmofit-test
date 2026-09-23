@@ -298,8 +298,92 @@ cat(sprintf("  se of the mean bias: %.3f h\n", sd(pooled_mle) / sqrt(N_REP_POOL)
 cat("\n  Compare against the hierarchical fits' population estimates, which\n",
     "  ran +1.0 to +2.6 h high on the same design.\n", sep = "")
 
+
+
+# ------------------------------------------------------------------------ #
+# The same pooled maximum, on the simulation's own replicates
+#
+# The stage above uses this script's own noise seeds, so its bias cannot be
+# compared against the hierarchical fits' bias: replicate-to-replicate spread
+# is ~1 h, which is larger than the differences being separated. This repeats
+# it on the exact datasets wockner-schedule-sim.R fitted, reproducing their
+# noise the same way -- one rnorm call over all observations in series order,
+# from the seed recorded in each saved summary -- so the ladder
+#
+#   pooled MLE  ->  pooled_cl posterior  ->  no_pool posterior
+#
+# is paired within a replicate and the steps can be subtracted.
+# ------------------------------------------------------------------------ #
+
+sim_res <- list.files("_data", "^wock-schedsim-RES-.*[.]rds$", full.names = TRUE)
+sim_seeds <- if (length(sim_res) > 0) {
+    map(sim_res, read_rds) |>
+        map(\(r) tibble(rep = r$rep, seed_noise = r$seed_noise)) |>
+        list_rbind() |> distinct() |> arrange(rep)
+} else tibble(rep = integer(), seed_noise = integer())
+
+if (nrow(sim_seeds) > 0) {
+    ## global observation indices per trial, in the order trial_data uses
+    glob_idx <- map(seq_len(d$n_grp_cl), \(j) {
+        sers <- which(d$grp_cl == j)
+        list_c(map(sers, \(i) starts[i]:ends[i]))
+    })
+
+    ## noiseless trajectories over ALL series, in the data list's own order
+    y_hat_all <- numeric(d$n_total_obs)
+    for (i in seq_len(d$n_ts)) {
+        ix <- starts[i]:ends[i]
+        y0 <- plasmofit:::generate_starts(truth$cycle_length, d$n_c,
+                                          truth$b_shape[d$grp_init[i]],
+                                          truth$b_offset[d$grp_init[i]],
+                                          truth$log10_total0[d$grp_init[i]])
+        y_hat_all[ix] <- plasmofit:::mat_exp_series(y0, truth$cycle_length,
+                                                    d$n_c, truth$R[d$grp_R[i]],
+                                                    d$mu, d$ts[ix], d$dt_full)
+    }
+    sd_all <- truth$sd_iRBC[rep(d$grp_sd, d$n_obs)]
+
+    paired <- map(seq_len(nrow(sim_seeds)), \(k) {
+        set.seed(sim_seeds$seed_noise[k])     # matches wockner-schedule-sim.R
+        y_r <- pmax(0, 10^(log10(y_hat_all + 1) +
+                           rnorm(d$n_total_obs, 0, sd_all)) - 1)
+        yobs <- map(glob_idx, \(g) log10(y_r[g] + 1))
+        warm <- map(trial_data, \(td) par_at(td, truth$cycle_length)[-1])
+        nll_fix <- function(q, td, yt, cl) {
+            nll(c(lgt((cl - d$min_cl) / (d$max_cl - d$min_cl)), q), td, yt)
+        }
+        tot <- numeric(length(CL_GRID))
+        for (m in seq_along(CL_GRID)) {
+            v <- 0
+            for (j in seq_along(trial_data)) {
+                o <- tryCatch(optim(warm[[j]], nll_fix, td = trial_data[[j]],
+                                    yt = yobs[[j]], cl = CL_GRID[m],
+                                    method = "Nelder-Mead",
+                                    control = list(maxit = 3000, reltol = 1e-10)),
+                              error = function(e) NULL)
+                if (!is.null(o)) { warm[[j]] <- o$par; v <- v + o$value }
+                else v <- v + 1e12
+            }
+            tot[m] <- v
+        }
+        tibble(rep = sim_seeds$rep[k], pooled_mle = argmin_refine(tot),
+               bias = argmin_refine(tot) - truth$cycle_length)
+    }, .progress = FALSE) |> list_rbind()
+
+    cat("\n=== pooled MLE on the simulation's own replicates (paired) ===\n")
+    paired |> mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
+    cat("\n  Subtract these from the matching no_hier / no_pool posteriors to\n",
+        "  split the bias into likelihood, prior, and hierarchy on the same\n",
+        "  data. Comparing against the unpaired stage above is not valid.\n",
+        sep = "")
+} else {
+    paired <- NULL
+    cat("\n(no wock-schedsim-RES-*.rds found; skipping the paired stage)\n")
+}
+
 write_rds(list(truth = truth$cycle_length, control = ctrl_tab, mle = mle,
                obs_per_series = ops, summary = out, r_rep = r_rep,
-               cl_grid = CL_GRID, profile = prof_mat, pooled_mle = pooled_mle),
+               cl_grid = CL_GRID, profile = prof_mat, pooled_mle = pooled_mle,
+               paired = paired),
           "_data/wock-schedbias-profile.rds")
 cat("\nwrote _data/wock-schedbias-profile.rds\n")
