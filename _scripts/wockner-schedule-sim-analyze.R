@@ -97,15 +97,26 @@ real <- list(
 # Headline comparison
 # ------------------------------------------------------------------------ #
 
+## A model that gives every trial the same cycle_length (pooled_cl, arm
+## no_hier) has no between-trial variation to correlate against sampling
+## density, so its correlation columns are NA by construction, not by
+## failure. Such replicates still carry a recovery number and are kept for
+## that; the correlation sections below drop them.
+has_corr <- map_lgl(res, \(r) any(is.finite(r$r_draws)))
+
 tab <- map(res, \(r) {
     pt <- r$per_trial
+    rd <- r$r_draws[is.finite(r$r_draws)]
+    ok <- length(rd) > 0
     tibble(config = r$config, arm = r$arm, rep = r$rep,
-           sd_logit_cl = r$sd_logit_cl,
+           sd_logit_cl = r$sd_logit_cl %||% NA_real_,
            r_means = r$r_means,
-           r_draw_mean = mean(r$r_draws),
-           r_draw_lo = unname(quantile(r$r_draws, 0.025)),
-           r_draw_hi = unname(quantile(r$r_draws, 0.975)),
-           slope = unname(coef(lm(pt$cl_mean ~ pt$obs_per_series))[2]),
+           r_draw_mean = if (ok) mean(rd) else NA_real_,
+           r_draw_lo = if (ok) unname(quantile(rd, 0.025)) else NA_real_,
+           r_draw_hi = if (ok) unname(quantile(rd, 0.975)) else NA_real_,
+           slope = if (sd(pt$cl_mean) > 1e-8) {
+               unname(coef(lm(pt$cl_mean ~ pt$obs_per_series))[2])
+           } else NA_real_,
            spread = diff(range(pt$cl_mean)),
            bias = mean(pt$cl_mean) - r$true_cl,
            sigma = r$sigma_logit_cl[["mean"]])
@@ -116,6 +127,7 @@ tab |> mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
 
 cat("\n=== by prior arm, vs the real data ===\n")
 by_arm <- tab |>
+    filter(!is.na(r_means)) |>
     summarise(.by = c(arm, sd_logit_cl),
               n = n(),
               r_mean = mean(r_means),
@@ -214,21 +226,28 @@ if (n_distinct(paired$arm) == 2L) {
 
 cat("\n=== correlation with obs_per_series: simulated vs real ===\n")
 
+tab_corr <- tab |> filter(!is.na(r_means))
+if (nrow(tab_corr) < nrow(tab)) {
+    cat(sprintf("  (excluding %s: no between-trial variation to correlate)\n",
+                paste(setdiff(tab$config, tab_corr$config), collapse = ", ")))
+}
+
 cat(sprintf("\n  posterior means -- real %+.3f\n", real$r_means))
-for (a in unique(tab$arm)) {
-    rr <- sort(tab$r_means[tab$arm == a])
+for (a in unique(tab_corr$arm)) {
+    rr <- sort(tab_corr$r_means[tab_corr$arm == a])
     cat(sprintf("    %-8s n=%d: %s | most negative %+.3f\n", a, length(rr),
                 paste(sprintf("%+.3f", rr), collapse = " "), min(rr)))
 }
-n_le <- sum(tab$r_means <= real$r_means)
+n_le <- sum(tab_corr$r_means <= real$r_means)
 cat(sprintf("    simulated replicates at least as negative as real: %d of %d\n",
-            n_le, nrow(tab)))
+            n_le, nrow(tab_corr)))
 
 cat(sprintf("\n  within draw -- real mean %+.3f (95%% %+.3f to %+.3f)\n",
             mean(real$r_draws), quantile(real$r_draws, 0.025),
             quantile(real$r_draws, 0.975)))
-for (a in unique(tab$arm)) {
-    pooled <- unlist(map(res[map_chr(res, "arm") == a], "r_draws"))
+for (a in unique(tab_corr$arm)) {
+    pooled <- unlist(map(res[map_chr(res, "arm") == a & has_corr], "r_draws"))
+    pooled <- pooled[is.finite(pooled)]
     cat(sprintf("    %-8s mean %+.3f (95%% %+.3f to %+.3f)\n", a,
                 mean(pooled), quantile(pooled, 0.025), quantile(pooled, 0.975)))
     cat(sprintf("             P(simulated draw <= real draw, both sampled) = %.3f\n",
@@ -239,7 +258,61 @@ for (a in unique(tab$arm)) {
 cat(sprintf(paste0("\n  With only %d noise realizations the spread across replicates is\n",
                    "  itself poorly pinned down. Read whether the simulated correlations\n",
                    "  reach the real one, not a p-value.\n"),
-            n_distinct(tab$rep)))
+            n_distinct(tab_corr$rep)))
+
+
+# ------------------------------------------------------------------------ #
+# Nuisance-parameter recovery
+#
+# The pooled MLE and the pooled posterior differ by 1.3-2.1 h on the same
+# data, which the cycle_length prior cannot explain (widening it moves the
+# estimate 0.15 h). The other things the Bayesian fit does and the MLE does
+# not are: put priors on every nuisance parameter, and estimate sd_iRBC
+# instead of fixing it. If a nuisance prior is pulling its parameter away
+# from the truth, it can drag cycle_length with it -- b_shape is the prime
+# suspect, since lognormal(mean_log_b_shape, sd_log_b_shape) has median
+# exp(2) = 7.4 against truth values of 11-19.
+#
+# Truth here is the pooled_cl fit's posterior means, the same values
+# wockner-schedule-sim.R generated from.
+# ------------------------------------------------------------------------ #
+
+f_pl <- read_rds("_data/wock-fit-pooled_cl.rds")
+pm <- function(f, par) unname(colMeans(as.matrix(f, pars = par)))
+truth_nuis <- list(b_shape = pm(f_pl, "b_shape"),
+                   b_offset = pm(f_pl, "b_offset"),
+                   log10_total0 = pm(f_pl, "log10_total0"),
+                   R = pm(f_pl, "R"),
+                   sd_iRBC = pm(f_pl, "sd_iRBC"))
+rm(f_pl); invisible(gc())
+
+cat("\n=== nuisance-parameter recovery (posterior mean vs the truth used to simulate) ===\n")
+nuis <- map(res, \(r) {
+    f <- read_rds(sprintf("_data/wock-schedsim-fit-%s.rds", r$config))
+    o <- map(names(truth_nuis), \(nm) {
+        est <- pm(f, nm); tv <- truth_nuis[[nm]]
+        tibble(config = r$config, par = nm, n = length(tv),
+               mean_truth = mean(tv), mean_est = mean(est),
+               mean_diff = mean(est - tv),
+               max_abs_diff = max(abs(est - tv)),
+               rel = mean(est - tv) / mean(tv))
+    }) |> list_rbind()
+    rm(f); invisible(gc())
+    o
+}) |> list_rbind()
+
+nuis |>
+    summarise(.by = par,
+              n = first(n), truth = first(mean_truth),
+              est = mean(mean_est), diff = mean(mean_diff),
+              rel = mean(rel), worst = max(max_abs_diff)) |>
+    mutate(across(where(is.numeric), \(x) round(x, 4))) |>
+    print(width = Inf)
+
+cat("\n  A parameter recovered near zero difference is not the culprit. One\n",
+    "  pulled systematically toward its prior is a candidate for dragging\n",
+    "  cycle_length with it, and is worth refitting with that prior widened.\n",
+    sep = "")
 
 
 # ------------------------------------------------------------------------ #

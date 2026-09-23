@@ -491,6 +491,57 @@ posterior skew is **-0.016**, and the bias is +1.82 h by the mean against
 the choice of summary. Same conclusion applying the transform after
 summarizing `mu_logit_cl` rather than before.
 
+### The simulation does not recover its own nuisance parameters
+
+The finding that matters most here, and it was turned up by chasing the
+cycle-length bias rather than looked for. `wockner-schedule-sim-analyze.R`'s
+nuisance-recovery stage compares each simulation fit's posterior means against
+the values the data were generated from:
+
+| parameter | truth (mean) | estimated | difference | relative | prior |
+|---|---|---|---|---|---|
+| `b_shape` | 14.9 | 8.90 | **-5.95** | -40% | `lognormal(2, 0.5)`, median 7.39 |
+| `log10_total0` | 0.425 | 0.854 | **+0.429** | +101% | `normal(1, 0.25)` |
+| `b_offset` | 0.254 | 0.369 | +0.114 | +45% | -- |
+| `R` | 6.24 | 4.73 | -1.50 | -24% | median `max_R * inv_logit(-2)` = 5.98 |
+| `sd_iRBC` | 0.598 | 0.607 | +0.009 | +1% | -- |
+
+`b_shape` lands almost exactly on its prior median instead of on the truth,
+and `log10_total0` moves halfway to its prior mean. Only `sd_iRBC` is
+recovered. `log10_total0`, `R` and `b_shape` trade off against each other --
+a larger starting population with slower growth and a flatter initial
+distribution produces a similar trajectory -- so this is a weakly identified
+ridge with the priors choosing a point along it.
+
+This is also where the maximum-likelihood/posterior gap comes from. The paired
+ladder, all on the same simulated datasets:
+
+| replicate | pooled MLE | `pooled_cl` posterior | `no_pool` posterior |
+|---|---|---|---|
+| rep1 | +1.01 | -- | +2.58 |
+| rep2 | **-1.18** | +0.928 | +1.218 |
+| rep3 | +0.711 | +1.968 | +2.194 |
+
+On rep2 the data alone say 43.8 h and the fitted model says 45.9 h. That
+2.1 h gap is not the cycle-length prior, which moves the estimate 0.15 h when
+widened; it is the nuisance priors dragging `cycle_length` along the ridge,
+plus the MLE fixing `sd_iRBC` at truth where the fit estimates it.
+
+**This weakens the whole simulation, including the results above.** The truth
+was the `pooled_cl` fit's posterior **mean vector**, and with correlated
+parameters a mean vector is not a coherent parameter set: it can sit where no
+posterior draw sits, and generate data less informative than the real data.
+The evidence that this happened is direct -- on real data the likelihood
+pulled `b_shape` to 14.9 against a prior median of 7.4, but data simulated
+from 14.9 does not pull it up at all. So the cycle-length biases reported
+above (+1.0 to +2.6 h) are plausibly larger than what the real data suffer,
+and should be read as an upper bound rather than an estimate.
+
+The fix is to draw the truth from a single posterior **draw** rather than the
+mean vector, which keeps the parameter correlations intact, and to repeat
+over several draws. Until that is done, every number in the two sections
+above carries this caveat.
+
 ## Running this on the cluster directly
 
 The workflow above assumes editing locally and `scp`-ing up. If instead you
@@ -515,14 +566,29 @@ are working *on* `biohpc`, three things change:
 
 Roughly in priority order.
 
-1. **Find the hierarchy-induced bias.** The largest open question, and it is
-   about the estimate itself rather than about the hierarchy earning its
-   keep. On data generated from a known `cycle_length`, `no_pool`'s
-   population estimate runs +1.6 to +1.7 h high, and elimination puts only
-   ~0.15 h of that on the prior and at most ~0.5 h on the likelihood (see
-   "Where the bias is, by elimination"). The remaining ~1.1 h is the
-   hierarchical structure and has no mechanism attached to it yet. Three
-   candidates, in the order they are cheap to test:
+1. **Re-run the schedule-bias simulation from a posterior draw, not the
+   posterior mean vector.** Everything the simulation says is conditional on
+   this, so it comes first. Generating from the `pooled_cl` fit's posterior
+   mean vector broke the parameter correlations and produced data that does
+   not identify `b_shape` or `log10_total0` the way the real data does (see
+   "The simulation does not recover its own nuisance parameters"). Replace
+   the truth construction in `wockner-schedule-sim.R` with a single posterior
+   draw, repeat over a few draws, and check nuisance recovery *first*: if
+   `b_shape` still lands on its prior median, the weak identification is real
+   and not an artifact of how the truth was built. Only then are the
+   cycle-length numbers worth re-reading.
+2. **Finish attributing the cycle-length bias.** Conditional on 1: if the
+   simulation is rebuilt from a posterior draw and the bias survives, this is
+   what is left to explain. Paired measurement so far puts ~0.25 h on the
+   hierarchy, ~0.15 h on the cycle-length prior, and the largest share on the
+   nuisance priors dragging `cycle_length` along the weakly identified
+   `(log10_total0, R, b_shape)` ridge -- the maximum-likelihood/posterior gap
+   is 1.3-2.1 h on the same data. The direct test is to refit the simulated
+   data with `mean_log_b_shape`/`sd_log_b_shape` and
+   `mean_log10_total0`/`sd_log10_total0` widened, and see how much of the
+   cycle-length bias goes with them; both are already
+   `archer_stan_data()` arguments, so it needs no package change. Candidates
+   that have been checked:
    - ~~`sigma_logit_cl` estimates ~0.41 when the truth is 0.~~ **Largely
      answered**: the `no_hier` arm (`pooled_cl`, hierarchy removed) still
      biases +0.93 and +1.97 h on replicates 2 and 3, so the hierarchy
@@ -544,7 +610,7 @@ Roughly in priority order.
      boundary mode, so this needs the bounds moved, not just widened.
    Until one of these lands, no cycle-length number should be reported as an
    estimate of anything biological.
-2. **`hold_out` masking in `plasmofit`, then Design A.** The enabling change
+3. **`hold_out` masking in `plasmofit`, then Design A.** The enabling change
    for cross-validation that does not rely on PSIS: a per-observation 0/1
    `hold_out` in `data`, with `transformed data` ordering each combo's kept
    observations first and storing a second length, so the model block's
@@ -559,18 +625,18 @@ Roughly in priority order.
    initial conditions, error scale and `eta_cl[j]` stay informed, so
    `no_pool` can adapt per trial while `pooled_cl` cannot, and cycle-length
    error shows up as accumulated phase drift exactly in the held-out window.
-3. **Design B, only if A is ambiguous.** True leave-one-trial-out K-fold,
+4. **Design B, only if A is ambiguous.** True leave-one-trial-out K-fold,
    13 folds x 2-4 models. Note it is structurally near-rigged against the
    hierarchy: for a never-seen trial, `no_pool`'s point prediction collapses
    to the population mean, the same location `pooled_cl` gives, so it can
    only win on calibration. That likely explains why trial-level `loo` put
    `pooled_cl` marginally ahead.
-4. **`cl_prior_center` decision.** Decide whether the default should move
+5. **`cl_prior_center` decision.** Decide whether the default should move
    off 48 h. Demoted: the simulation showed the prior carries less of the
    error than thought (weight 0.113), so this mostly does not fix anything.
    Matters for reporting a cycle-length number; mostly cancels for model
    comparison.
-5. `test-archer-fit.R` has not been run to completion with a full-length fit;
+6. `test-archer-fit.R` has not been run to completion with a full-length fit;
    it has only been smoke-tested with a short one, where recovery was good
    (23/23 parameters inside their 95% intervals, max |z| 0.76). Worth
    revisiting in light of the schedule-bias finding: that smoke test used a
@@ -578,18 +644,18 @@ Roughly in priority order.
 
 ### Lower priority
 
-6. **More schedule-simulation replicates.** The correlation question is
+7. **More schedule-simulation replicates.** The correlation question is
    limited by having only three noise realizations, not by compute. Another
    6-9 replicates in the default arm would say whether the schedule-induced
    correlation routinely reaches the real -0.93 or only occasionally brushes
    it. Add seeds to `REP_SEEDS` in `wockner-schedule-sim.R` and widen the
    array; ~2 h wall clock.
-7. **Re-run `wide-rep1` with a different fit seed.** It failed at R-hat 1.23,
+8. **Re-run `wide-rep1` with a different fit seed.** It failed at R-hat 1.23,
    11.5% divergences, ESS 13, chains 22 `lp__` units apart, and is excluded
    from all the numbers above. It shares a noise seed with `default-rep1`,
    which was also the shakiest default replicate (R-hat 1.030), so it is
    worth knowing whether that simulated dataset is hard or the wide prior is.
-8. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
+9. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
    entries 3-7, `--array=3-7`. Written but never submitted. Demoted: these
    were to discriminate explanation 1 from 2-3 for the sampling-density
    correlation. The simulation has since killed 1 and found against 2, so
