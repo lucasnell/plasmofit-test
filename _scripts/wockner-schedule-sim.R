@@ -82,9 +82,20 @@ SEED_FIT <- 538065874L
 ## from the task id, so a replicate is reproducible on its own.
 REP_SEEDS <- c(742160183L, 1908445027L, 355721694L)
 
+## Each arm is a model plus data overrides, following wockner-fit.R's CONFIGS.
+## default/wide answer where the bias is not (prior); tight_sigma/no_hier ask
+## whether it is the hierarchy, from two directions: tight_sigma keeps the
+## model identical and only removes the hierarchy's width, no_hier removes the
+## hierarchy itself. tight_sigma is the controlled comparison but pins a
+## centred parameterization at a near-zero scale, which may sample badly;
+## no_hier is well conditioned but changes the model. Agreement between them
+## is the point.
 ARMS <- list(
-    default = list(sd_logit_cl = 1),
-    wide    = list(sd_logit_cl = 2)
+    default     = list(model = "no_pool",   data = list(sd_logit_cl = 1)),
+    wide        = list(model = "no_pool",   data = list(sd_logit_cl = 2)),
+    tight_sigma = list(model = "no_pool",   data = list(sd_logit_cl = 1,
+                                                        sd_bs_cl = 0.001)),
+    no_hier     = list(model = "pooled_cl", data = list(sd_logit_cl = 1))
 )
 
 CONFIGS <- expand_grid(arm = names(ARMS), rep = seq_along(REP_SEEDS)) |>
@@ -100,8 +111,11 @@ cfg <- CONFIGS[task, ]
 cfg_name <- cfg$name
 seed_noise <- REP_SEEDS[cfg$rep]
 
+arm <- ARMS[[cfg$arm]]
+
 cat("=== schedule-bias simulation:", cfg_name, "===\n")
-cat("  arm:", cfg$arm, "| sd_logit_cl =", ARMS[[cfg$arm]]$sd_logit_cl, "\n")
+cat("  arm:", cfg$arm, "| model", arm$model, "|",
+    paste(names(arm$data), unlist(arm$data), sep = " = ", collapse = ", "), "\n")
 cat("  replicate:", cfg$rep, "| noise seed", seed_noise, "\n\n")
 
 
@@ -217,14 +231,14 @@ cat(sprintf("  sim : mean %.3f sd %.3f range %.2f-%.2f\n\n",
 
 d_sim <- d
 d_sim$y <- y_sim
-d_sim$sd_logit_cl <- ARMS[[cfg$arm]]$sd_logit_cl
+for (nm in names(arm$data)) d_sim[[nm]] <- arm$data[[nm]]
 
 
 # ------------------------------------------------------------------------ #
 # Fit
 # ------------------------------------------------------------------------ #
 
-f <- archer_fit(d_sim, model = "no_pool", chains = N_CHAINS, iter = ITER,
+f <- archer_fit(d_sim, model = arm$model, chains = N_CHAINS, iter = ITER,
                 warmup = WARMUP, seed = SEED_FIT, threads_per_chain = 1L)
 
 write_rds(f, sprintf("_data/wock-schedsim-fit-%s.rds", cfg_name))
@@ -234,7 +248,9 @@ write_rds(f, sprintf("_data/wock-schedsim-fit-%s.rds", cfg_name))
 # Sampler health first: the correlation means nothing if it did not converge
 # ------------------------------------------------------------------------ #
 
-diag_pars <- c("cycle_length", "mu_logit_cl", "sigma_logit_cl", "R", "sd_iRBC")
+has_hier <- arm$model != "pooled_cl"    # pooled_cl has no cycle-length hierarchy
+diag_pars <- c("cycle_length", "R", "sd_iRBC")
+if (has_hier) diag_pars <- c(diag_pars, "mu_logit_cl", "sigma_logit_cl")
 diags <- map(diag_pars, \(p) {
     sims <- rstan::extract(f, p, permuted = FALSE)
     tibble(par = dimnames(sims)$parameters,
@@ -284,7 +300,7 @@ r_means <- cor(per_trial$cl_mean, per_trial$obs_per_series)
 ## above hides how much of its own sampling uncertainty it has; this does not.
 r_draws <- apply(cl_draws, 1, \(x) cor(x, per_trial$obs_per_series))
 
-sig <- as.numeric(rstan::extract(f, "sigma_logit_cl")[[1]])
+sig <- if (has_hier) as.numeric(rstan::extract(f, "sigma_logit_cl")[[1]]) else NA_real_
 
 cat("\n=== correlation of per-trial cycle_length with obs_per_series ===\n")
 cat(sprintf("  posterior means:  %+.3f   (real data: -0.93)\n", r_means))
@@ -296,8 +312,13 @@ cat(sprintf("  slope:            %+.3f h per obs/series\n",
 cat(sprintf("  per-trial spread: %.2f-%.2f h (range %.2f), true value %.2f\n",
             min(per_trial$cl_mean), max(per_trial$cl_mean),
             diff(range(per_trial$cl_mean)), truth$cycle_length))
-cat(sprintf("  sigma_logit_cl:   %.3f (95%% %.3f-%.3f), prior scale %.2f\n",
-            mean(sig), quantile(sig, 0.025), quantile(sig, 0.975), d$sd_bs_cl))
+if (has_hier) {
+    cat(sprintf("  sigma_logit_cl:   %.3f (95%% %.3f-%.3f), prior scale %g\n",
+                mean(sig), quantile(sig, 0.025), quantile(sig, 0.975),
+                d_sim$sd_bs_cl))
+} else {
+    cat("  sigma_logit_cl:   n/a (pooled_cl has no cycle-length hierarchy)\n")
+}
 
 cat("\n=== per trial ===\n")
 per_trial |>
@@ -308,14 +329,17 @@ per_trial |>
 
 summ <- list(
     config = cfg_name, arm = cfg$arm, rep = cfg$rep,
-    sd_logit_cl = ARMS[[cfg$arm]]$sd_logit_cl,
+    model = arm$model, overrides = arm$data,
+    sd_logit_cl = arm$data$sd_logit_cl,
     seed_noise = seed_noise, seed_fit = SEED_FIT,
     true_cl = truth$cycle_length,
     per_trial = per_trial,
     r_means = r_means,
     r_draws = r_draws,
-    sigma_logit_cl = c(mean = mean(sig), q025 = unname(quantile(sig, 0.025)),
-                       q975 = unname(quantile(sig, 0.975))),
+    sigma_logit_cl = if (has_hier)
+        c(mean = mean(sig), q025 = unname(quantile(sig, 0.025)),
+          q975 = unname(quantile(sig, 0.975)))
+    else c(mean = NA_real_, q025 = NA_real_, q975 = NA_real_),
     n_div = n_div,
     max_rhat = max(diags$rhat, na.rm = TRUE),
     min_ess = min(diags$ess_bulk, na.rm = TRUE),

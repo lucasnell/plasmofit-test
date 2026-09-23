@@ -32,6 +32,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-schedule-sim-analyze.R` | cluster | pools the simulation replicates and compares them against the real fit |
 | `wockner-schedule-sim-check.R` | cluster | `run_check = 1` cross-check that the simulator and the likelihood share a forward model |
 | `wockner-schedule-bias-profile.R` | cluster | maximum-likelihood `cycle_length` at the real schedules, per trial and pooled -- no prior, no hierarchy, no MCMC |
+| `wockner-schedule-sim-mode.R` | cluster | posterior mean vs mode of the population `cycle_length` in the saved simulation fits |
 
 The cluster workflow is in the header comment of `wockner-fit.R` (and
 `wockner-fit-kfold.R`, which follows the same pattern): `scp` the script and
@@ -449,6 +450,16 @@ results table.
   bound geometry, `[35, 50]` leaving 5 h of headroom above a truth of 45 and
   10 h below.
 
+**Not a posterior-summary artifact.** `wockner-schedule-sim-mode.R`, output
+`_data/wock-schedsim-mode.rds`. `cycle_length` is bounded and nonlinearly
+transformed, so a skewed posterior summarized by its mean would manufacture
+part of the gap. It does not: across the five converged fits the posterior
+mean and mode of the population `cycle_length` differ by **-0.044 h**, mean
+posterior skew is **-0.016**, and the bias is +1.82 h by the mean against
++1.87 h by the mode. The posterior is symmetric and the bias is in it, not in
+the choice of summary. Same conclusion applying the transform after
+summarizing `mu_logit_cl` rather than before.
+
 ## Running this on the cluster directly
 
 The workflow above assumes editing locally and `scp`-ing up. If instead you
@@ -481,12 +492,16 @@ Roughly in priority order.
    "Where the bias is, by elimination"). The remaining ~1.1 h is the
    hierarchical structure and has no mechanism attached to it yet. Three
    candidates, in the order they are cheap to test:
-   - `sigma_logit_cl` estimates ~0.41 when the truth is 0. Refit the
-     simulated data with `sigma_logit_cl` fixed near 0 and see how much of
-     the bias survives. This is the cheapest discriminating test.
-   - Posterior mean versus maximum on a bounded parameter. Compare the
-     posterior *mode* of the population `cycle_length` against its mean in
-     the saved simulation fits; no refitting needed.
+   - `sigma_logit_cl` estimates ~0.41 when the truth is 0. **Running**:
+     `wockner-schedule-sim.R` arms `tight_sigma` (`sd_bs_cl = 0.001`, same
+     model, hierarchy width removed) and `no_hier` (`pooled_cl`, hierarchy
+     removed outright), replicates 2-3 of each, tasks 8-9 and 11-12. Two
+     directions because `tight_sigma` pins a centred parameterization at a
+     near-zero scale and may sample badly, while `no_hier` is well
+     conditioned but changes the model; agreement between them is the point.
+   - ~~Posterior mean versus maximum on a bounded parameter.~~ **Done and
+     eliminated** by `wockner-schedule-sim-mode.R`: mean and mode differ by
+     0.044 h and the posterior is symmetric (skew -0.016).
    - Bound geometry: `[35, 50]` leaves 5 h above a truth of 45 and 10 h
      below. Re-simulate with wider bounds, e.g. `[30, 60]`, and see whether
      the bias tracks the asymmetry. Note `max_cl = 55` reintroduces the
