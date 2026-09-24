@@ -159,21 +159,49 @@ cat("design:", d$n_ts, "series,", d$n_total_obs, "observations,",
 # such. Simulating from it is the null this script is built to test.
 # ------------------------------------------------------------------------ #
 
+## SCHEDSIM_TRUTH_DRAW=<i> takes the truth from posterior draw i instead of
+## the posterior mean. The mean vector is NOT a coherent parameter set when
+## parameters are correlated -- log10_total0 and R correlate -0.89 in every
+## group (see claude/CLAUDE.md, "The ridge is real, but the simulation's weak
+## identification is not") -- so a mean-vector truth can sit where no draw
+## sits and generate data less informative than the real data. A single draw
+## keeps the correlations intact. Output names carry the draw index.
+draw_i <- Sys.getenv("SCHEDSIM_TRUTH_DRAW", "")
+use_draw <- nzchar(draw_i)
+if (use_draw) {
+    draw_i <- as.integer(draw_i)
+    if (is.na(draw_i) || draw_i < 1) stop("SCHEDSIM_TRUTH_DRAW must be a positive integer")
+    cfg_name <- sprintf("%s-draw%d", cfg_name, draw_i)
+}
+
 post_mean <- function(f, par) unname(colMeans(as.matrix(f, pars = par)))
+post_draw <- function(f, par, i) unname(as.matrix(f, pars = par)[i, ])
 
 f_pl <- read_rds("_data/wock-fit-pooled_cl.rds")
+take <- if (use_draw) {
+    n_draw <- nrow(as.matrix(f_pl, pars = "cycle_length"))
+    if (draw_i > n_draw) stop("SCHEDSIM_TRUTH_DRAW exceeds ", n_draw, " draws")
+    \(par) post_draw(f_pl, par, draw_i)
+} else {
+    \(par) post_mean(f_pl, par)
+}
+
 truth <- list(
-    b_shape      = post_mean(f_pl, "b_shape"),
-    b_offset     = post_mean(f_pl, "b_offset"),
-    log10_total0 = post_mean(f_pl, "log10_total0"),
-    R            = post_mean(f_pl, "R"),
-    sd_iRBC      = post_mean(f_pl, "sd_iRBC")
+    b_shape      = take("b_shape"),
+    b_offset     = take("b_offset"),
+    log10_total0 = take("log10_total0"),
+    R            = take("R"),
+    sd_iRBC      = take("sd_iRBC")
 )
 ## pooled_cl reports cycle_length as n_grp_cl identical copies of one value
-cl_pooled <- post_mean(f_pl, "cycle_length")
+cl_pooled <- take("cycle_length")
 stopifnot(length(unique(round(cl_pooled, 10))) == 1L)
 truth$cycle_length <- cl_pooled[1]
 rm(f_pl); invisible(gc())
+
+cat("truth source:",
+    if (use_draw) sprintf("posterior draw %d", draw_i) else "posterior mean",
+    "\n")
 
 ## A silent length mismatch here would look exactly like a simulation failure
 stopifnot(length(truth$b_shape) == d$n_grp_init,
@@ -356,6 +384,9 @@ per_trial |>
 summ <- list(
     config = cfg_name, arm = cfg$arm, rep = cfg$rep,
     model = arm$model, overrides = arm$data,
+    truth_source = if (use_draw) sprintf("draw%d", draw_i) else "mean",
+    truth_nuisance = truth[c("b_shape", "b_offset", "log10_total0", "R",
+                             "sd_iRBC")],
     sd_logit_cl = arm$data$sd_logit_cl,
     seed_noise = seed_noise, seed_fit = SEED_FIT,
     true_cl = truth$cycle_length,

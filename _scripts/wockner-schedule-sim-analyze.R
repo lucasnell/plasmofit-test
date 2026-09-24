@@ -109,6 +109,7 @@ tab <- map(res, \(r) {
     rd <- r$r_draws[is.finite(r$r_draws)]
     ok <- length(rd) > 0
     tibble(config = r$config, arm = r$arm, rep = r$rep,
+           src = r$truth_source %||% "mean",
            sd_logit_cl = r$sd_logit_cl %||% NA_real_,
            r_means = r$r_means,
            r_draw_mean = if (ok) mean(rd) else NA_real_,
@@ -128,7 +129,7 @@ tab |> mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
 cat("\n=== by prior arm, vs the real data ===\n")
 by_arm <- tab |>
     filter(!is.na(r_means)) |>
-    summarise(.by = c(arm, sd_logit_cl),
+    summarise(.by = c(src, arm, sd_logit_cl),
               n = n(),
               r_mean = mean(r_means),
               r_min = min(r_means), r_max = max(r_means),
@@ -161,15 +162,19 @@ inv_lg <- function(x, lo, hi) lo + (hi - lo) / (1 + exp(-x))
 
 cat("\n=== recovery of the true cycle_length ===\n")
 rec <- tab |>
-    select(config, arm, rep, sd_logit_cl, bias) |>
+    select(config, arm, rep, src, sd_logit_cl, bias) |>
     left_join(map(res, \(r) tibble(config = r$config,
                                    cl_mean = mean(r$per_trial$cl_mean),
                                    true_cl = r$true_cl)) |> list_rbind(),
               by = "config") |>
-    arrange(rep, arm)
+    arrange(src, rep, arm)
 rec |> mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
 
-paired <- rec |> filter(rep %in% rec$rep[duplicated(rec$rep)])
+## The default-vs-wide prior contrast is only defined among replicates that
+## share a truth. Draw-based replicates reuse arm "default" and rep 2, so
+## pairing on rep alone would average across four different true values.
+paired <- rec |> filter(src == "mean")
+paired <- paired |> filter(rep %in% paired$rep[duplicated(paired$rep)])
 
 if (n_distinct(paired$arm) == 2L) {
     m_def <- mean(paired$cl_mean[paired$arm == "default"])
@@ -233,9 +238,10 @@ if (nrow(tab_corr) < nrow(tab)) {
 }
 
 cat(sprintf("\n  posterior means -- real %+.3f\n", real$r_means))
-for (a in unique(tab_corr$arm)) {
-    rr <- sort(tab_corr$r_means[tab_corr$arm == a])
-    cat(sprintf("    %-8s n=%d: %s | most negative %+.3f\n", a, length(rr),
+tab_corr <- tab_corr |> mutate(grp = paste(arm, src, sep = "/"))
+for (a in unique(tab_corr$grp)) {
+    rr <- sort(tab_corr$r_means[tab_corr$grp == a])
+    cat(sprintf("    %-16s n=%d: %s | most negative %+.3f\n", a, length(rr),
                 paste(sprintf("%+.3f", rr), collapse = " "), min(rr)))
 }
 n_le <- sum(tab_corr$r_means <= real$r_means)
@@ -245,10 +251,11 @@ cat(sprintf("    simulated replicates at least as negative as real: %d of %d\n",
 cat(sprintf("\n  within draw -- real mean %+.3f (95%% %+.3f to %+.3f)\n",
             mean(real$r_draws), quantile(real$r_draws, 0.025),
             quantile(real$r_draws, 0.975)))
-for (a in unique(tab_corr$arm)) {
-    pooled <- unlist(map(res[map_chr(res, "arm") == a & has_corr], "r_draws"))
+res_grp <- map_chr(res, \(r) paste(r$arm, r$truth_source %||% "mean", sep = "/"))
+for (a in unique(tab_corr$grp)) {
+    pooled <- unlist(map(res[res_grp == a & has_corr], "r_draws"))
     pooled <- pooled[is.finite(pooled)]
-    cat(sprintf("    %-8s mean %+.3f (95%% %+.3f to %+.3f)\n", a,
+    cat(sprintf("    %-16s mean %+.3f (95%% %+.3f to %+.3f)\n", a,
                 mean(pooled), quantile(pooled, 0.025), quantile(pooled, 0.975)))
     cat(sprintf("             P(simulated draw <= real draw, both sampled) = %.3f\n",
                 mean(sample(pooled, 2e5, replace = TRUE) <=
@@ -286,11 +293,23 @@ truth_nuis <- list(b_shape = pm(f_pl, "b_shape"),
                    sd_iRBC = pm(f_pl, "sd_iRBC"))
 rm(f_pl); invisible(gc())
 
+## Replicates generated from a posterior DRAW record their own truth; those
+## generated from the posterior mean vector predate that and fall back to the
+## pooled_cl means, which is what they were built from. Comparing a
+## draw-based fit against the mean vector would score it against a truth it
+## never used.
+truth_of <- function(r) if (!is.null(r$truth_nuisance)) r$truth_nuisance else truth_nuis
+
 cat("\n=== nuisance-parameter recovery (posterior mean vs the truth used to simulate) ===\n")
+cat("  truth source per replicate:",
+    paste(map_chr(res, \(r) sprintf("%s=%s", r$config,
+                                    r$truth_source %||% "mean")),
+          collapse = ", "), "\n")
 nuis <- map(res, \(r) {
     f <- read_rds(sprintf("_data/wock-schedsim-fit-%s.rds", r$config))
+    tn <- truth_of(r)
     o <- map(names(truth_nuis), \(nm) {
-        est <- pm(f, nm); tv <- truth_nuis[[nm]]
+        est <- pm(f, nm); tv <- tn[[nm]]
         tibble(config = r$config, par = nm, n = length(tv),
                mean_truth = mean(tv), mean_est = mean(est),
                mean_diff = mean(est - tv),
@@ -301,13 +320,21 @@ nuis <- map(res, \(r) {
     o
 }) |> list_rbind()
 
+nuis <- nuis |>
+    left_join(map(res, \(r) tibble(config = r$config,
+                                   src = r$truth_source %||% "mean")) |>
+                  list_rbind(),
+              by = "config")
+
 nuis |>
-    summarise(.by = par,
+    summarise(.by = c(src, par),
+              n_rep = n_distinct(config),
               n = first(n), truth = first(mean_truth),
               est = mean(mean_est), diff = mean(mean_diff),
               rel = mean(rel), worst = max(max_abs_diff)) |>
+    arrange(src, par) |>
     mutate(across(where(is.numeric), \(x) round(x, 4))) |>
-    print(width = Inf)
+    print(n = Inf, width = Inf)
 
 cat("\n  A parameter recovered near zero difference is not the culprit. One\n",
     "  pulled systematically toward its prior is a candidate for dragging\n",
@@ -321,14 +348,15 @@ cat("\n  A parameter recovered near zero difference is not the culprit. One\n",
 
 per_trial_all <- map(res, \(r) r$per_trial |>
                          mutate(config = r$config, arm = r$arm,
+                                src = r$truth_source %||% "mean",
                                 bias = cl_mean - r$true_cl)) |>
     list_rbind()
 
 cat("\n=== per-trial bias, averaged over replicates within arm ===\n")
 per_trial_all |>
-    summarise(.by = c(arm, trial, obs_per_series),
+    summarise(.by = c(src, arm, trial, obs_per_series),
               bias = mean(bias), cl_sd = mean(cl_sd)) |>
-    arrange(arm, obs_per_series) |>
+    arrange(src, arm, obs_per_series) |>
     mutate(across(where(is.numeric), \(x) round(x, 3))) |>
     print(n = Inf)
 
