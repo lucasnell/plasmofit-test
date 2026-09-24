@@ -35,19 +35,19 @@ and both need committing separately.
 
 **Unfinished and blocking**
 
-- The anchor's regression test (`total0_anchor = 0` must reproduce a
-  pre-change fit exactly) had not finished when the session ended. SLURM job
-  `28880_2`, writing `_data/wock-schedsim-{fit,RES}-default-rep2.rds`.
-  When it lands, run
+- The anchor's regression test is **INCONCLUSIVE**, one fit short. Detail in
+  "Regression test for the anchor" below. The substantive half passed:
+  parameter sets match exactly and posterior means agree within Monte Carlo
+  error. What is missing is a null run to judge posterior *widths* against.
+  It is submitted as SLURM job `28892` (~55 min); when it lands, re-run
 
   ```
-  srun -N 1 -n 1 -c 4 --mem=24G Rscript --vanilla \
+  srun -N 1 -n 1 -c 4 --mem=32G Rscript --vanilla \
       _scripts/wockner-anchor-regression.R
   ```
 
-  which compares the draw matrices against
-  `_data/regress-ref-fit-default-rep2.rds` and prints PASS or FAIL. Do not
-  trust any anchored fit until it passes.
+  and it will print PASS or FAIL instead of INCONCLUSIVE. Do not interpret
+  any anchored fit until it passes.
 
 **Known thin spots in the numbers above**
 
@@ -222,6 +222,13 @@ differs. Compare on the constrained scale instead.
   if known; the second is attenuated by their uncertainty. Mixing them
   produced a `P = 0.0000` that meant nothing. The correct comparisons are
   0.16-0.19. The analyze script reports the two separately and says why.
+- **Two fits of the same model are never bit-identical across a recompile.**
+  Rebuilding the DSO can reorder floating-point operations and HMC turns a
+  last-bit difference into a different trajectory within a few leapfrog
+  steps. Any regression test on a Stan change has to compare *posteriors*,
+  scaled by Monte Carlo error, against a null of two runs of identical code
+  with different seeds -- not draws, and not a flat band on posterior sds.
+  See "Regression test for the anchor".
 - **Leave-one-trial-out strains `loo`.** Dropping a whole trial perturbs the
   posterior far more than dropping one observation, so Pareto k goes bad (8 of
   13 trials on a trial run). High k there means the approximation failed, not
@@ -790,6 +797,67 @@ default with an all-zero anchor vector; `inoc_size = "inoc_size"` reproduces
 `wockner-inoc-prior.R`'s independent per-group prediction; `blood_volume_ml`
 rescales by exactly log10 of the ratio; all four bad-input paths error.
 
+### Regression test for the anchor
+
+`_scripts/wockner-anchor-regression.R`, output `_data/anchor-regression.log`.
+The question is whether `total0_anchor = 0` under 0.0.0.9008 still targets the
+posterior that the pre-anchor code did. It matters because the `else` branch
+is supposed to be the original prior statement verbatim and the two new
+parameters are supposed to be zero-sized.
+
+**Do not test this by comparing draws.** The first version of this script
+demanded bit-identical draw matrices and reported FAIL. That bar is
+unreachable: the reference was sampled by a **different compiled DSO**, and
+recompiling can reorder floating-point operations, which HMC amplifies into a
+completely different trajectory within a few leapfrog steps. A second version
+compared posterior sds against a flat 0.9-1.1 band and also reported FAIL;
+that band is arbitrary in the other direction, because the Monte Carlo error
+on a posterior sd scales with effective sample size, and the parameters that
+tripped it (`b_off_vec`, ESS 500-800) carry several percent of it per fit.
+Neither FAIL was evidence about the code.
+
+**The design that does work is three fits:**
+
+| fit | code | seed | file |
+|---|---|---|---|
+| reference | pre-change | A | `_data/regress-ref-fit-default-rep2.rds` |
+| rebuilt | post-change | A | `_data/wock-schedsim-fit-default-rep2.rds` |
+| null run | post-change | B | `_data/wock-schedsim-fit-default-rep2-seed*.rds` |
+
+reference-vs-rebuilt is the test. rebuilt-vs-null-run is the null: identical
+code and identical data, different sampler seed, so everything it shows is
+run-to-run variation. Splitting one fit's chains is **not** a substitute for
+it -- that holds the step-size and mass-matrix adaptation constant, and those
+adapt separately in every run (0.0210 against 0.0203 here, with 1.04M against
+0.90M leapfrog steps and 49 against 25 divergences).
+
+`SCHEDSIM_FIT_SEED=<n>` in `wockner-schedule-sim.R` refits the same simulated
+data with a different sampler seed and names the output `...-seed<n>`:
+
+```
+sbatch --array=2 --job-name=wock-seednull \
+    --output=_data/wock-seednull.out --error=_data/wock-seednull.err \
+    --export=ALL,SCHEDSIM_FIT_SEED=271828183 \
+    _scripts/wockner-schedule-sim.sh
+```
+
+**Result so far, means (the substantive half, and it passes):**
+
+- parameter name sets identical, 208 each -- so the zero-sized
+  `delta_total0` and `sigma_total0` really do contribute no columns
+- `|z|` on posterior means, scaled by each fit's MCSE: median 0.73,
+  90th percentile 1.60, max 2.67; **0 of 208 above 3**
+- `log10_total0`, the one parameter whose prior statement the change touches:
+  max `|z|` 1.79, sd ratio 0.964-1.049
+- widest movers are `sd_iRBC[2]` (z 2.67) and `b_shape[4]` (z -2.34), neither
+  connected to the anchor
+
+Widths are pending the null run: the test pair gives a median `|log sd ratio|`
+of 0.0262 and a 95th percentile of 0.1248, with nothing yet to compare against.
+The pass threshold is written into the script and was fixed before the null
+run existed: the test pair must be under 1.5x the null pair at the 95th
+percentile.
+
 ## Running this on the cluster directly
 
 The workflow above assumes editing locally and `scp`-ing up. If instead you
@@ -815,15 +883,16 @@ are working *on* `biohpc`, three things change:
 Roughly in priority order.
 
 1. **Finish the inoculum-anchor regression test and take the first anchored
-   fit.** The package change is written, installed, and unit-tested, but the
-   test that matters is that `total0_anchor = 0` reproduces a pre-change fit
-   *exactly*. `_data/regress-ref-{fit,RES}-default-rep2.rds` is the frozen
-   reference; rebuild `default-rep2` under 0.0.0.9008 and compare the draw
-   matrices, not summaries. Nothing anchored should be believed until that
-   passes, because the `else` branch is supposed to be the original statement
-   verbatim and zero-sized parameters are supposed to cost nothing. Then fit
-   the real data with `inoc_size = "inoc_size"` and read `delta_total0`
-   against the predicted +0.811, and `R` against 9.96.
+   fit.** The test is one fit short of a verdict -- see "Regression test for
+   the anchor". Posterior means already agree within Monte Carlo error and
+   the parameter sets match exactly; what is missing is the null run (SLURM
+   `28892`) that posterior widths get judged against. Re-run
+   `_scripts/wockner-anchor-regression.R` once it lands. **Do not** weaken
+   the thresholds in that script to get a PASS: they were fixed before the
+   null run existed, and the whole point of the null is that it is the only
+   thing entitled to move them. Then fit the real data with
+   `inoc_size = "inoc_size"` and read `delta_total0` against the predicted
+   +0.811, and `R` against 9.96.
 2. **Attribute the cycle-length bias.** Now the live scientific question,
    since the truth-construction explanation is dead (see "Rebuilt from
    posterior draws"). Paired measurement puts ~0.25 h on the hierarchy and

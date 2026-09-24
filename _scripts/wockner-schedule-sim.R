@@ -174,6 +174,19 @@ if (use_draw) {
     cfg_name <- sprintf("%s-draw%d", cfg_name, draw_i)
 }
 
+## SCHEDSIM_FIT_SEED=<n> refits the SAME simulated data with a different
+## sampler seed. Nothing about the data or the truth changes, so two runs
+## that differ only in this seed are two independent samples from one
+## posterior -- the null needed to judge whether a package change moved the
+## target. Output names carry the seed so the runs sit side by side.
+seed_env <- Sys.getenv("SCHEDSIM_FIT_SEED", "")
+seed_fit <- SEED_FIT
+if (nzchar(seed_env)) {
+    seed_fit <- as.integer(seed_env)
+    if (is.na(seed_fit)) stop("SCHEDSIM_FIT_SEED must be an integer")
+    cfg_name <- sprintf("%s-seed%d", cfg_name, seed_fit)
+}
+
 post_mean <- function(f, par) unname(colMeans(as.matrix(f, pars = par)))
 post_draw <- function(f, par, i) unname(as.matrix(f, pars = par)[i, ])
 
@@ -278,7 +291,7 @@ if (identical(Sys.getenv("SCHEDSIM_REBUILD"), "1")) {
     f <- read_rds(fit_path)
 } else {
     f <- archer_fit(d_sim, model = arm$model, chains = N_CHAINS, iter = ITER,
-                    warmup = WARMUP, seed = SEED_FIT, threads_per_chain = 1L)
+                    warmup = WARMUP, seed = seed_fit, threads_per_chain = 1L)
     write_rds(f, fit_path)
 }
 
@@ -388,7 +401,7 @@ summ <- list(
     truth_nuisance = truth[c("b_shape", "b_offset", "log10_total0", "R",
                              "sd_iRBC")],
     sd_logit_cl = arm$data$sd_logit_cl,
-    seed_noise = seed_noise, seed_fit = SEED_FIT,
+    seed_noise = seed_noise, seed_fit = seed_fit,
     true_cl = truth$cycle_length,
     per_trial = per_trial,
     r_means = r_means,
