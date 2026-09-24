@@ -19,12 +19,29 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## In flight as of 2026-09-24 15:20 — read this first on coming back
+## In flight as of 2026-09-24 15:40 — read this first on coming back
 
 SLURM **28931**, tasks 10–13, started 15:13, four real-data fits at ~1.7 h
 each, so expect them around **17:00**. Logs `_data/wock-fit-1{0,1,2,3}.out`;
 `_data/wock-fit-<config>.rds` is written before the summary, so a job that
 dies late has still saved its fit.
+
+**The analysis is already armed — do not re-run it blindly.**
+`_data/panel-watch.sh` runs detached (`setsid`, PPID 1, so it survives a
+cleared session or a dropped SSH), waits for 28931 to drain, then runs
+`_scripts/wockner-prior-panel.R`. **Check `_data/panel-watch.log` first:**
+
+- ends at `waiting for SLURM 28931` → jobs still running, nothing to do
+- contains `panel exited 0` → **read `_data/prior-panel.log`**, the analysis
+  is done; the watcher also logged each task's exit state and which of the
+  eight fits are `PRESENT`/`MISSING`
+- contains `panel exited` with anything else → the panel itself failed; its
+  error is in `_data/prior-panel.log`, re-run the command below by hand
+- the watcher process is gone and the log ends mid-way → it was killed;
+  re-run the command below by hand
+
+`_data/panel-watch.sh` is scaffolding: delete it once its log reads clean.
+Its log is kept.
 
 | task | config | model | prior override |
 |---|---|---|---|
@@ -33,7 +50,7 @@ dies late has still saved its fit.
 | 12 | `pl_wide_total0` | `pooled_cl` | `sd_log10_total0 = 1` |
 | 13 | `pl_wide_both` | `pooled_cl` | `sd_log_b_shape = 1.5`, `sd_log10_total0 = 1` |
 
-**The one command to run when they land:**
+**The command, if you do need to run it by hand:**
 
 ```
 squeue -u lan68                      # empty means all four are done
@@ -49,27 +66,16 @@ failed. It reproduces the pooling offset (−0.304 h, paired mean z −3.79) and
 the original `no_pool`/`pooled_cl` elpd difference (−1.38, se 1.03), which is
 the regression check on it.
 
-Read the output in order and stop at the first failure:
-
-1. **§1 sampler health.** Any row with max R-hat ≥ 1.05 is dropped and
-   everything about it is void. Thread 9's lesson: that is more likely a bad
-   fit seed than a hard posterior, so re-run the task before concluding.
-2. **§4 thread 2.** `no_pool → np_wide_bshape` is `b_shape`'s prior in
-   isolation; `np_wide_total0 → np_wide_both` is the same on top of the
-   corrected `log10_total0` prior. In simulation, widening `b_shape` moves
-   `cycle_length` −0.50 h and widening `log10_total0` moves nothing. On real
-   data there is no truth, so that row is a **shift, not a bias**: it bounds
-   the prior's contribution from below and cannot show the remainder is
-   biological.
-3. **§5 thread 3.** `no_pool` vs `pooled_cl` at three prior settings. The
-   last table is the number the hierarchy conclusion rests on — the
-   cycle-length pooling offset in hours. If it moves, every hierarchy
-   conclusion was drawn under a prior costing 104.7 elpd and needs restating.
+**How to read the output** — in order, stopping at the first failure — is
+in the header comment of `_scripts/wockner-prior-panel.R`. In short: §1 is
+sampler health and voids any row it fails, §4 is thread 2, §5 is thread 3.
 
 **Do not edit `_scripts/wockner-fit.R` while 28931 is running.** `Rscript`
 reads source incrementally; an edit mid-run killed two 1.5 h jobs today.
 
 ## Settled, 2026-09-24
+
+Tables and derivations for all of these are in `claude/findings.md`.
 
 - **The `normal(1, 0.25)` prior on `log10_total0` is misspecified.** Relaxing
   it gains **104.7 elpd (se 12.8)** and moves `R` from 6.2 into the 15–18
@@ -78,16 +84,11 @@ reads source incrementally; an edit mid-run killed two 1.5 h jobs today.
 - **The `b_shape` prior owns ~0.50 h of the simulated cycle-length bias and
   the `log10_total0` prior owns none**, so the `log10_total0`/`R` ridge is
   not the mechanism. ~1.07 h of ~1.97 h is still unexplained.
-- The simulated designs are **not** less informative than the real one (0.97
-  of its information about the oscillation). Thread 3 as originally posed is
-  dead.
-- Truth rebuilt from posterior **draws** rather than the mean vector does not
-  rescue nuisance recovery, and the bias survives. That explanation is dead.
-- The inoculum anchor switched off targets the same posterior as the
-  pre-change code: width inflation 1.01×, 0 of 208 means beyond 3 MCSE.
-- Both non-converged replicates were bad **fit seeds**, not hard datasets.
-
-Detail and the tables behind each of these are in `claude/findings.md`.
+- Dead explanations: the simulated designs are *not* less informative (0.97
+  of the real design's information about the oscillation), and truth rebuilt
+  from posterior **draws** rather than the mean vector rescues nothing.
+- The anchor switched off reproduces the pre-change posterior (width
+  inflation 1.01×); both non-converged replicates were bad **fit seeds**.
 
 ## Known thin spots
 
@@ -95,6 +96,5 @@ Detail and the tables behind each of these are in `claude/findings.md`.
   paired replicates. Whether it carries to real data is what 28931 asks.
 - The real-data prior comparisons are n=1 by construction — one dataset, one
   fit per setting — so shifts get a Monte Carlo z, not a confidence interval.
-- Three noise realizations, and three posterior-draw replicates (all usable
-  only after a refit on a second seed).
-- No cycle-length number should yet be reported as biological.
+- Three noise realizations; three posterior-draw replicates, usable only
+  after a refit on a second seed. No cycle-length number is yet biological.

@@ -19,6 +19,27 @@
 # Fits come from `_scripts/wockner-fit.R` tasks 1, 2, 8-13. Runs in a few
 # minutes; the fits are ~55 MB each and are read one at a time.
 #
+# HOW TO READ THE OUTPUT -- in order, stopping at the first failure:
+#
+#   1. Section 1, sampler health. Any fit with max R-hat >= 1.05 is dropped
+#      automatically and everything else about it is void. Thread 9's lesson
+#      applies: that is more likely a bad fit seed than a hard posterior, so
+#      re-run that one task on a new seed before concluding anything.
+#   2. Section 4, thread 2. In simulation, widening `b_shape`'s prior moves
+#      cycle_length by -0.50 h and widening `log10_total0`'s moves nothing.
+#      On real data there is no truth, so the cycle_length row is a SHIFT,
+#      NOT A BIAS: it bounds the prior's contribution to the reported cycle
+#      length from below, and cannot show the remainder is biological.
+#   3. Section 5, thread 3. The final table is the single number the
+#      hierarchy conclusion rests on -- the cycle-length pooling offset in
+#      hours, at each of the three prior settings. If it moves with the
+#      prior, every hierarchy conclusion in claude/findings.md was drawn
+#      under a prior costing 104.7 elpd and needs restating.
+#
+# A missing fit becomes NA rows rather than an error, so NA in section 4 or
+# 5 means a fit is absent, not that the code is broken; section 1 lists what
+# was actually read.
+#
 #   srun -N 1 -n 1 -c 4 --mem=32G Rscript --vanilla \
 #       _scripts/wockner-prior-panel.R 2>&1 | tee _data/prior-panel.log
 
