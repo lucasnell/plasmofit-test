@@ -201,6 +201,15 @@ differs. Compare on the constrained scale instead.
   `plasmofit` therefore fails to find `rstantools` no matter what `R_LIBS` is
   exported. Prefix the command with `R_ENVIRON_USER=/dev/null`; do not edit
   `.Renviron`, other work depends on it.
+- **Do not reinstall `plasmofit` while a fit job is running.** `R CMD INSTALL`
+  moves the live package directory into `00LOCK-plasmofit` before writing the
+  new one, so for a window the path does not exist; a running R process that
+  lazy-loads from `R/plasmofit.rdb` in that window dies. Wait for `squeue` to
+  clear, or sequence the install behind the job. There is a second reason on
+  this project specifically: a reinstall recompiles the Stan models, and the
+  anchor regression test needs its null run to differ from the rebuilt fit by
+  the sampler seed *alone*. Installing mid-run would confound seed with
+  recompilation and invalidate the null.
 - **Never interrupt `R CMD INSTALL`.** It moves the live package directory
   aside into `00LOCK-<pkg>` and restores it at the end. Killing it mid-way
   leaves an empty live directory and the only good copy inside the lock.
