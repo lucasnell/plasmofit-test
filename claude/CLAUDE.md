@@ -1,12 +1,14 @@
 # plasmofit-test — scripts and fits
 
 This repo holds the driver scripts and saved fits for the `plasmofit` package;
-it is not itself a package. The package lives at `~/GitHub/Cornell/plasmofit`,
-and **the notes for package-side work are separate**, in
-`~/GitHub/Cornell/plasmofit/claude/`. Read `claude/chat3/CLAUDE.md` there for
-the model internals: the gradient-cost optimizations, the Erlang-window guard,
-and the `log_lik` / `reduce_sum` details. This file covers only the scripts and
-the fits, and the modelling findings needed to make sense of them.
+it is not itself a package. The package is a **separate git repository** --
+`~/GitHub/Cornell/plasmofit` on a laptop, `/home2/lan68/plasmofit/plasmofit`
+on `cbsugreischar` -- and **the notes for package-side work are separate**, in
+its `claude/` directory, one subdirectory per session. Read `chat3/CLAUDE.md`
+there for the model internals (gradient-cost optimizations, the Erlang-window
+guard, `log_lik` / `reduce_sum`) and `chat5/CLAUDE.md` for the
+inoculum-anchored prior. This file covers only the scripts and the fits, and
+the modelling findings needed to make sense of them.
 
 Note the history: these scripts used to live in `plasmofit/_testing/` and were
 moved here. Older commits and some stale comments still refer to that path.
@@ -701,7 +703,7 @@ against the truth actually simulated from:
 leading explanation for the mis-recovery and it does not survive contact with
 the test.
 
-**The cycle-length bias survives**, smaller but clearly present:
+**The cycle-length bias survives:**
 
 | replicate | truth | fitted mean | bias |
 |---|---|---|---|
@@ -738,7 +740,7 @@ So the schedules plus the model manufacture a correlation of roughly -0.2 to
 -0.6 out of nothing, which is a large share of -0.93 but does not account for
 it.
 
-### Inoculum-anchored prior for `log10_total0` (package change, uncommitted)
+### Inoculum-anchored prior for `log10_total0` (package change)
 
 Idea: `y` is in infected RBC per mL and the inoculation sizes are known in
 viable parasites, so `log10(inoculum / 5000 mL)` is a per-`grp_init`
