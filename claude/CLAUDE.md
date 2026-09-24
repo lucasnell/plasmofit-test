@@ -41,9 +41,12 @@ and both need committing separately.
 
 **Unfinished and blocking**
 
-- Nothing. The anchor's regression test **PASSES**; see "Regression test for
-  the anchor". `plasmofit` 0.0.0.9009 is installed. The first anchored fit is
-  now unblocked.
+- Nothing blocked. The first anchored fit is **running** (SLURM `28919_8`,
+  config `np_anchor` in `wockner-fit.R`, `inoc_size = "inoc_size"`). Read
+  `delta_total0` against the predicted **+0.811** and `R` against **9.96**.
+  Note the sign: the anchor for a 1800-parasite inoculum is
+  `log10(1800/5000) = -0.444` and the unanchored fit puts `log10_total0`
+  near +0.31, so the offset is positive.
 
 **In flight as of 2026-09-24 09:15**
 
@@ -85,6 +88,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `test-archer-fit.R` | local | simulates from known parameters, fits, checks recovery |
 | `wockner-schedule-sim.R` | cluster | simulates all 13 trials from one true `cycle_length` at the real observation times, one (prior arm, replicate) per SLURM array task |
 | `wockner-schedule-sim.sh` | cluster | sbatch wrapper for the above, `--array=1-6` |
+| `wockner-fit.sh` | cluster | sbatch wrapper for `wockner-fit.R`; runs with the working directory set to `_data/`, so outputs land beside the other saved fits |
 | `wockner-schedule-sim-analyze.R` | cluster | pools the simulation replicates and compares them against the real fit |
 | `wockner-schedule-sim-check.R` | cluster | `run_check = 1` cross-check that the simulator and the likelihood share a forward model |
 | `wockner-schedule-bias-profile.R` | cluster | maximum-likelihood `cycle_length` at the real schedules, per trial and pooled -- no prior, no hierarchy, no MCMC |
@@ -244,6 +248,20 @@ differs. Compare on the constrained scale instead.
   if known; the second is attenuated by their uncertainty. Mixing them
   produced a `P = 0.0000` that meant nothing. The correct comparisons are
   0.16-0.19. The analyze script reports the two separately and says why.
+- **`unconstrain_pars()` needs an entry for every DECLARED parameter, even a
+  zero-sized one.** Since the inoculum anchor was added, all four Stan
+  programs always declare `delta_total0` and `sigma_total0`; with the anchor
+  off they are `array[0]`, contribute no draws, and `rstan::extract` returns
+  nothing for them -- but omitting them from the list still fails with
+  "variable does not exist". `wockner-fit.R`'s `draw_as_list()` adds them at
+  length 0 when `fit@model_pars` says the model has them, which also keeps
+  fits compiled before the change working. This broke `grad_time()` and
+  `fit_cond()` for **every** config, anchored or not, and the posterior
+  regression test could not have caught it because that only compares draws.
+- **A length-one container comes back from `extract()` without a `dim`.**
+  `x[i, ]` on an (iterations x 1) matrix is a bare scalar in R, so Stan reads
+  "dims declared=(1); dims found=()". Use `array(x[i, ], d[2])`, which is
+  correct for every length and not a special case.
 - **Data-list overrides bypass `archer_stan_data()`'s recycling.**
   `wockner-schedule-sim.R` writes each arm's overrides into the already-built
   list. Some entries are per-`grp_init` **vectors** in the Stan data block

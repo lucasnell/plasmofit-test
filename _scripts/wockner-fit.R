@@ -122,7 +122,13 @@ CONFIGS <- list(
     pl_wide_prior  = list(model = "pooled_cl", data = list(sd_logit_cl = 2)),
     np_center45    = list(model = "no_pool",   data = list(cl_prior_center = 45)),
     np_center42    = list(model = "no_pool",   data = list(cl_prior_center = 42)),
-    np_wider_prior = list(model = "no_pool",   data = list(sd_logit_cl = 3))
+    np_wider_prior = list(model = "no_pool",   data = list(sd_logit_cl = 3)),
+    ## Inoculum-anchored log10_total0. `inoc` is interaction(trial, inoc_size),
+    ## so inoc_size is constant within every grp_init level by construction.
+    ## Predictions to read this against, from wockner-inoc-prior.R on the
+    ## unanchored no_pool fit: delta_total0 ~ +0.811 (a factor of 6.47 more
+    ## parasites at t = 0 than were inoculated) and R ~ 9.96.
+    np_anchor      = list(model = "no_pool",   data = list(inoc_size = "inoc_size"))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -258,20 +264,45 @@ cl_pars_for <- function(model) {
     if (model %in% c("pooled_cl", "pooled_both")) "logit_cl"
     else c("mu_logit_cl", "sigma_logit_cl", "eta_cl")
 }
-par_block_for <- function(model) {
+## The inoculum anchor adds two free parameters, declared array[total0_anchor]
+## and so zero-sized when it is off. unconstrain_pars() needs EVERY free
+## parameter, so omitting them would fail on an anchored fit -- after the
+## sampling is already paid for.
+anchor_pars_for <- function(data) {
+    if (isTRUE(as.integer(data$total0_anchor) == 1L))
+        c("delta_total0", "sigma_total0") else character(0)
+}
+par_block_for <- function(model, data = d) {
     c("b_shape", "b_off_vec", "log10_total0",
-      r_pars_for(model), cl_pars_for(model), "z_sd_iRBC")
+      r_pars_for(model), cl_pars_for(model), "z_sd_iRBC",
+      anchor_pars_for(data))
 }
 
-## one draw as a named list shaped the way unconstrain_pars expects
+## one draw as a named list shaped the way unconstrain_pars expects.
+##
+## unconstrain_pars() needs an entry for EVERY parameter the model declares,
+## including ones declared array[0] and therefore zero-sized. Since the
+## inoculum anchor was added, archer_fit.stan always declares delta_total0 and
+## sigma_total0, so a fit with the anchor OFF still needs them present at
+## length 0 -- otherwise "variable does not exist". Fits compiled before that
+## change do not declare them at all, so they are added only when the fit says
+## it has them.
 draw_as_list <- function(fit, pars, i = 1L) {
     dr <- rstan::extract(fit, pars = pars, permuted = TRUE)
-    lapply(dr, function(x) {
+    out <- lapply(dr, function(x) {
         d <- dim(x)
         if (length(d) == 1L) x[i]
-        else if (length(d) == 2L) x[i, ]
+        ## array(), not x[i, ]: a length-one container (array[1] real, as the
+        ## anchor's delta_total0 and sigma_total0 are declared) would otherwise
+        ## come back as a bare scalar with no dim, and unconstrain_pars() reads
+        ## dims from the object -- "dims declared=(1); dims found=()".
+        else if (length(d) == 2L) array(x[i, ], d[2])
         else array(x[i, , ], d[-1])
     })
+    for (nm in intersect(c("delta_total0", "sigma_total0"), fit@model_pars)) {
+        if (!nm %in% names(out)) out[[nm]] <- array(numeric(0), 0L)
+    }
+    out
 }
 
 ## seconds per gradient evaluation
