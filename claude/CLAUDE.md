@@ -248,6 +248,18 @@ differs. Compare on the constrained scale instead.
   if known; the second is attenuated by their uncertainty. Mixing them
   produced a `P = 0.0000` that meant nothing. The correct comparisons are
   0.16-0.19. The analyze script reports the two separately and says why.
+- **Never edit a script while a job is reading it.** `Rscript` reads a source
+  file incrementally rather than parsing it all up front, so editing the file
+  shifts byte offsets under a running process and it parses garbage. This ate
+  two 1.5-hour fits: jobs 28896 and 28897 started at 10:11:01,
+  `wockner-schedule-sim.R` was edited at 10:11:49, and both died at the
+  summary stage an hour and a half later with `Error: unexpected ')' in
+  "... span_h = max(time) - min(time)) |>P)"` -- text that appears nowhere in
+  the file. The same hazard applies to bash scripts. Check `squeue` before
+  editing anything a running job sources, or copy the script and submit the
+  copy. **Recovery is cheap**: the fit is written before the summary, so
+  `SCHEDSIM_REBUILD=1` with the same environment rebuilds the summary in a
+  minute instead of refitting.
 - **`unconstrain_pars()` needs an entry for every DECLARED parameter, even a
   zero-sized one.** Since the inoculum anchor was added, all four Stan
   programs always declare `delta_total0` and `sigma_total0`; with the anchor
@@ -1095,13 +1107,15 @@ Roughly in priority order.
    correlation question is limited by noise realizations, not by compute.
    Add seeds to `REP_SEEDS` in `wockner-schedule-sim.R` and widen the array,
    or submit more `SCHEDSIM_TRUTH_DRAW` values; ~2 h wall clock each.
-9. **Re-run the two non-converged replicates with a different fit seed.**
-   `wide-rep1` (R-hat 1.23, 11.5% divergences, ESS 13, chains 22 `lp__`
-   units apart) and `default-rep2-draw1500` (R-hat 1.11, 7.5% divergences,
-   ESS 26). Both are excluded from every number above. `wide-rep1` shares a
-   noise seed with `default-rep1`, the shakiest default replicate, so it is
-   worth knowing whether that simulated dataset is hard or the wide prior
-   is.
+9. ~~**Re-run the two non-converged replicates with a different fit seed.**~~
+   **Done**, `SCHEDSIM_FIT_SEED=415926535`. Both converge on the new seed, so
+   neither was a hard dataset -- it was the chain initialization.
+   `wide-rep1`: R-hat 1.23 -> 1.0255, divergences 11.5% -> 2.9%, ESS 13 ->
+   180, bias **+2.83 h**. `default-rep2-draw1500`: R-hat 1.107 -> 1.0083,
+   divergences 7.5% -> 0.6%, ESS 26 -> 239, bias **+1.82 h**. The
+   posterior-draw result is therefore n=3, not n=2: +1.68, +1.82, +0.86,
+   mean +1.45. Worth noting for any future replicate that fails: try another
+   fit seed before concluding anything about the dataset.
 10. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
     entries 3-7, `--array=3-7`. Written but never submitted. Demoted: these
     were to discriminate explanation 1 from 2-3 for the sampling-density
