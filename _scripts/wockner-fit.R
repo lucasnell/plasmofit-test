@@ -137,7 +137,22 @@ CONFIGS <- list(
     ## anchored fit's elpd and its R, then the gain is the old prior being
     ## wrong and the inoculum adds nothing; if the anchored fit still wins,
     ## the inoculum carries information.
-    np_wide_total0 = list(model = "no_pool",   data = list(sd_log10_total0 = 1))
+    np_wide_total0 = list(model = "no_pool",   data = list(sd_log10_total0 = 1)),
+    ## b_shape gets the same treatment log10_total0 just got. lognormal(2,
+    ## 0.5) has median 7.39 against a posterior of 14-19, and in simulation
+    ## widening it removes 0.50 h of cycle-length bias while widening
+    ## log10_total0 removes none. 10 isolates it on the original baseline; 11
+    ## applies it on top of the corrected log10_total0 prior, so the two are
+    ## not confounded.
+    np_wide_bshape = list(model = "no_pool",   data = list(sd_log_b_shape = 1.5)),
+    np_wide_both   = list(model = "no_pool",   data = list(sd_log_b_shape = 1.5,
+                                                           sd_log10_total0 = 1)),
+    ## The no_pool/pooled_cl hierarchy comparison was decided under the
+    ## misspecified log10_total0 prior, so it has to be re-run under a
+    ## defensible one before any of it is believed. Paired with 9 and 11.
+    pl_wide_total0 = list(model = "pooled_cl", data = list(sd_log10_total0 = 1)),
+    pl_wide_both   = list(model = "pooled_cl", data = list(sd_log_b_shape = 1.5,
+                                                           sd_log10_total0 = 1))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.

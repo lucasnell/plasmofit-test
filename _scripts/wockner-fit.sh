@@ -9,7 +9,8 @@
 # The array range must match the CONFIGS list in wockner-fit.R:
 #   1 no_pool        2 pooled_cl     3 np_wide_prior   4 pl_wide_prior
 #   5 np_center45    6 np_center42   7 np_wider_prior  8 np_anchor
-#   9 np_wide_total0
+#   9 np_wide_total0 10 np_wide_bshape 11 np_wide_both
+#  12 pl_wide_total0 13 pl_wide_both
 #
 #   sbatch --array=8 _scripts/wockner-fit.sh
 

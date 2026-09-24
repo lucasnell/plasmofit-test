@@ -75,6 +75,37 @@ happens to be there.
   failed convergence (R-hat 1.107, 7.5% divergences) and is excluded.
 - Three noise realizations for the correlation question.
 
+## Writing conventions for this file
+
+**Every table must say what is in its cells.** A number here is almost never
+self-describing: `8.89` could be a posterior mean, a median, a single group's
+value, or a mean over groups, and `-40%` could be relative to a truth, to
+another arm, or to a prior. State it once, immediately above the table, in a
+line or two. Cover, as applicable:
+
+- **what the number is** -- posterior mean, median, mean over groups, sum,
+  difference, ratio
+- **its units** -- hours, log10 units, dimensionless, percent of what
+- **what it is relative to**, if it is a comparison -- which baseline, and
+  which direction is "better" or "less biased"
+- **what it is aggregated over**, if anything -- groups, trials, replicates,
+  draws -- and how many
+- **whether it is paired**, when replicates share a dataset, since paired and
+  unpaired numbers of the same quantity differ here by more than the effects
+  being measured
+
+This applies to any table of **numbers**. Purely descriptive tables -- the
+script list, the `_data/` naming key, a list of which fit came from which code
+and seed -- are exempt, since their cells are prose.
+
+Do not rely on the column header alone. A header names the quantity; it does
+not say how it was computed, and this file's whole value is that a number in
+it can be re-derived a month later.
+
+The same applies to a number quoted in prose. Write "posterior mean over 14
+`grp_init` groups" rather than "the estimate", and give the script and the
+saved output it came from.
+
 ## The scripts
 
 Four, after consolidating seven (commit `0538cd2`), plus two added for the
@@ -372,6 +403,10 @@ the way to actually close this out.
 Decomposed by `wockner-pooling-offset.R` (post-hoc on the saved full-data
 fits, no refitting). Of the 0.526 h gap as originally reported:
 
+Cells: `size` is hours of the `no_pool` minus `pooled_cl` difference in
+population `cycle_length` attributable to that component, from one pair of
+saved full-data fits (no replicates).
+
 | component | size | what it is |
 |---|---|---|
 | summary statistic | 0.222 h | artifact, not a model difference |
@@ -514,6 +549,11 @@ forcing one cycle length pushes the timing (see the section above). True
 **The headline is not the correlation. It is that the model does not recover
 a cycle length it generated from.**
 
+Cells: per-trial posterior mean `cycle_length` averaged over 13 trials, in
+hours, with `(bias vs the true 45.012 h)` in brackets. The two columns are
+the same simulated dataset fitted under two cycle-length prior widths, so
+they are paired within a row.
+
 | replicate | `sd_logit_cl` = 1 | `sd_logit_cl` = 2 |
 |---|---|---|
 | rep1 | 47.59 (+2.58) | did not converge |
@@ -539,6 +579,10 @@ a cycle length it generated from.**
   ~1 h. Any single simulated dataset is a weak read.
 
 **The correlation does reappear, but not demonstrably at full strength.**
+
+Cells: Pearson correlation across 13 trials between each trial's posterior
+mean `cycle_length` and its observations per series. Dimensionless; the
+simulated row lists one value per replicate, not a range.
 
 | | correlation of posterior means |
 |---|---|
@@ -582,6 +626,11 @@ The first version of this script failed that control on one trial, because
 at t = 216 indexed past the end of its trajectory and scored `1e12`
 everywhere. Without the control that would have been a fabricated row in a
 results table.
+
+Cells: `bias` is the estimated `cycle_length` minus the true 45.012 h, in
+hours, averaged over replicates; **positive means overestimation**. These are
+maximum-likelihood point estimates with no prior and no MCMC, so `precision`
+is the spread across independent simulated datasets, not a posterior width.
 
 | estimator | bias vs truth 45.012 h | precision |
 |---|---|---|
@@ -661,6 +710,12 @@ cycle-length bias rather than looked for. `wockner-schedule-sim-analyze.R`'s
 nuisance-recovery stage compares each simulation fit's posterior means against
 the values the data were generated from:
 
+Cells: `truth` and `estimated` are posterior means averaged over the
+parameter's groups (14 `grp_init`, 13 `grp_R`, 27 `grp_sd`), on each
+parameter's own scale; `difference` is `estimated - truth` in those units;
+`relative` is that divided by `truth`, so **0% is perfect recovery**.
+Averaged over 7 replicates that share the mean-vector truth.
+
 | parameter | truth (mean) | estimated | difference | relative | prior |
 |---|---|---|---|---|---|
 | `b_shape` | 14.9 | 8.90 | **-5.95** | -40% | `lognormal(2, 0.5)`, median 7.39 |
@@ -682,6 +737,11 @@ section.
 
 This is also where the maximum-likelihood/posterior gap comes from. The paired
 ladder, all on the same simulated datasets:
+
+Cells: bias in hours -- estimated population `cycle_length` minus the true
+45.012 h, **positive means overestimation**. All three columns are fitted to
+the same simulated dataset within a row, so differences across a row are
+paired and differences down a column are not.
 
 | replicate | pooled MLE | `pooled_cl` posterior | `no_pool` posterior |
 |---|---|---|---|
@@ -712,6 +772,10 @@ truth was built.
 
 **Posterior correlations, over all 14 `grp_init` groups:**
 
+Cells: within-draw Pearson correlation between the two parameters, computed
+separately in each of the 14 `grp_init` groups of one saved real-data
+`no_pool` fit; `median` and `range` are over those 14 groups. Dimensionless.
+
 | pair | median | range |
 |---|---|---|
 | `log10_total0` vs `R` | **-0.886** | -0.958 to -0.811 |
@@ -732,6 +796,12 @@ truth was built.
 **The real data are informative where the simulated data were not**, compared
 on the scale each prior is written on (a lognormal's natural-scale sd grows
 with its location, so `b_shape` must be compared on the log scale):
+
+Cells: `real posterior` is the posterior mean over groups on the parameter's
+natural scale; the last column is the posterior sd divided by the prior sd,
+**each computed on the scale that prior is written on** (log scale for the
+lognormal), so **a ratio near 1 means the data added nothing** and near 0
+means the likelihood dominates.
 
 | parameter | prior | real posterior | posterior sd / prior sd |
 |---|---|---|---|
@@ -774,6 +844,11 @@ below should be read with that in mind.
 **Nuisance recovery does not improve.** Relative difference, posterior mean
 against the truth actually simulated from:
 
+Cells: `(estimate - truth) / truth` as a percentage, where the estimate is
+the posterior mean averaged over the parameter's groups and the truth is what
+that replicate was simulated from; **0% is perfect recovery**. The mean-vector
+column averages 7 replicates, the draw columns are single replicates.
+
 | parameter | mean vector (n=7) | draw 500 | draw 2500 |
 |---|---|---|---|
 | `b_shape` | -40% | -26% | -22% |
@@ -788,6 +863,11 @@ leading explanation for the mis-recovery and it does not survive contact with
 the test.
 
 **The cycle-length bias survives:**
+
+Cells: `truth` is the single `cycle_length` all 13 trials were simulated
+from, in hours; `fitted mean` is the per-trial posterior mean averaged over
+13 trials, in hours; `bias` is `fitted mean - truth`, so **positive means the
+fit overestimates**. One simulated dataset per row.
 
 | replicate | truth | fitted mean | bias |
 |---|---|---|---|
@@ -805,6 +885,11 @@ parameter vector.
 
 **Sampling-density correlation, per-trial posterior means against observations
 per series:**
+
+Cells: Pearson correlation across the 13 trials between each trial's
+posterior mean `cycle_length` and its observations per series. Dimensionless,
+one value per fit; **more negative means sparser-sampled trials got longer
+cycle lengths**.
 
 | source | r |
 |---|---|
@@ -930,6 +1015,10 @@ sbatch --array=2 --job-name=wock-seednull \
 
 **Widths, against the null run (seed 271828183), and the verdict:**
 
+Cells: for each of 208 parameters, `|log(sd_A / sd_B)|` where sd is the
+posterior sd; the columns are the median and 95th percentile of that over the
+208. Dimensionless; **0 means the two fits give identical posterior widths**.
+
 | | median \|log sd ratio\| | 95th percentile |
 |---|---|---|
 | test, pre-change vs post-change | 0.0262 | 0.1248 |
@@ -969,6 +1058,14 @@ wrong quantity: information about a periodic parameter comes from the
 oscillation, not from the trend or the overall scale. Detrending each series
 on time and dividing the remaining signal by that series' `sd_iRBC` gives
 
+Cells: `signal` is the median over 177 series of the sd of the **noiseless**
+trajectory after removing a within-series linear trend in time, in log10
+units; `noise` is the median over series of that series' `sd_iRBC`, same
+units; the fourth column sums `(signal/noise)^2` weighted by each series'
+observation count over all 1130 observations, so it is dimensionless and
+**larger means more information about the oscillation**; `vs real` is that
+sum divided by the real data's.
+
 | dataset | signal (wiggle) | noise | sum (signal/noise)^2 | vs real |
 |---|---|---|---|---|
 | real | 0.204 | 0.585 | 149 | -- |
@@ -1006,7 +1103,15 @@ everything above, and nobody has looked at it.
 ### The `log10_total0` prior was misspecified, and that is most of the story
 
 `wockner-anchor-check.R`, output `_data/anchor-check.log` and
-`_data/wock-anchor-check.rds`. Three real-data fits, all `no_pool`:
+`_data/wock-anchor-check.rds`. Three fits to the **real** data.
+
+Cells: each parameter column is the **posterior mean, then averaged over that
+parameter's groups** -- 14 `grp_init` for `log10_total0`, 13 `grp_R` for `R`,
+13 `grp_cl` for `cycle_length`, 27 `grp_sd` for `sd_iRBC`. `log10_total0` is
+in log10 iRBC/mL, `cycle_length` in hours, `R` and `sd_iRBC` dimensionless.
+`loo elpd` is expected log pointwise predictive density over all 1130
+observations; **higher (less negative) is better**. One fit per row, no
+replicates.
 
 | config | prior on `log10_total0` | `log10_total0` | `R` | `sd_iRBC` | `cycle_length` | loo elpd |
 |---|---|---|---|---|---|---|
@@ -1014,7 +1119,10 @@ everything above, and nobody has looked at it.
 | `np_wide_total0` | `normal(1, 1)` | -0.913 | 14.9 | 0.544 | 45.52 | **-950.7** |
 | `np_anchor` | anchored on the inoculum | -1.18 | 17.9 | 0.543 | 46.14 | **-948.5** |
 
-`loo_compare`, per observation:
+`loo_compare`, over the same 1130 observations. Cells: `elpd_diff` is each
+row's elpd minus the best row's, so it is 0 for the best and negative for the
+rest; `se_diff` is the standard error **of that paired difference**, which is
+much smaller than the se of either elpd because the two share observations.
 
 | | elpd_diff | se_diff |
 |---|---|---|
@@ -1064,7 +1172,12 @@ From `wockner-schedule-sim-analyze.R`, paired within replicate because
 replicate-to-replicate spread (~1 h) exceeds the effects being measured. All
 arms run on the same simulated datasets as `default`.
 
-**Change in cycle-length bias when a prior is widened:**
+**Change in cycle-length bias when a prior is widened.** Cells: bias is the
+per-trial posterior mean `cycle_length` averaged over 13 trials, minus the
+known true `cycle_length`, in **hours**. Each entry is that arm's bias minus
+`default`'s bias **on the same simulated dataset** (noise seeds are shared),
+so it is paired; **negative means widening reduced the bias**. `mean change`
+averages the three replicates; `per replicate` lists them in order 1, 2, 3.
 
 | arm | widened | mean change | per replicate |
 |---|---|---|---|
@@ -1072,7 +1185,12 @@ arms run on the same simulated datasets as `default`.
 | `wide_nuis` | both | -0.540 h | -0.142, -1.08, -0.398 |
 | `wide_total0` | `sd_log10_total0` 0.25 -> 1 | +0.129 h | +0.429, -0.156, +0.113 |
 
-**Recovery of the nuisance parameters themselves, by arm:**
+**Recovery of the nuisance parameters themselves, by arm.** Cells: posterior
+mean averaged over the parameter's groups (14 `grp_init` for `b_shape` and
+`log10_total0`, 13 `grp_R` for `R`), then averaged over the 3 replicates of
+that arm; the bracketed percentage is `(estimate - truth) / truth`, so **0%
+is perfect recovery** and the sign says which way it misses. `truth` is the
+value the data were simulated from, identical across arms.
 
 | parameter | truth | `default` | `wide_bshape` | `wide_total0` |
 |---|---|---|---|---|
@@ -1099,8 +1217,11 @@ The real-data fits agree on the part they can speak to: relaxing the
 `log10_total0` prior there moved `cycle_length` +0.20 h, against +0.13 h in
 the simulation.
 
-**Budget for the cycle-length bias** at the default arm, mean bias +1.97 h
-over replicates 1-3:
+**Budget for the cycle-length bias** at the `default` arm, whose mean bias is
++1.97 h over replicates 1-3. Cells: `size` is hours of cycle-length bias
+attributable to that source, each from a paired within-replicate contrast
+against `default` on the same simulated datasets. These are not guaranteed to
+sum to the total, and do not.
 
 | source | size | how measured |
 |---|---|---|
