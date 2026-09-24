@@ -40,14 +40,22 @@ cat("read", length(res), "replicate summaries\n\n")
 # contribute a correlation.
 # ------------------------------------------------------------------------ #
 
+## Built in the order of `res` and kept that way. Sorting it here and then
+## indexing `res` with the result silently misaligns the two: list.files()
+## orders by locale collation, where "wide_bshape-rep1" precedes "wide-rep1",
+## while arrange(arm, rep) puts it after. That kept a replicate with R-hat
+## 1.23 and dropped one that had converged. Sort only for printing.
 health <- map(res, \(r) tibble(
     config = r$config, arm = r$arm, rep = r$rep,
     div = r$n_div, max_rhat = r$max_rhat, min_ess = r$min_ess,
     lp_spread = diff(range(r$lp_by_chain))
-)) |> list_rbind() |> arrange(arm, rep)
+)) |> list_rbind()
+
+stopifnot(identical(health$config, map_chr(res, "config")))
 
 cat("=== sampler health ===\n")
-health |> mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
+health |> arrange(arm, rep) |>
+    mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
 
 ok <- health$max_rhat < 1.05
 if (!all(ok)) {
@@ -57,6 +65,8 @@ if (!all(ok)) {
 cat("\n")
 
 res <- res[ok]
+health <- health[ok, ]
+stopifnot(identical(health$config, map_chr(res, "config")))
 if (length(res) == 0) stop("no converged replicates to analyze")
 
 
@@ -335,6 +345,51 @@ nuis |>
     arrange(src, par) |>
     mutate(across(where(is.numeric), \(x) round(x, 4))) |>
     print(n = Inf, width = Inf)
+
+## ---------------------------------------------------------------------- #
+## Thread 2, paired: what does widening each nuisance prior actually buy?
+##
+## Every arm runs on the SAME simulated datasets as `default` (noise seeds are
+## shared), so differencing within a replicate removes the replicate-to-
+## replicate spread, which is ~1 h and larger than the effects being measured.
+## Unpaired means would drown this.
+## ---------------------------------------------------------------------- #
+
+paired_arms <- tab |>
+    filter(src == "mean", arm %in% c("default", "wide_bshape",
+                                     "wide_total0", "wide_nuis")) |>
+    select(arm, rep, bias)
+base <- paired_arms |> filter(arm == "default") |> select(rep, base = bias)
+
+cat("\n=== thread 2: cycle-length bias, paired against `default` ===\n")
+cyc <- paired_arms |>
+    filter(arm != "default") |>
+    left_join(base, by = "rep") |>
+    mutate(delta = bias - base)
+cyc |> select(arm, rep, bias, default = base, delta) |>
+    arrange(arm, rep) |>
+    mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
+cat("\n  mean paired change in bias (negative = widening REDUCES the bias):\n")
+cyc |> summarise(.by = arm, n = n(), mean_delta = mean(delta),
+                 min = min(delta), max = max(delta)) |>
+    mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(width = Inf)
+
+## And does widening a prior actually fix that parameter's recovery? If it
+## does not, the prior was not what was holding it.
+cat("\n=== thread 2: nuisance recovery by arm (mean-vector truth) ===\n")
+nuis |>
+    left_join(tab |> select(config, arm), by = "config") |>
+    filter(src == "mean", arm %in% c("default", "wide_bshape",
+                                     "wide_total0", "wide_nuis"),
+           par %in% c("b_shape", "log10_total0", "R")) |>
+    summarise(.by = c(par, arm), n_rep = n_distinct(config),
+              truth = first(mean_truth), est = mean(mean_est),
+              rel = mean(rel)) |>
+    arrange(par, arm) |>
+    mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
+
+cat("\n  A prior that was holding a parameter should move it toward the truth\n",
+    "  when widened. One that does not was not the binding constraint.\n", sep = "")
 
 cat("\n  A parameter recovered near zero difference is not the culprit. One\n",
     "  pulled systematically toward its prior is a candidate for dragging\n",

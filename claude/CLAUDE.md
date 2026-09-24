@@ -29,6 +29,16 @@ and both need committing separately.
   parameters beyond 3 MCSE on the means.
 - The simulated designs are **not** less informative than the real one. Open
   thread 3 is answered and dead; see "Information content".
+- **The `normal(1, 0.25)` prior on `log10_total0` is misspecified.** Relaxing
+  it gains **104.7 elpd (se 12.8)** on the real data and moves `R` from 6.2
+  into the 15-18 range that burst size implies. The inoculum anchor adds
+  nothing over simply widening it (2.13 +- 2.91). `R` is not identified by
+  these data. See "The `log10_total0` prior was misspecified".
+- **Thread 2: the `b_shape` prior owns ~0.50 h of the cycle-length bias and
+  the `log10_total0` prior owns none**, which means the ridge is not the
+  mechanism. ~1.07 h of ~1.97 h remains unexplained. See "Thread 2".
+- Thread 9: both non-converged replicates were bad fit seeds, not hard
+  datasets.
 
 - The schedule-bias simulation was rebuilt from single posterior **draws**
   rather than the posterior mean vector. This was the leading explanation for
@@ -41,12 +51,7 @@ and both need committing separately.
 
 **Unfinished and blocking**
 
-- Nothing blocked. The first anchored fit is **running** (SLURM `28919_8`,
-  config `np_anchor` in `wockner-fit.R`, `inoc_size = "inoc_size"`). Read
-  `delta_total0` against the predicted **+0.811** and `R` against **9.96**.
-  Note the sign: the anchor for a 1800-parasite inoculum is
-  `log10(1800/5000) = -0.444` and the unanchored fit puts `log10_total0`
-  near +0.31, so the offset is positive.
+- Nothing blocked, nothing running.
 
 **In flight as of 2026-09-24 09:15**
 
@@ -97,6 +102,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-inoc-prior.R` | cluster | compares fitted `log10_total0` against `log10(inoculum / 5000 mL)`; sizes the offset the anchored prior has to absorb |
 | `wockner-anchor-regression.R` | cluster | checks that `total0_anchor = 0` targets the same posterior as the pre-anchor code |
 | `wockner-sim-information.R` | cluster | compares the information the simulated and real designs carry about the oscillation, post-hoc |
+| `wockner-anchor-check.R` | cluster | reads the anchored fit against its predictions, against the unanchored fit, and against the widened-prior control |
 
 The cluster workflow is in the header comment of `wockner-fit.R` (and
 `wockner-fit-kfold.R`, which follows the same pattern): `scp` the script and
@@ -248,6 +254,16 @@ differs. Compare on the constrained scale instead.
   if known; the second is attenuated by their uncertainty. Mixing them
   produced a `P = 0.0000` that meant nothing. The correct comparisons are
   0.16-0.19. The analyze script reports the two separately and says why.
+- **Do not index one list by a gate computed from a re-sorted copy of it.**
+  `wockner-schedule-sim-analyze.R` built its health table, `arrange()`d it,
+  then used `res[ok]` on the unsorted `res`. `list.files()` orders by locale
+  collation, where `wide_bshape-rep1` precedes `wide-rep1`, while
+  `arrange(arm, rep)` puts it after; 13 of 22 rows were misaligned, so the
+  convergence gate **kept** a replicate with R-hat 1.23 and dropped one that
+  had converged. Latent until arms with underscores existed, so results from
+  before that are unaffected. The script now keeps the health table in `res`
+  order, sorts only for printing, and `stopifnot`s the alignment on both
+  sides of the filter.
 - **Never edit a script while a job is reading it.** `Rscript` reads a source
   file incrementally rather than parsing it all up front, so editing the file
   shifts byte offsets under a running process and it parses garbage. This ate
@@ -986,6 +1002,115 @@ and fall more steeply over time than the fitted trajectories do, with a
 median within-series range of 2.56 log10 units against 1.95-2.21 simulated.
 That is a lack-of-fit signal in the model's time course, independent of
 everything above, and nobody has looked at it.
+
+### The `log10_total0` prior was misspecified, and that is most of the story
+
+`wockner-anchor-check.R`, output `_data/anchor-check.log` and
+`_data/wock-anchor-check.rds`. Three real-data fits, all `no_pool`:
+
+| config | prior on `log10_total0` | `log10_total0` | `R` | `sd_iRBC` | `cycle_length` | loo elpd |
+|---|---|---|---|---|---|---|
+| `no_pool` | `normal(1, 0.25)` | +0.430 | 6.23 | 0.597 | 45.32 | -1053.2 |
+| `np_wide_total0` | `normal(1, 1)` | -0.913 | 14.9 | 0.544 | 45.52 | **-950.7** |
+| `np_anchor` | anchored on the inoculum | -1.18 | 17.9 | 0.543 | 46.14 | **-948.5** |
+
+`loo_compare`, per observation:
+
+| | elpd_diff | se_diff |
+|---|---|---|
+| `np_anchor` | 0.00 | -- |
+| `np_wide_total0` | -2.13 | 2.91 |
+| `no_pool` | **-104.70** | **12.83** |
+
+**Read this the right way round.** The anchored fit beats the original by 8.2
+standard errors, but it does **not** beat the control that merely widens the
+old prior without using the inoculum at all (2.13 +- 2.91). So the entire
+predictive gain comes from `normal(1, 0.25)` being **wrong**, and the
+inoculum information adds nothing detectable. The anchor was worth building
+because it is what exposed this, not because it wins.
+
+Two things independent of elpd say the new location is the right one:
+
+- The original fit implied **6.47x more parasites at t = 0 than were
+  inoculated** -- an establishment fraction of 647%, which is impossible. The
+  anchored fit gives `delta_total0` = **-0.798**, a factor of 0.16, i.e. a
+  16% establishment fraction, which is unremarkable.
+- `R` moves from 6.23 into the **15-18** range, which is where burst size
+  puts it (median 15-18 per schizont, max 32). The old 6.23 was near the
+  *in vitro* 3D7 figure of ~8.
+
+**The prediction of `delta_total0` = +0.811 failed, and the failure is the
+finding.** It assumed the anchored fit would leave `log10_total0` where the
+unanchored fit put it. It did not: `log10_total0` moved -1.61. The ridge
+itself held up exactly -- applying the measured slope
+(`d log10(R) / d log10_total0` = **-0.280**) to the distance actually
+travelled predicts `R` = **17.63** against an observed **17.95**. What was
+wrong was the assumed landing point, which took a prior-dominated posterior
+for a likelihood-dominated one.
+
+**Consequence: `R` is not identified by these data.** It reads 6.2, 14.9, or
+17.9 depending on the prior, and the last two are predictively
+indistinguishable. Any `R` reported from this model is a statement about the
+prior unless the prior is defended. The same caution applies, more weakly, to
+`cycle_length`, which spans 45.3 to 46.1 across the three.
+
+This also retires the ridge section's claim that the real data move
+`log10_total0` "well away from both priors". They do not: relax the prior and
+it moves another 1.3 decades.
+
+### Thread 2: it is the `b_shape` prior, and the ridge is not the mechanism
+
+From `wockner-schedule-sim-analyze.R`, paired within replicate because
+replicate-to-replicate spread (~1 h) exceeds the effects being measured. All
+arms run on the same simulated datasets as `default`.
+
+**Change in cycle-length bias when a prior is widened:**
+
+| arm | widened | mean change | per replicate |
+|---|---|---|---|
+| `wide_bshape` | `sd_log_b_shape` 0.5 -> 1.5 | **-0.501 h** | -0.531, -0.452, -0.519 |
+| `wide_nuis` | both | -0.540 h | -0.142, -1.08, -0.398 |
+| `wide_total0` | `sd_log10_total0` 0.25 -> 1 | +0.129 h | +0.429, -0.156, +0.113 |
+
+**Recovery of the nuisance parameters themselves, by arm:**
+
+| parameter | truth | `default` | `wide_bshape` | `wide_total0` |
+|---|---|---|---|---|
+| `b_shape` | 14.9 | 8.89 (-40%) | **23.9 (+61%)** | 8.68 (-42%) |
+| `log10_total0` | 0.425 | 0.858 (+102%) | 0.858 (+102%) | **0.533 (+25%)** |
+| `R` | 6.24 | 4.75 (-24%) | 4.71 (-24%) | **5.92 (-5%)** |
+
+The dissociation is clean and it is the opposite of what was expected:
+
+- Widening the **`log10_total0`** prior fixes `log10_total0` (+102% to +25%)
+  and `R` (-24% to -5%) -- and does **nothing** to the cycle-length bias
+  (+0.13 h, sign inconsistent across replicates).
+- Widening the **`b_shape`** prior does nothing for `log10_total0` or `R`,
+  overshoots `b_shape` itself (-40% to +61%), and removes **0.50 h** of
+  cycle-length bias, with a spread of only 0.08 h across three replicates.
+
+**So the `log10_total0`/`R` ridge is not what drags `cycle_length`.** The
+`b_shape` prior is, and `b_shape` is off the ridge entirely -- median
+posterior correlation +0.026 with `log10_total0` and +0.004 with `R` (see
+"The ridge is real"). The standing hypothesis in this file, that the bias came
+from nuisance priors dragging `cycle_length` **along the ridge**, is wrong.
+
+The real-data fits agree on the part they can speak to: relaxing the
+`log10_total0` prior there moved `cycle_length` +0.20 h, against +0.13 h in
+the simulation.
+
+**Budget for the cycle-length bias** at the default arm, mean bias +1.97 h
+over replicates 1-3:
+
+| source | size | how measured |
+|---|---|---|
+| `b_shape` prior | ~0.50 h | paired, `wide_bshape` vs `default` |
+| hierarchy | ~0.25 h | paired, `no_hier` vs `default` |
+| cycle-length prior | ~0.15 h | paired, `wide` vs `default` |
+| `log10_total0` prior | ~0 | paired, `wide_total0` vs `default` |
+| **unexplained** | **~1.07 h** | the remainder |
+
+Over half is still unaccounted for.
 
 ## Running this on the cluster directly
 

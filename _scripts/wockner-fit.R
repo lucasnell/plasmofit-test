@@ -128,7 +128,16 @@ CONFIGS <- list(
     ## Predictions to read this against, from wockner-inoc-prior.R on the
     ## unanchored no_pool fit: delta_total0 ~ +0.811 (a factor of 6.47 more
     ## parasites at t = 0 than were inoculated) and R ~ 9.96.
-    np_anchor      = list(model = "no_pool",   data = list(inoc_size = "inoc_size"))
+    np_anchor      = list(model = "no_pool",   data = list(inoc_size = "inoc_size")),
+    ## The control np_anchor needs. The anchored fit relaxes TWO things at
+    ## once: it centres log10_total0 on the inoculum, and it replaces a tight
+    ## normal(1, 0.25) with a location that is free to move (delta_total0 has
+    ## sd 1). This arm relaxes only the second -- same normal centre of 1, sd
+    ## widened to 1, no inoculum information at all. If it reproduces the
+    ## anchored fit's elpd and its R, then the gain is the old prior being
+    ## wrong and the inoculum adds nothing; if the anchored fit still wins,
+    ## the inoculum carries information.
+    np_wide_total0 = list(model = "no_pool",   data = list(sd_log10_total0 = 1))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
