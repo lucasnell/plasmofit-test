@@ -33,6 +33,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-schedule-sim-check.R` | cluster | `run_check = 1` cross-check that the simulator and the likelihood share a forward model |
 | `wockner-schedule-bias-profile.R` | cluster | maximum-likelihood `cycle_length` at the real schedules, per trial and pooled -- no prior, no hierarchy, no MCMC |
 | `wockner-schedule-sim-mode.R` | cluster | posterior mean vs mode of the population `cycle_length` in the saved simulation fits |
+| `wockner-ridge.R` | cluster | posterior correlations and prior-vs-posterior in the real fit; tests whether the simulation's weak identification is real |
 
 The cluster workflow is in the header comment of `wockner-fit.R` (and
 `wockner-fit-kfold.R`, which follows the same pattern): `scp` the script and
@@ -508,10 +509,14 @@ the values the data were generated from:
 
 `b_shape` lands almost exactly on its prior median instead of on the truth,
 and `log10_total0` moves halfway to its prior mean. Only `sd_iRBC` is
-recovered. `log10_total0`, `R` and `b_shape` trade off against each other --
-a larger starting population with slower growth and a flatter initial
-distribution produces a similar trajectory -- so this is a weakly identified
-ridge with the priors choosing a point along it.
+recovered.
+
+An earlier version of this section explained that as a three-way
+`(log10_total0, R, b_shape)` ridge. **That was wrong**: `wockner-ridge.R`
+finds `b_shape` essentially uncorrelated with the others in the real
+posterior (median +0.026 against `log10_total0`, +0.004 against `R`, over all
+14 groups). The ridge is `log10_total0` against `R` alone -- see the next
+section.
 
 This is also where the maximum-likelihood/posterior gap comes from. The paired
 ladder, all on the same simulated datasets:
@@ -541,6 +546,56 @@ The fix is to draw the truth from a single posterior **draw** rather than the
 mean vector, which keeps the parameter correlations intact, and to repeat
 over several draws. Until that is done, every number in the two sections
 above carries this caveat.
+
+### The ridge is real, but the simulation's weak identification is not
+
+`wockner-ridge.R`, output `_data/wock-ridge.rds`. Post-hoc on the saved real
+`no_pool` fit, no refitting. Asks whether the nuisance mis-recovery above is a
+property of the model on real data or an artifact of how the simulation's
+truth was built.
+
+**Posterior correlations, over all 14 `grp_init` groups:**
+
+| pair | median | range |
+|---|---|---|
+| `log10_total0` vs `R` | **-0.886** | -0.958 to -0.811 |
+| `b_offset` vs `cycle_length` | +0.517 | **-0.932 to +0.667** |
+| `b_shape` vs `log10_total0` | +0.026 | -0.050 to +0.064 |
+| `b_shape` vs `R` | +0.004 | -0.030 to +0.066 |
+| `b_shape` vs `cycle_length` | -0.094 | -0.267 to +0.083 |
+
+- **`log10_total0` against `R` is a genuine ridge**, in every group, |r| ~0.89:
+  a larger starting population with slower growth gives a similar trajectory.
+- **`b_shape` is not in it.** It is independent of everything else, so no
+  trade-off explains its mis-recovery in the simulation.
+- **`b_offset` against `cycle_length` does not generalize.** Group 1 gives
+  -0.932, which is where a single-group read would have stopped; the median
+  over all groups is +0.52 and the sign flips. Check every group before
+  quoting this pair.
+
+**The real data are informative where the simulated data were not**, compared
+on the scale each prior is written on (a lognormal's natural-scale sd grows
+with its location, so `b_shape` must be compared on the log scale):
+
+| parameter | prior | real posterior | posterior sd / prior sd |
+|---|---|---|---|
+| `b_shape` | `lognormal(2, 0.5)`, median 7.39 | **18.9** | 0.759 (log scale) |
+| `log10_total0` | `normal(1, 0.25)` | **0.312** | 0.697 |
+| `R` | median `max_R * inv_logit(-2)` = 5.96 | 5.88 | 0.106 |
+
+On real data the likelihood moves `b_shape` from 7.39 to 18.9 and
+`log10_total0` from 1 to 0.312, well away from both priors. In the simulation,
+generated from `b_shape` = 14.9, the fit returned 8.90 -- back at the prior
+median. **So the simulated data are genuinely less informative than the real
+data, and the nuisance mis-recovery is largely an artifact of building the
+truth from a posterior mean vector rather than a draw.** Open thread 1 stands
+and is now the test of record: rebuild from a posterior draw and see whether
+recovery improves.
+
+Note what this does *not* say. The `log10_total0`/`R` ridge is real and
+pervasive, and `R` sitting near its prior median is a coincidence of location,
+not evidence the prior is driving it -- its posterior is a tenth of the prior
+width.
 
 ## Running this on the cluster directly
 
