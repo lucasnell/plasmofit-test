@@ -866,6 +866,11 @@ The pass threshold is written into the script and was fixed before the null
 run existed: the test pair must be under 1.5x the null pair at the 95th
 percentile.
 
+The script also refuses to pass on a null run with R-hat above 1.05. A badly
+mixed null has inflated widths and would make **any** test pair look
+acceptable, so a pass obtained against one means nothing. In that case it
+reports INCONCLUSIVE and asks for another `SCHEDSIM_FIT_SEED`.
+
 ## Running this on the cluster directly
 
 The workflow above assumes editing locally and `scp`-ing up. If instead you

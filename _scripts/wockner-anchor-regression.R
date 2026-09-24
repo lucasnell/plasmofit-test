@@ -195,6 +195,16 @@ if (have_null) {
     s_nul <- s_nul[match(shared, s_nul$par), ]
     if (anyNA(s_nul$sd)) stop("null run does not carry the same parameters")
 
+    ## A null run that mixed badly has inflated posterior widths, which would
+    ## make ANY test pair look acceptable against it. Refuse to pass on such a
+    ## null rather than accept a verdict obtained for the wrong reason.
+    null_rhat <- max(s_nul$rhat, na.rm = TRUE)
+    null_div <- sum(sapply(get_sampler_params(nullfit, inc_warmup = FALSE),
+                           \(x) sum(x[, "divergent__"])))
+    cat(sprintf("  null run health: max R-hat %.4f, divergences %d\n",
+                null_rhat, null_div))
+    null_healthy <- null_rhat < 1.05
+
     null_lr <- lr(s_nul$sd, s_new$sd)
     z_null <- (s_new$mean - s_nul$mean) /
         sqrt((s_new$sd / sqrt(s_new$ess))^2 + (s_nul$sd / sqrt(s_nul$ess))^2)
@@ -216,7 +226,7 @@ if (have_null) {
 
     ## Thresholds fixed before the null run existed: the test pair must not be
     ## more than half again as spread as two runs of identical code.
-    sd_ok <- is.finite(width_infl) && width_infl < 1.5
+    sd_ok <- is.finite(width_infl) && width_infl < 1.5 && null_healthy
     rm(nullfit); invisible(gc())
 } else {
     cat("  null run NOT FOUND -- nothing to judge the test against.\n")
@@ -225,6 +235,7 @@ if (have_null) {
     cat("  between runs, so it understates run-to-run spread.\n")
     width_infl <- NA_real_
     sd_ok <- NA
+    null_healthy <- NA
 }
 
 ## Sampler behaviour. Differs freely between two runs of the same target;
@@ -249,12 +260,18 @@ if (!names_ok) {
 } else if (!z_ok) {
     cat("  FAIL -- posterior means moved beyond Monte Carlo error.\n")
     cat("  Do not interpret any anchored fit until this is understood.\n")
-} else if (is.na(sd_ok)) {
+} else if (is.na(sd_ok) && is.na(null_healthy)) {
     cat("  INCONCLUSIVE -- parameter sets match and posterior means agree\n")
     cat("  within Monte Carlo error, which is the substantive check. Posterior\n")
     cat("  widths cannot be judged without the null run; produce it as shown in\n")
     cat("  the header and re-run. Draws are not bit-identical, which is expected\n")
     cat("  across a rebuilt DSO and is not evidence of anything.\n")
+} else if (!null_healthy) {
+    cat(sprintf("  INCONCLUSIVE -- the null run did not converge (max R-hat %.4f),\n",
+                null_rhat))
+    cat("  so its posterior widths are inflated and would make any test pair\n")
+    cat("  look acceptable. Re-run it with another SCHEDSIM_FIT_SEED; do not\n")
+    cat("  read the inflation figure above.\n")
 } else if (!sd_ok) {
     cat(sprintf("  FAIL -- posterior widths are %.2fx as spread as two runs of\n",
                 width_infl))
