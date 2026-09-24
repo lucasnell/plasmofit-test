@@ -49,6 +49,22 @@ and both need committing separately.
   and it will print PASS or FAIL instead of INCONCLUSIVE. Do not interpret
   any anchored fit until it passes.
 
+**In flight as of 2026-09-24 09:15**
+
+Everything below is gated on `plasmofit` 0.0.0.9009 installing cleanly; the
+launcher aborts and submits nothing if the installed version is not 9009 or a
+`00LOCK-plasmofit` is present, because every job would otherwise load whatever
+happens to be there.
+
+- **thread 2**, tasks 13-21: three new arms in `wockner-schedule-sim.R`
+  (`wide_bshape`, `wide_total0`, `wide_nuis`) on the same noise seeds as
+  `default`, asking how much cycle-length bias moves with the nuisance
+  priors. Read against `default-rep{1,2,3}`, paired.
+- **thread 9**: `wide-rep1` and `default-rep2-draw1500` refit with
+  `SCHEDSIM_FIT_SEED=415926535`, to tell a hard dataset from a hard prior.
+- **thread 3**: `wockner-sim-information.R`, output
+  `_data/sim-information.log` and `_data/wock-sim-information.rds`.
+
 **Known thin spots in the numbers above**
 
 - Two usable posterior-draw replicates, not three: `default-rep2-draw1500`
@@ -79,7 +95,8 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-schedule-sim-mode.R` | cluster | posterior mean vs mode of the population `cycle_length` in the saved simulation fits |
 | `wockner-ridge.R` | cluster | posterior correlations and prior-vs-posterior in the real fit; tests whether the simulation's weak identification is real |
 | `wockner-inoc-prior.R` | cluster | compares fitted `log10_total0` against `log10(inoculum / 5000 mL)`; sizes the offset the anchored prior has to absorb |
-| `wockner-anchor-regression.R` | cluster | checks that `total0_anchor = 0` reproduces a pre-anchor fit bit-for-bit |
+| `wockner-anchor-regression.R` | cluster | checks that `total0_anchor = 0` targets the same posterior as the pre-anchor code |
+| `wockner-sim-information.R` | cluster | compares the information the simulated and real designs carry about the oscillation, post-hoc |
 
 The cluster workflow is in the header comment of `wockner-fit.R` (and
 `wockner-fit-kfold.R`, which follows the same pattern): `scp` the script and

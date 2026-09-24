@@ -95,7 +95,29 @@ ARMS <- list(
     wide        = list(model = "no_pool",   data = list(sd_logit_cl = 2)),
     tight_sigma = list(model = "no_pool",   data = list(sd_logit_cl = 1,
                                                         sd_bs_cl = 0.001)),
-    no_hier     = list(model = "pooled_cl", data = list(sd_logit_cl = 1))
+    no_hier     = list(model = "pooled_cl", data = list(sd_logit_cl = 1)),
+    ## The nuisance-prior test. The simulation recovers b_shape ~25-40% low
+    ## and log10_total0 ~100% high whatever the truth is built from (see
+    ## claude/CLAUDE.md, "Rebuilt from posterior draws"), and both sit on the
+    ## log10_total0/R ridge that cycle_length is suspected of being dragged
+    ## along. Widening each prior asks how much of the cycle-length bias goes
+    ## with it. Same model and same noise seeds as `default`, so the contrast
+    ## is the prior and nothing else.
+    ##
+    ## Widened, NOT recentred. Recentring on the truth would manufacture the
+    ## answer and is unavailable in practice, where the truth is what is being
+    ## estimated. sd_log_b_shape 0.5 -> 1.5 makes the b_shape prior span
+    ## exp(2 +/- 2.94) = 0.39 to 139, and sd_log10_total0 0.25 -> 1 spans
+    ## -0.96 to 2.96; both are then diffuse over any plausible value. Stopped
+    ## there rather than wider because a centred parameterization at a very
+    ## large prior scale samples badly, which would confound the test.
+    wide_bshape = list(model = "no_pool",   data = list(sd_logit_cl = 1,
+                                                        sd_log_b_shape = 1.5)),
+    wide_total0 = list(model = "no_pool",   data = list(sd_logit_cl = 1,
+                                                        sd_log10_total0 = 1)),
+    wide_nuis   = list(model = "no_pool",   data = list(sd_logit_cl = 1,
+                                                        sd_log_b_shape = 1.5,
+                                                        sd_log10_total0 = 1))
 )
 
 CONFIGS <- expand_grid(arm = names(ARMS), rep = seq_along(REP_SEEDS)) |>
