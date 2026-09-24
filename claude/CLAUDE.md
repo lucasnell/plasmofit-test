@@ -24,6 +24,12 @@ and both need committing separately.
 
 **Settled this session**
 
+- The inoculum anchor switched off targets the same posterior as the
+  pre-change code: width inflation 1.01x against a proper null, 0 of 208
+  parameters beyond 3 MCSE on the means.
+- The simulated designs are **not** less informative than the real one. Open
+  thread 3 is answered and dead; see "Information content".
+
 - The schedule-bias simulation was rebuilt from single posterior **draws**
   rather than the posterior mean vector. This was the leading explanation for
   the nuisance mis-recovery and the cycle-length bias, and **it is wrong**:
@@ -35,19 +41,9 @@ and both need committing separately.
 
 **Unfinished and blocking**
 
-- The anchor's regression test is **INCONCLUSIVE**, one fit short. Detail in
-  "Regression test for the anchor" below. The substantive half passed:
-  parameter sets match exactly and posterior means agree within Monte Carlo
-  error. What is missing is a null run to judge posterior *widths* against.
-  It is submitted as SLURM job `28892` (~55 min); when it lands, re-run
-
-  ```
-  srun -N 1 -n 1 -c 4 --mem=32G Rscript --vanilla \
-      _scripts/wockner-anchor-regression.R
-  ```
-
-  and it will print PASS or FAIL instead of INCONCLUSIVE. Do not interpret
-  any anchored fit until it passes.
+- Nothing. The anchor's regression test **PASSES**; see "Regression test for
+  the anchor". `plasmofit` 0.0.0.9009 is installed. The first anchored fit is
+  now unblocked.
 
 **In flight as of 2026-09-24 09:15**
 
@@ -248,6 +244,15 @@ differs. Compare on the constrained scale instead.
   if known; the second is attenuated by their uncertainty. Mixing them
   produced a `P = 0.0000` that meant nothing. The correct comparisons are
   0.16-0.19. The analyze script reports the two separately and says why.
+- **Data-list overrides bypass `archer_stan_data()`'s recycling.**
+  `wockner-schedule-sim.R` writes each arm's overrides into the already-built
+  list. Some entries are per-`grp_init` **vectors** in the Stan data block
+  (`sd_log_b_shape`, `sd_log10_total0`, `mean_log_b_shape`,
+  `mean_log10_total0`) and some are true scalars (`sd_logit_cl`, `sd_bs_cl`).
+  A scalar written over a vector entry gets as far as data initialization and
+  dies with "mismatch in number dimensions declared and found in context".
+  The script now recycles to the existing entry's length and errors on an
+  override that is not in the list at all.
 - **Two fits of the same model are never bit-identical across a recompile.**
   Rebuilding the DSO can reorder floating-point operations and HMC turns a
   last-bit difference into a different trajectory within a few leapfrog
@@ -877,16 +882,80 @@ sbatch --array=2 --job-name=wock-seednull \
 - widest movers are `sd_iRBC[2]` (z 2.67) and `b_shape[4]` (z -2.34), neither
   connected to the anchor
 
-Widths are pending the null run: the test pair gives a median `|log sd ratio|`
-of 0.0262 and a 95th percentile of 0.1248, with nothing yet to compare against.
-The pass threshold is written into the script and was fixed before the null
-run existed: the test pair must be under 1.5x the null pair at the 95th
-percentile.
+**Widths, against the null run (seed 271828183), and the verdict:**
+
+| | median \|log sd ratio\| | 95th percentile |
+|---|---|---|
+| test, pre-change vs post-change | 0.0262 | 0.1248 |
+| null, same code, different seed | 0.0368 | 0.1241 |
+
+Inflation at the 95th percentile: **1.01x**, against a threshold of 1.5x fixed
+before the null run existed. Null run health: max R-hat 1.0287, 39
+divergences, so it converged and is entitled to serve as the null. Means on
+the null pair behave like the test pair (median \|z\| 1.12 against 0.73, 0 of
+208 above 3 in both).
+
+**Verdict: PASS.** The anchor switched off targets the same posterior as the
+pre-change code.
+
+Note how badly the two earlier bars misled. Bit-identity said FAIL. The flat
+0.9-1.1 band on sd ratios said FAIL. The within-fit split-half null put the
+inflation at 1.41x, which also would have said FAIL at any sensible
+threshold — and the reason it is wrong is visible in the numbers: two halves
+of one fit share an adapted step size and mass matrix, so they agree more
+closely than two independent runs do. Only the between-run null is the right
+comparison, and it gives 1.01x.
 
 The script also refuses to pass on a null run with R-hat above 1.05. A badly
 mixed null has inflated widths and would make **any** test pair look
 acceptable, so a pass obtained against one means nothing. In that case it
 reports INCONCLUSIVE and asks for another `SCHEDSIM_FIT_SEED`.
+
+### Information content: the simulated designs are not the poorer ones
+
+`wockner-sim-information.R`, output `_data/sim-information.log` and
+`_data/wock-sim-information.rds`. Open thread 3, answered and closed.
+
+The lead was that simulated `log10(y + 1)` has sd 0.85-0.89 against a real
+1.01, which looked like it might explain why the simulation recovers
+`b_shape` low and `log10_total0` high. **It does not.** Raw spread is the
+wrong quantity: information about a periodic parameter comes from the
+oscillation, not from the trend or the overall scale. Detrending each series
+on time and dividing the remaining signal by that series' `sd_iRBC` gives
+
+| dataset | signal (wiggle) | noise | sum (signal/noise)^2 | vs real |
+|---|---|---|---|---|
+| real | 0.204 | 0.585 | 149 | -- |
+| `sim-rep1/2/3` | 0.207 | 0.590 | 145 | **0.97** |
+| `sim-draw500` | 0.229 | 0.608 | 195 | 1.31 |
+| `sim-draw1500` | 0.230 | 0.606 | 197 | 1.32 |
+| `sim-draw2500` | 0.218 | 0.624 | 174 | 1.17 |
+
+The apples-to-apples comparison is `sim-rep1/2/3` against real, because both
+build their trajectory from a posterior **mean**: ratio **0.97**, which is no
+deficit at all. The draw-based replicates come out 1.17-1.32 precisely
+because a draw is less shrunk than a mean, which is a useful internal check
+that the machinery is measuring what it claims to.
+
+So the mis-recovery is not an information deficit and needs another
+explanation. **The natural successor hypothesis: the estimator is biased at
+this design, and the real fit is subject to the same bias.** If simulating
+from `b_shape` = 14.9 returns 8.90, a 40% shortfall, then the real fit's 18.9
+is not evidence that the real data pin `b_shape` down — it is an estimate
+from the same biased estimator, and the true value would be higher still.
+That reframes the ridge section's "the real data are informative where the
+simulated data were not", which compared a real estimate against a simulated
+truth as though the former were unbiased.
+
+**A separate finding, not what was being looked for.** The real data's extra
+spread is entirely within series (ratio 0.80-0.86) and not between them
+(0.83-1.01), while the *detrended* within-series scatter is if anything
+larger in simulation (0.53-0.57 against a real 0.508). All of the real
+excess therefore sits in the within-series **linear trend**: real series rise
+and fall more steeply over time than the fitted trajectories do, with a
+median within-series range of 2.56 log10 units against 1.95-2.21 simulated.
+That is a lack-of-fit signal in the model's time course, independent of
+everything above, and nobody has looked at it.
 
 ## Running this on the cluster directly
 
@@ -953,19 +1022,20 @@ Roughly in priority order.
    mode.
    Until one of these lands, no cycle-length number should be reported as an
    estimate of anything biological.
-3. **Why are the simulated data less informative than the real data?** Raised
-   by 2's elimination and not yet addressed. At identical observation times
-   and sample size, the real fit pulls `b_shape` to 18.9 and `log10_total0`
-   to 0.312, far from their priors, while data simulated from comparable
-   values return ~10 and ~0.8. Something about the simulated observations
-   carries less information than the real ones. First checks: is the
-   simulated noise actually drawn at the fitted `sd_iRBC` per `grp_sd` group
-   (the real data may be less noisy than the fit thinks in the groups that
-   matter); and does the real data's information come from series the
-   simulation reproduces badly, e.g. the low-parasitaemia tails where
-   `log10(y + 1)` compresses. `wockner-schedule-sim.R` prints a real-vs-sim
-   comparison of `log10(y + 1)` moments already -- sim sd is 0.85-0.89
-   against real 1.01, which is a lead.
+3. ~~**Why are the simulated data less informative than the real data?**~~
+   **Answered and closed**: they are not. Information about the oscillation
+   is 0.97 of the real design's, comparing like with like (see "Information
+   content"). What replaces it: **is the estimator biased at this design, and
+   is the real fit subject to the same bias?** If simulating from `b_shape`
+   = 14.9 returns 8.90, the real fit's 18.9 is an estimate from the same
+   biased estimator rather than evidence the real data pin it down. The test
+   is the one already running for thread 2 -- if widening the nuisance priors
+   removes the recovery bias, the estimator is prior-driven; if it does not,
+   the bias is structural and every nuisance number in this project,
+   including the real ones, needs re-reading. Separately, the real data's
+   within-series time trends are steeper than the fitted trajectories (median
+   range 2.56 against 1.95-2.21 log10 units), which is an unexplored
+   lack-of-fit signal.
 4. **`hold_out` masking in `plasmofit`, then Design A.** The enabling change
    for cross-validation that does not rely on PSIS: a per-observation 0/1
    `hold_out` in `data`, with `transformed data` ordering each combo's kept

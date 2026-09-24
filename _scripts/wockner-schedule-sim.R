@@ -294,7 +294,19 @@ cat(sprintf("  sim : mean %.3f sd %.3f range %.2f-%.2f\n\n",
 
 d_sim <- d
 d_sim$y <- y_sim
-for (nm in names(arm$data)) d_sim[[nm]] <- arm$data[[nm]]
+
+## Overrides are written into the already-built data list, which bypasses the
+## recycling archer_stan_data() does. Some of these entries are per-grp_init
+## VECTORS in the Stan data block (sd_log_b_shape, sd_log10_total0,
+## mean_log_b_shape, mean_log10_total0) and some are true scalars
+## (sd_logit_cl, sd_bs_cl). Writing a scalar over a vector entry gets as far
+## as data initialization and then fails with "mismatch in number dimensions
+## declared and found in context", so recycle to whatever length the entry
+## already has.
+for (nm in names(arm$data)) {
+    if (is.null(d[[nm]])) stop("override `", nm, "` is not in the data list")
+    d_sim[[nm]] <- rep(arm$data[[nm]], length.out = length(d[[nm]]))
+}
 
 
 # ------------------------------------------------------------------------ #
