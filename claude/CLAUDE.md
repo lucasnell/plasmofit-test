@@ -789,9 +789,8 @@ structurally exclude the Wockner range, which would make the two sets of
 estimates incomparable.
 
 Package state: `plasmofit` **0.0.0.9008**, installed and tested (171 passing,
-0 failing). `man/archer_stan_data.Rd` is **not** regenerated -- `roxygen2` is
-not installed on the cluster -- so `R CMD check` will warn about undocumented
-arguments until it is run somewhere that has it. The change touches all four Stan programs, `R/archer-fit.R`, and
+0 failing). Documentation regenerated at 0.0.0.9009 with roxygen2 8.1.0;
+`tools::checkDocFiles()` and `tools::undoc()` are both clean. The change touches all four Stan programs, `R/archer-fit.R`, and
 `tests/testthat/test-archer-stan-data.R`. Validation run: anchor off by
 default with an all-zero anchor vector; `inoc_size = "inoc_size"` reproduces
 `wockner-inoc-prior.R`'s independent per-group prediction; `blood_volume_ml`
