@@ -65,7 +65,7 @@ ends <- cumsum(d$n_obs)
 starts <- ends - d$n_obs + 1L
 
 ## The statistic: per-series range of log10(y + 1), then the median over the
-## 174 series. Range rather than sd because it is what "rise and fall more
+## 177 series. Range rather than sd because it is what "rise and fall more
 ## steeply" means on a series with 4-8 observations, and it is the statistic
 ## the 2.56 / 1.95-2.21 comparison was made on.
 med_range <- function(y) {
@@ -136,7 +136,7 @@ cat("drawing", N_DRAW, "posterior predictive replicates per fit\n")
 res <- map(FITS, run_fit) |> list_rbind()
 
 cat("\nCells: one row per fit. `b_shape` is the posterior mean averaged over\n")
-cat("14 grp_init groups. `traj_*` is the median-over-174-series within-series\n")
+cat("14 grp_init groups. `traj_*` is the median-over-177-series within-series\n")
 cat("range of log10(y_hat + 1) for the NOISELESS trajectory, `rep_*` the same\n")
 cat("for a full posterior predictive replicate (trajectory + observation\n")
 cat("noise), each summarised over 200 draws as median and a 95% interval, in\n")
