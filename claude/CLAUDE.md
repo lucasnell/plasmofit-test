@@ -13,35 +13,49 @@ This file is an index and the current state. **Read the file you need:**
 
 | file | when to read it |
 |---|---|
-| `claude/handoff-2026-09-25.md` | **transient** — the three jobs in flight and how to finish them; delete when done |
 | `claude/scripts.md` | what each script does, the `CONFIGS`/arm mechanics, `_data/` naming, how to run on the cluster |
 | `claude/gotchas.md` | **before running or editing anything** — the traps that have cost hours each |
 | `claude/findings.md` | the modelling results: hierarchy, pooling offset, schedule-bias simulation, nuisance priors |
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## In flight as of 2026-09-25 — read `claude/handoff-2026-09-25.md` first
+## Nothing in flight as of 2026-09-25
 
-Three jobs, 17 tasks, submitted 2026-09-25 and mailing on `END,FAIL`:
+The queue is empty. SLURM 28940, 28941, and 28957 all completed; results are
+in `findings.md` and summarised below. `claude/handoff-2026-09-25.md` and
+`claude/handoff.md` are both spent and can be deleted.
 
-- **28957** — option 1, the trend posterior predictive check. Does `b_shape`
-  ~ 65 actually repair the within-series trend misfit, or is the 24.8 elpd
-  being bought somewhere else?
-- **28941** — option 2, 3 tasks. Simulates from a truth with `b_shape` ~ 65
-  and asks whether this design recovers it or sends it back to ~15.
-- **28940** — option 3, 13 tasks. Replicates 4–5 of the budget arms, plus
-  `no_hier-rep1`, which was never run.
-
-`claude/handoff-2026-09-25.md` has what each asks, how to read it, the
-caveats, and where to write the results down. **`claude/handoff.md` is the
-previous one and is spent** — its run finished and is written up; it is kept
-only until its write-up has been checked.
+**Outstanding from that batch**: `default-rep4`, `default-rep5`, and
+`wide_total0-rep4` failed the convergence gate. Per thread 9 that is most
+likely the fit seed, not the dataset — refit with `SCHEDSIM_FIT_SEED` before
+concluding anything. Until `default` reps 4–5 exist, the paired cycle-length
+budget is still n=3.
 
 **Do not edit a script while a job is reading it.** `Rscript` reads source
-incrementally; an edit mid-run killed two 1.5 h jobs. That covers
-`_scripts/wockner-fit.R`, `_scripts/wockner-schedule-sim.R` and
-`_scripts/wockner-ppc-trend.R` until the queue drains.
-`_scripts/wockner-schedule-sim-analyze.R` is not read by any running job.
+incrementally; an edit mid-run killed two 1.5 h jobs.
+
+## Settled, 2026-09-25 — `b_shape`, and what the trend misfit actually was
+
+- **The within-series trend misfit is the `log10_total0` prior, not
+  `b_shape`.** Widening `b_shape` moves the median within-series range
+  1.66 → 1.73 against an observed 2.563 and leaves the posterior predictive
+  p-value at 0; widening `log10_total0` moves it to 2.29 and `ppp` to 0.155.
+  The hypothesis that `b_shape` ~ 65 was the model absorbing lack of fit is
+  **tested and rejected**.
+- **`b_shape` is not identified: this design cannot separate 15 from 65.**
+  Under identical widened priors a truth of 14.9 returns 19.5–27.9 and a
+  truth of 65.0 returns 32.2–37.4 — a factor of 4.36 in the truth becomes
+  1.53 in the estimate. The real data report 65.4, *above* what the design
+  returns when the truth really is 65, so the attenuation runs the opposite
+  way from the artefact explanation. **No point estimate of `b_shape` is
+  defensible**, and the calibration must not be inverted.
+- **Widening the nuisance priors does not remove the cycle-length bias.**
+  Simulating from the widened-prior truth and fitting with widened priors
+  still leaves +1.83 h. A shift in `cycle_length` when a prior is widened is
+  not bias removal — in simulation or on real data.
+- Replicates 4–5 left the recovery numbers essentially unmoved (`wide_bshape`
+  `b_shape` 23.9 → 24.3), so that story is not an artefact of three noise
+  draws.
 
 ## Settled, 2026-09-25 — the eight-fit prior panel
 

@@ -58,13 +58,20 @@ Roughly in priority order.
    bias**: it bounds the priors' share of the reported 45.3 h from below and
    cannot show the remainder is biological. The ~1.07 h unexplained in the
    simulation budget is untouched by it.
-   **Running as of 2026-09-25** (see `handoff-2026-09-25.md`): SLURM 28940
-   adds replicates 4-5 of every budget arm plus the never-run
-   `no_hier-rep1`, because every component of the budget above is smaller
-   than the replicate-to-replicate spread at n=3. SLURM 28957 is the trend
-   PPC and 28941 asks whether this design can recover a `b_shape` of 65 at
-   all. **Bound geometry is still the one cheap untested suspect** and is
-   deliberately not in that batch.
+   **Answered 2026-09-25, and it does not shrink the remainder.** Simulating
+   from a truth whose `b_shape` is 65 and fitting with both nuisance priors
+   widened still leaves **+1.83 h** of cycle-length bias; the `pooled_cl`
+   truth with the same widened priors leaves +1.63 h against `default`'s
+   +1.97 h. Widening the nuisance priors buys ~0.5 h of ~2 h. **A shift in
+   `cycle_length` when a prior is widened is not bias removal.** ~1.5 h is
+   unaccounted for and **bound geometry is now the one cheap untested
+   suspect left** -- re-run with `[35, 50]` *moved*, e.g. `[30, 60]`, not
+   merely widened.
+   SLURM 28940 added replicates 4-5 of every budget arm, but `default-rep4`
+   and `default-rep5` both failed the convergence gate, so the **paired**
+   budget is still n=3 and every number in it is unchanged. Refit those two
+   on a new `SCHEDSIM_FIT_SEED` before reading anything more into the
+   decomposition.
    Until one of these lands, no cycle-length number should be reported as an
    estimate of anything biological.
 3. ~~**Why are the simulated data less informative than the real data?**~~
@@ -82,15 +89,21 @@ Roughly in priority order.
    within-series time trends are steeper than the fitted trajectories (median
    range 2.56 against 1.95-2.21 log10 units), which is an unexplored
    lack-of-fit signal.
-   **The panel answers the first half**: the real fit's `b_shape` *is* from
-   the same prior-driven estimator. Under `lognormal(2, 0.5)` its posterior
-   is barely narrower than its prior (CV 0.433 against 0.533); widened, it
-   reads 65.4 with a posterior sd of 50. So the default-prior `b_shape` is
-   not evidence the real data pin it down, and no `b_shape` number from this
-   model means anything without its prior stated. The lack-of-fit signal --
-   within-series time trends steeper than the fitted trajectories, median
-   range 2.56 against 1.95-2.21 log10 units -- is still unexplored, and is
-   now the live part of this thread.
+   **Answered 2026-09-25, both halves.** The estimator is biased at this
+   design and the real fit is subject to it: under identical widened priors a
+   true `b_shape` of 14.9 returns 19.5-27.9 and a true 65.0 returns
+   32.2-37.4, so a factor of 4.36 in the truth becomes 1.53 in the estimate.
+   `b_shape` is unidentified over at least 15-65 and no point estimate of it
+   is defensible. Note the direction: the real data report 65.4, *above* what
+   the design returns when the truth really is 65, so the attenuation runs
+   the opposite way from "the real 65 is an artefact". Do not invert the
+   calibration to get a number.
+   ~~The lack-of-fit signal in the within-series time trends.~~ **Explained**:
+   it was the misspecified `log10_total0` prior flattening the trajectories.
+   Correcting it takes the median within-series range from 1.66 to 2.29
+   against an observed 2.563, and the posterior predictive p-value from 0 to
+   0.155. Widening `b_shape` does nothing for it. A residual flatness remains
+   (`ppp` 0.155-0.17) but it is no longer a clear misfit.
    ~~**Also now running**, SLURM 28931 tasks 12-13.~~ **Done**: the
    `no_pool` vs `pooled_cl` comparison was re-run with `log10_total0`
    corrected and with both nuisance priors corrected. `pooled_cl` fails to

@@ -1078,3 +1078,141 @@ under `pooled_cl` (1.28 and 0.56 h with both priors corrected). The -0.509 h
 offset is ~0.4 of one trial's posterior sd. Its `mean_z` of -7.19 says only
 that it is not MCMC noise; with one dataset and one fit per setting there is
 no interval on it.
+
+### The trend misfit is the `log10_total0` prior, not `b_shape`
+
+`_scripts/wockner-ppc-trend.R`, output `_data/ppc-trend.log` and
+`_data/wock-ppc-trend.rds`. SLURM 28957, COMPLETED. Post-hoc on four saved
+real-data fits, no refitting.
+
+The hypothesis under test was that the panel's `b_shape` ~ 65 is the model
+absorbing structural lack of fit -- real series rise and fall more steeply
+than the fitted trajectories, and a sharper stage window is what would let
+the model chase a steeper decline. **It is wrong.**
+
+Cells: one row per fit. `b_shape` is the posterior mean averaged over 14
+`grp_init` groups. `traj` is the median-over-177-series within-series range
+of `log10(y_hat + 1)` for the **noiseless trajectory**, `rep` the same for a
+full posterior predictive replicate (trajectory plus observation noise), each
+the median over 200 posterior draws with a 95% interval, in log10 units.
+`ppp` is `P(T(y_rep) >= T(y_obs))` over those draws: ~0.5 reproduces the
+statistic, near 0 means the model generates series flatter than the real
+ones. **Observed `T(y_obs)` = 2.563.**
+
+| fit | `b_shape` | traj (95%) | rep (95%) | `ppp` |
+|---|---|---|---|---|
+| `no_pool` | 15.0 | 1.66 (1.51-1.82) | 2.16 (2.02-2.30) | **0** |
+| `np_wide_bshape` | 66.6 | 1.73 (1.53-1.90) | 2.19 (2.04-2.36) | **0** |
+| `np_wide_total0` | 14.4 | 2.29 (2.06-2.44) | 2.48 (2.36-2.66) | 0.155 |
+| `np_wide_both` | 65.3 | 2.31 (2.11-2.48) | 2.50 (2.34-2.64) | 0.17 |
+
+**Widening `b_shape` does essentially nothing to the trend.** At an unchanged
+`log10_total0` prior it moves the trajectory range 1.66 -> 1.73 and the
+replicate range 2.16 -> 2.19, and `ppp` stays at 0. Widening `log10_total0`
+moves the trajectory range 1.66 -> 2.29 and takes `ppp` from 0 to 0.155. The
+two rows with the corrected `log10_total0` prior differ by a factor of 4.4 in
+`b_shape` and are indistinguishable on this statistic.
+
+So the lack-of-fit signal recorded under "Information content" was the
+misspecified `log10_total0` prior flattening the trajectories, and correcting
+it largely closes the gap. `ppp` of 0.155-0.17 is still on the low side --
+the model runs slightly flatter than the real series -- but it is no longer a
+clear misfit.
+
+**What this does and does not settle.** It rules out the absorption
+explanation for `b_shape` on this statistic: whatever the 24.8 elpd is
+buying, it is not a steeper time course. It does not show that `b_shape` ~ 65
+is a real measurement; that is the next section.
+
+### `b_shape` is not identified: the design cannot separate 15 from 65
+
+`_scripts/wockner-schedule-sim.R` with `SCHEDSIM_TRUTH_FIT=pl_wide_both`
+(SLURM 28941, 3 tasks, all COMPLETED), read by
+`_scripts/schedsim-truthfit-check.R`, output
+`_data/schedsim-truthfit-check.log`. Simulates from `pl_wide_both`, whose
+truth has `b_shape` = 65.0 and `cycle_length` = 43.7361 h, and fits under the
+same widened priors the truth was generated under.
+
+Cells: one row per replicate, all of arm `wide_nuis`, so
+`sd_log_b_shape = 1.5` and `sd_log10_total0 = 1` in **every** row and the
+only thing that differs between the blocks is which fit the truth came from.
+`b_shape` true and est are that parameter averaged over 14 `grp_init` groups
+-- the value simulated from, and the posterior mean recovered; `rel` is
+`(est - true) / true`. `cl` columns are the population `cycle_length` in
+hours and `cl_bias` is est minus true. One fit per row, nothing averaged.
+
+| replicate | truth fit | `b_shape` true | est | `rel` | `cl` true | est | `cl_bias` |
+|---|---|---|---|---|---|---|---|
+| rep1 | `pl_wide_both` | 65.0 | 32.2 | -0.505 | 43.74 | 45.8 | +2.05 |
+| rep2 | `pl_wide_both` | 65.0 | 35.6 | -0.452 | 43.74 | 45.5 | +1.74 |
+| rep3 | `pl_wide_both` | 65.0 | 37.4 | -0.424 | 43.74 | 45.4 | +1.69 |
+| rep1 | `pooled_cl` | 14.9 | 21.9 | +0.475 | 45.01 | 47.4 | +2.44 |
+| rep2 | `pooled_cl` | 14.9 | 23.0 | +0.546 | 45.01 | 45.1 | +0.06 |
+| rep3 | `pooled_cl` | 14.9 | 22.9 | +0.540 | 45.01 | 46.8 | +1.80 |
+| rep4 | `pooled_cl` | 14.9 | 27.9 | +0.877 | 45.01 | 47.0 | +2.02 |
+| rep5 | `pooled_cl` | 14.9 | 19.5 | +0.313 | 45.01 | 46.8 | +1.82 |
+
+**The estimate is compressed toward ~25 whatever the truth is.** A truth of
+14.9 returns 19.5-27.9; a truth of 65.0 returns 32.2-37.4. The truth changes
+by a factor of 4.36 and the estimate by a factor of 1.53 -- on the log scale
+the design transmits **0.287** of a change in `b_shape` onto the estimate.
+The two ranges do not overlap, so the design carries *some* information, but
+it never gets near either truth: it overshoots a small `b_shape` by ~50% and
+undershoots a large one by ~46%.
+
+**This runs the opposite way from the artefact explanation.** The real data
+under the same widened prior report 65.4, which is *above* what this design
+returns even when the truth is genuinely 65. So the real-data 65.4 is not an
+estimator wandering up from a modest true value -- the attenuation pushes the
+other way. **Do not inverse-calibrate it.** Reading 65.4 back through the
+0.287 slope extrapolates far outside the two points that define it and gives
+a number this design cannot support. The defensible statement is
+directional: `b_shape` is unidentified over at least 15-65, and nothing in
+these data licenses a point estimate for it.
+
+**The cycle-length bias survives the corrected priors.** From the
+`pl_wide_both` truth, fitted with both nuisance priors widened, bias is
++1.69 to +2.05 h (mean +1.83). From the `pooled_cl` truth with the same
+widened priors it is +1.63 h over 5 replicates. Against the `default` arm's
++1.97 h, widening buys ~0.5 h of ~2 h and leaves ~1.5 h. **A shift in
+`cycle_length` when a prior is widened is not bias removal**, on real data or
+in simulation.
+
+### Replicates 4-5: the arms gained, the paired budget did not
+
+`_scripts/wockner-schedule-sim.sh`, SLURM 28940, 13 tasks, all COMPLETED
+(exit 0), read by `_scripts/wockner-schedule-sim-analyze.R`, output
+`_data/schedsim-analyze.log`.
+
+**Three of the new replicates failed the convergence gate** and are excluded:
+`default-rep4` (max R-hat 1.22, 478 divergences, min ESS 13),
+`default-rep5` (1.07, ESS 57), and `wide_total0-rep4` (1.06, ESS 63). Per
+thread 9 both earlier failures of this kind were bad **fit seeds** rather
+than hard datasets, so these are candidates for a refit on a new
+`SCHEDSIM_FIT_SEED`, not evidence about the posterior.
+
+Cells: `n_arm` is how many replicates of that arm converged; `n_pair` how
+many have a converged `default` replicate on the **same simulated dataset**,
+which is what the paired contrast can use. `mean_delta` is the paired change
+in cycle-length bias in hours, that arm minus `default`, **negative means
+widening reduced the bias**; `min`/`max` are over the paired replicates.
+
+| arm | `n_arm` | `n_pair` | `mean_delta` | min | max |
+|---|---|---|---|---|---|
+| `wide_bshape` | 5 | 3 | -0.501 | -0.531 | -0.452 |
+| `wide_nuis` | 5 | 3 | -0.540 | -1.08 | -0.142 |
+| `wide_total0` | 4 | 3 | +0.129 | -0.156 | +0.429 |
+
+**`n_pair` is still 3.** Both new `default` replicates failed, and `default`
+is the baseline every paired contrast subtracts, so the batch added no paired
+replicates at all and every number in the budget is unchanged. The unpaired
+arms did gain: `no_hier` is now n=5 (+2.56, +0.928, +1.97, +2.17, +1.57) and
+`wide`, `wide_bshape` and `wide_nuis` are n=5.
+
+Nuisance recovery moved very little with the extra replicates, which is worth
+having: `wide_bshape`'s `b_shape` goes 23.9 (n=3) to 24.3 (n=5),
+`wide_nuis`'s `log10_total0` +25.6% to +20.0%. The recovery story is not an
+artefact of three noise draws.
+
+**Until `default-rep4` and `default-rep5` are refit on a new seed, option 3
+has not delivered what it was run for.**

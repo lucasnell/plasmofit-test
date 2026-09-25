@@ -397,8 +397,15 @@ cyc |> select(arm, rep, bias, default = base, delta) |>
     arrange(arm, rep) |>
     mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
 cat("\n  mean paired change in bias (negative = widening REDUCES the bias):\n")
-cyc |> summarise(.by = arm, n = n(), mean_delta = mean(delta),
-                 min = min(delta), max = max(delta)) |>
+## `n_pair` is the number of replicates where BOTH this arm and `default`
+## converged, which is what the paired contrast can actually use; `n_arm` is
+## how many of this arm converged at all. They differ whenever a `default`
+## replicate failed, and the pair is what the mean is over -- without na.rm
+## a single missing baseline turned every row of this table into NA.
+cyc |> summarise(.by = arm, n_arm = n(), n_pair = sum(!is.na(delta)),
+                 mean_delta = mean(delta, na.rm = TRUE),
+                 min = min(delta, na.rm = TRUE),
+                 max = max(delta, na.rm = TRUE)) |>
     mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(width = Inf)
 
 ## And does widening a prior actually fix that parameter's recovery? If it
