@@ -114,12 +114,39 @@ real <- list(
 ## that; the correlation sections below drop them.
 has_corr <- map_lgl(res, \(r) any(is.finite(r$r_draws)))
 
+## A replicate's truth is identified by its SOURCE -- posterior mean, or a
+## named draw -- AND by which fit that source came from. SCHEDSIM_TRUTH_FIT
+## runs record truth_source = "mean" exactly like every other mean-vector
+## replicate, but simulate from a different fit with a different true
+## cycle_length: pl_wide_both's is 43.736 h against pooled_cl's 45.012 h.
+## Grouping on truth_source alone pools them and averages two truths, which
+## is the same class of silent misalignment as the res[ok] bug above. The
+## truth fit is recoverable from the config name, which carries -truth<cfg>.
+truth_key <- function(r) {
+    fit <- if (grepl("-truth", r$config, fixed = TRUE)) {
+        sub(".*-truth", "", r$config)
+    } else "pooled_cl"
+    paste(r$truth_source %||% "mean", fit, sep = "@")
+}
+
+## Whatever the key says, replicates that end up in one group must actually
+## share a truth. Cheap, and it fails loudly instead of averaging.
+local({
+    k <- map_chr(res, truth_key)
+    cl <- map_dbl(res, \(r) r$true_cl %||% NA_real_)
+    bad <- tapply(cl, k, \(x) diff(range(x, na.rm = TRUE)) > 1e-6)
+    if (any(bad, na.rm = TRUE)) {
+        stop("truth_key groups replicates with different true_cl: ",
+             paste(names(bad)[which(bad)], collapse = ", "))
+    }
+})
+
 tab <- map(res, \(r) {
     pt <- r$per_trial
     rd <- r$r_draws[is.finite(r$r_draws)]
     ok <- length(rd) > 0
     tibble(config = r$config, arm = r$arm, rep = r$rep,
-           src = r$truth_source %||% "mean",
+           src = truth_key(r),
            sd_logit_cl = r$sd_logit_cl %||% NA_real_,
            r_means = r$r_means,
            r_draw_mean = if (ok) mean(rd) else NA_real_,
@@ -183,7 +210,7 @@ rec |> mutate(across(where(is.numeric), \(x) round(x, 3))) |> print(n = Inf)
 ## The default-vs-wide prior contrast is only defined among replicates that
 ## share a truth. Draw-based replicates reuse arm "default" and rep 2, so
 ## pairing on rep alone would average across four different true values.
-paired <- rec |> filter(src == "mean")
+paired <- rec |> filter(src == "mean@pooled_cl")
 paired <- paired |> filter(rep %in% paired$rep[duplicated(paired$rep)])
 
 if (n_distinct(paired$arm) == 2L) {
@@ -261,7 +288,7 @@ cat(sprintf("    simulated replicates at least as negative as real: %d of %d\n",
 cat(sprintf("\n  within draw -- real mean %+.3f (95%% %+.3f to %+.3f)\n",
             mean(real$r_draws), quantile(real$r_draws, 0.025),
             quantile(real$r_draws, 0.975)))
-res_grp <- map_chr(res, \(r) paste(r$arm, r$truth_source %||% "mean", sep = "/"))
+res_grp <- map_chr(res, \(r) paste(r$arm, truth_key(r), sep = "/"))
 for (a in unique(tab_corr$grp)) {
     pooled <- unlist(map(res[res_grp == a & has_corr], "r_draws"))
     pooled <- pooled[is.finite(pooled)]
@@ -313,7 +340,7 @@ truth_of <- function(r) if (!is.null(r$truth_nuisance)) r$truth_nuisance else tr
 cat("\n=== nuisance-parameter recovery (posterior mean vs the truth used to simulate) ===\n")
 cat("  truth source per replicate:",
     paste(map_chr(res, \(r) sprintf("%s=%s", r$config,
-                                    r$truth_source %||% "mean")),
+                                    truth_key(r))),
           collapse = ", "), "\n")
 nuis <- map(res, \(r) {
     f <- read_rds(sprintf("_data/wock-schedsim-fit-%s.rds", r$config))
@@ -332,7 +359,7 @@ nuis <- map(res, \(r) {
 
 nuis <- nuis |>
     left_join(map(res, \(r) tibble(config = r$config,
-                                   src = r$truth_source %||% "mean")) |>
+                                   src = truth_key(r))) |>
                   list_rbind(),
               by = "config")
 
@@ -356,7 +383,7 @@ nuis |>
 ## ---------------------------------------------------------------------- #
 
 paired_arms <- tab |>
-    filter(src == "mean", arm %in% c("default", "wide_bshape",
+    filter(src == "mean@pooled_cl", arm %in% c("default", "wide_bshape",
                                      "wide_total0", "wide_nuis")) |>
     select(arm, rep, bias)
 base <- paired_arms |> filter(arm == "default") |> select(rep, base = bias)
@@ -379,7 +406,7 @@ cyc |> summarise(.by = arm, n = n(), mean_delta = mean(delta),
 cat("\n=== thread 2: nuisance recovery by arm (mean-vector truth) ===\n")
 nuis |>
     left_join(tab |> select(config, arm), by = "config") |>
-    filter(src == "mean", arm %in% c("default", "wide_bshape",
+    filter(src == "mean@pooled_cl", arm %in% c("default", "wide_bshape",
                                      "wide_total0", "wide_nuis"),
            par %in% c("b_shape", "log10_total0", "R")) |>
     summarise(.by = c(par, arm), n_rep = n_distinct(config),
@@ -403,7 +430,7 @@ cat("\n  A parameter recovered near zero difference is not the culprit. One\n",
 
 per_trial_all <- map(res, \(r) r$per_trial |>
                          mutate(config = r$config, arm = r$arm,
-                                src = r$truth_source %||% "mean",
+                                src = truth_key(r),
                                 bias = cl_mean - r$true_cl)) |>
     list_rbind()
 
