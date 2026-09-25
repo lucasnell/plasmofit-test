@@ -1216,3 +1216,63 @@ artefact of three noise draws.
 
 **Until `default-rep4` and `default-rep5` are refit on a new seed, option 3
 has not delivered what it was run for.**
+
+### What `b_shape` means biologically, and where the data sit
+
+`_scripts/bshape-upper-range.R`, output `_data/bshape-upper-range.log`.
+Post-hoc on saved fits plus a deterministic mapping; no refitting.
+
+`b_shape` is the shape of a **symmetric Beta(`b_shape`, `b_shape`)** over
+position in the cycle (`inst/stan/functions/plasmofit.stan`, `beta_starts`),
+discretised into `n_c` = 96 stage cells and declared
+`<lower=2, upper=max_shape>` with `max_shape` = 250. So it is a synchrony
+parameter, and it converts into an age range.
+
+Cells: `age_range_h` is the width of the central 99% of the starting-stage
+distribution -- the 0.5% and 99.5% quantiles of Beta(`b_shape`, `b_shape`)
+scaled by a 45.3 h cycle, in hours. Exact Beta quantiles, not a normal
+approximation. Deterministic; no data enter.
+
+| `b_shape` | age range (h) | where it comes from |
+|---|---|---|
+| 14.9 | **20.4** | posterior mean under the default `lognormal(2, 0.5)` prior |
+| 48.3 | 11.7 | posterior **median**, widened prior |
+| 65.4 | 10.1 | posterior **mean**, widened prior |
+| 84 | 8.93 | the 9 h initial age range assumed in `mmcm.pdf`, Figure 1 |
+| 100 | 8.19 | -- |
+| 250 | 5.2 | the `max_shape` bound |
+
+**The default prior implies a starting-stage spread of 20.4 h on a ~45 h
+cycle.** That is close to no synchrony at all, which is not what an
+inoculation is. The misspecification of the `b_shape` prior is therefore
+visible on biological grounds and not only through elpd, and the direction
+the data move when it is relaxed -- toward 10-12 h -- is *toward* the
+literature's assumption, not away from it.
+
+Note the anchor's status: the 9 h figure is a **modelling assumption** in
+`mmcm.pdf`'s Figure 1 for controlled human infection trials, not a
+measurement of any inoculum. It fixes an order of magnitude, nothing finer.
+
+**The widened-prior posterior is strongly right-skewed, and the panel
+reported its mean.** Cells: quantiles and tail probabilities of `b_shape`
+pooled over 14 `grp_init` groups and all post-warmup draws of one real-data
+fit. Dimensionless.
+
+| fit | mean | median | q90 | q97.5 | P(>100) | P(>240) |
+|---|---|---|---|---|---|---|
+| `no_pool` | 14.9 | 13.6 | 23.9 | 32.2 | 0 | 0 |
+| `np_wide_bshape` | 65.4 | **48.3** | 144 | 210 | 0.208 | 0.005 |
+| `np_wide_both` | 64.4 | 47.5 | 143 | 208 | 0.203 | 0.004 |
+
+Two consequences. **The bound is not binding** -- 0.4-0.5% of the mass lies
+within 4% of `max_shape` = 250, so the 65.4 is not an artefact of where the
+model was cut off. And **65.4 overstates the centre**: the median is 48.3, so
+"the data say 65" is a mean of a long-tailed posterior. Quote the median, or
+the age range, not the mean.
+
+**The effect of `b_shape` collapses at high values.** The starting-stage sd
+is `cycle_length / (2 * sqrt(2 * b_shape + 1))`, so a further +10 in
+`b_shape` is worth 0.90 h at `b_shape` = 15, 0.136 h at 65, 0.074 h at 100,
+and 0.020 h at 250. Anything above ~100 is nearly unobservable at this
+design, which is the mechanism behind the attenuation measured in "the design
+cannot separate 15 from 65".
