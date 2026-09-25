@@ -1,3 +1,9 @@
+> **SPENT, 2026-09-25.** The run this describes (SLURM 28931) completed and
+> is written up in `findings.md`, "the eight-fit prior panel". Its ETAs and
+> its "do not re-run blindly" instructions no longer apply. Kept only until
+> the write-up has been checked; the live handoff is
+> `claude/handoff-2026-09-25.md`.
+
 # Handoff: threads 2 and 3 on real data, 2026-09-24
 
 *Transient. Written 16:15 while SLURM 28931 was running. Once its results are

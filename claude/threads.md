@@ -58,6 +58,13 @@ Roughly in priority order.
    bias**: it bounds the priors' share of the reported 45.3 h from below and
    cannot show the remainder is biological. The ~1.07 h unexplained in the
    simulation budget is untouched by it.
+   **Running as of 2026-09-25** (see `handoff-2026-09-25.md`): SLURM 28940
+   adds replicates 4-5 of every budget arm plus the never-run
+   `no_hier-rep1`, because every component of the budget above is smaller
+   than the replicate-to-replicate spread at n=3. SLURM 28957 is the trend
+   PPC and 28941 asks whether this design can recover a `b_shape` of 65 at
+   all. **Bound geometry is still the one cheap untested suspect** and is
+   deliberately not in that batch.
    Until one of these lands, no cycle-length number should be reported as an
    estimate of anything biological.
 3. ~~**Why are the simulated data less informative than the real data?**~~

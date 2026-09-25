@@ -13,20 +13,35 @@ This file is an index and the current state. **Read the file you need:**
 
 | file | when to read it |
 |---|---|
+| `claude/handoff-2026-09-25.md` | **transient** — the three jobs in flight and how to finish them; delete when done |
 | `claude/scripts.md` | what each script does, the `CONFIGS`/arm mechanics, `_data/` naming, how to run on the cluster |
 | `claude/gotchas.md` | **before running or editing anything** — the traps that have cost hours each |
 | `claude/findings.md` | the modelling results: hierarchy, pooling offset, schedule-bias simulation, nuisance priors |
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Nothing in flight as of 2026-09-25
+## In flight as of 2026-09-25 — read `claude/handoff-2026-09-25.md` first
 
-The queue is empty. SLURM 28931 (tasks 10–13) completed and the eight-fit
-prior panel has been read and written up; see "the eight-fit prior panel" in
-`claude/findings.md`.
+Three jobs, 17 tasks, submitted 2026-09-25 and mailing on `END,FAIL`:
 
-**Do not edit `_scripts/wockner-fit.R` while a fit is running.** `Rscript`
-reads source incrementally; an edit mid-run killed two 1.5 h jobs.
+- **28957** — option 1, the trend posterior predictive check. Does `b_shape`
+  ~ 65 actually repair the within-series trend misfit, or is the 24.8 elpd
+  being bought somewhere else?
+- **28941** — option 2, 3 tasks. Simulates from a truth with `b_shape` ~ 65
+  and asks whether this design recovers it or sends it back to ~15.
+- **28940** — option 3, 13 tasks. Replicates 4–5 of the budget arms, plus
+  `no_hier-rep1`, which was never run.
+
+`claude/handoff-2026-09-25.md` has what each asks, how to read it, the
+caveats, and where to write the results down. **`claude/handoff.md` is the
+previous one and is spent** — its run finished and is written up; it is kept
+only until its write-up has been checked.
+
+**Do not edit a script while a job is reading it.** `Rscript` reads source
+incrementally; an edit mid-run killed two 1.5 h jobs. That covers
+`_scripts/wockner-fit.R`, `_scripts/wockner-schedule-sim.R` and
+`_scripts/wockner-ppc-trend.R` until the queue drains.
+`_scripts/wockner-schedule-sim-analyze.R` is not read by any running job.
 
 ## Settled, 2026-09-25 — the eight-fit prior panel
 
