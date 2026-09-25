@@ -13,26 +13,33 @@ This file is an index and the current state. **Read the file you need:**
 
 | file | when to read it |
 |---|---|
+| `claude/handoff-bshape-ladder.md` | **transient** — the two jobs in flight and how to finish them; delete when done |
 | `claude/scripts.md` | what each script does, the `CONFIGS`/arm mechanics, `_data/` naming, how to run on the cluster |
 | `claude/gotchas.md` | **before running or editing anything** — the traps that have cost hours each |
 | `claude/findings.md` | the modelling results: hierarchy, pooling offset, schedule-bias simulation, nuisance priors |
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Nothing in flight as of 2026-09-25
+## In flight as of 2026-09-25 — read `claude/handoff-bshape-ladder.md` first
 
-The queue is empty. SLURM 28940, 28941, and 28957 all completed; results are
-in `findings.md` and summarised below. `claude/handoff-2026-09-25.md` and
-`claude/handoff.md` are both spent and can be deleted.
+- **28963**, 5 tasks — the `b_shape` ladder. `b_shape` pinned by a tight
+  prior at 50, 84, 100, 150, and 250, all on the corrected `log10_total0`
+  prior, so they read against task 9 (`np_wide_total0`). A ladder rather than
+  one fixed value: the sensitivity is the output. **Prediction on record**:
+  `cycle_length` should move only ~0.1–0.3 h across it.
+- **28964**, 3 tasks — refits of `default-rep4`, `default-rep5`, and
+  `wide_total0-rep4` on `SCHEDSIM_FIT_SEED=1618033989`, after all three
+  failed the convergence gate. Until `default` has reps 4–5 the paired
+  cycle-length budget is still n=3.
 
-**Outstanding from that batch**: `default-rep4`, `default-rep5`, and
-`wide_total0-rep4` failed the convergence gate. Per thread 9 that is most
-likely the fit seed, not the dataset — refit with `SCHEDSIM_FIT_SEED` before
-concluding anything. Until `default` reps 4–5 exist, the paired cycle-length
-budget is still n=3.
+**Do not edit a script while a job is reading it.** That covers
+`_scripts/wockner-fit.R` and `_scripts/wockner-schedule-sim.R` until the
+queue drains; `_scripts/wockner-schedule-sim-analyze.R` is not read by a
+running job.
 
-**Do not edit a script while a job is reading it.** `Rscript` reads source
-incrementally; an edit mid-run killed two 1.5 h jobs.
+`claude/handoff.md` and `claude/handoff-2026-09-25.md` are both spent —
+their runs are written up in `findings.md` — and are awaiting a decision to
+delete.
 
 ## Settled, 2026-09-25 — `b_shape`, and what the trend misfit actually was
 
