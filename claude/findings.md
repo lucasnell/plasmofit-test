@@ -470,11 +470,15 @@ separately in each of the 14 `grp_init` groups of one saved real-data
 on the scale each prior is written on (a lognormal's natural-scale sd grows
 with its location, so `b_shape` must be compared on the log scale):
 
-Cells: `real posterior` is the posterior mean over groups on the parameter's
-natural scale; the last column is the posterior sd divided by the prior sd,
-**each computed on the scale that prior is written on** (log scale for the
-lognormal), so **a ratio near 1 means the data added nothing** and near 0
-means the likelihood dominates.
+Cells: `real posterior` is the posterior mean **in `grp_init` group 1 only**,
+on the parameter's natural scale -- `wockner-ridge.R:49` fixes `gi` at group
+1, which is the group `b_shape`, `b_offset` and `log10_total0` are indexed
+by. It is **not** a mean over the 14 groups, as an earlier version of this
+caption said; over all 14, `b_shape` is **14.91** (range 10.99-19.23), from
+`_data/wock-prior-panel.rds`. The last column is the posterior sd divided by
+the prior sd, group 1 only, **each computed on the scale that prior is
+written on** (log scale for the lognormal), so **a ratio near 1 means the
+data added nothing** and near 0 means the likelihood dominates.
 
 | parameter | prior | real posterior | posterior sd / prior sd |
 |---|---|---|---|
@@ -486,6 +490,15 @@ On real data the likelihood moves `b_shape` from 7.39 to 18.9 and
 `log10_total0` from 1 to 0.312, well away from both priors. In the simulation,
 generated from `b_shape` = 14.9, the fit returned 8.90 -- back at the prior
 median. The simulated data are therefore less informative than the real data.
+
+**Both halves of "well away from both priors" have since been retired.** For
+`log10_total0`, by the misspecification section below. For `b_shape`, by the
+eight-fit panel: its posterior CV over all 14 groups is 0.433 against a prior
+CV of 0.533, so the default prior is doing nearly all the work, and widening
+it moves the posterior mean from 14.9 to 65.4. This section's group-1 read of
+18.9 is the **highest** of the 14 groups, which is what made the move look
+larger than it is -- the single-group trap this section warns about for
+`b_offset`, in its own table.
 
 Two cautions on this comparison. First, it is across fits: 18.9 is the real
 **`no_pool`** posterior, while the simulation's truth came from **`pooled_cl`**
