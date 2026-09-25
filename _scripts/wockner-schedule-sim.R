@@ -80,7 +80,16 @@ SEED_FIT <- 538065874L
 
 ## One seed per replicate, drawn once and written down rather than derived
 ## from the task id, so a replicate is reproducible on its own.
-REP_SEEDS <- c(742160183L, 1908445027L, 355721694L)
+##
+## Replicates 4-5 added 2026-09-25. Every structural effect the budget in
+## claude/findings.md separates (b_shape prior ~0.50 h, hierarchy ~0.25 h,
+## cycle-length prior ~0.15 h) is SMALLER than the replicate-to-replicate
+## spread at n=3 (+0.93 vs +1.97 h on the same design, differing only in
+## noise), so the budget is underpowered for the effects it is decomposing.
+## APPENDED, never reordered: rep1-3 must keep their seeds or the fits
+## already on disk stop matching their names.
+REP_SEEDS <- c(742160183L, 1908445027L, 355721694L,
+               1414213562L, 1732050808L)
 
 ## Each arm is a model plus data overrides, following wockner-fit.R's CONFIGS.
 ## default/wide answer where the bias is not (prior); tight_sigma/no_hier ask
@@ -153,10 +162,18 @@ paras_df <- read_csv("_data/wockner-cleaned.csv", col_types = "cccdcdd") |>
     mutate(inoc = interaction(trial, inoc_size, drop = TRUE) |> paste()) |>
     mutate(obs_error = interaction(trial, cohort, drop = TRUE) |> paste())
 
+## The nuisance priors are written out rather than left to the package
+## default. archer_stan_data()'s defaults are these exact values today, so
+## this changes nothing about what runs -- but replicates 4-5 have to be
+## poolable with replicates 1-3, which were fitted months earlier, and a
+## change to the package default would otherwise silently redefine what the
+## `default` arm means. Arms that widen a prior override these below.
 d <- archer_stan_data(paras_df,
                       series = "id", time = "time", abundance = "para",
                       grp_init = "inoc", grp_R = "trial", grp_cl = "trial",
-                      grp_sd = "obs_error", calc_log_lik = 0L)
+                      grp_sd = "obs_error", calc_log_lik = 0L,
+                      mean_log_b_shape = 2, sd_log_b_shape = 0.5,
+                      mean_log10_total0 = 1, sd_log10_total0 = 0.25)
 
 trial_names <- attr(d, "levels")[[attr(d, "grp_columns")$grp_cl]]
 
@@ -209,10 +226,31 @@ if (nzchar(seed_env)) {
     cfg_name <- sprintf("%s-seed%d", cfg_name, seed_fit)
 }
 
+## SCHEDSIM_TRUTH_FIT=<config> takes the truth from a different saved fit
+## instead of wock-fit-pooled_cl.rds. It must be a POOLED fit, since the
+## design of this script is one true cycle_length shared by every trial; the
+## stopifnot below enforces that.
+##
+## The case it was added for is `pl_wide_both`: the eight-fit panel put
+## b_shape at 65.4 with a posterior sd of 50 once its prior was widened, and
+## the open question is whether that is a measurement or the model absorbing
+## lack of fit (claude/findings.md, "the eight-fit prior panel"). Simulating
+## from a truth with b_shape ~ 65 and fitting under the same widened priors
+## asks it directly: if the design returns ~15 again, the real-data 65 is not
+## a measurement. Note the truth's cycle_length is then 43.7 h, not 45.012 h,
+## so bias must be read against the value this prints, not against a
+## remembered one.
+truth_cfg <- Sys.getenv("SCHEDSIM_TRUTH_FIT", "pooled_cl")
+if (!identical(truth_cfg, "pooled_cl")) {
+    cfg_name <- sprintf("%s-truth%s", cfg_name, truth_cfg)
+}
+truth_path <- sprintf("_data/wock-fit-%s.rds", truth_cfg)
+if (!file.exists(truth_path)) stop("no truth fit at ", truth_path)
+
 post_mean <- function(f, par) unname(colMeans(as.matrix(f, pars = par)))
 post_draw <- function(f, par, i) unname(as.matrix(f, pars = par)[i, ])
 
-f_pl <- read_rds("_data/wock-fit-pooled_cl.rds")
+f_pl <- read_rds(truth_path)
 take <- if (use_draw) {
     n_draw <- nrow(as.matrix(f_pl, pars = "cycle_length"))
     if (draw_i > n_draw) stop("SCHEDSIM_TRUTH_DRAW exceeds ", n_draw, " draws")
@@ -234,7 +272,7 @@ stopifnot(length(unique(round(cl_pooled, 10))) == 1L)
 truth$cycle_length <- cl_pooled[1]
 rm(f_pl); invisible(gc())
 
-cat("truth source:",
+cat("truth source:", truth_cfg, "--",
     if (use_draw) sprintf("posterior draw %d", draw_i) else "posterior mean",
     "\n")
 
