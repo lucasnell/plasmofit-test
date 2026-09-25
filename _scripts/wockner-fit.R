@@ -152,7 +152,62 @@ CONFIGS <- list(
     ## defensible one before any of it is believed. Paired with 9 and 11.
     pl_wide_total0 = list(model = "pooled_cl", data = list(sd_log10_total0 = 1)),
     pl_wide_both   = list(model = "pooled_cl", data = list(sd_log_b_shape = 1.5,
-                                                           sd_log10_total0 = 1))
+                                                           sd_log10_total0 = 1)),
+    ## ---- the b_shape ladder, 14-18 -------------------------------------
+    ## b_shape is the shape of a symmetric Beta over cycle position, so it is
+    ## a synchrony parameter and converts to a starting-stage age range (see
+    ## findings.md, "What b_shape means biologically"): 14.9 -> 20.4 h on a
+    ## ~45 h cycle, which is nearly no synchrony, against ~9 h assumed for
+    ## controlled human infection trials in mmcm.pdf Fig. 1 (b_shape ~ 84).
+    ##
+    ## The panel showed b_shape is unidentified over 15-65 and its effect
+    ## collapses with its value (+10 is worth 0.90 h of starting-stage sd at
+    ## 15 and 0.074 h at 100), so the honest treatment is not to estimate it
+    ## and not to pick one value, but to fix it across a RANGE and report the
+    ## sensitivity. Each rung pins b_shape with a tight prior rather than
+    ## declaring it data, which would be a package change. sd_log_b_shape =
+    ## 0.05 is +-10% at 95%, which at these centres is worth <0.2 h of
+    ## starting-stage sd -- pinned for every practical purpose.
+    ##
+    ## This is NOT the tight_sigma trap (findings.md, "Where the bias is"):
+    ## that pinned a HIERARCHICAL SCALE near zero and made a funnel. This
+    ## narrows a bounded scalar's own prior, which should sample no worse
+    ## than the widened fits and probably better -- they carry the batch's
+    ## worst divergences, 3.4-4.0%.
+    ##
+    ## All five carry the corrected log10_total0 prior, so the ladder is read
+    ## against np_wide_total0 (task 9), not against no_pool.
+    ##
+    ## max_shape is raised 250 -> 400 for ALL five so the 250 rung is not
+    ## sitting on the boundary -- max_cl = 55 is what reintroduced a boundary
+    ## mode once already. Every rung's prior is far from 400, so the bound is
+    ## non-binding throughout and the rungs stay comparable with each other.
+    ## They differ from tasks 1-13 in this one respect.
+    ##
+    ## Prediction, recorded before the runs: relative to np_wide_total0 these
+    ## should move cycle_length only ~0.1-0.3 h, because 65 -> 100 narrows the
+    ## age range 10.1 -> 8.2 h where 15 -> 65 narrowed it 20.4 -> 10.1 h. A
+    ## much larger move means this reasoning is wrong.
+    np_bs50        = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           mean_log_b_shape = log(50),
+                                                           sd_log_b_shape = 0.05,
+                                                           max_shape = 400)),
+    np_bs84        = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           mean_log_b_shape = log(84),
+                                                           sd_log_b_shape = 0.05,
+                                                           max_shape = 400)),
+    np_bs100       = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           mean_log_b_shape = log(100),
+                                                           sd_log_b_shape = 0.05,
+                                                           max_shape = 400)),
+    np_bs150       = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           mean_log_b_shape = log(150),
+                                                           sd_log_b_shape = 0.05,
+                                                           max_shape = 400)),
+    np_bs250       = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           mean_log_b_shape = log(250),
+                                                           sd_log_b_shape = 0.05,
+                                                           max_shape = 400))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.

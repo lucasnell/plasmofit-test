@@ -387,6 +387,14 @@ paired_arms <- tab |>
                                      "wide_total0", "wide_nuis")) |>
     select(arm, rep, bias)
 base <- paired_arms |> filter(arm == "default") |> select(rep, base = bias)
+## One converged `default` per replicate, or the left_join below silently
+## duplicates every row of that replicate. Two can coexist once a replicate
+## has been refit on a second seed and both runs converge.
+if (anyDuplicated(base$rep)) {
+    stop("more than one converged `default` for replicate(s) ",
+         paste(unique(base$rep[duplicated(base$rep)]), collapse = ", "),
+         " -- pick which seed is the baseline before pairing")
+}
 
 cat("\n=== thread 2: cycle-length bias, paired against `default` ===\n")
 cyc <- paired_arms |>
