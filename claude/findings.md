@@ -906,3 +906,162 @@ sum to the total, and do not.
 | **unexplained** | **~1.07 h** | the remainder |
 
 Over half is still unaccounted for.
+
+### Threads 2 and 3 on real data: the eight-fit prior panel
+
+`_scripts/wockner-prior-panel.R`, output `_data/prior-panel.log`, summaries
+`_data/wock-prior-panel.rds`. Fits are `_scripts/wockner-fit.R` tasks 1, 2,
+8-13; tasks 10-13 are SLURM 28931, all four `COMPLETED`. The supplementary
+spread check below is `_scripts/panel-bshape-spread.R`, output
+`_data/panel-bshape-spread.log`.
+
+**What licenses the rest.** Cells: one row per fit; `div` is divergent
+transitions after warmup summed over 4 chains and `div_pct` the same as a
+percent of the 4000 post-warmup transitions, `max_rhat` the largest split
+R-hat over all parameters, `min_ess` the smallest bulk n_eff over all
+parameters. Absolute, not a comparison.
+
+| fit | div | div_pct | max_rhat | min_ess |
+|---|---|---|---|---|
+| `no_pool` | 42 | 1.05 | 1.01 | 246 |
+| `np_wide_total0` | 82 | 2.05 | 1.02 | 160 |
+| `np_wide_bshape` | 45 | 1.12 | 1.01 | 324 |
+| `np_wide_both` | 137 | 3.42 | 1.02 | 214 |
+| `np_anchor` | 74 | 1.85 | 1.03 | 186 |
+| `pooled_cl` | 45 | 1.12 | 1.01 | 569 |
+| `pl_wide_total0` | 78 | 1.95 | 1.01 | 205 |
+| `pl_wide_both` | 160 | 4.00 | 1.02 | 230 |
+
+All eight clear the R-hat < 1.05 gate, so nothing is dropped. **The
+divergences are the standing caveat**: they are non-zero everywhere and rise
+with each widening, to 3.4% and 4.0% in the two fits with both priors
+widened. Every posterior mean below is a mean over an imperfectly explored
+posterior, and the two `wide_both` fits are the ones to distrust first.
+
+The panel reproduces both numbers it inherits -- the pooling offset (-0.304
+h, paired mean z -3.79) and the original `no_pool`/`pooled_cl` elpd
+difference (-1.38, se 1.03) -- from the fits that already existed.
+
+#### Thread 2: the `b_shape` prior carries cycle length on real data too
+
+Two contrasts, because the isolated effect and the effect on top of a
+corrected `log10_total0` prior are different questions. Cells: `from` and
+`to` are posterior means averaged over the parameter's groups (14 `grp_init`
+for `log10_total0` and `b_shape`, 13 for `R` and `cycle_length`, 27 for
+`sd_iRBC`); `shift` is `to` minus `from` averaged over groups and **paired by
+group**; `mean_z` is that paired shift over its Monte Carlo standard error
+averaged over groups, so it says the shift beats MCMC noise and **nothing
+more** -- it is not an inferential z. Units: `cycle_length` in hours,
+`log10_total0` and `sd_iRBC` in log10 units, `R` and `b_shape`
+dimensionless.
+
+| contrast | parameter | from | to | shift | mean_z |
+|---|---|---|---|---|---|
+| `no_pool` -> `np_wide_bshape` | `cycle_length` | 45.3 | 44.8 | **-0.468** | -8.41 |
+| | `b_shape` | 14.9 | 65.4 | +50.5 | 40.0 |
+| | `log10_total0` | +0.430 | +0.431 | +0.0007 | -0.12 |
+| | `R` | 6.23 | 6.24 | +0.0095 | 0.77 |
+| | `sd_iRBC` | 0.597 | 0.584 | -0.0135 | -7.33 |
+| `np_wide_total0` -> `np_wide_both` | `cycle_length` | 45.5 | 44.2 | **-1.29** | -18.2 |
+| | `b_shape` | 14.4 | 64.4 | +50.0 | 42.1 |
+| | `log10_total0` | -0.913 | -0.881 | +0.0316 | 2.93 |
+| | `R` | 14.9 | 14.4 | -0.447 | -5.03 |
+| | `sd_iRBC` | 0.544 | 0.533 | -0.0115 | -7.47 |
+
+Paired PSIS-LOO, `to` minus `from`, summed over the 1130 observations both
+fits share; positive favours `to`; `se_diff` is the standard error of the
+paired difference.
+
+| contrast | elpd_diff | se_diff |
+|---|---|---|
+| `no_pool` -> `np_wide_bshape` | **+24.8** | 2.23 |
+| `np_wide_total0` -> `np_wide_both` | **+24.4** | 2.06 |
+
+**The simulation's dissociation reproduces.** Widening `b_shape`'s prior
+moves `cycle_length` by -0.47 h in isolation, against -0.501 h in
+simulation, and leaves `log10_total0` and `R` untouched (z -0.12 and 0.77) --
+the same off-the-ridge behaviour the simulation found. Widening it is also a
+genuine predictive gain, +24.8 elpd at 11 standard errors, which the
+simulation could not have shown.
+
+**The effect is larger once `log10_total0` is fixed**, -1.29 h against -0.47
+h. The two priors are additive in elpd -- widening `log10_total0` alone gains
+102.6, `b_shape` alone 24.8, both 127.0 -- but **super-additive on
+`cycle_length`**: singly +0.20 and -0.47 h, jointly -1.1 h. So the joint
+effect is not recoverable from the one-at-a-time contrasts, and the ~0.50 h
+the simulation budget assigns to `b_shape` is a floor for what the pair does
+together.
+
+**This is a shift, not a bias.** There is no truth on real data. It bounds
+from below how much of the reported 45.3 h is the nuisance priors' doing --
+at least 1.1 h of it -- and says nothing about whether the remainder is
+biological.
+
+**`b_shape` is not identified in location, only bounded.** From
+`_data/panel-bshape-spread.log`. Cells: `mean` and `sd` are the posterior
+mean and posterior sd of `b_shape` averaged over its 14 `grp_init` groups;
+`CV` is the mean over groups of each group's own sd/mean, comparable to the
+prior CV, which for `lognormal(mu, sigma)` is `sqrt(exp(sigma^2) - 1)` and
+does not depend on `mu`. Dimensionless.
+
+| `b_shape` prior | prior CV | posterior mean | posterior sd | posterior CV |
+|---|---|---|---|---|
+| `lognormal(2, 0.5)` (default) | 0.533 | 14.9 | 6.5 | 0.433 |
+| `lognormal(2, 1.5)` (widened) | 2.913 | 65.4 | 50.7 | 0.776 |
+
+Under the default prior the posterior is barely narrower than the prior
+(0.433 against 0.533) and sits at its upper end -- the data add almost
+nothing, and **the 14.9 reported throughout this project is a prior
+artefact**. Widening it lets the likelihood speak, and it does: the CV falls
+from 2.913 to 0.776, so the data genuinely rule out the wide prior's tails.
+But the location moves by a factor of 4.4, and a posterior sd of 50 on a mean
+of 65 means that mean is not a usable point estimate. `b_shape` is in the
+same position as `R`: **a number reported from it is a statement about the
+prior.**
+
+**Ruled out as evidence: the runtime signal.** Both `b_shape`-widened tasks
+ran ~68% slower per iteration than `np_wide_total0`, which would be
+consistent with widening `b_shape` making the geometry harder. Section 1 does
+not support it. In isolation (`no_pool` -> `np_wide_bshape`) divergences are
+flat (1.05% -> 1.12%), max treedepth hits fall 1 -> 0, and the adapted step
+size *rises* 0.0209 -> 0.0219, all of which say the geometry got no harder.
+The quantity that would settle it, mean leapfrog steps per iteration, is not
+recorded by the panel. **It does not count toward anything.**
+
+#### Thread 3: the hierarchy conclusion survives, its number does not
+
+Cells: `no_pool` and `pooled_cl` are posterior mean `cycle_length` averaged
+over 13 trials, in hours; `offset_h` is `pooled_cl` minus `no_pool` averaged
+over trials and **paired by trial**; `mean_z` is that paired offset over its
+Monte Carlo standard error, again a noise check and not an inferential z.
+`elpd_diff` is paired PSIS-LOO, `pooled_cl` minus `no_pool`, summed over
+1130 observations, **positive favouring `pooled_cl`**, with the standard
+error of the paired difference.
+
+| prior setting | `no_pool` | `pooled_cl` | offset_h | mean_z | elpd_diff | se_diff |
+|---|---|---|---|---|---|---|
+| as originally run | 45.3 | 45.0 | -0.304 | -3.79 | -1.38 | 1.03 |
+| `log10_total0` corrected | 45.5 | 45.4 | **-0.110** | -2.16 | -1.67 | 0.86 |
+| both corrected | 44.2 | 43.7 | **-0.509** | -7.19 | -1.68 | 1.21 |
+
+**The predictive conclusion is robust.** `pooled_cl` fails to beat `no_pool`
+at all three prior settings, by -1.4 to -1.7 elpd, never more than about 2
+standard errors and always in the same direction. Correcting the prior that
+costs 104.7 elpd does not rescue the hierarchy, which is the thing thread 3
+asked.
+
+**The offset's magnitude is not robust.** Its sign is -- pooling shortens
+cycle length at every setting -- but the size runs -0.304, -0.110, -0.509 h,
+a factor of 4.6, and **non-monotonically**: correcting `log10_total0` alone
+nearly removes it, correcting both restores it larger than it started.
+Quoting "-0.304 h" as the pooling offset is quoting a prior-dependent number
+drawn under a prior that costs 104.7 elpd. On the best-fitting setting
+available the offset is **-0.509 h**, and that is the number to use.
+
+**Keep the offset next to a posterior width.** From
+`_data/panel-bshape-spread.log`, the within-fit posterior sd of one trial's
+`cycle_length`, averaged over 13 trials, is 1.36 h under `no_pool` and 0.63 h
+under `pooled_cl` (1.28 and 0.56 h with both priors corrected). The -0.509 h
+offset is ~0.4 of one trial's posterior sd. Its `mean_z` of -7.19 says only
+that it is not MCMC noise; with one dataset and one fit per setting there is
+no interval on it.

@@ -32,6 +32,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-sim-information.R` | cluster | compares the information the simulated and real designs carry about the oscillation, post-hoc |
 | `wockner-anchor-check.R` | cluster | reads the anchored fit against its predictions, against the unanchored fit, and against the widened-prior control |
 | `wockner-prior-panel.R` | cluster | reads threads 2 and 3 off the eight-fit real-data panel: sampler health, posterior means, `loo`, and the paired prior and pooling contrasts |
+| `panel-bshape-spread.R` | anywhere | reads `_data/wock-prior-panel.rds` only (87 KB, no fits): posterior sd and CV of `b_shape` against its prior's CV, and the within-fit posterior sd of `cycle_length`; seconds to run |
 
 The cluster workflow is in the header comment of `wockner-fit.R` (and
 `wockner-fit-kfold.R`, which follows the same pattern): `scp` the script and

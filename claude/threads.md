@@ -46,14 +46,18 @@ Roughly in priority order.
    truth of 45 and 10 h below. Re-simulate with the bounds *moved*, e.g.
    `[30, 60]`, not merely widened -- `max_cl = 55` reintroduces the boundary
    mode.
-   **Now running on real data**, SLURM 28931 tasks 10-13: the simulation
-   result says `b_shape`'s prior owns ~0.50 h and `log10_total0`'s owns
-   none, so the real-data question is whether the same dissociation holds
-   where there is no truth to recover. Read with
-   `_scripts/wockner-prior-panel.R`, section 4. Note what a real-data answer
-   can and cannot be: a shift in `cycle_length` when the prior is widened
-   bounds the prior's contribution from below, but it cannot show the
-   remainder is biological.
+   ~~**Now running on real data**, SLURM 28931 tasks 10-13.~~ **Done, and
+   the dissociation reproduces** -- see `findings.md`, "the eight-fit prior
+   panel". Widening `b_shape`'s prior moves real-data `cycle_length`
+   -0.47 h in isolation (-0.501 h in simulation) and -1.29 h on top of a
+   corrected `log10_total0` prior, leaving `log10_total0` and `R` untouched,
+   and gains +24.8 elpd (se 2.23). The two nuisance priors turn out to be
+   **super-additive on `cycle_length`** -- jointly -1.1 h against -0.27 h
+   from the one-at-a-time contrasts -- so ~0.50 h is a floor for what the
+   pair does together, not the pair's total. This is a **shift, not a
+   bias**: it bounds the priors' share of the reported 45.3 h from below and
+   cannot show the remainder is biological. The ~1.07 h unexplained in the
+   simulation budget is untouched by it.
    Until one of these lands, no cycle-length number should be reported as an
    estimate of anything biological.
 3. ~~**Why are the simulated data less informative than the real data?**~~
@@ -71,12 +75,23 @@ Roughly in priority order.
    within-series time trends are steeper than the fitted trajectories (median
    range 2.56 against 1.95-2.21 log10 units), which is an unexplored
    lack-of-fit signal.
-   **Also now running**, SLURM 28931 tasks 12-13: every `no_pool` vs
-   `pooled_cl` conclusion was drawn under the `normal(1, 0.25)` prior on
-   `log10_total0` that costs 104.7 elpd, so the comparison is being re-run
-   with that prior corrected and with both nuisance priors corrected. Read
-   with `_scripts/wockner-prior-panel.R`, section 5. The number to watch is
-   the cycle-length pooling offset, -0.304 h as originally run.
+   **The panel answers the first half**: the real fit's `b_shape` *is* from
+   the same prior-driven estimator. Under `lognormal(2, 0.5)` its posterior
+   is barely narrower than its prior (CV 0.433 against 0.533); widened, it
+   reads 65.4 with a posterior sd of 50. So the default-prior `b_shape` is
+   not evidence the real data pin it down, and no `b_shape` number from this
+   model means anything without its prior stated. The lack-of-fit signal --
+   within-series time trends steeper than the fitted trajectories, median
+   range 2.56 against 1.95-2.21 log10 units -- is still unexplored, and is
+   now the live part of this thread.
+   ~~**Also now running**, SLURM 28931 tasks 12-13.~~ **Done**: the
+   `no_pool` vs `pooled_cl` comparison was re-run with `log10_total0`
+   corrected and with both nuisance priors corrected. `pooled_cl` fails to
+   beat `no_pool` at all three settings (-1.38, -1.67, -1.68 elpd, se ~1),
+   so **the hierarchy conclusion survives a defensible prior**. The pooling
+   offset does not survive as a number: -0.304, -0.110, -0.509 h across the
+   three settings, a factor of 4.6 and non-monotone. Quote **-0.509 h**, the
+   best-fitting setting.
 4. **`hold_out` masking in `plasmofit`, then Design A.** The enabling change
    for cross-validation that does not rely on PSIS: a per-observation 0/1
    `hold_out` in `data`, with `transformed data` ordering each combo's kept
