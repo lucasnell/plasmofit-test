@@ -207,7 +207,36 @@ CONFIGS <- list(
     np_bs250       = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
                                                            mean_log_b_shape = log(250),
                                                            sd_log_b_shape = 0.05,
-                                                           max_shape = 400))
+                                                           max_shape = 400)),
+    ## ---- extending the ladder, 19-21 -----------------------------------
+    ## elpd was still rising monotonically at the 250 rung (+36.2 against a
+    ## free b_shape, and +2.26 against the 100 rung), so 250 is the top of
+    ## what was run rather than an optimum. These bracket it.
+    ##
+    ## 400 and 600 need max_shape above them; 1000 is used for both. That
+    ## makes them differ from rungs 14-18 in two things at once, since
+    ## max_shape also sets the scale of Stan's bounded transform and so can
+    ## move divergences and step size on its own -- and divergences rising
+    ## with the pin is one of the ladder's findings. np_bs250_ms1000 is the
+    ## control that separates the two: it is rung 18 with max_shape alone
+    ## changed, so the difference between it and np_bs250 is what max_shape
+    ## is worth, and anything beyond that in 400/600 is the pin.
+    ##
+    ## An age range of 5.2 h at 250 falls to 4.1 h at 400 and 3.4 h at 600,
+    ## against 0.47 h per stage cell -- still several cells wide, so this is
+    ## not yet asking the model to resolve below its own discretisation.
+    np_bs400       = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           mean_log_b_shape = log(400),
+                                                           sd_log_b_shape = 0.05,
+                                                           max_shape = 1000)),
+    np_bs600       = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           mean_log_b_shape = log(600),
+                                                           sd_log_b_shape = 0.05,
+                                                           max_shape = 1000)),
+    np_bs250_ms1000 = list(model = "no_pool",  data = list(sd_log10_total0 = 1,
+                                                           mean_log_b_shape = log(250),
+                                                           sd_log_b_shape = 0.05,
+                                                           max_shape = 1000))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.

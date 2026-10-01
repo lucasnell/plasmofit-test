@@ -126,7 +126,37 @@ ARMS <- list(
                                                         sd_log10_total0 = 1)),
     wide_nuis   = list(model = "no_pool",   data = list(sd_logit_cl = 1,
                                                         sd_log_b_shape = 1.5,
-                                                        sd_log10_total0 = 1))
+                                                        sd_log10_total0 = 1)),
+    ## Bound geometry (thread 2's last cheap suspect). The default [35, 50]
+    ## leaves 5 h above a truth of 45.012 and 10 h below, and the prior on
+    ## cycle_length is normal on the LOGIT scale between those bounds, so an
+    ## asymmetric window is also an asymmetric prior in hours. Both arms MOVE
+    ## the bounds rather than merely widening them -- max_cl = 55 is what
+    ## reintroduced the boundary mode.
+    ##
+    ## `cl_move` keeps the width at 15 h and centres it on the truth, which
+    ## isolates ASYMMETRY at constant width. `cl_wide_move` is the [30, 60]
+    ## the thread proposed, which moves and widens at once and asks whether
+    ## being far from any bound matters. Read them together: if only
+    ## cl_wide_move moves the bias, it is distance from the bounds; if both
+    ## do, it is the asymmetry.
+    ##
+    ## These are BUILD-time arguments, not data-list overrides: min_cl and
+    ## max_cl feed mean_logit_cl = logit((cl_prior_center - min_cl) /
+    ## (max_cl - min_cl)) and the Erlang window, so writing them into the
+    ## already-built list would leave every derived field describing the old
+    ## bounds. `build` goes to archer_stan_data(); `data` is still written
+    ## over the built list afterwards.
+    ##
+    ## cl_prior_center stays at 48, so the prior's location in hours is
+    ## unchanged and only the window moves. Its WIDTH in hours is not
+    ## constant -- the same sd_logit_cl spans more hours in a wider window --
+    ## which is a confound to state, bounded by the cycle-length prior's
+    ## measured weight of ~0.15 h.
+    cl_move     = list(model = "no_pool",   data = list(sd_logit_cl = 1),
+                       build = list(min_cl = 37.5, max_cl = 52.5)),
+    cl_wide_move = list(model = "no_pool",  data = list(sd_logit_cl = 1),
+                        build = list(min_cl = 30, max_cl = 60))
 )
 
 CONFIGS <- expand_grid(arm = names(ARMS), rep = seq_along(REP_SEEDS)) |>
@@ -330,7 +360,37 @@ cat(sprintf("  sim : mean %.3f sd %.3f range %.2f-%.2f\n\n",
             mean(log10(y_sim + 1)), sd(log10(y_sim + 1)),
             min(log10(y_sim + 1)), max(log10(y_sim + 1))))
 
-d_sim <- d
+## An arm with build-time arguments needs its own archer_stan_data() call:
+## min_cl/max_cl change mean_logit_cl and the Erlang window, which a
+## post-hoc override of the built list would leave stale. The DESIGN is
+## identical either way -- same times, same group codes -- so the data
+## simulated above are unaffected and only the fit's bounds move.
+d_fit <- if (length(arm$build %||% list()) > 0) {
+    cat("  build overrides:",
+        paste(names(arm$build), unlist(arm$build), sep = " = ",
+              collapse = ", "), "\n")
+    df <- do.call(archer_stan_data,
+                  c(list(paras_df, series = "id", time = "time",
+                         abundance = "para", grp_init = "inoc",
+                         grp_R = "trial", grp_cl = "trial",
+                         grp_sd = "obs_error", calc_log_lik = 0L,
+                         mean_log_b_shape = 2, sd_log_b_shape = 0.5,
+                         mean_log10_total0 = 1, sd_log10_total0 = 0.25),
+                    arm$build))
+    stopifnot(identical(as.integer(df$grp_cl), as.integer(d$grp_cl)),
+              identical(df$n_total_obs, d$n_total_obs),
+              isTRUE(all.equal(df$ts, d$ts)))
+    df
+} else d
+## The truth has to be inside the FITTED bounds too, not only the default
+## ones, or the arm is asking the model to recover something it cannot hold.
+stopifnot(truth$cycle_length > d_fit$min_cl, truth$cycle_length < d_fit$max_cl)
+cat(sprintf("  fitting with cycle_length in (%g, %g), prior centred at %.2f h\n",
+            d_fit$min_cl, d_fit$max_cl,
+            d_fit$min_cl + (d_fit$max_cl - d_fit$min_cl) *
+                plogis(d_fit$mean_logit_cl)))
+
+d_sim <- d_fit
 d_sim$y <- y_sim
 
 ## Overrides are written into the already-built data list, which bypasses the
@@ -342,8 +402,8 @@ d_sim$y <- y_sim
 ## declared and found in context", so recycle to whatever length the entry
 ## already has.
 for (nm in names(arm$data)) {
-    if (is.null(d[[nm]])) stop("override `", nm, "` is not in the data list")
-    d_sim[[nm]] <- rep(arm$data[[nm]], length.out = length(d[[nm]]))
+    if (is.null(d_fit[[nm]])) stop("override `", nm, "` is not in the data list")
+    d_sim[[nm]] <- rep(arm$data[[nm]], length.out = length(d_fit[[nm]]))
 }
 
 
