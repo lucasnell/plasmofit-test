@@ -13,27 +13,31 @@ This file is an index and the current state. **Read the file you need:**
 
 | file | when to read it |
 |---|---|
+| `claude/handoff-bounds.md` | **transient** — the two jobs in flight and how to finish them; delete when done |
 | `claude/scripts.md` | what each script does, the `CONFIGS`/arm mechanics, `_data/` naming, how to run on the cluster |
 | `claude/gotchas.md` | **before running or editing anything** — the traps that have cost hours each |
 | `claude/findings.md` | the modelling results: hierarchy, pooling offset, schedule-bias simulation, nuisance priors |
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Nothing in flight as of 2026-10-01
+## In flight as of 2026-10-01 — read `claude/handoff-bounds.md` first
 
-The queue is empty. SLURM 28963 (the `b_shape` ladder) and 28964 (three
-convergence refits) all completed and are written up in `findings.md`.
+- **29493**, 3 tasks — `b_shape` ladder extension to 400 and 600, plus
+  `np_bs250_ms1000`, the control separating the pin from `max_shape` itself.
+  elpd was still rising at the 250 rung, so 250 was the top of what was run
+  rather than an optimum.
+- **29494**, 6 tasks — bound geometry, thread 2's last cheap suspect for the
+  ~1.5 h of cycle-length bias that survives correcting the nuisance priors.
+  `cl_move` `[37.5, 52.5]` isolates asymmetry at constant width;
+  `cl_wide_move` `[30, 60]` moves and widens.
 
-**Outstanding**: `default-rep4` still misses the R-hat < 1.05 gate on a
-second seed, at 1.06 — a near-miss (divergences 478 → 39, ESS 13 → 117), not
-a hard dataset. The paired cycle-length budget is at n=4 without it.
+**Do not edit a script while a job is reading it.** That covers
+`_scripts/wockner-fit.R` and `_scripts/wockner-schedule-sim.R` until the
+queue drains.
 
-All three handoff files (`handoff.md`, `handoff-2026-09-25.md`,
-`handoff-bshape-ladder.md`) are spent; their content is in `findings.md` and
-`gotchas.md`, and they are awaiting a decision to delete.
-
-**Do not edit a script while a job is reading it.** `Rscript` reads source
-incrementally; an edit mid-run killed two 1.5 h jobs.
+**Outstanding, deliberately skipped**: `default-rep4` still misses the R-hat
+gate at 1.06 on a second seed — a near-miss, not a hard dataset. A third seed
+would take the paired budget to n=5.
 
 ## Settled, 2026-10-01 — fixing `b_shape` is a large predictive gain
 

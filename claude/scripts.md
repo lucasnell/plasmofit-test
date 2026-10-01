@@ -33,6 +33,9 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-anchor-check.R` | cluster | reads the anchored fit against its predictions, against the unanchored fit, and against the widened-prior control |
 | `wockner-prior-panel.R` | cluster | reads threads 2 and 3 off the eight-fit real-data panel: sampler health, posterior means, `loo`, and the paired prior and pooling contrasts |
 | `wockner-ppc-trend.R` (`.sh`) | cluster | option 1: posterior predictive check on the within-series trend statistic, over the four fits spanning the `b_shape` contrast. Post-hoc on saved fits, no refitting, but slow -- 200 draws x 177 series x 4 fits |
+| `wockner-bshape-ladder.R` | cluster | reads the pinned-`b_shape` rungs against the free-`b_shape` fit: sampler health, posterior means with the implied starting-stage age range, and paired `loo` against two references |
+| `wockner-schedule-sim-bounds.sh` | cluster | thread 2's bound-geometry arms, `cl_move` and `cl_wide_move`, tasks 36-38 and 41-43 |
+| `bshape-upper-range.R` | cluster | converts `b_shape` to a starting-stage age range and checks the real posterior against the `max_shape` bound |
 | `schedsim-truthfit-check.R` | cluster | reads the `SCHEDSIM_TRUTH_FIT` replicates one at a time against the same arm's `pooled_cl`-truth replicates, so `b_shape` recovery at two truths can be read side by side under identical priors |
 | `wockner-schedule-sim-truth.sh` | cluster | option 2: submits `wockner-schedule-sim.R` with `SCHEDSIM_TRUTH_FIT=pl_wide_both`, so the truth has `b_shape` ~ 65 and `cycle_length` 43.7361 h. Tasks 31-33 |
 | `panel-bshape-spread.R` | anywhere | reads `_data/wock-prior-panel.rds` only (87 KB, no fits): posterior sd and CV of `b_shape` against its prior's CV, and the within-fit posterior sd of `cycle_length`; seconds to run |
