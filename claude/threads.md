@@ -32,6 +32,14 @@ Roughly in priority order.
    independent route at the same target: it replaces the `log10_total0`
    prior with a data-derived one, so if that prior is carrying the bias, the
    anchored fit should move `cycle_length`.
+   **Budget updated 2026-10-01 at n=4**: the `b_shape` prior's share is
+   **0.43 h**, not 0.50 h, and its spread across replicates is four times
+   wider than three replicates suggested (-0.228 to -0.531). The old
+   precision was luck. Separately, fixing `b_shape` rather than estimating
+   it gains **+28 to +36 elpd** on real data, and `cycle_length` then depends
+   on where it is pinned -- 44.0 h at 50 down to 43.6 h at 250 (see
+   `findings.md`, "The `b_shape` ladder"). **Any cycle-length number is now
+   conditional on that choice and must be reported with the ladder.**
    Checked and closed:
    - ~~Prior pull on `cycle_length` (explanation 1).~~ Quadrupling the prior
      variance moves the estimate 0.15 h.
@@ -154,7 +162,13 @@ Roughly in priority order.
    Add seeds to `REP_SEEDS` in `wockner-schedule-sim.R` and widen the array,
    or submit more `SCHEDSIM_TRUTH_DRAW` values; ~2 h wall clock each.
 9. ~~**Re-run the two non-converged replicates with a different fit seed.**~~
-   **Done**, `SCHEDSIM_FIT_SEED=415926535`. Both converge on the new seed, so
+   **Done**, `SCHEDSIM_FIT_SEED=415926535`. **Qualified 2026-10-01**: a new
+   seed is not always enough. Of three refits at
+   `SCHEDSIM_FIT_SEED=1618033989`, two converged and `default-rep4` did not
+   -- max R-hat 1.06 against a 1.05 gate, though divergences fell 478 -> 39
+   and ESS rose 13 -> 117, so the seed did most of the work and the gate is
+   close. Try a third seed or a longer warmup there; do not assume one reseed
+   settles it. Both converge on the new seed, so
    neither was a hard dataset -- it was the chain initialization.
    `wide-rep1`: R-hat 1.23 -> 1.0255, divergences 11.5% -> 2.9%, ESS 13 ->
    180, bias **+2.83 h**. `default-rep2-draw1500`: R-hat 1.107 -> 1.0083,

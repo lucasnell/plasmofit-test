@@ -13,33 +13,47 @@ This file is an index and the current state. **Read the file you need:**
 
 | file | when to read it |
 |---|---|
-| `claude/handoff-bshape-ladder.md` | **transient** — the two jobs in flight and how to finish them; delete when done |
 | `claude/scripts.md` | what each script does, the `CONFIGS`/arm mechanics, `_data/` naming, how to run on the cluster |
 | `claude/gotchas.md` | **before running or editing anything** — the traps that have cost hours each |
 | `claude/findings.md` | the modelling results: hierarchy, pooling offset, schedule-bias simulation, nuisance priors |
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## In flight as of 2026-09-25 — read `claude/handoff-bshape-ladder.md` first
+## Nothing in flight as of 2026-10-01
 
-- **28963**, 5 tasks — the `b_shape` ladder. `b_shape` pinned by a tight
-  prior at 50, 84, 100, 150, and 250, all on the corrected `log10_total0`
-  prior, so they read against task 9 (`np_wide_total0`). A ladder rather than
-  one fixed value: the sensitivity is the output. **Prediction on record**:
-  `cycle_length` should move only ~0.1–0.3 h across it.
-- **28964**, 3 tasks — refits of `default-rep4`, `default-rep5`, and
-  `wide_total0-rep4` on `SCHEDSIM_FIT_SEED=1618033989`, after all three
-  failed the convergence gate. Until `default` has reps 4–5 the paired
-  cycle-length budget is still n=3.
+The queue is empty. SLURM 28963 (the `b_shape` ladder) and 28964 (three
+convergence refits) all completed and are written up in `findings.md`.
 
-**Do not edit a script while a job is reading it.** That covers
-`_scripts/wockner-fit.R` and `_scripts/wockner-schedule-sim.R` until the
-queue drains; `_scripts/wockner-schedule-sim-analyze.R` is not read by a
-running job.
+**Outstanding**: `default-rep4` still misses the R-hat < 1.05 gate on a
+second seed, at 1.06 — a near-miss (divergences 478 → 39, ESS 13 → 117), not
+a hard dataset. The paired cycle-length budget is at n=4 without it.
 
-`claude/handoff.md` and `claude/handoff-2026-09-25.md` are both spent —
-their runs are written up in `findings.md` — and are awaiting a decision to
-delete.
+All three handoff files (`handoff.md`, `handoff-2026-09-25.md`,
+`handoff-bshape-ladder.md`) are spent; their content is in `findings.md` and
+`gotchas.md`, and they are awaiting a decision to delete.
+
+**Do not edit a script while a job is reading it.** `Rscript` reads source
+incrementally; an edit mid-run killed two 1.5 h jobs.
+
+## Settled, 2026-10-01 — fixing `b_shape` is a large predictive gain
+
+- **Fixing `b_shape` beats leaving it free by +28 to +36 elpd**, at every
+  rung from 50 to 250, and beats merely widening its prior (+24.4). 10–12
+  standard errors. The case for fixing it does not rest on the biology.
+- **Where it is fixed matters much less, but the data are not indifferent**:
+  3.6 elpd across 84–250, with higher consistently and detectably better
+  (250 beats 100 by 2.26, se 0.50). **The ladder is still climbing at its top
+  rung**, so 250 is the top of what was run, not an optimum.
+- **`cycle_length` is conditional on the pin**: 44.0 h at `b_shape` 50 down
+  to 43.6 h at 250, and 1.5–1.9 h below the free-`b_shape` fit. That spread
+  is the sensitivity to report. `R`, `log10_total0`, and `sd_iRBC` are flat
+  across the ladder — only `cycle_length` tracks it.
+- **Pinning samples worse**: divergences rise 2.05% → 4.58% with the pin and
+  `np_bs150` sits at the R-hat gate. The best-fitting rung is the
+  worst-sampling one.
+- **The `b_shape` prior's share of the simulated cycle-length bias is 0.43 h,
+  not 0.50 h**, and its spread is four times wider than three replicates
+  suggested. The old figure's precision was luck.
 
 ## Settled, 2026-09-25 — `b_shape`, and what the trend misfit actually was
 

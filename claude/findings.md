@@ -912,13 +912,20 @@ sum to the total, and do not.
 
 | source | size | how measured |
 |---|---|---|
-| `b_shape` prior | ~0.50 h | paired, `wide_bshape` vs `default` |
+| `b_shape` prior | ~0.50 h **(superseded: 0.43 h)** | paired, `wide_bshape` vs `default` |
 | hierarchy | ~0.25 h | paired, `no_hier` vs `default` |
 | cycle-length prior | ~0.15 h | paired, `wide` vs `default` |
 | `log10_total0` prior | ~0 | paired, `wide_total0` vs `default` |
 | **unexplained** | **~1.07 h** | the remainder |
 
 Over half is still unaccounted for.
+
+**Superseded in two places by later sections.** The `b_shape` prior's share
+is **0.43 h** at n=4, not 0.50 h at n=3, with a spread four times wider (see
+"Refits: the budget reaches n=4"). And the one-at-a-time decomposition is the
+wrong shape: the two nuisance priors are super-additive on `cycle_length`
+(see "the eight-fit prior panel"). The unexplained remainder is unchanged and
+is now ~1.5 h on the real-data scale (see "`b_shape` is not identified").
 
 ### Threads 2 and 3 on real data: the eight-fit prior panel
 
@@ -1276,3 +1283,119 @@ is `cycle_length / (2 * sqrt(2 * b_shape + 1))`, so a further +10 in
 and 0.020 h at 250. Anything above ~100 is nearly unobservable at this
 design, which is the mechanism behind the attenuation measured in "the design
 cannot separate 15 from 65".
+
+### The `b_shape` ladder: fixing synchrony is a large predictive gain
+
+`_scripts/wockner-bshape-ladder.R`, output `_data/bshape-ladder.log` and
+`_data/wock-bshape-ladder.rds`. Fits are `wockner-fit.R` tasks 14-18, SLURM
+28963, all five COMPLETED. `b_shape` pinned by a tight prior
+(`sd_log_b_shape` = 0.05, ±10% at 95%) at five centres, all carrying the
+corrected `log10_total0` prior, so the ladder reads against `np_wide_total0`
+(same prior, `b_shape` free) and `np_wide_both` (same prior, `b_shape` prior
+widened). `max_shape` is 400 for the five rungs so the 250 rung is not on its
+own boundary; it is 250 for the two references, and non-binding in all seven.
+
+Cells: `pinned` is where the tight prior was centred, blank where `b_shape`
+was free. `b_shape` and `cycle_length` are posterior means averaged over 14
+`grp_init` and 13 `grp_cl` groups; `age_range_h` is the central 99% of the
+starting-stage distribution implied by the fitted `b_shape` at a 45.5 h
+cycle, in hours; `d_cl` is `cycle_length` minus `np_wide_total0`'s, in hours.
+`div_pct` is divergent transitions as a percent of 4000 post-warmup
+transitions. `vs_free` is the paired PSIS-LOO difference against
+`np_wide_total0` and `vs_bs100` against the `np_bs100` rung, summed over the
+same 1130 observations, **positive means better**, with the standard error of
+the paired difference.
+
+| fit | pinned | `b_shape` | age range | `cycle_length` | `d_cl` | `div_pct` | max R-hat | `vs_free` (se) | `vs_bs100` (se) |
+|---|---|---|---|---|---|---|---|---|---|
+| `np_wide_total0` | free | 14.4 | 20.8 | 45.5 | 0 | 2.05 | 1.02 | 0 | −34.0 (2.91) |
+| `np_bs50` | 50 | 50.2 | 11.5 | 44.0 | −1.53 | 2.33 | 1.03 | **+28.5** (2.46) | −5.44 (0.58) |
+| `np_bs84` | 84 | 84.2 | 8.96 | 43.9 | −1.66 | 3.35 | 1.03 | **+32.6** (2.85) | −1.34 (0.32) |
+| `np_bs100` | 100 | 100 | 8.22 | 43.8 | −1.74 | 3.58 | 1.02 | **+34.0** (2.91) | 0 |
+| `np_bs150` | 150 | 150 | 6.73 | 43.8 | −1.77 | 3.48 | **1.05** | **+34.8** (3.12) | +0.84 (0.51) |
+| `np_bs250` | 250 | 250 | 5.22 | 43.6 | −1.92 | 4.58 | 1.04 | **+36.2** (3.20) | +2.26 (0.50) |
+| `np_wide_both` | free (wide) | 64.4 | 10.2 | 44.2 | −1.29 | 3.42 | 1.02 | +24.4 (2.06) | −9.51 (1.06) |
+
+**Fixing `b_shape` is worth +28 to +36 elpd over leaving it free, at every
+rung tested**, and every rung also beats `np_wide_both`, which merely widens
+its prior. That is a large gain, 10-12 standard errors, and it is the main
+result: the argument for fixing this parameter does not rest on the biology
+alone.
+
+**Where it is fixed matters far less, but the data are not indifferent.**
+Across 84-250 the spread is 3.6 elpd, against 28-36 for fixing at all.
+Within that, higher is consistently better and detectably so: `np_bs250`
+beats `np_bs100` by 2.26 (se 0.50) and `np_bs100` beats `np_bs84` by 1.34
+(se 0.32). `np_bs50` is clearly the worst rung, −5.44 (se 0.58).
+
+**The ladder is still climbing at its top rung.** elpd rises monotonically to
+250 with no plateau, so the data have not been shown to prefer any value --
+only "higher than 50". 250 is the top of what was run, not an optimum, and
+`max_shape` would have to be raised again to find one.
+
+**`cycle_length` does not plateau either, and this is the cost.** It falls
+monotonically 44.0 -> 43.6 h across the ladder, and sits 1.53-1.92 h below
+the free-`b_shape` fit. So a reported cycle length is conditional on where
+`b_shape` is pinned, to about 0.4 h across plausible rungs and about 1.7 h
+against leaving it free. **This is the sensitivity, and it is the thing to
+report** -- not the value at any one rung.
+
+Note what does *not* move: `R` (14.2-14.3), `log10_total0` (−0.857 to
+−0.867), and `sd_iRBC` (0.528-0.532) are flat across the whole ladder. Only
+`cycle_length` tracks the pin.
+
+**Pinning samples worse, not better.** Divergences rise monotonically with
+the pin, 2.05% free to 4.58% at 250, and the adapted step size falls from
+0.0196 to 0.0115-0.0162; `np_bs150` reaches max R-hat 1.05, at the gate. A
+narrow starting distribution makes the trajectory sharper and the geometry
+stiffer. **The best-fitting rung is also the worst-sampling one.**
+
+**Two predictions recorded before the run were wrong**, and the record is
+kept because it bounds how far the heuristic reasoning can be trusted. The
+first was stated against the wrong reference: `np_wide_total0` leaves
+`b_shape` free at 14.4, so moving to a pinned 100 is a change of 20.8 -> 8.2
+h in the age range and could never have been a 0.1-0.3 h move. Against the
+right reference, `np_wide_both` at `b_shape` 64.4, pinning at 100 moves
+`cycle_length` −0.45 h, still above the predicted 0.1-0.3 h. The second was
+that pinning a bounded scalar would sample no worse than widening its prior;
+it samples worse at every rung. **The argument that `b_shape`'s effect
+collapses at high values is true on the `b_shape` scale and misleading on the
+age-range scale**, which is what `cycle_length` tracks: per hour of age-range
+narrowing the effect on `cycle_length` does not fall off at all, and between
+the 150 and 250 rungs it is larger than between 50 and 84.
+
+### Refits: the budget reaches n=4, and `default-rep4` is a near-miss
+
+SLURM 28964, 3 tasks, all COMPLETED, read by
+`_scripts/wockner-schedule-sim-analyze.R`, output `_data/schedsim-analyze.log`.
+`SCHEDSIM_FIT_SEED` = 1618033989 and nothing else changed.
+
+- `default-rep5` converged (max R-hat 1.02, 46 divergences, min ESS 144).
+- `wide_total0-rep4` converged (1.01, 70, 203).
+- **`default-rep4` did not** -- max R-hat **1.06** against a 1.05 gate. But
+  it is a near-miss, not a hard dataset: divergences fell 478 -> 39 and min
+  ESS rose 13 -> 117 against the original seed. The seed did most of the
+  work and the gate is close; a third seed or a longer warmup would likely
+  clear it. This is weaker than thread 9's two cases, where a new seed
+  settled it outright, and stronger than "the dataset is hard".
+
+**The paired budget is now n=4, and the headline number moved.** Cells: as in
+"Thread 2: it is the `b_shape` prior" -- paired change in cycle-length bias
+in hours, arm minus `default` on the same simulated dataset, negative means
+widening reduced the bias; `n_pair` is replicates where both converged.
+
+| arm | `n_pair` | mean change | range | was (n=3) |
+|---|---|---|---|---|
+| `wide_bshape` | 4 | **−0.433 h** | −0.531 to −0.228 | −0.501 h |
+| `wide_nuis` | 4 | −0.423 h | −1.08 to −0.071 | −0.540 h |
+| `wide_total0` | 4 | +0.099 h | −0.156 to +0.429 | +0.129 h |
+
+**The `b_shape` prior's share of the simulated cycle-length bias is ~0.43 h,
+not ~0.50 h, and the spread is four times wider than three replicates
+suggested** -- −0.228 to −0.531 against −0.452 to −0.531. The old figure's
+apparent precision (0.08 h across three replicates) was luck. This is what
+option 3 was run for and it is the one number in the budget that the extra
+replicates actually changed.
+
+Nuisance recovery barely moved at n=4-5: `default` `b_shape` 8.89 -> 8.77,
+`log10_total0` +102% -> +101%, `R` −23.8% -> −23.6%.
