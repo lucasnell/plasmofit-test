@@ -115,3 +115,30 @@ orientation and the current state of play.*
   posterior far more than dropping one observation, so Pareto k goes bad (8 of
   13 trials on a trial run). High k there means the approximation failed, not
   that the model is bad; a trustworthy answer needs K-fold refitting, 13 fits.
+- **The saved `wock-fit-LOO-<cfg>.rds` is NOT a bare `loo` object.** It is a
+  two-element list, `observation` and `trial`, and handing it straight to
+  `loo::loo_compare()` fails with "All inputs should have class 'loo'".
+  `wockner-prior-panel.R` has a `pick()` helper for exactly this; copy it
+  rather than rediscovering the error. Take `observation` -- trial-level
+  `loo` is broken on these data anyway, Pareto k > 0.7 for all 13 units in
+  every model.
+- **`wockner-fit.R` does not pin the nuisance priors.** It inherits
+  `archer_stan_data()`'s defaults, so a change to
+  `mean_log_b_shape`/`sd_log_b_shape`/`mean_log10_total0`/`sd_log10_total0`
+  in the package would silently redefine what `no_pool` and `pooled_cl` mean
+  and break the eight-fit panel's baseline without any error.
+  `wockner-schedule-sim.R` and `wockner-ppc-trend.R` *are* pinned; this one
+  is not, deliberately, because `np_anchor` passes `inoc_size`, which
+  replaces the `log10_total0` prior, and whether `archer_stan_data()` accepts
+  both together has never been tested. **Test that before pinning it.**
+  Related: the package default `sd_log10_total0 = 0.25` is known to be
+  indefensible -- it implies a 647% establishment fraction and costs 104.7
+  elpd -- and was left in place by decision, not oversight.
+- **Fits from different package builds are not bit-comparable, and this has
+  already happened mid-project.** Schedule-simulation replicates 1-3 predate
+  the inoculum anchor; replicates 4-5 postdate it, and the anchor added
+  `delta_total0`/`sigma_total0` declarations to all four Stan programs. With
+  the anchor off those are `array[0]` and contribute nothing, so the model is
+  mathematically identical and pooling across noise replicates is fine. Do
+  not use replicates from both sides of that change in any bit-exact
+  regression test.
