@@ -1546,3 +1546,79 @@ noise.
 
 **So a single shared `b_shape` loses nothing measurable**, which is what
 would license moving it to the data block as one user-set value.
+
+### Regression test for `b_shape`-as-data: no change detected, not yet a pass
+
+`_scripts/wockner-bshape-regression.R`, output `_data/bshape-regression.log`.
+Fits are SLURM 29526 (tasks 9 and 19 refitted under the rebuilt package, as
+`<config>-rebuild`) and 29528 (task 22, `np_bs400_data`), all COMPLETED.
+Package branch `fixed-b-shape`, commits `0bf12b0` and `e637d8d`.
+
+The change renames the free parameter to `b_shape_free`, makes it zero-sized
+when `b_shape` is data, and rebuilds `b_shape` as a transformed parameter.
+With `b_shape = NULL` that is mathematically a rename, so the old path must
+be unchanged.
+
+**Structural check, exact.** In all three comparisons the only name present
+in the new fit and absent from the old is `b_shape_free`, and nothing is
+present in the old and absent from the new. That is the expected signature of
+the rename and nothing else moved.
+
+Cells: over the scalar entries both fits share, excluding `lp__`, `log_lik`,
+and any entry with zero or missing `se_mean` (a constant has no Monte Carlo
+error and no meaningful z). `z` is the difference in posterior means over
+`sqrt(se_mean_new^2 + se_mean_old^2)`, so the shift in units of the two runs'
+combined Monte Carlo standard error. `n` is entries compared, `frac > 2` the
+share beyond 2. Dimensionless.
+
+| | comparison | `n` | max abs `z` | worst entry | `frac > 2` | `frac > 3` |
+|---|---|---|---|---|---|---|
+| A | `np_wide_total0-rebuild` vs `np_wide_total0` | 206 | **3.52** | `b_shape[2]` | 0.175 | 0.005 |
+| B | `np_bs400-rebuild` vs `np_bs400` | 206 | 2.56 | `z_sd_iRBC[21]` | 0.063 | 0 |
+| C | `np_bs400_data` vs `np_bs400` | 192 | 2.02 | `z_sd_iRBC[26]` | 0.005 | 0 |
+
+C compares 14 fewer entries because `b_shape` is constant there and drops out
+on the zero-`se_mean` rule.
+
+All five fits clear the R-hat gate: 1.0196 and 1.0201 (A), 1.0291 and 1.0242
+(B), 1.0468 for `np_bs400_data`, whose worst entry is `lp__`.
+
+**B and C are unremarkable.** No entry moves beyond 3 combined MCSE, and C's
+distribution is tighter than either regression pair -- so passing `b_shape`
+as data lands where pinning it with a tight prior does, which is what the
+`sd_log_b_shape` = 0.05 prior being nearly a point mass predicts.
+
+**A is the one to look at, and this test cannot resolve it.** Its worst entry
+is `b_shape[2]` at 3.52, and 17.5% of entries exceed 2 against about 5%
+expected if `z` were standard normal. Two explanations are confounded here
+and neither is favoured by the data in hand:
+
+- `b_shape` under a free, wide prior is the most heavy-tailed quantity in
+  this model -- posterior median 48 against a mean of 65, sd 50 (see
+  "What `b_shape` means biologically"). A posterior *mean* is a poor,
+  high-variance summary of it, and `se_mean` understates run-to-run spread
+  worst exactly there. On that reading A's inflation is an artefact of the
+  statistic.
+- `b_shape` is also the parameter the code change touches, so it is where a
+  real regression would show first.
+
+**The comparison is anti-conservative by construction**, which is why the
+inflation cannot be waved away: two runs differ in step-size and mass-matrix
+adaptation as well as sampling noise, and MCSE captures none of that. Against
+a correctly-scaled null, |z| of 3.5 on the least stable statistic in the
+model may be ordinary.
+
+**So: no change detected, and that is not the same as a pass.** By the
+standard `wockner-anchor-regression.R` sets, a regression test without a null
+run is inconclusive, and none exists for these configs. The null is two fits
+of identical code and data differing only in the sampler seed;
+`wockner-fit.R` now takes `WOCKFIT_SEED` so one can be produced:
+
+```
+sbatch --array=9 --export=ALL,WOCKFIT_SEED=1618033989,WOCKFIT_SUFFIX=-null \
+    _scripts/wockner-fit.sh
+```
+
+Read A's 3.52 against that run's max |z| before concluding anything. If the
+null reaches a similar figure, A is Monte Carlo variation; if it sits near 2,
+A is a real shift in `b_shape` and the change is not inert.
