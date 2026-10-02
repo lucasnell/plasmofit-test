@@ -1699,3 +1699,37 @@ drift needs the pre-change code rebuilt and refitted, which is a ~2.5 h fit
 plus a reinstall that would clobber the current one. The block split is what
 makes that unnecessary for clearing the change; it is still what would be
 needed to characterise the drift itself.
+
+### Thread 1's anchor regression: PASS, on a null that was already on disk
+
+`_scripts/wockner-anchor-regression.R`, output `_data/anchor-regression.log`.
+No new fitting: it reads three saved fits.
+
+The thread has sat at "one fit short of a verdict" since 2026-09-24 because
+SLURM 28892 was recorded as FAILED. It was — **at the summary stage, after
+writing the fit.** `wock-schedsim-fit-default-rep2-seed271828183.rds` has
+been on disk the whole time, and the script's own glob finds it.
+
+Cells: `test` is the pre-change fit against the post-change rebuild, same
+seed; `null` is two runs of identical post-change code differing only in
+sampler seed. `median |log sd ratio|` is over the 208 shared scalar entries,
+measuring posterior-width agreement; `|z|` is the difference in posterior
+means over its Monte Carlo standard error. Dimensionless.
+
+| | median \|log sd ratio\| | 95% | \|z\| median | \|z\| max | \|z\| > 3 |
+|---|---|---|---|---|---|
+| test (across the change) | **0.0262** | 0.1248 | **0.73** | 2.67 | 0 of 208 |
+| null (seed alone) | 0.0368 | 0.1241 | 1.12 | 2.93 | 0 of 208 |
+
+**The test is tighter than the null on both statistics.** Posteriors agree
+better across the anchor change than two runs of identical code differ from
+each other, and width inflation at the 95% is 1.01x. Nothing in 208 entries
+moves beyond 3 MCSE in either. With the anchor off, the change targets the
+same posterior as before it.
+
+`log10_total0`, the parameter the anchor exists to re-prior, is the one to
+check specifically: max |z| 1.79, sd ratio 0.964-1.049.
+
+**Thread 1's first half is closed.** What remains of that thread is the
+anchored fit itself, which was taken on 2026-09-24 (`np_anchor`) and is
+written up under "The `log10_total0` prior was misspecified".

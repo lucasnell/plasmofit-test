@@ -180,3 +180,9 @@ orientation and the current state of play.*
   problem if it outlives the install, and then the recovery is the one in the
   "Never interrupt `R CMD INSTALL`" entry above: `rmdir` the empty live
   directory, move the lock's copy back, then remove the lock.
+- **A FAILED SLURM state does not mean no output.** Thread 1 sat blocked for
+  over a week on a null run recorded as FAILED; the job had died at the
+  summary stage *after* writing its fit, and the file had been on disk the
+  whole time. The fit is always written before the summary, and
+  `SCHEDSIM_REBUILD=1` regenerates a missing summary in a minute. **Check
+  `_data/` before re-running anything a failed job was supposed to produce.**

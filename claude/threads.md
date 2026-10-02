@@ -5,8 +5,18 @@ orientation and the current state of play.*
 
 Roughly in priority order.
 
-1. **Finish the inoculum-anchor regression test and take the first anchored
-   fit.** The test is one fit short of a verdict -- see `findings.md`,
+1. ~~**Finish the inoculum-anchor regression test and take the first anchored
+   fit.**~~ **CLOSED 2026-10-02, PASS.** The null run was never missing:
+   SLURM 28892 died at the summary stage after writing its fit, and
+   `wock-schedsim-fit-default-rep2-seed271828183.rds` had been on disk since
+   2026-09-24. Posteriors agree better across the change than two runs of
+   identical code differ (|z| median 0.73 against the null's 1.12; width
+   inflation 1.01x; nothing beyond 3 MCSE in 208 entries). See
+   `findings.md`, "Thread 1's anchor regression". The anchored fit itself was
+   taken as `np_anchor` and is written up under "The `log10_total0` prior was
+   misspecified". **Lesson worth keeping: a FAILED SLURM state does not mean
+   no output** -- the fit is written before the summary.
+   ~~The test is one fit short of a verdict -- see `findings.md`,
    "Regression test for the anchor". Posterior means already agree within
    Monte Carlo error and the parameter sets match exactly; what is missing
    is the null run (SLURM
