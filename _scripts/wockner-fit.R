@@ -55,6 +55,18 @@
 
 .libPaths("/home/lan68/R/x86_64-pc-linux-gnu-library/4.6")
 
+## WOCKFIT_LIB=<dir> PREPENDS a library, so a fit can be run against a
+## different build of plasmofit without disturbing the installed one. The
+## reason to want that is thread 6: measuring how much two builds of the SAME
+## source disagree needs the old source rebuilt somewhere it cannot clobber
+## the current install. Dependencies still resolve from the path above.
+lib_env <- Sys.getenv("WOCKFIT_LIB", "")
+if (nzchar(lib_env)) {
+    if (!dir.exists(lib_env)) stop("WOCKFIT_LIB does not exist: ", lib_env)
+    .libPaths(c(lib_env, .libPaths()))
+    cat("library override:", lib_env, "\n")
+}
+
 suppressPackageStartupMessages({
     library(tidyverse)
     library(rstan)
@@ -250,7 +262,41 @@ CONFIGS <- list(
     ## exactly rather than leaving one more thing different between them.
     np_bs400_data  = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
                                                            b_shape = 400,
-                                                           max_shape = 1000))
+                                                           max_shape = 1000)),
+    ## ---- Design A, 23-26 -----------------------------------------------
+    ## The hierarchy comparison done honestly. Observation-level loo is the
+    ## weak test -- a held-out point is pinned by its neighbours whatever the
+    ## model -- and trial-level loo is broken here, Pareto k > 0.7 for all 13
+    ## units in every model. So mask the last third of every series and score
+    ## the four model variants on the held-out window, where cycle-length
+    ## error accumulates as phase drift. Each series keeps 3-6 points, so its
+    ## initial conditions and error scale stay informed and no_pool can adapt
+    ## per trial while pooled_cl cannot.
+    ##
+    ## Both nuisance priors are at the settings the panel showed are
+    ## defensible, so the comparison is not re-run under the misspecified
+    ## log10_total0 prior that cost 104.7 elpd, and b_shape is FIXED at the
+    ## ladder's plateau rather than estimated -- it is unidentified here and
+    ## leaving it free would put a different amount of freedom in each model.
+    ## calc_log_lik is on in all four: it is how the held-out points are
+    ## scored, and generated quantities computes it for every observation
+    ## whether or not it was fitted.
+    daA_no_pool    = list(model = "no_pool",    data = list(sd_log10_total0 = 1,
+                                                            b_shape = 400,
+                                                            max_shape = 1000,
+                                                            hold_out = "ho_last_third")),
+    daA_pooled_cl  = list(model = "pooled_cl",  data = list(sd_log10_total0 = 1,
+                                                            b_shape = 400,
+                                                            max_shape = 1000,
+                                                            hold_out = "ho_last_third")),
+    daA_pooled_R   = list(model = "pooled_R",   data = list(sd_log10_total0 = 1,
+                                                            b_shape = 400,
+                                                            max_shape = 1000,
+                                                            hold_out = "ho_last_third")),
+    daA_pooled_both = list(model = "pooled_both", data = list(sd_log10_total0 = 1,
+                                                            b_shape = 400,
+                                                            max_shape = 1000,
+                                                            hold_out = "ho_last_third"))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -325,6 +371,27 @@ paras_df <- read_csv("wockner-cleaned.csv", col_types = "cccdcdd") |>
     # Group for observation error:
     mutate(obs_error = interaction(trial, cohort, drop = TRUE) |> paste())
 
+## Design A's hold-out mask: the LAST THIRD of each series, by that series'
+## own observation count, at least one point. Configs opt in by naming the
+## column; it is simply an unused column otherwise.
+##
+## Why a third, decided before any fit was run. The design has 4-8
+## observations per series, and Design A's logic needs each series to keep
+## enough points to inform its initial conditions and error scale while
+## cycle-length error shows up as accumulated phase drift in the held-out
+## window. Holding out the last half leaves some series with 2 retained
+## points, too thin for that, so it is out on the stated criterion rather
+## than on what it would produce. A third and a quarter both retain 3-6; a
+## third is taken because it scores 306 held-out points against 218, which is
+## more power on the comparison. A quarter is the sensitivity to run if the
+## answer comes out marginal.
+paras_df <- paras_df |>
+    group_by(id) |>
+    arrange(time, .by_group = TRUE) |>
+    mutate(ho_last_third = as.integer(
+        row_number() > n() - pmax(1L, as.integer(floor(n() / 3))))) |>
+    ungroup()
+
 d <- do.call(archer_stan_data,
              c(list(data = paras_df,
                     series = "id", time = "time", abundance = "para",
@@ -334,6 +401,9 @@ d <- do.call(archer_stan_data,
                cfg$data))
 
 cat("config:", cfg_name, "| model:", cfg$model, "\n")
+cat("  plasmofit from:", dirname(system.file(package = "plasmofit")),
+    "| b_shape arg present:",
+    "b_shape" %in% names(formals(archer_stan_data)), "\n")
 if (length(cfg$data) > 0) {
     cat("  data overrides:", paste(names(cfg$data), unlist(cfg$data),
                                    sep = " = ", collapse = ", "), "\n")
