@@ -88,8 +88,13 @@ SEED_FIT <- 538065874L
 ## noise), so the budget is underpowered for the effects it is decomposing.
 ## APPENDED, never reordered: rep1-3 must keep their seeds or the fits
 ## already on disk stop matching their names.
+## Replicates 6-7 added 2026-10-02. At n=4 the paired budget's own spread is
+## ~0.3 h across replicates, against component effects of 0.43 h and 0.10 h --
+## the widest error bar left in the project, and the one thing more compute
+## can still narrow. APPENDED, never reordered.
 REP_SEEDS <- c(742160183L, 1908445027L, 355721694L,
-               1414213562L, 1732050808L)
+               1414213562L, 1732050808L,
+               1234567891L, 987654321L)
 
 ## Each arm is a model plus data overrides, following wockner-fit.R's CONFIGS.
 ## default/wide answer where the bias is not (prior); tight_sigma/no_hier ask
