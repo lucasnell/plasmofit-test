@@ -21,58 +21,45 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-02
 
-**SLURM 29526 and 29528 are running** (3 tasks total, ~2 h, mailing on
-`END,FAIL`); see below. Both repos are committed, so a restart costs nothing but the wait.
+**Nothing is running.** The queue is empty and both repos are committed.
 
-Repo state: this repo at `f857ec3` on `main`; the package at `e637d8d` on
-branch **`fixed-b-shape`** (not merged to `main`, not pushed). The installed
-`plasmofit` is built from that branch. The package repo shows
-`src/available.stanfunctions.cpp` as modified — that is a generated namespace
-hash from a build, it predates this work, and it is deliberately not
+Repo state: this repo at `main`; the package at `e637d8d` on branch
+**`fixed-b-shape`** (not merged, not pushed), and the installed `plasmofit`
+is built from it. The package repo shows `src/available.stanfunctions.cpp`
+modified — a generated namespace hash predating this work, deliberately not
 committed.
 
-**The package change's end-to-end regression is RUNNING**: SLURM **29526**,
-`_scripts/wockner-fit-regression.sh`, tasks 9 and 19 re-fitted under the
-rebuilt package. Outputs land as `np_wide_total0-rebuild` and
-`np_bs400-rebuild` via `WOCKFIT_SUFFIX`, **beside** the existing fits — do
-not re-run these configs under their own names, that overwrites the baseline
-the comparison needs.
+**The b_shape regression ran and is INCONCLUSIVE by design, not by
+accident.** Structurally exact; `np_bs400_data` (the new argument) matches
+`np_bs400` well. But `np_wide_total0-rebuild` vs `np_wide_total0` shows max
+|z| 3.52 on `b_shape[2]` with 17.5% of entries beyond 2, and the test has no
+null to judge that against. See `findings.md`, "Regression test for
+`b_shape`-as-data". **Next action, one fit, ~1.5 h:**
 
-Both use `b_shape = NULL`, so they test that the change left the OLD path
-alone; the new path is already covered by the package's own test suite.
-**The models were recompiled, so these cannot be bit-identical** — compare
-posteriors scaled by Monte Carlo error, the method in
-`_scripts/wockner-anchor-regression.R`. A shift of a few MCSE is the expected
-result; a shift far outside that, or a change in sampler health, is what this
-is looking for.
+```
+cd /home2/lan68/plasmofit/plasmofit-test
+sbatch --array=9 --export=ALL,WOCKFIT_SEED=1618033989,WOCKFIT_SUFFIX=-null \
+    _scripts/wockner-fit.sh
+```
 
-**SLURM 29528** covers the new argument itself: `np_bs400_data` passes
-`b_shape = 400` through `archer_stan_data()` rather than pinning it with a
-tight prior. Its regression target is `np_bs400` — a lognormal at
-`sd_log_b_shape` = 0.05 is ±10% at 95%, so the two are nearly the same model
-and should agree within Monte Carlo error. They will not agree exactly: a
-tight prior is not a point mass.
+Then re-read A's 3.52 against that run's max |z|. Similar → Monte Carlo
+variation. Near 2 → a real shift in `b_shape`, and the change is not inert.
 
-**`_scripts/wockner-fit-bshapedata.R` is a TRANSIENT COPY of
-`wockner-fit.R`.** 29526 was reading the original when this config was added,
-and `Rscript` parses incrementally, so editing it would have killed both
-running fits. **Once the queue drains**: fold `np_bs400_data` into
-`wockner-fit.R`'s `CONFIGS` as entry 22 — the copy is identical apart from
-that entry — then delete the copy and `wockner-fit-bshapedata.sh`. Until that
-is done the real script cannot reproduce `wock-fit-np_bs400_data.rds`.
+**Do not re-run a config under its own name to check anything** — that
+overwrites the baseline being compared against. `WOCKFIT_SUFFIX` exists for
+this; `WOCKFIT_SEED` exists to make null runs possible.
 
 **Then, in priority order:**
 
-1. **Decide whether the package change goes to `main`**, and whether
-   `wockner-fit.R` should start passing `b_shape` rather than pinning it with
-   a tight prior.
+1. **Decide whether `fixed-b-shape` goes to `main`**, once the null settles
+   the regression, and whether `wockner-fit.R` should pass `b_shape` rather
+   than pinning it with a tight prior.
 2. **Thread 4, `hold_out` masking then Design A** — the only honest route to
    the hierarchy answer, and the only instrument left for the ~1.5 h of
-   cycle-length bias that nothing else has explained. The real engineering
-   job; all-zero `hold_out` reproducing current fits is its regression test.
-3. **`default-rep4`** still misses the R-hat gate at 1.06 on a second seed
-   (`SCHEDSIM_FIT_SEED=1618033989`). A third seed or a longer warmup would
-   take the paired cycle-length budget from n=4 to n=5.
+   cycle-length bias nothing has explained. All-zero `hold_out` reproducing
+   current fits is its regression test.
+3. **`default-rep4`** still misses the R-hat gate at 1.06 on a second seed. A
+   third seed takes the paired cycle-length budget from n=4 to n=5.
 
 ## Package state, 2026-10-02 — `b_shape` can now be supplied as data
 
