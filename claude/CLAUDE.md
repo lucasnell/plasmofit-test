@@ -21,8 +21,8 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-02
 
-**Nothing is running.** The SLURM queue is empty, both repos are committed,
-and no job is waiting on anything. A restart loses nothing.
+**SLURM 29526 is running** (2 tasks, ~2 h, mailing on `END,FAIL`); see
+below. Both repos are committed, so a restart costs nothing but the wait.
 
 Repo state: this repo at `f857ec3` on `main`; the package at `e637d8d` on
 branch **`fixed-b-shape`** (not merged to `main`, not pushed). The installed
@@ -31,24 +31,24 @@ branch **`fixed-b-shape`** (not merged to `main`, not pushed). The installed
 hash from a build, it predates this work, and it is deliberately not
 committed.
 
-**The one thing left undone on the package change** is its end-to-end
-regression. The suite passes and a fixed fit returns `b_shape` = 400.0
-exactly, but nobody has checked that the change left the FREE path alone.
-Two fits, ~2 h each, which can run together:
+**The package change's end-to-end regression is RUNNING**: SLURM **29526**,
+`_scripts/wockner-fit-regression.sh`, tasks 9 and 19 re-fitted under the
+rebuilt package. Outputs land as `np_wide_total0-rebuild` and
+`np_bs400-rebuild` via `WOCKFIT_SUFFIX`, **beside** the existing fits — do
+not re-run these configs under their own names, that overwrites the baseline
+the comparison needs.
 
-```
-cd /home2/lan68/plasmofit/plasmofit-test
-sbatch --array=9  _scripts/wockner-fit.sh   # np_wide_total0, b_shape free
-sbatch --array=19 _scripts/wockner-fit.sh   # np_bs400, b_shape pinned by prior
-```
+Both use `b_shape = NULL`, so they test that the change left the OLD path
+alone; the new path is already covered by the package's own test suite.
+**The models were recompiled, so these cannot be bit-identical** — compare
+posteriors scaled by Monte Carlo error, the method in
+`_scripts/wockner-anchor-regression.R`. A shift of a few MCSE is the expected
+result; a shift far outside that, or a change in sampler health, is what this
+is looking for.
 
-Compare each against the fit of the same name already in `_data/`. **The
-models were recompiled, so these cannot be bit-identical** — compare
-posteriors scaled by Monte Carlo error against a two-seed null, per
-`gotchas.md`. Note neither of those configs uses the new argument; a third
-fit passing `b_shape = 400` through `archer_stan_data()` is what would test
-the new path against the tight-prior rung it should reproduce, and it needs a
-new entry in `wockner-fit.R`'s `CONFIGS`.
+Still not covered: neither config exercises the new argument. A fit passing
+`b_shape = 400` through `archer_stan_data()` should reproduce `np_bs400`, and
+needs its own `CONFIGS` entry.
 
 **Then, in priority order:**
 
