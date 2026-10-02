@@ -13,31 +13,39 @@ This file is an index and the current state. **Read the file you need:**
 
 | file | when to read it |
 |---|---|
-| `claude/handoff-bounds.md` | **transient** — the two jobs in flight and how to finish them; delete when done |
 | `claude/scripts.md` | what each script does, the `CONFIGS`/arm mechanics, `_data/` naming, how to run on the cluster |
 | `claude/gotchas.md` | **before running or editing anything** — the traps that have cost hours each |
 | `claude/findings.md` | the modelling results: hierarchy, pooling offset, schedule-bias simulation, nuisance priors |
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## In flight as of 2026-10-01 — read `claude/handoff-bounds.md` first
+## Nothing in flight as of 2026-10-02
 
-- **29493**, 3 tasks — `b_shape` ladder extension to 400 and 600, plus
-  `np_bs250_ms1000`, the control separating the pin from `max_shape` itself.
-  elpd was still rising at the 250 rung, so 250 was the top of what was run
-  rather than an optimum.
-- **29494**, 6 tasks — bound geometry, thread 2's last cheap suspect for the
-  ~1.5 h of cycle-length bias that survives correcting the nuisance priors.
-  `cl_move` `[37.5, 52.5]` isolates asymmetry at constant width;
-  `cl_wide_move` `[30, 60]` moves and widens.
+The queue is empty. SLURM 29493 (ladder extension) and 29494 (bound geometry)
+completed and are written up in `findings.md`.
 
-**Do not edit a script while a job is reading it.** That covers
-`_scripts/wockner-fit.R` and `_scripts/wockner-schedule-sim.R` until the
-queue drains.
+**Do not edit a script while a job is reading it.** `Rscript` reads source
+incrementally; an edit mid-run killed two 1.5 h jobs.
 
-**Outstanding, deliberately skipped**: `default-rep4` still misses the R-hat
-gate at 1.06 on a second seed — a near-miss, not a hard dataset. A third seed
-would take the paired budget to n=5.
+## Settled, 2026-10-02 — the ladder plateaus, and bound geometry is out
+
+- **The `b_shape` ladder plateaus at ~400**, a starting-stage age range of
+  about **4 h**. Still climbing 250 → 400 (+0.96 elpd, z 3.3), flat 400 → 600
+  (−0.11, z −0.3). Pushing past it costs sampling (5.92% divergences at 600).
+  `max_shape` on its own is worth +0.00 elpd, so the extended rungs are
+  comparable with the earlier ones.
+- **`cycle_length` is flat from 250 upward**, 43.6–43.7 h, against 44.0 h at
+  `b_shape` 50 and 45.5 h with `b_shape` free. Anywhere above 250 gives the
+  same answer to within 0.1 h.
+- The data want **tighter** synchrony than the 9 h assumed for controlled
+  human infection trials in `mmcm.pdf` (`b_shape` ~ 84); that rung is
+  detectably worse than 100, 250, and 400.
+- **Bound geometry does not carry the cycle-length bias.** Moving the window
+  changes the paired bias by **+0.059 h** (centred, same width) and +0.03 h
+  (moved and widened), against the ~−1.5 h that would be needed, with the
+  sign wrong. **Thread 2 is out of cheap suspects for the remaining ~1.5 h.**
+- Two rungs fail the R-hat < 1.05 gate and are void: `np_bs150` (1.0513) and
+  the `max_shape` control (1.0550). Nothing rests on either.
 
 ## Settled, 2026-10-01 — fixing `b_shape` is a large predictive gain
 

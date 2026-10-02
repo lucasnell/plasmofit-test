@@ -50,10 +50,15 @@ Roughly in priority order.
      `wockner-schedule-sim-mode.R`.
    - ~~Incoherent (mean-vector) truth.~~ Rebuilt from posterior draws;
      recovery is no better and the bias survives.
-   Still open within this: **bound geometry**. `[35, 50]` leaves 5 h above a
-   truth of 45 and 10 h below. Re-simulate with the bounds *moved*, e.g.
-   `[30, 60]`, not merely widened -- `max_cl = 55` reintroduces the boundary
-   mode.
+   ~~Still open within this: **bound geometry**.~~ **Closed 2026-10-02 and it
+   is not the answer.** Both `[37.5, 52.5]` (same width, centred on the
+   truth, isolating asymmetry) and `[30, 60]` (moved and widened) change the
+   paired cycle-length bias by **+0.059 h** and **+0.03 h** -- against the
+   ~-1.5 h that would be needed, with the sign wrong. Three of six replicates
+   failed the gate, so this is n=2 and n=1: adequate for "nowhere near the
+   size needed", not for an estimate. **This thread is now out of cheap
+   suspects**; what is left is structural, and thread 4's `hold_out` masking
+   is the next real instrument.
    ~~**Now running on real data**, SLURM 28931 tasks 10-13.~~ **Done, and
    the dissociation reproduces** -- see `findings.md`, "the eight-fit prior
    panel". Widening `b_shape`'s prior moves real-data `cycle_length`
