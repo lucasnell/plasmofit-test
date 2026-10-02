@@ -1789,3 +1789,67 @@ of `max_cl` = 50, where the real fit at 45.5 h is further from it — so this
 looks like proximity to the upper bound shaping the posterior. It is **not**
 the bias mechanism: moving the bounds to `[30, 60]`, which puts the estimate
 13 h clear of them, changed the paired bias by +0.03 h.
+
+### The MAP check: the joint surface is too rough to have a mode worth reporting
+
+`_scripts/schedsim-map-check.R`, outputs `_data/map-check-rep{1,2,3}.log` and
+`_data/wock-map-check-*.rds`. `rstan::optimizing` on the same model, priors,
+and simulated data the fits used, from many random starts.
+
+The question was whether the cycle-length bias is a **marginalisation**
+effect. Mean, median, and marginal mode cannot distinguish it, because all
+three integrate over the other ~200 parameters alike. A joint maximum does
+not integrate, so it sits at the other end of a three-point ladder from the
+pooled MLE and the posterior mean.
+
+**The answer is that there is no usable joint maximum here.** Cells: `best
+lp` is the largest joint log posterior found across random starts; `bias` is
+that optimum's `cycle_length` averaged over 13 trials, minus the simulated
+truth of 45.012 h; `lp range` and `cl range` are across converged starts;
+`found twice` counts starts reaching the best mode within 0.01 lp.
+
+| replicate | starts | best lp | bias | lp range | cl range | found twice |
+|---|---|---|---|---|---|---|
+| `default-rep1` | 198 | −818.65 | +0.62 | 2097 | 8.2 h | 1 of 198 |
+| `default-rep2` | 198 | −854.37 | +2.47 | 2014 | 7.3 h | 1 of 198 |
+| `default-rep3` | 199 | −878.23 | **−1.67** | 2009 | 12.6 h | 1 of 199 |
+| `default-rep2`, rerun | 120 | **−823.99** | +0.31 | — | — | 1 of 120 |
+
+**The best mode was never found twice, and more searching keeps finding
+better ones** -- the 120-start rerun of rep2 beat the 198-start run by 30 lp.
+Modes span ~2000 nats and 7-13 h of `cycle_length`. There is no evidence any
+of these is the global optimum, so **"report the MAP instead" is not a
+remedy**, which was the pre-registered outcome for starts disagreeing.
+
+**What the modes look like.** From the rep2 rerun, top 15 by lp. Two families:
+some put all 13 trials at one `cycle_length` (min = max, the hierarchy
+collapsed, `sigma_logit_cl` -> 0) and some spread them over 10+ h
+(37.6-49.9). `b_shape` ranges **4.3 to 28.2** across modes -- different modes
+explain the same data with entirely different synchrony, which is what
+non-identification looks like on the joint surface rather than in a marginal.
+`norm_boff` is 1 at every optimum, so the `unit_vector` is properly
+normalised and radial degeneracy is **not** the cause.
+
+**Suggestive, not conclusive.** The better modes sit nearer the truth than
+the posterior mean does -- rep2's best is +0.31 h against a posterior mean of
++1.22 h -- which is the direction the marginalisation hypothesis predicts.
+But with no optimum found twice, this cannot carry weight.
+
+**`rstan::optimizing` is not reproducible here at a fixed seed.** Three calls
+with identical data, identical `seed`, and `set.seed()` fixed returned
+lp −935.5, −955.1, −961.3. It happens at one thread as well as four, so it is
+not `reduce_sum`'s summation order. The clean test -- a fixed numeric init --
+**segfaults**, because `init = 0` puts the `unit_vector` at the origin, so
+the cause is not isolated.
+
+**This does not extend to sampling.** `tests/testthat/test-holdout.R` asserts
+that two `archer_fit` runs with the same seed and data return *bit-identical*
+draws, and it passes. Whatever this is, it is specific to optimisation, and
+no claim about fit reproducibility follows from it.
+
+**What it leaves.** The marginalisation question is not settled; what is
+settled is that the joint mode cannot settle it. The remaining separable
+component of the MLE-to-posterior gap is the one the notes already name and
+have never isolated: **the MLE fixes `sd_iRBC` at truth where the fit
+estimates it.** That is a single simulation arm, and it is now the cheapest
+untried thing on this question.
