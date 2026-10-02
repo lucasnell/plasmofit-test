@@ -21,42 +21,45 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-02
 
-**Nothing is running.** The queue is empty and both repos are committed.
+**Five tasks running**, all mailing on `END,FAIL`:
 
-Repo state: this repo on `main`; the package at `e637d8d` on branch
-**`fixed-b-shape`** (not merged, not pushed), and the installed `plasmofit`
-is built from it. The package repo shows `src/available.stanfunctions.cpp`
-modified — a generated namespace hash predating this work, deliberately not
-committed.
+- **29537**, 1 task — thread 6, build drift. `np_wide_total0-drift`: source
+  `e61fb47` rebuilt today into its own library, same seed, same data as the
+  September fit. Identical source, so every difference is the rebuild alone.
+- **29538**, 4 tasks — **Design A**, configs 23–26. The hierarchy comparison
+  with a genuinely held-out window: the last third of every series, 306 of
+  1130 observations, scored across all four model variants.
 
-**The b_shape regression is finished and the change is clear.** The null run
-(SLURM 29531) is well calibrated, and by mean |z| over it the new data path
-is the closest of the three comparisons to the null. `b_shape` itself is the
-quietest parameter block in the whole table. See `findings.md`, "The null
-run: the change is clear, and something else is not".
+Both read `_scripts/wockner-fit.R`, so **do not edit it until the queue
+drains** — `Rscript` parses incrementally and an edit mid-run has killed jobs
+here before.
 
-**It turned up a separate finding that is now thread 6**: fits of the same
-specification from different package builds differ by 2.5–3.5× Monte Carlo
-error in `mu_logit_R` and the `(log10_total0, R)` ridge. Any `R` figure
-carries irreproducibility beyond its stated MCSE.
+**Package: `fixed-b-shape` is merged to `main`** (`f17c7b6`), and `hold_out`
+masking is in on top (`815609e`). Not pushed. The installed build is the
+hold_out one; a build of the pre-change source lives in
+`/home2/lan68/plasmofit/.prechange/lib` with its worktree at
+`.prechange/src`, used only by 29537. **Delete both once thread 6 is
+written up** (`git worktree remove`).
 
-**Do not re-run a config under its own name to check anything** — that
-overwrites the baseline. `WOCKFIT_SUFFIX` exists for this, `WOCKFIT_SEED` for
-null runs. `WOCKFIT_SEED` also makes thread 1's anchor regression
-completable; it has sat inconclusive since its null run failed, for exactly
-the want of this.
+Full package suite passes with `PLASMOFIT_TEST_SAMPLING` set, including the
+assertion that all-zero `hold_out` reproduces an unmasked fit **bit-for-bit**.
 
-**Next, in priority order:**
+### How to read these when they land
 
-1. **Merge `fixed-b-shape` to `main`.** The regression is done and clean. Then
-   decide whether `wockner-fit.R` should pass `b_shape` rather than pinning it
-   with a tight prior.
-2. **Thread 4, `hold_out` masking then Design A** — the only honest route to
-   the hierarchy answer, and the only instrument left for the ~1.5 h of
-   cycle-length bias nothing has explained.
-3. **Thread 6, the build drift**, before any `R` number is published.
-4. **`default-rep4`** still misses the R-hat gate at 1.06 on a second seed; a
-   third takes the paired cycle-length budget from n=4 to n=5.
+**29537 (drift).** Compare `np_wide_total0-drift` against `np_wide_total0`
+with `_scripts/wockner-bshape-regression.R` — add the pair to `PAIRS`. Read
+its mean |z| against the seed-only null's **0.85** and the b_shape test's
+**1.23**. Near 1.23 → the excess is rebuild drift and the b_shape change is
+fully exonerated. Near 0.85 → the excess belongs to the change and the merge
+needs revisiting.
+
+**29538 (Design A).** Score the **held-out** elpd only: sum `log_lik` over the
+observations with `hold_out == 1`. `generated quantities` computes `log_lik`
+for every observation whether fitted or not, so the total would mix the two
+and answer nothing. The mask is the `ho_last_third` column built in
+`wockner-fit.R`; `_data/wock-data-daA_*.rds` carries the `hold_out` vector
+for each fit. A quarter instead of a third is the pre-registered sensitivity
+if the answer is marginal.
 
 ## Package state, 2026-10-02 — `b_shape` can now be supplied as data
 
