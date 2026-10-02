@@ -21,46 +21,42 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-02
 
-**SLURM 29531 is running** — the null run for the b_shape regression, one
-fit, ~1.5 h, mailing on `END,FAIL`. Both repos are committed.
+**Nothing is running.** The queue is empty and both repos are committed.
 
-Repo state: this repo at `main`; the package at `e637d8d` on branch
+Repo state: this repo on `main`; the package at `e637d8d` on branch
 **`fixed-b-shape`** (not merged, not pushed), and the installed `plasmofit`
 is built from it. The package repo shows `src/available.stanfunctions.cpp`
 modified — a generated namespace hash predating this work, deliberately not
 committed.
 
-**The b_shape regression ran and is INCONCLUSIVE by design, not by
-accident.** Structurally exact; `np_bs400_data` (the new argument) matches
-`np_bs400` well. But `np_wide_total0-rebuild` vs `np_wide_total0` shows max
-|z| 3.52 on `b_shape[2]` with 17.5% of entries beyond 2, and the test has no
-null to judge that against. See `findings.md`, "Regression test for
-`b_shape`-as-data".
+**The b_shape regression is finished and the change is clear.** The null run
+(SLURM 29531) is well calibrated, and by mean |z| over it the new data path
+is the closest of the three comparisons to the null. `b_shape` itself is the
+quietest parameter block in the whole table. See `findings.md`, "The null
+run: the change is clear, and something else is not".
 
-**The null is running** as SLURM 29531
-(`_scripts/wockner-fit-null.sh`, same code and data as
-`np_wide_total0-rebuild`, seed 1618033989, landing as
-`np_wide_total0-null`). When it finishes, add the pair
-`np_wide_total0-null` vs `np_wide_total0-rebuild` to `PAIRS` in
-`_scripts/wockner-bshape-regression.R` and re-run it. Read A's 3.52 against
-the null's max |z|: similar → Monte Carlo variation and the change is inert;
-near 2 → a real shift in `b_shape`.
+**It turned up a separate finding that is now thread 6**: fits of the same
+specification from different package builds differ by 2.5–3.5× Monte Carlo
+error in `mu_logit_R` and the `(log10_total0, R)` ridge. Any `R` figure
+carries irreproducibility beyond its stated MCSE.
 
 **Do not re-run a config under its own name to check anything** — that
-overwrites the baseline being compared against. `WOCKFIT_SUFFIX` exists for
-this; `WOCKFIT_SEED` exists to make null runs possible.
+overwrites the baseline. `WOCKFIT_SUFFIX` exists for this, `WOCKFIT_SEED` for
+null runs. `WOCKFIT_SEED` also makes thread 1's anchor regression
+completable; it has sat inconclusive since its null run failed, for exactly
+the want of this.
 
-**Then, in priority order:**
+**Next, in priority order:**
 
-1. **Decide whether `fixed-b-shape` goes to `main`**, once the null settles
-   the regression, and whether `wockner-fit.R` should pass `b_shape` rather
-   than pinning it with a tight prior.
+1. **Merge `fixed-b-shape` to `main`.** The regression is done and clean. Then
+   decide whether `wockner-fit.R` should pass `b_shape` rather than pinning it
+   with a tight prior.
 2. **Thread 4, `hold_out` masking then Design A** — the only honest route to
    the hierarchy answer, and the only instrument left for the ~1.5 h of
-   cycle-length bias nothing has explained. All-zero `hold_out` reproducing
-   current fits is its regression test.
-3. **`default-rep4`** still misses the R-hat gate at 1.06 on a second seed. A
-   third seed takes the paired cycle-length budget from n=4 to n=5.
+   cycle-length bias nothing has explained.
+3. **Thread 6, the build drift**, before any `R` number is published.
+4. **`default-rep4`** still misses the R-hat gate at 1.06 on a second seed; a
+   third takes the paired cycle-length budget from n=4 to n=5.
 
 ## Package state, 2026-10-02 — `b_shape` can now be supplied as data
 

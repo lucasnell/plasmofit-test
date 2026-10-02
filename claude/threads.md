@@ -146,12 +146,25 @@ Roughly in priority order.
    to the population mean, the same location `pooled_cl` gives, so it can
    only win on calibration. That likely explains why trial-level `loo` put
    `pooled_cl` marginally ahead.
-6. **`cl_prior_center` decision.** Decide whether the default should move
+6. **Build-to-build drift in the weakly identified directions.** New,
+   2026-10-02. Two fits of the same specification from different package
+   builds differ by **2.5-3.5x Monte Carlo error** in `mu_logit_R` and the
+   `(log10_total0, R)` ridge, where two fits from the SAME build differ by
+   exactly 1x (the null is calibrated: mean |z| 0.85 against 0.798 expected).
+   See `findings.md`, "The null run". So any `R` or `mu_logit_R` number
+   carries irreproducibility across rebuilds beyond its stated MCSE, and no
+   interval this project reports captures it. Not yet separated from the
+   `b_shape` change that shipped in the same rebuild -- that needs the
+   pre-change code rebuilt and refitted, ~2.5 h plus a reinstall that would
+   clobber the current one. Worth doing before any `R` figure is published;
+   not worth doing to clear the `b_shape` change, which the per-block split
+   already clears.
+7. **`cl_prior_center` decision.** Decide whether the default should move
    off 48 h. Demoted: the simulation showed the prior carries less of the
    error than thought (weight 0.113), so this mostly does not fix anything.
    Matters for reporting a cycle-length number; mostly cancels for model
    comparison.
-7. `_scripts/test-archer-fit.R` (the driver script, not the package's
+8. `_scripts/test-archer-fit.R` (the driver script, not the package's
    `tests/testthat/test-archer-fit.R`) has not been run to completion with a
    full-length fit; it has only been smoke-tested with a short one, where
    recovery was good (23/23 parameters inside their 95% intervals, max |z|
@@ -161,12 +174,12 @@ Roughly in priority order.
 
 ### Lower priority
 
-8. **More schedule-simulation replicates**, and more posterior-draw
+9. **More schedule-simulation replicates**, and more posterior-draw
    replicates specifically -- there are only two usable ones. The
    correlation question is limited by noise realizations, not by compute.
    Add seeds to `REP_SEEDS` in `wockner-schedule-sim.R` and widen the array,
    or submit more `SCHEDSIM_TRUTH_DRAW` values; ~2 h wall clock each.
-9. ~~**Re-run the two non-converged replicates with a different fit seed.**~~
+10. ~~**Re-run the two non-converged replicates with a different fit seed.**~~
    **Done**, `SCHEDSIM_FIT_SEED=415926535`. **Qualified 2026-10-01**: a new
    seed is not always enough. Of three refits at
    `SCHEDSIM_FIT_SEED=1618033989`, two converged and `default-rep4` did not
@@ -181,7 +194,7 @@ Roughly in priority order.
    posterior-draw result is therefore n=3, not n=2: +1.68, +1.82, +0.86,
    mean +1.45. Worth noting for any future replicate that fails: try another
    fit seed before concluding anything about the dataset.
-10. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
+11. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
     entries 3-7, `--array=3-7`. Written but never submitted. Demoted: these
     were to discriminate explanation 1 from 2-3 for the sampling-density
     correlation. The simulation has since killed 1 and found against 2, so
