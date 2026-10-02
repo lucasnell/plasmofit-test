@@ -19,10 +19,11 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Resume here, 2026-10-02
+## Resume here, 2026-10-02 (end of session)
 
-**26 tasks running**, all mailing on `END,FAIL`. Nothing below waits on
-anything else.
+**26 tasks running**, all mailing `lan68@cornell.edu` on `END,FAIL`. Nothing
+below waits on anything else. Both repos are committed; a restart costs only
+the wait.
 
 | job | n | what |
 |---|---|---|
@@ -33,39 +34,70 @@ anything else.
 | 29544 | 4 | third-seed refits: `default-rep4`, `cl_move-rep2`, `cl_wide_move-rep2/3` |
 
 **Do not edit `_scripts/wockner-fit.R` or `_scripts/wockner-schedule-sim.R`
-until the queue drains.** Both are being read.
+until the queue drains.** Both are being read; `Rscript` parses incrementally
+and an edit mid-run has killed jobs here before.
 
-**Queued behind the queue draining**: Design A at a quarter-mask (4 fits). It
-needs 4 new configs in `wockner-fit.R`, which cannot be edited while 29537,
-29538, and 29545 read it. Running both mask fractions means the fraction
-cannot be chosen after seeing the answer.
+### First three things to do, in order
+
+1. **Submit Design A at a quarter-mask** (4 fits) the moment the queue
+   drains. It needs 4 configs in `wockner-fit.R` mirroring 23–26 with the
+   mask at a quarter instead of a third — the `ho_last_third` column is built
+   in that script, so add an `ho_last_quarter` beside it. Running both
+   fractions means the fraction cannot be chosen after seeing the answer,
+   which is the whole point of having pre-registered it.
+2. **Read the five running jobs back** against the decision rules below.
+3. **Then the `sd_iRBC` arm** — see "where the bias question stands".
 
 ### Decision rules, fixed in advance
 
-Written down so these results can be acted on without a round-trip. If a
-result falls outside what a rule anticipated, that is the case worth stopping
-to discuss — not the cases below.
+Only a result falling *outside* one of these is worth stopping to discuss.
 
-1. **Thread 6 drift.** Compare each `-drift` fit against its September twin
-   with `_scripts/wockner-bshape-regression.R` (add the pairs to `PAIRS`).
-   Read mean |z| against the seed-only null's **0.85** and the b_shape test's
-   **1.23**. Near 1.23 in both → the excess is rebuild drift, the b_shape
-   change is exonerated, the merge stands, and thread 6 becomes a reporting
-   caveat on `R`. Near 0.85 → the excess belongs to the change; revisit the
-   merge before anything else.
-2. **Design A.** Score **held-out elpd only** — `log_lik` summed over
-   `hold_out == 1`. If `pooled_cl` loses by more than ~2 se the hierarchy
-   earns its keep on the test built to settle it; if it wins or ties, the
-   long-standing "no detectable benefit" result finally rests on a
-   comparison that is not broken. Either way, read the quarter-mask run
-   beside it before writing a verdict.
-3. **Refits.** If `default-rep4` fails a third seed, **stop reseeding** and
-   record it: that contradicts thread 9's finding on the two earlier cases
-   and is a result, not an obstacle.
-4. **Budget replicates.** Re-run `_scripts/wockner-schedule-sim-analyze.R`;
-   it globs, so no argument is needed. Expect the `b_shape` prior's share to
-   move again — it went 0.50 → 0.43 h from n=3 to n=4. Quote the n=6–7 figure
-   and its range, not the older one.
+1. **Thread 6 drift (29537, 29545).** Add both `-drift` pairs to `PAIRS` in
+   `_scripts/wockner-bshape-regression.R` and re-run. Read mean |z| against
+   the seed-only null's **0.85** and the b_shape test's **1.23**. Near 1.23 →
+   the excess is rebuild drift, the b_shape change is exonerated, the merge
+   stands, thread 6 becomes a reporting caveat on `R`. Near 0.85 → the excess
+   belongs to the change; revisit the merge before anything else.
+2. **Design A (29538).** Score **held-out elpd only** — `log_lik` summed over
+   `hold_out == 1`. `generated quantities` computes it for every observation
+   fitted or not, so the total mixes the two and answers nothing. The mask is
+   in `_data/wock-data-daA_*.rds`. Read the quarter-mask run beside it before
+   writing a verdict.
+3. **Refits (29544).** If `default-rep4` fails a **third** seed, stop
+   reseeding and record it — that contradicts thread 9 and is a result, not
+   an obstacle.
+4. **Budget replicates (29543).** Re-run
+   `_scripts/wockner-schedule-sim-analyze.R`; it globs, no argument needed.
+   Expect the `b_shape` prior's share to move again (0.50 → 0.43 h from n=3
+   to n=4). Quote the n=6–7 figure and its range.
+
+### Where the bias question stands
+
+The ~1.5 h of unexplained cycle-length bias is **not fit-limited** — none of
+the 26 running jobs touches it. This session closed two candidate remedies
+and left one live lead:
+
+- **The posterior median does not help** and moves the bias *up* by
+  0.03–0.09 h; the per-trial posteriors are left-skewed. Mean, median, and
+  mode span 0.05 h on a 1.8 h bias. It *does* matter for `b_shape` (~10%),
+  whose median should be what gets quoted.
+- **The MAP cannot settle it either.** The joint surface has modes spanning
+  ~2000 nats and 7–13 h of `cycle_length`; the best was never found twice in
+  ~200 starts and more searching keeps finding better ones.
+- **Still live and never isolated**: the MLE fixes `sd_iRBC` at truth where
+  the fit estimates it. That is the last named component of the
+  MLE-to-posterior gap that nobody has separated, and it is **one simulation
+  arm** — add `sd_iRBC` fixed at truth to `ARMS` in
+  `wockner-schedule-sim.R`, paired against `default`. Cheapest untried thing
+  on the question.
+- Beyond that it is idea-limited, not compute-limited.
+
+### Scratch to clean up
+
+`/home2/lan68/plasmofit/.prechange/` holds a git worktree at `e61fb47` and a
+library built from it, used only by 29537 and 29545. Once thread 6 is written
+up: `git worktree remove /home2/lan68/plasmofit/.prechange/src` and delete
+the directory.
 
 ## Package state, 2026-10-02 — `b_shape` can now be supplied as data
 
