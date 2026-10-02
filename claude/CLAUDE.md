@@ -21,8 +21,8 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-02
 
-**SLURM 29526 is running** (2 tasks, ~2 h, mailing on `END,FAIL`); see
-below. Both repos are committed, so a restart costs nothing but the wait.
+**SLURM 29526 and 29528 are running** (3 tasks total, ~2 h, mailing on
+`END,FAIL`); see below. Both repos are committed, so a restart costs nothing but the wait.
 
 Repo state: this repo at `f857ec3` on `main`; the package at `e637d8d` on
 branch **`fixed-b-shape`** (not merged to `main`, not pushed). The installed
@@ -46,9 +46,20 @@ posteriors scaled by Monte Carlo error, the method in
 result; a shift far outside that, or a change in sampler health, is what this
 is looking for.
 
-Still not covered: neither config exercises the new argument. A fit passing
-`b_shape = 400` through `archer_stan_data()` should reproduce `np_bs400`, and
-needs its own `CONFIGS` entry.
+**SLURM 29528** covers the new argument itself: `np_bs400_data` passes
+`b_shape = 400` through `archer_stan_data()` rather than pinning it with a
+tight prior. Its regression target is `np_bs400` — a lognormal at
+`sd_log_b_shape` = 0.05 is ±10% at 95%, so the two are nearly the same model
+and should agree within Monte Carlo error. They will not agree exactly: a
+tight prior is not a point mass.
+
+**`_scripts/wockner-fit-bshapedata.R` is a TRANSIENT COPY of
+`wockner-fit.R`.** 29526 was reading the original when this config was added,
+and `Rscript` parses incrementally, so editing it would have killed both
+running fits. **Once the queue drains**: fold `np_bs400_data` into
+`wockner-fit.R`'s `CONFIGS` as entry 22 — the copy is identical apart from
+that entry — then delete the copy and `wockner-fit-bshapedata.sh`. Until that
+is done the real script cannot reproduce `wock-fit-np_bs400_data.rds`.
 
 **Then, in priority order:**
 
