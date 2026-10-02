@@ -1622,3 +1622,80 @@ sbatch --array=9 --export=ALL,WOCKFIT_SEED=1618033989,WOCKFIT_SUFFIX=-null \
 Read A's 3.52 against that run's max |z| before concluding anything. If the
 null reaches a similar figure, A is Monte Carlo variation; if it sits near 2,
 A is a real shift in `b_shape` and the change is not inert.
+
+### The null run: the change is clear, and something else is not
+
+`_scripts/wockner-bshape-regression.R` (output `_data/bshape-regression.log`)
+and `_scripts/bshape-regression-blocks.R` (output
+`_data/bshape-regression-blocks.log`). The null is SLURM 29531,
+`np_wide_total0-null`: identical code and data to `np_wide_total0-rebuild`,
+sampler seed alone differs (`WOCKFIT_SEED` = 1618033989).
+
+**The null is well calibrated**, which is what makes the rest readable. Its
+mean |z| is **0.85** against the 0.798 expected for |N(0, 1)|, so combined
+Monte Carlo standard error is an accurate yardstick for run-to-run variation
+in this model. Max |z| 2.41, 4.1% of entries beyond 2.
+
+Cells: mean over the scalar entries of |difference in posterior means| over
+the two runs' combined Monte Carlo standard error. `ratio` is each
+comparison's mean |z| over the null's, so 1 means a comparison adds nothing
+beyond what the sampler seed alone produces. Dimensionless.
+
+| | comparison | `n` | mean \|z\| | ratio to null | max \|z\| |
+|---|---|---|---|---|---|
+| N | **null**, seed alone | 220 | 0.85 | 1 | 2.41 |
+| A | `np_wide_total0-rebuild` vs `np_wide_total0` | 206 | 1.23 | **1.45** | 3.52 |
+| B | `np_bs400-rebuild` vs `np_bs400` | 206 | 0.92 | 1.08 | 2.56 |
+| C | `np_bs400_data` vs `np_bs400` | 192 | 0.81 | 0.95 | 2.02 |
+
+**Read mean |z|, not max |z|.** The max is one order statistic over ~200
+entries and is far noisier. A's max of 3.52 looked alarming on its own; the
+block split below shows the entry it lands on is not where the change is.
+
+**By block**, test over null, for A (`b_shape` free) and B (`b_shape` pinned):
+
+| block | `n` | null mean \|z\| | ratio A | ratio B |
+|---|---|---|---|---|
+| `mu_logit_R` | 1 | 0.72 | **3.49** | **2.48** |
+| `R` / `eta_R` / `logit_R` | 13 each | 0.72 | **2.81** | 1.61–1.63 |
+| `mu_logit_cl` | 1 | 0.90 | 2.57 | 0.35 |
+| `cycle_length` / `eta_cl` / `logit_cl` | 13 each | 0.67–0.72 | 1.80–1.87 | 1.15–1.21 |
+| `log10_total0` | 14 | 0.82 | 1.79 | 1.00 |
+| `b_offset` / `b_off_vec` | 14 / 28 | 0.85–1.06 | 1.05–1.08 | 0.68–0.86 |
+| `sd_iRBC` / `z_sd_iRBC` | 27 each | 0.89–0.90 | 0.91–0.92 | 1.08–1.09 |
+| **`b_shape`** | 14 | 1.00 | **0.90** | **1.12** |
+| `sigma_logit_R` / `sigma_logit_cl` | 1 each | 1.31–1.39 | 0.25–0.45 | 0.19–0.47 |
+
+**`b_shape` is the quietest block in the table.** Ratio 0.90 and 1.12 — at
+the null in both test pairs. The parameter the code change touches is the one
+that does not move. B and C pass outright, and C, the new data path, is the
+closest of all three to the null.
+
+**So the `b_shape` change is clear**, as firmly as this design allows: if it
+had perturbed anything, `b_shape` is where that would appear first, and
+`b_shape` is flat.
+
+**But A's excess is real and is a separate finding.** It sits in the `R`
+hyperparameter and the `(log10_total0, R)` ridge — `mu_logit_R` at 3.5x the
+null, `R`/`eta_R`/`logit_R` at 2.8x — and it is present in **B as well**,
+where `b_shape` is pinned, so `b_shape`'s freedom does not cause it. What A
+and B share and the null does not is the **build**: both compare a fit from
+the 2026-09 package against one from the 2026-10 package, where the null
+compares two fits from the same build.
+
+**What that means for reported numbers.** Build-to-build variation in the
+weakly identified directions is **larger than Monte Carlo error**, by roughly
+2.5–3.5x in the `R` block. Any `R` or `mu_logit_R` figure therefore carries
+irreproducibility across package rebuilds well beyond its stated MCSE. This
+is consistent with everything else known about those parameters — `R` is not
+identified by these data and sits on a ridge with `log10_total0` — but it has
+not been measured before and it is not captured by any interval this project
+reports.
+
+**Not separated**: the two builds differ by the `b_shape` change *and* by a
+recompile, and the change alters the `parameters` block, so a given seed no
+longer yields the same initial values across builds. Isolating pure rebuild
+drift needs the pre-change code rebuilt and refitted, which is a ~2.5 h fit
+plus a reinstall that would clobber the current one. The block split is what
+makes that unnecessary for clearing the change; it is still what would be
+needed to characterise the drift itself.

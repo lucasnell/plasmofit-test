@@ -40,7 +40,12 @@ PAIRS <- tribble(
     ~cmp, ~new,                      ~old,              ~what,
     "A",  "np_wide_total0-rebuild",  "np_wide_total0",  "old path, b_shape free",
     "B",  "np_bs400-rebuild",        "np_bs400",        "old path, tight prior",
-    "C",  "np_bs400_data",           "np_bs400",        "NEW path vs tight prior")
+    "C",  "np_bs400_data",           "np_bs400",        "NEW path vs tight prior",
+    ## The NULL: identical code and data, sampler seed alone differs. Every
+    ## difference it shows is run-to-run variation, including the separate
+    ## step-size and mass-matrix adaptation each run performs. A and B have to
+    ## be read against THIS, not against 2 or 3.
+    "N",  "np_wide_total0-null",     "np_wide_total0-rebuild", "NULL: seed only")
 
 ## Posterior mean and its Monte Carlo standard error for every scalar entry.
 summ_of <- function(cfg) {
@@ -93,7 +98,12 @@ z_tab <- map(seq_len(nrow(PAIRS)), \(i) {
                se_mean_new > 0, se_mean_old > 0) |>
         mutate(z = (mean_new - mean_old) /
                    sqrt(se_mean_new^2 + se_mean_old^2))
+    ## mean|z| is the statistic the verdict uses. The max is one order
+    ## statistic over ~200 entries and is far noisier; reading a regression
+    ## off it is how a 3.52 looked alarming when the block that moved was not
+    ## the one the change touches. For well-calibrated z, mean|z| = 0.798.
     tibble(cmp = p$cmp, what = p$what, n = nrow(j),
+           mean_abs_z = mean(abs(j$z)),
            max_abs_z = max(abs(j$z)), frac_gt2 = mean(abs(j$z) > 2),
            frac_gt3 = mean(abs(j$z) > 3),
            worst = j$par[which.max(abs(j$z))])
@@ -111,14 +121,29 @@ map(need, \(c) tibble(fit = c, div = S[[c]]$health$div,
     print(width = Inf)
 
 cat("\n=== verdict ===\n")
+null_z <- z_tab$max_abs_z[z_tab$cmp == "N"]
+if (length(null_z) != 1 || !is.finite(null_z)) {
+    cat("  no null run present -- every comparison below is INCONCLUSIVE\n")
+} else {
+    null_m <- z_tab$mean_abs_z[z_tab$cmp == "N"]
+    cat(sprintf("  null run (seed alone): mean |z| = %.2f, max %.2f, frac > 2 = %.3f\n",
+                null_m, null_z, z_tab$frac_gt2[z_tab$cmp == "N"]))
+    cat(sprintf("  for well-calibrated z, mean |z| would be 0.80 -- the null is %s\n",
+                if (abs(null_m - 0.798) < 0.15) "calibrated" else "NOT calibrated"))
+    cat("  a test at or near that is run-to-run variation, not a change\n\n")
+}
 for (i in seq_len(nrow(z_tab))) {
     r <- z_tab[i, ]
-    v <- if (r$max_abs_z > 5) {
-        "CHANGED -- shift far outside Monte Carlo error"
-    } else if (r$max_abs_z > 3) {
-        "SUSPECT -- largest shift beyond 3 combined MCSE, look at it"
+    if (r$cmp == "N") next
+    ratio <- r$mean_abs_z / null_m
+    v <- if (!is.finite(null_z)) {
+        "INCONCLUSIVE -- no null"
+    } else if (ratio <= 1.15) {
+        "PASS -- no more spread than the seed alone produces"
     } else {
-        "consistent with equivalence; NOT a pass (no null run, see header)"
+        paste0("EXCESS x", sprintf("%.2f", ratio),
+               " -- read the per-block split before blaming the change")
     }
-    cat(sprintf("  %s  %-28s %s\n", r$cmp, r$what, v))
+    cat(sprintf("  %s  %-28s mean |z| %.2f (null %.2f)  %s\n", r$cmp, r$what,
+                r$mean_abs_z, null_m, v))
 }
