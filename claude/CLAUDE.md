@@ -92,6 +92,18 @@ and left one live lead:
   on the question.
 - Beyond that it is idea-limited, not compute-limited.
 
+### Package repo state
+
+`main` at **`5be1b47`**, **not pushed**. Carries the merged `b_shape`-as-data
+change and `hold_out` masking on top. The installed build is this one.
+
+Five files show as modified and are **deliberately uncommitted build noise**:
+`R/RcppExports.R`, `src/RcppExports.cpp`, `src/available.stanfunctions.cpp`,
+and `stanExports_archer_fit_single.h` / `stanExports_test_ode.h` — all
+namespace-hash churn from the rebuild, with zero `hold_out` references. The
+four model headers that *did* change in substance are committed. Do not
+"tidy" the rest into a commit; they regenerate on every install.
+
 ### Scratch to clean up
 
 `/home2/lan68/plasmofit/.prechange/` holds a git worktree at `e61fb47` and a
