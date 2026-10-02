@@ -21,45 +21,51 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-02
 
-**Five tasks running**, all mailing on `END,FAIL`:
+**26 tasks running**, all mailing on `END,FAIL`. Nothing below waits on
+anything else.
 
-- **29537**, 1 task — thread 6, build drift. `np_wide_total0-drift`: source
-  `e61fb47` rebuilt today into its own library, same seed, same data as the
-  September fit. Identical source, so every difference is the rebuild alone.
-- **29538**, 4 tasks — **Design A**, configs 23–26. The hierarchy comparison
-  with a genuinely held-out window: the last third of every series, 306 of
-  1130 observations, scored across all four model variants.
+| job | n | what |
+|---|---|---|
+| 29537 | 1 | thread 6 drift, `np_wide_total0-drift` (pre-change build) |
+| 29545 | 1 | thread 6 drift, `np_bs400-drift` — makes it n=2 |
+| 29538 | 4 | **Design A**, configs 23–26, last-third mask |
+| 29543 | 16 | budget replicates 6–7 (6 arms), bound arms reps 4–5 |
+| 29544 | 4 | third-seed refits: `default-rep4`, `cl_move-rep2`, `cl_wide_move-rep2/3` |
 
-Both read `_scripts/wockner-fit.R`, so **do not edit it until the queue
-drains** — `Rscript` parses incrementally and an edit mid-run has killed jobs
-here before.
+**Do not edit `_scripts/wockner-fit.R` or `_scripts/wockner-schedule-sim.R`
+until the queue drains.** Both are being read.
 
-**Package: `fixed-b-shape` is merged to `main`** (`f17c7b6`), and `hold_out`
-masking is in on top (`815609e`). Not pushed. The installed build is the
-hold_out one; a build of the pre-change source lives in
-`/home2/lan68/plasmofit/.prechange/lib` with its worktree at
-`.prechange/src`, used only by 29537. **Delete both once thread 6 is
-written up** (`git worktree remove`).
+**Queued behind the queue draining**: Design A at a quarter-mask (4 fits). It
+needs 4 new configs in `wockner-fit.R`, which cannot be edited while 29537,
+29538, and 29545 read it. Running both mask fractions means the fraction
+cannot be chosen after seeing the answer.
 
-Full package suite passes with `PLASMOFIT_TEST_SAMPLING` set, including the
-assertion that all-zero `hold_out` reproduces an unmasked fit **bit-for-bit**.
+### Decision rules, fixed in advance
 
-### How to read these when they land
+Written down so these results can be acted on without a round-trip. If a
+result falls outside what a rule anticipated, that is the case worth stopping
+to discuss — not the cases below.
 
-**29537 (drift).** Compare `np_wide_total0-drift` against `np_wide_total0`
-with `_scripts/wockner-bshape-regression.R` — add the pair to `PAIRS`. Read
-its mean |z| against the seed-only null's **0.85** and the b_shape test's
-**1.23**. Near 1.23 → the excess is rebuild drift and the b_shape change is
-fully exonerated. Near 0.85 → the excess belongs to the change and the merge
-needs revisiting.
-
-**29538 (Design A).** Score the **held-out** elpd only: sum `log_lik` over the
-observations with `hold_out == 1`. `generated quantities` computes `log_lik`
-for every observation whether fitted or not, so the total would mix the two
-and answer nothing. The mask is the `ho_last_third` column built in
-`wockner-fit.R`; `_data/wock-data-daA_*.rds` carries the `hold_out` vector
-for each fit. A quarter instead of a third is the pre-registered sensitivity
-if the answer is marginal.
+1. **Thread 6 drift.** Compare each `-drift` fit against its September twin
+   with `_scripts/wockner-bshape-regression.R` (add the pairs to `PAIRS`).
+   Read mean |z| against the seed-only null's **0.85** and the b_shape test's
+   **1.23**. Near 1.23 in both → the excess is rebuild drift, the b_shape
+   change is exonerated, the merge stands, and thread 6 becomes a reporting
+   caveat on `R`. Near 0.85 → the excess belongs to the change; revisit the
+   merge before anything else.
+2. **Design A.** Score **held-out elpd only** — `log_lik` summed over
+   `hold_out == 1`. If `pooled_cl` loses by more than ~2 se the hierarchy
+   earns its keep on the test built to settle it; if it wins or ties, the
+   long-standing "no detectable benefit" result finally rests on a
+   comparison that is not broken. Either way, read the quarter-mask run
+   beside it before writing a verdict.
+3. **Refits.** If `default-rep4` fails a third seed, **stop reseeding** and
+   record it: that contradicts thread 9's finding on the two earlier cases
+   and is a result, not an obstacle.
+4. **Budget replicates.** Re-run `_scripts/wockner-schedule-sim-analyze.R`;
+   it globs, so no argument is needed. Expect the `b_shape` prior's share to
+   move again — it went 0.50 → 0.43 h from n=3 to n=4. Quote the n=6–7 figure
+   and its range, not the older one.
 
 ## Package state, 2026-10-02 — `b_shape` can now be supplied as data
 
