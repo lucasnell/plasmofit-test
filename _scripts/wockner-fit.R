@@ -264,6 +264,19 @@ if (curr_idx > length(CONFIGS)) {
 }
 
 cfg_name <- names(CONFIGS)[curr_idx]
+
+## WOCKFIT_SUFFIX=<string> appends to every output name for this run, so a
+## refit lands BESIDE the existing one instead of overwriting it. Needed for
+## any regression test, where the saved fit is the thing being compared
+## against: re-running a config under its own name destroys the baseline
+## before you can use it. The config itself is unchanged -- same priors, same
+## seed -- so two files differing only in this suffix are two runs of the
+## same specification.
+fit_suffix <- Sys.getenv("WOCKFIT_SUFFIX", "")
+if (nzchar(fit_suffix)) {
+    cfg_name <- paste0(cfg_name, fit_suffix)
+    cat("output suffix:", fit_suffix, "-> writing as", cfg_name, "\n")
+}
 cfg <- CONFIGS[[curr_idx]]
 
 # Within-chain threading measured at roughly 1.0x on these data: there are only
