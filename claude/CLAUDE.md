@@ -21,7 +21,8 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-02
 
-**Nothing is running.** The queue is empty and both repos are committed.
+**SLURM 29531 is running** — the null run for the b_shape regression, one
+fit, ~1.5 h, mailing on `END,FAIL`. Both repos are committed.
 
 Repo state: this repo at `main`; the package at `e637d8d` on branch
 **`fixed-b-shape`** (not merged, not pushed), and the installed `plasmofit`
@@ -34,16 +35,16 @@ accident.** Structurally exact; `np_bs400_data` (the new argument) matches
 `np_bs400` well. But `np_wide_total0-rebuild` vs `np_wide_total0` shows max
 |z| 3.52 on `b_shape[2]` with 17.5% of entries beyond 2, and the test has no
 null to judge that against. See `findings.md`, "Regression test for
-`b_shape`-as-data". **Next action, one fit, ~1.5 h:**
+`b_shape`-as-data".
 
-```
-cd /home2/lan68/plasmofit/plasmofit-test
-sbatch --array=9 --export=ALL,WOCKFIT_SEED=1618033989,WOCKFIT_SUFFIX=-null \
-    _scripts/wockner-fit.sh
-```
-
-Then re-read A's 3.52 against that run's max |z|. Similar → Monte Carlo
-variation. Near 2 → a real shift in `b_shape`, and the change is not inert.
+**The null is running** as SLURM 29531
+(`_scripts/wockner-fit-null.sh`, same code and data as
+`np_wide_total0-rebuild`, seed 1618033989, landing as
+`np_wide_total0-null`). When it finishes, add the pair
+`np_wide_total0-null` vs `np_wide_total0-rebuild` to `PAIRS` in
+`_scripts/wockner-bshape-regression.R` and re-run it. Read A's 3.52 against
+the null's max |z|: similar → Monte Carlo variation and the change is inert;
+near 2 → a real shift in `b_shape`.
 
 **Do not re-run a config under its own name to check anything** — that
 overwrites the baseline being compared against. `WOCKFIT_SUFFIX` exists for
