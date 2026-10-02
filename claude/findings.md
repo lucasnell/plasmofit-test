@@ -1503,3 +1503,46 @@ across every arm measured, so a −1.5 h effect could not hide in it.
 package's note that tight bounds are worth real compute and with `max_cl` =
 55 having reintroduced a boundary mode. Any future bound experiment should
 budget for refits on new seeds.
+
+### The 14 `grp_init` groups do not differ in `b_shape`
+
+`_scripts/bshape-between-group.R`, output `_data/bshape-between-group.log`.
+Post-hoc on `_data/wock-prior-panel.rds`, no refitting.
+
+The ladder pinned all 14 groups at a common centre, so it tested **fixed vs
+estimated** and said nothing about **one shared value vs 14**. Collapsing
+`vector[n_grp_init] b_shape` to a scalar is a separate change and needs its
+own evidence.
+
+Cells: over the 14 `grp_init` groups of one fit, `sd_between` is the sd of
+the per-group posterior **means** and `sd_within` the mean of the per-group
+posterior **sds**; `ratio` is their quotient, so well below 1 means the
+groups sit closer together than one group's own uncertainty. `log` rows are
+the same on `log(b_shape)`, the scale its prior is written on, with the
+within-group sd on that scale taken as `sd/mean` -- a delta-method
+approximation, adequate for an order of magnitude and not for an interval.
+Dimensionless.
+
+| fit | scale | `sd_between` | `sd_within` | `ratio` | range of means |
+|---|---|---|---|---|---|
+| `no_pool` | natural | 2.68 | 6.46 | **0.42** | 11.0-19.2 |
+| `no_pool` | log | 0.182 | 0.438 | **0.42** | -- |
+| `np_wide_bshape` | natural | 14.3 | 50.7 | **0.28** | 44.9-87.8 |
+| `np_wide_bshape` | log | 0.223 | 0.799 | **0.28** | -- |
+| `np_wide_both` | natural | 15.4 | 49.8 | **0.31** | 36.7-89.7 |
+| `np_wide_both` | log | 0.249 | 0.800 | **0.31** | -- |
+
+**The data carry no evidence that the groups differ.** The ratio is 0.28-0.42
+in every fit on both scales: the 14 estimates are three to four times closer
+together than one group's own posterior sd. The per-group means do span a
+factor of ~2 under the widened prior (44.9 to 87.8), but each carries a
+posterior sd near 50, so that spread sits well inside noise.
+
+The comparison is conservative in the direction that matters. `b_shape` has
+an independent prior per group and no hierarchical pooling, so nothing shrinks
+the per-group estimates toward each other; if anything they should be *more*
+dispersed than the truth, and they are less dispersed than the within-group
+noise.
+
+**So a single shared `b_shape` loses nothing measurable**, which is what
+would license moving it to the data block as one user-set value.
