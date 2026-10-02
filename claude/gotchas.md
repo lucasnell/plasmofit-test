@@ -142,3 +142,23 @@ orientation and the current state of play.*
   mathematically identical and pooling across noise replicates is fine. Do
   not use replicates from both sides of that change in any bit-exact
   regression test.
+- **A new arm in `wockner-schedule-sim.R` does not automatically reach the
+  paired tables.** `wockner-schedule-sim-analyze.R` filtered on a literal
+  `arm %in% c("default", "wide_bshape", "wide_total0", "wide_nuis")`, inlined
+  in two places, so `cl_move` and `cl_wide_move` ran, converged, and appeared
+  in the health and recovery sections while being silently absent from the
+  thread 2 paired contrast -- no error, just missing rows. It is now the
+  named constant `PAIRED_ARMS`, defined once. **Add a new arm there when you
+  add it to `ARMS`.**
+- **Bound overrides must go through `archer_stan_data()`, not the arm's
+  `data` list.** `min_cl`/`max_cl` feed
+  `mean_logit_cl = logit((cl_prior_center - min_cl) / (max_cl - min_cl))` and
+  the Erlang-window check, so writing them over the already-built data list
+  leaves every derived field describing the old bounds and produces a wrong
+  fit with no error. `wockner-schedule-sim.R` arms take a `build` list for
+  this; `data` is still applied afterwards for true pass-through entries.
+- **Moving the cycle-length bounds costs convergence.** Three of six
+  bound-geometry replicates failed the R-hat gate, one badly (1.32, 513
+  divergences). Tight bounds are worth real compute per the package docs, and
+  `max_cl = 55` reintroduced a boundary mode once. Budget for refits on new
+  seeds in any bound experiment.

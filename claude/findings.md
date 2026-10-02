@@ -1399,3 +1399,107 @@ replicates actually changed.
 
 Nuisance recovery barely moved at n=4-5: `default` `b_shape` 8.89 -> 8.77,
 `log10_total0` +102% -> +101%, `R` −23.8% -> −23.6%.
+
+### The ladder plateaus at ~400, and bound geometry is not the bias
+
+`_scripts/wockner-bshape-ladder.R` (output `_data/bshape-ladder.log`,
+`_data/wock-bshape-ladder.rds`) and
+`_scripts/wockner-schedule-sim-analyze.R` (output
+`_data/schedsim-analyze.log`). SLURM 29493 (3 real-data fits) and 29494 (6
+simulation fits), all COMPLETED.
+
+**Correction to the previous ladder section.** `np_bs150`'s max R-hat is
+**1.0513**, which fails the R-hat < 1.05 gate; it was described there as "at
+the gate" and should have been dropped. Nothing rests on it -- elpd is
+monotone through it either way -- but it is not a valid rung.
+
+#### Where the ladder stops climbing
+
+Cells: `age_range_h` is the central 99% of the starting-stage distribution at
+a 45.5 h cycle, in hours. `d_cl` is `cycle_length` minus `np_wide_total0`'s,
+in hours. `div_pct` is divergent transitions as a percent of 4000 post-warmup
+transitions. `vs_bs100` is the paired PSIS-LOO difference against the
+`np_bs100` rung over the same 1130 observations, **positive is better**, with
+the standard error of the paired difference.
+
+| rung | age range | `d_cl` | `div_pct` | max R-hat | `vs_bs100` (se) |
+|---|---|---|---|---|---|
+| 100 | 8.22 | −1.74 | 3.58 | 1.021 | 0 |
+| 150 | 6.73 | −1.77 | 3.48 | **1.051 (fails)** | +0.84 (0.51) |
+| 250 | 5.22 | −1.92 | 4.58 | 1.043 | +2.26 (0.50) |
+| 250, `max_shape` 1000 | 5.22 | −1.83 | 4.68 | **1.055 (fails)** | +2.26 (0.42) |
+| 400 | 4.14 | −1.89 | 4.32 | 1.029 | **+3.22** (0.54) |
+| 600 | 3.38 | −1.95 | 5.92 | 1.024 | +3.11 (0.51) |
+
+Direct paired comparisons at the top of the ladder, same cells:
+
+| contrast | elpd_diff (se) | z |
+|---|---|---|
+| 400 vs 250 | **+0.96** (0.29) | +3.3 |
+| 600 vs 400 | −0.11 (0.35) | −0.3 |
+| 250 `max_shape` 1000 vs 250 | **+0.00** (0.38) | 0.0 |
+
+**elpd plateaus at 400.** It is still detectably climbing from 250 to 400
+(z 3.3) and flat from 400 to 600 (z −0.3). So the data prefer a
+starting-stage age range of about **4 h**, and asking for narrower buys
+nothing. That is the answer the extension was run for.
+
+**`max_shape` on its own is worth nothing predictively** -- +0.00 elpd
+(se 0.38) between two fits pinned identically at 250 -- so the extended rungs
+are comparable with 14-18 despite using 1000 against 400. Note the control
+fit itself fails the R-hat gate at 1.0550, so by this project's own rule it
+is void. The conclusion does not depend on it: `np_bs400` beats `np_bs250`
+by +0.96 (se 0.29) and `np_bs250_ms1000` by +0.96 (se 0.31), identically, so
+which of the two is used as reference does not matter.
+
+**`cycle_length` is flat across the top of the ladder** -- 43.6 to 43.7 h
+from 250 to 600 -- against 44.0 h at 50 and 45.5 h free. So the sensitivity
+reported earlier does not widen: anywhere from 250 upward gives the same
+answer to within 0.1 h.
+
+**Pushing past the plateau costs sampling.** Divergences are worst at 600
+(5.92%, against 2.05% with `b_shape` free). There is no reason to pin above
+~400 and a reason not to.
+
+**Against the biology**, 4 h is *more* synchronous than the 9 h initial age
+range assumed for controlled human infection trials in `mmcm.pdf` Fig. 1
+(`b_shape` ~ 84). The data want tighter synchrony than that assumption, not
+looser, and the 84 rung is detectably worse than 100, 250, and 400.
+
+#### Bound geometry: not the explanation
+
+Two arms, both **moving** the `[35, 50]` window rather than only widening it.
+`cl_move` is `[37.5, 52.5]` -- the same 15 h width centred on the 45.012 h
+truth, isolating asymmetry -- and `cl_wide_move` is `[30, 60]`, moved and
+widened, asking whether distance from any bound matters.
+
+Cells: paired change in cycle-length bias in hours, arm minus `default` on
+the same simulated dataset, **negative means the change reduced the bias**;
+`n_pair` is replicates where both converged.
+
+| arm | `n_pair` | mean change | range |
+|---|---|---|---|
+| `cl_move` | 2 | **+0.059 h** | −0.04 to +0.157 |
+| `cl_wide_move` | 1 | **+0.03 h** | -- |
+| `wide_bshape` (for scale) | 4 | −0.433 h | −0.531 to −0.228 |
+
+**Bound geometry does not carry the bias.** To account for the ~1.5 h that
+survives correcting the nuisance priors, moving the bounds would have to move
+it by about −1.5 h. It moves it by +0.06 h, and the sign is *wrong* -- a
+centred window is marginally worse, not better. Even the most extreme single
+replicate (+0.157 h) is an order of magnitude too small and the wrong way.
+Neither asymmetry (`cl_move`) nor distance from the bounds (`cl_wide_move`)
+is the mechanism. **Thread 2 is out of cheap suspects.**
+
+**The evidence is thinner than planned: 3 of 6 replicates failed the gate.**
+`cl_move-rep2` failed badly (max R-hat 1.32, 513 divergences, min ESS 10),
+and `cl_wide_move-rep2` and `-rep3` are near-misses (1.07 and 1.06). So the
+contrasts are n=2 and n=1. That is weak for a precise estimate and adequate
+for the conclusion drawn, which is only that the effect is nowhere near the
+size needed -- the paired contrast's own spread within an arm is ~0.2-0.3 h
+across every arm measured, so a −1.5 h effect could not hide in it.
+
+**Moving the bounds degrades sampling**, which is itself consistent with the
+package's note that tight bounds are worth real compute and with `max_cl` =
+55 having reintroduced a boundary mode. Any future bound experiment should
+budget for refits on new seeds.

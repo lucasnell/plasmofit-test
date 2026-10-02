@@ -28,6 +28,13 @@ suppressPackageStartupMessages({
     library(rstan)
 })
 
+## Arms that get a paired contrast against `default`. Named rather than
+## inlined because it was inlined in two places and a new arm added to
+## wockner-schedule-sim.R would silently never appear in the paired tables --
+## which is exactly what happened to cl_move and cl_wide_move.
+PAIRED_ARMS <- c("default", "wide_bshape", "wide_total0", "wide_nuis",
+                 "cl_move", "cl_wide_move")
+
 res_files <- list.files("_data", "^wock-schedsim-RES-.*[.]rds$", full.names = TRUE)
 if (length(res_files) == 0) stop("no wock-schedsim-RES-*.rds found in _data/")
 
@@ -383,8 +390,7 @@ nuis |>
 ## ---------------------------------------------------------------------- #
 
 paired_arms <- tab |>
-    filter(src == "mean@pooled_cl", arm %in% c("default", "wide_bshape",
-                                     "wide_total0", "wide_nuis")) |>
+    filter(src == "mean@pooled_cl", arm %in% PAIRED_ARMS) |>
     select(arm, rep, bias)
 base <- paired_arms |> filter(arm == "default") |> select(rep, base = bias)
 ## One converged `default` per replicate, or the left_join below silently
@@ -421,8 +427,7 @@ cyc |> summarise(.by = arm, n_arm = n(), n_pair = sum(!is.na(delta)),
 cat("\n=== thread 2: nuisance recovery by arm (mean-vector truth) ===\n")
 nuis |>
     left_join(tab |> select(config, arm), by = "config") |>
-    filter(src == "mean@pooled_cl", arm %in% c("default", "wide_bshape",
-                                     "wide_total0", "wide_nuis"),
+    filter(src == "mean@pooled_cl", arm %in% PAIRED_ARMS,
            par %in% c("b_shape", "log10_total0", "R")) |>
     summarise(.by = c(par, arm), n_rep = n_distinct(config),
               truth = first(mean_truth), est = mean(mean_est),

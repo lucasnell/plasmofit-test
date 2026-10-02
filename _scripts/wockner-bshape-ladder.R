@@ -39,6 +39,14 @@ LADDER <- tribble(
     "np_bs100",        100,
     "np_bs150",        150,
     "np_bs250",        250,
+    ## max_shape = 1000 from here down, against 400 for the rungs above.
+    ## np_bs250_ms1000 is np_bs250 with max_shape ALONE changed, so the gap
+    ## between the two is what max_shape is worth on its own -- it sets the
+    ## scale of Stan's bounded transform and so can move divergences and step
+    ## size without the pin changing at all. Read it before 400 and 600.
+    "np_bs250_ms1000", 250,
+    "np_bs400",        400,
+    "np_bs600",        600,
     "np_wide_both",    NA_real_)
 
 PARS <- c("log10_total0", "R", "cycle_length", "b_shape", "sd_iRBC")
