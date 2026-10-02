@@ -19,6 +19,28 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
+## Package state, 2026-10-02 — `b_shape` can now be supplied as data
+
+**The installed `plasmofit` is from branch `fixed-b-shape`, not `main`, and
+is not pushed.** `archer_stan_data(b_shape = )` takes a single value recycled
+over `grp_init` groups, or one per group; `NULL` (the default) estimates it
+as before. In Stan, `b_shape_free` is zero-sized when the switch is on and
+`b_shape` is a transformed parameter assembled from whichever source is
+active, so it stays in the output and every script reading it works unchanged.
+Package commits `0bf12b0` and `e637d8d`; this repo's follow-through is
+`c213cbb`.
+
+**The Stan models were recompiled**, so per `gotchas.md` nothing fitted from
+here on is bit-comparable with the fits already on disk. That is fine for
+pooling across noise replicates and not fine for a bit-exact regression test.
+
+**The end-to-end regression has NOT been run.** The package test suite passes
+(20 new assertions, sampling tests included) and a fixed fit returns
+`b_shape` = 400.0 exactly, but nobody has yet checked that `b_shape = NULL`
+reproduces the existing `np_wide_total0` posterior, or that `b_shape = 400`
+reproduces `np_bs400`. Both are ~2 h fits and both are the real test.
+
+## Nothing in flight as of 2026-10-02
 ## Nothing in flight as of 2026-10-02
 
 The queue is empty. SLURM 29493 (ladder extension) and 29494 (bound geometry)

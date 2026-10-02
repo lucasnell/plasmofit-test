@@ -162,3 +162,21 @@ orientation and the current state of play.*
   divergences). Tight bounds are worth real compute per the package docs, and
   `max_cl = 55` reintroduced a boundary mode once. Budget for refits on new
   seeds in any bound experiment.
+- **`R CMD INSTALL` reuses stale `src/*.o`, so a Stan change can install a
+  binary that ignores it.** After editing a `.stan` file, the regenerated
+  `src/stanExports_*.h` was correct and `stanmodels[[...]]@model_code`
+  contained the new code, but the compiled object files were reused from an
+  earlier build and the fitted model silently ignored the new data entries --
+  Stan discards unknown data fields without complaint, so there was no error
+  anywhere. A fit with `b_shape = 400` returned `b_shape` = 114, not 400.
+  **Use `R CMD INSTALL --preclean`, or `rm src/*.o src/*.so` first**, and
+  **verify against the installed binary, never the source**: check that the
+  new parameter appears in `fit@model_pars` and that a fit actually honours
+  the new argument. Checking `@model_code` is not enough -- it was right while
+  the binary was wrong.
+- **A `00LOCK-plasmofit` directory during a running install is normal.**
+  `R CMD INSTALL` creates it at the start and removes it on a clean finish.
+  Do not delete it to "clean up" while an install is in flight. It is only a
+  problem if it outlives the install, and then the recovery is the one in the
+  "Never interrupt `R CMD INSTALL`" entry above: `rmdir` the empty live
+  directory, move the lock's copy back, then remove the lock.
