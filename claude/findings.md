@@ -1733,3 +1733,59 @@ check specifically: max |z| 1.79, sd ratio 0.964-1.049.
 **Thread 1's first half is closed.** What remains of that thread is the
 anchored fit itself, which was taken on 2026-09-24 (`np_anchor`) and is
 written up under "The `log10_total0` prior was misspecified".
+
+### The posterior median does not help the cycle-length bias
+
+`_scripts/summary-stat-check.R`, output `_data/summary-stat-check.log`.
+Post-hoc on four saved fits, no refitting.
+
+Cells: per-trial posterior `cycle_length` averaged over 13 trials, by summary
+statistic, in hours; `bias` is that minus the simulated truth of 45.012 h,
+**positive means overestimation**; `shift` is median minus mean; `skew` is
+the median over trials of each trial's posterior skew, 0 being symmetric.
+
+| fit | bias by mean | bias by median | shift | skew |
+|---|---|---|---|---|
+| `default-rep1` | +2.58 | **+2.66** | +0.080 | −0.52 |
+| `default-rep2` | +1.14 | **+1.17** | +0.031 | −0.18 |
+| `default-rep3` | +2.19 | **+2.28** | +0.088 | −0.58 |
+
+**It makes the bias slightly worse, not better**, by 0.03-0.09 h, because the
+per-trial `cycle_length` posteriors are **left**-skewed, so the median sits
+*above* the mean. That matches the earlier mode check from the other side:
++1.82 h by the mean against +1.87 h by the mode. Mean, median, and mode span
+0.05 h on a bias of 1.8 h — a 3% effect on a problem that is 100%.
+
+**The deeper reason is not skew.** Mean, median, and marginal mode are all
+**marginal** summaries: each integrates over the other ~200 parameters alike.
+If the bias comes from integrating over the `(log10_total0, R)` ridge and two
+unidentified nuisances, all three carry it equally and choosing between them
+cannot help. Only a **joint** summary -- the MAP -- escapes marginalisation,
+which is why `rstan::optimizing` on the same model and priors is the
+discriminating test and a change of summary statistic is not.
+
+**Where the median does change a reported number.** Cells: over each
+parameter's groups, the mean of the per-group posterior means and medians;
+`rel_shift` is (median − mean) / mean; `skew` the median over groups of the
+per-group posterior skew. Dimensionless.
+
+| parameter | skew | `rel_shift` |
+|---|---|---|
+| `b_shape` | **+1.45 to +1.77** | **−8.5% to −10.7%** |
+| `sd_iRBC` | +0.54 to +0.60 | −1.1% |
+| `R` | +0.12 to +0.55 | −0.4% to −0.7% |
+| `log10_total0` | −0.25 to +0.15 | −0.2% to −0.6% |
+| `cycle_length` | +0.06 (real), −0.18 to −0.58 (sim) | ~0 |
+
+**`b_shape` is the one parameter where the summary choice matters**, and it
+matters by about 10% under the default prior as well as the 65.4-vs-48.3 gap
+already recorded under the widened one. Quote its median. Everything else
+moves by around 1% or less.
+
+**An observation not previously noted**: the real `cycle_length` posterior is
+symmetric (skew +0.06) while the simulated ones are distinctly left-skewed
+(−0.18 to −0.58). The simulated estimates sit at 46.2-47.6 h, within 2.4-3.8 h
+of `max_cl` = 50, where the real fit at 45.5 h is further from it — so this
+looks like proximity to the upper bound shaping the posterior. It is **not**
+the bias mechanism: moving the bounds to `[30, 60]`, which puts the estimate
+13 h clear of them, changed the paired bias by +0.03 h.
