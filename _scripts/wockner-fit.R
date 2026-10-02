@@ -380,8 +380,19 @@ anchor_pars_for <- function(data) {
     if (isTRUE(as.integer(data$total0_anchor) == 1L))
         c("delta_total0", "sigma_total0") else character(0)
 }
-par_block_for <- function(model, data = d) {
-    c("b_shape", "b_off_vec", "log10_total0",
+## Since b_shape became optionally-data, the PARAMETER is `b_shape_free` and
+## `b_shape` is a transformed parameter assembled from it or from the data.
+## unconstrain_pars() wants the parameter, and passing it a transformed one
+## errors. Models compiled before that change still have `b_shape` as the
+## parameter, so pick whichever this fit actually has -- fit@model_pars lists
+## transformed parameters too, so the presence of `b_shape` cannot settle it
+## and `b_shape_free` has to be the thing tested for.
+bshape_par_for <- function(fit) {
+    if ("b_shape_free" %in% fit@model_pars) "b_shape_free" else "b_shape"
+}
+
+par_block_for <- function(model, fit, data = d) {
+    c(bshape_par_for(fit), "b_off_vec", "log10_total0",
       r_pars_for(model), cl_pars_for(model), "z_sd_iRBC",
       anchor_pars_for(data))
 }
@@ -407,7 +418,13 @@ draw_as_list <- function(fit, pars, i = 1L) {
         else if (length(d) == 2L) array(x[i, ], d[2])
         else array(x[i, , ], d[-1])
     })
-    for (nm in intersect(c("delta_total0", "sigma_total0"), fit@model_pars)) {
+    ## Zero-sized parameters contribute no draws, so rstan::extract returns
+    ## nothing for them -- but unconstrain_pars() still needs an entry or it
+    ## fails with "variable does not exist". b_shape_free is zero-sized
+    ## whenever b_shape was supplied as data, exactly as delta_total0 and
+    ## sigma_total0 are whenever the anchor is off.
+    for (nm in intersect(c("delta_total0", "sigma_total0", "b_shape_free"),
+                         fit@model_pars)) {
         if (!nm %in% names(out)) out[[nm]] <- array(numeric(0), 0L)
     }
     out
@@ -415,16 +432,23 @@ draw_as_list <- function(fit, pars, i = 1L) {
 
 ## seconds per gradient evaluation
 grad_time <- function(fit, model, n = 200L) {
-    u <- rstan::unconstrain_pars(fit, draw_as_list(fit, par_block_for(model), 1L))
+    u <- rstan::unconstrain_pars(fit, draw_as_list(fit, par_block_for(model, fit), 1L))
     system.time(for (k in seq_len(n)) rstan::grad_log_prob(fit, u))[["elapsed"]] / n
 }
 
 ## condition number of the posterior correlation matrix, unconstrained scale
 fit_cond <- function(fit, max_shape, model) {
     lg <- function(p) log(p / (1 - p))
-    pars <- par_block_for(model)
+    pars <- par_block_for(model, fit)
     dr <- rstan::extract(fit, pars = pars, permuted = TRUE)
-    bs <- lg((dr$b_shape - 2) / (max_shape - 2))
+    ## b_shape contributes a block only when it was ESTIMATED. Supplied as
+    ## data it is constant, so it has no unconstrained coordinate and a
+    ## constant column would make cor(U) undefined (zero variance -> NaN)
+    ## rather than merely uninformative.
+    bs_nm <- bshape_par_for(fit)
+    bs <- if (!is.null(dr[[bs_nm]]) && length(dr[[bs_nm]]) > 0) {
+        lg((dr[[bs_nm]] - 2) / (max_shape - 2))
+    } else NULL
     ## unit_vector[2] is rank-deficient in storage; use the angle instead
     ang <- atan2(dr$b_off_vec[, , 2], dr$b_off_vec[, , 1])
     colnames(ang) <- paste0("b_ang[", seq_len(ncol(ang)), "]")
@@ -440,6 +464,7 @@ fit_cond <- function(fit, max_shape, model) {
     } else {
         cbind(mu_logit_cl = dr$mu_logit_cl, sigma_logit_cl = log(dr$sigma_logit_cl), dr$eta_cl)
     }
+    ## cbind() drops a NULL, so a fixed b_shape simply leaves the block out.
     U <- cbind(bs, ang, dr$log10_total0, r_block, cl_block, dr$z_sd_iRBC)
     ev <- eigen(cor(U), only.values = TRUE)$values
     sqrt(max(ev) / min(ev))
