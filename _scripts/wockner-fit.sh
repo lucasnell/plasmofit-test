@@ -14,6 +14,7 @@
 #  14 np_bs50        15 np_bs84       16 np_bs100
 #  17 np_bs150       18 np_bs250      19 np_bs400
 #  20 np_bs600       21 np_bs250_ms1000
+#  22 np_bs400_data  -- b_shape passed as DATA, not pinned by a prior
 #
 # 14-18 are the b_shape ladder: b_shape pinned by a tight prior at five
 # centres, all on the corrected log10_total0 prior, so they are read against

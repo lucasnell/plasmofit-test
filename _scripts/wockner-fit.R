@@ -236,6 +236,20 @@ CONFIGS <- list(
     np_bs250_ms1000 = list(model = "no_pool",  data = list(sd_log10_total0 = 1,
                                                            mean_log_b_shape = log(250),
                                                            sd_log_b_shape = 0.05,
+                                                           max_shape = 1000)),
+    ## ---- 22: the new b_shape-as-data path ------------------------------
+    ## Exercises archer_stan_data(b_shape = ) rather than pinning b_shape
+    ## with a tight prior. It should reproduce np_bs400 (entry 19): a
+    ## lognormal at sd 0.05 is +-10% at 95%, worth under 0.2 h of
+    ## starting-stage spread at this centre, so the two are nearly the same
+    ## model. That makes np_bs400 the regression target for the new path.
+    ##
+    ## mean_log_b_shape/sd_log_b_shape are unused when b_shape is data and are
+    ## left at their defaults. max_shape only ever bounded b_shape itself, so
+    ## it is irrelevant here too, but it is passed at 1000 to match entry 19
+    ## exactly rather than leaving one more thing different between them.
+    np_bs400_data  = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
                                                            max_shape = 1000))
 )
 
@@ -247,6 +261,20 @@ CALC_LOG_LIK <- TRUE
 # Fixed, because this posterior is multimodal: without it, two runs differ by
 # which mode each chain initializes into and not just by Monte Carlo error.
 SEED <- 538065874
+
+## WOCKFIT_SEED=<n> overrides it. The reason to want that is a NULL RUN: two
+## fits of identical code and data differing only in the sampler seed, which
+## is the only thing a regression test can judge a posterior shift against.
+## Comparing a shift to its Monte Carlo standard error is anti-conservative,
+## because two runs also differ in step-size and mass-matrix adaptation and
+## MCSE does not capture that. Pair it with WOCKFIT_SUFFIX so the null lands
+## beside the run it is the null for.
+seed_env <- Sys.getenv("WOCKFIT_SEED", "")
+if (nzchar(seed_env)) {
+    SEED <- as.integer(seed_env)
+    if (is.na(SEED)) stop("WOCKFIT_SEED must be an integer")
+    cat("sampler seed overridden:", SEED, "\n")
+}
 
 N_CHAINS <- 4L
 WARMUP <- 700L
