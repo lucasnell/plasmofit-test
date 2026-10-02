@@ -19,6 +19,50 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
+## Resume here, 2026-10-02
+
+**Nothing is running.** The SLURM queue is empty, both repos are committed,
+and no job is waiting on anything. A restart loses nothing.
+
+Repo state: this repo at `f857ec3` on `main`; the package at `e637d8d` on
+branch **`fixed-b-shape`** (not merged to `main`, not pushed). The installed
+`plasmofit` is built from that branch. The package repo shows
+`src/available.stanfunctions.cpp` as modified — that is a generated namespace
+hash from a build, it predates this work, and it is deliberately not
+committed.
+
+**The one thing left undone on the package change** is its end-to-end
+regression. The suite passes and a fixed fit returns `b_shape` = 400.0
+exactly, but nobody has checked that the change left the FREE path alone.
+Two fits, ~2 h each, which can run together:
+
+```
+cd /home2/lan68/plasmofit/plasmofit-test
+sbatch --array=9  _scripts/wockner-fit.sh   # np_wide_total0, b_shape free
+sbatch --array=19 _scripts/wockner-fit.sh   # np_bs400, b_shape pinned by prior
+```
+
+Compare each against the fit of the same name already in `_data/`. **The
+models were recompiled, so these cannot be bit-identical** — compare
+posteriors scaled by Monte Carlo error against a two-seed null, per
+`gotchas.md`. Note neither of those configs uses the new argument; a third
+fit passing `b_shape = 400` through `archer_stan_data()` is what would test
+the new path against the tight-prior rung it should reproduce, and it needs a
+new entry in `wockner-fit.R`'s `CONFIGS`.
+
+**Then, in priority order:**
+
+1. **Decide whether the package change goes to `main`**, and whether
+   `wockner-fit.R` should start passing `b_shape` rather than pinning it with
+   a tight prior.
+2. **Thread 4, `hold_out` masking then Design A** — the only honest route to
+   the hierarchy answer, and the only instrument left for the ~1.5 h of
+   cycle-length bias that nothing else has explained. The real engineering
+   job; all-zero `hold_out` reproducing current fits is its regression test.
+3. **`default-rep4`** still misses the R-hat gate at 1.06 on a second seed
+   (`SCHEDSIM_FIT_SEED=1618033989`). A third seed or a longer warmup would
+   take the paired cycle-length budget from n=4 to n=5.
+
 ## Package state, 2026-10-02 — `b_shape` can now be supplied as data
 
 **The installed `plasmofit` is from branch `fixed-b-shape`, not `main`, and
