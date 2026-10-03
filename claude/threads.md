@@ -135,21 +135,23 @@ Roughly in priority order.
    offset does not survive as a number: -0.304, -0.110, -0.509 h across the
    three settings, a factor of 4.6 and non-monotone. Quote **-0.509 h**, the
    best-fitting setting.
-4. **`hold_out` masking in `plasmofit`, then Design A.** The enabling change
-   for cross-validation that does not rely on PSIS: a per-observation 0/1
-   `hold_out` in `data`, with `transformed data` ordering each combo's kept
-   observations first and storing a second length, so the model block's
-   `reduce_sum` uses the fitting length while `generated quantities` keeps
-   the full range. `log_lik` there (archer_fit.stan:492-515) is already
-   computed independently of the model block, which is what makes this work.
-   No change to `traj_combo_partial_sum` or the dedup; all-zero `hold_out`
-   must reproduce current fits exactly, which is the regression test. Apply
-   to all four Stan programs, add `archer_stan_data(hold_out = )`.
-   Then **Design A**: mask the later portion of every series and compare
-   held-out elpd across all four model variants (~4 fits). Each trial's
-   initial conditions, error scale and `eta_cl[j]` stay informed, so
-   `no_pool` can adapt per trial while `pooled_cl` cannot, and cycle-length
-   error shows up as accumulated phase drift exactly in the held-out window.
+4. ~~**`hold_out` masking in `plasmofit`, then Design A.**~~ **DONE
+   2026-10-03, and it reversed the standing answer.** The masking shipped in
+   the package (per-observation 0/1, kept observations ordered first within
+   each trajectory combo, `generated quantities` scoring every observation
+   whether fitted or not; all-zero reproduces an unmasked fit bit-for-bit,
+   asserted in `tests/testthat/test-holdout.R`). Design A then masked the
+   last third of every series and scored the held-out window:
+   **collapsing `cycle_length` to a single value costs 3.27 log units at
+   z = −4.5**, so the hierarchy earns its keep. Every weak comparison before
+   it had the two indistinguishable. See `findings.md`, "Design A".
+   `pooled_R` is void there on R-hat 1.08 and `pooled_both` is imprecise.
+   **Still open within this**: the quarter-mask sensitivity (SLURM 29575) was
+   fixed before any fit ran and must be reported beside the third, whichever
+   way it reads. And a masked fit scores a held-out WINDOW, not a held-out
+   TRIAL -- so this answers whether per-trial cycle lengths predict better,
+   not whether a never-seen trial would be predicted better, which is thread
+   5's question and remains structurally near-rigged.
 5. **Design B, only if A is ambiguous.** True leave-one-trial-out K-fold,
    13 folds x 2-4 models. Note it is structurally near-rigged against the
    hierarchy: for a never-seen trial, `no_pool`'s point prediction collapses

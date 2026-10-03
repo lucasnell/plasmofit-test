@@ -19,97 +19,63 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Resume here, 2026-10-02 (end of session)
+## Resume here, 2026-10-03
 
-**26 tasks running**, all mailing `lan68@cornell.edu` on `END,FAIL`. Nothing
-below waits on anything else. Both repos are committed; a restart costs only
-the wait.
+**4 tasks running**: SLURM **29575**, Design A at the quarter mask (configs
+27–30), ~2 h, mailing on `END,FAIL`. Everything else from the 26-task batch
+is read back and written up. Both repos committed.
 
-| job | n | what |
-|---|---|---|
-| 29537 | 1 | thread 6 drift, `np_wide_total0-drift` (pre-change build) |
-| 29545 | 1 | thread 6 drift, `np_bs400-drift` — makes it n=2 |
-| 29538 | 4 | **Design A**, configs 23–26, last-third mask |
-| 29543 | 16 | budget replicates 6–7 (6 arms), bound arms reps 4–5 |
-| 29544 | 4 | third-seed refits: `default-rep4`, `cl_move-rep2`, `cl_wide_move-rep2/3` |
+**Do not edit `_scripts/wockner-fit.R` while 29575 runs.** Doing exactly that
+is what corrupted thread 6's first measurement — see the gotcha; the job
+completed cleanly and still produced an incomparable fit.
 
-**Do not edit `_scripts/wockner-fit.R` or `_scripts/wockner-schedule-sim.R`
-until the queue drains.** Both are being read; `Rscript` parses incrementally
-and an edit mid-run has killed jobs here before.
+### When 29575 lands
 
-### First three things to do, in order
+`PREFIX=daQ_ srun ... Rscript --vanilla _scripts/wockner-designA-score.R`,
+then report it beside the third-mask result. Both fractions were fixed before
+any fit ran; a verdict holding at one and not the other is a finding about
+the design's sensitivity, not grounds for preferring either.
 
-1. **Submit Design A at a quarter-mask** (4 fits) the moment the queue
-   drains. It needs 4 configs in `wockner-fit.R` mirroring 23–26 with the
-   mask at a quarter instead of a third — the `ho_last_third` column is built
-   in that script, so add an `ho_last_quarter` beside it. Running both
-   fractions means the fraction cannot be chosen after seeing the answer,
-   which is the whole point of having pre-registered it.
-2. **Read the five running jobs back** against the decision rules below.
-3. **Then the `sd_iRBC` arm** — see "where the bias question stands".
+### Then, in priority order
 
-### Decision rules, fixed in advance
+1. **Fix the mask so it stops reordering rows.** The Design A mask uses
+   `group_by(id) |> arrange(time)`, which changed the group level order and
+   silently invalidated entry-wise comparison with every earlier fit.
+   Replace it with a `rank(time)` within group, which leaves row order
+   untouched. **Only after 29575 drains.**
+2. **The `sd_iRBC` arm** — the last named component of the MLE-to-posterior
+   gap nobody has isolated. The MLE fixes `sd_iRBC` at truth where the fit
+   estimates it. One simulation arm, paired against `default`.
+3. **More null runs** if the one unexplained regression figure matters:
+   `np_wide_total0` across the b_shape change sits at mean |z| 1.23 where
+   the null is 0.85 and both drift pairs are 0.76–0.79. With the null
+   measured once, nothing says how far a single comparison should scatter.
+   `WOCKFIT_SEED` makes extra nulls cheap.
+4. **Thread 2 is out of cheap suspects.** Bound asymmetry is ruled out
+   (+0.033 h at n=4). What remains of the ~1.5 h is idea-limited, not
+   compute-limited.
 
-Only a result falling *outside* one of these is worth stopping to discuss.
+## Settled, 2026-10-03
 
-1. **Thread 6 drift (29537, 29545).** Add both `-drift` pairs to `PAIRS` in
-   `_scripts/wockner-bshape-regression.R` and re-run. Read mean |z| against
-   the seed-only null's **0.85** and the b_shape test's **1.23**. Near 1.23 →
-   the excess is rebuild drift, the b_shape change is exonerated, the merge
-   stands, thread 6 becomes a reporting caveat on `R`. Near 0.85 → the excess
-   belongs to the change; revisit the merge before anything else.
-2. **Design A (29538).** Score **held-out elpd only** — `log_lik` summed over
-   `hold_out == 1`. `generated quantities` computes it for every observation
-   fitted or not, so the total mixes the two and answers nothing. The mask is
-   in `_data/wock-data-daA_*.rds`. Read the quarter-mask run beside it before
-   writing a verdict.
-3. **Refits (29544).** If `default-rep4` fails a **third** seed, stop
-   reseeding and record it — that contradicts thread 9 and is a result, not
-   an obstacle.
-4. **Budget replicates (29543).** Re-run
-   `_scripts/wockner-schedule-sim-analyze.R`; it globs, no argument needed.
-   Expect the `b_shape` prior's share to move again (0.50 → 0.43 h from n=3
-   to n=4). Quote the n=6–7 figure and its range.
-
-### Where the bias question stands
-
-The ~1.5 h of unexplained cycle-length bias is **not fit-limited** — none of
-the 26 running jobs touches it. This session closed two candidate remedies
-and left one live lead:
-
-- **The posterior median does not help** and moves the bias *up* by
-  0.03–0.09 h; the per-trial posteriors are left-skewed. Mean, median, and
-  mode span 0.05 h on a 1.8 h bias. It *does* matter for `b_shape` (~10%),
-  whose median should be what gets quoted.
-- **The MAP cannot settle it either.** The joint surface has modes spanning
-  ~2000 nats and 7–13 h of `cycle_length`; the best was never found twice in
-  ~200 starts and more searching keeps finding better ones.
-- **Still live and never isolated**: the MLE fixes `sd_iRBC` at truth where
-  the fit estimates it. That is the last named component of the
-  MLE-to-posterior gap that nobody has separated, and it is **one simulation
-  arm** — add `sd_iRBC` fixed at truth to `ARMS` in
-  `wockner-schedule-sim.R`, paired against `default`. Cheapest untried thing
-  on the question.
-- Beyond that it is idea-limited, not compute-limited.
-
-### Package repo state
-
-`main` at **`5be1b47`**, **not pushed**. Carries the merged `b_shape`-as-data
-change and `hold_out` masking on top. The installed build is this one.
-
-Five files show as modified and are **deliberately uncommitted build noise**:
-`R/RcppExports.R`, `src/RcppExports.cpp`, `src/available.stanfunctions.cpp`,
-and `stanExports_archer_fit_single.h` / `stanExports_test_ode.h` — all
-namespace-hash churn from the rebuild, with zero `hold_out` references. The
-four model headers that *did* change in substance are committed. Do not
-"tidy" the rest into a commit; they regenerate on every install.
-
-### Scratch to clean up
-
-`/home2/lan68/plasmofit/.prechange/` holds a git worktree at `e61fb47` and a
-library built from it, used only by 29537 and 29545. Once thread 6 is written
-up: `git worktree remove /home2/lan68/plasmofit/.prechange/src` and delete
-the directory.
+- **The hierarchy on `cycle_length` earns its keep.** Design A: collapsing it
+  to one value costs **3.27 held-out log units, z −4.5**. This reverses the
+  lean of every weak comparison before it. `pooled_R` void (R-hat 1.08).
+- **There is no rebuild drift.** Identical source rebuilt and refitted at the
+  same seed gives mean |z| 0.79 and 0.76 against a seed-only null of 0.85.
+  Thread 6 is closed and the caveat that `R` carries irreproducibility beyond
+  its MCSE is **withdrawn**.
+- **The posterior median does not help the cycle-length bias** and moves it
+  *up* 0.03–0.09 h; mean, median and mode span 0.05 h on a 1.8 h bias. It
+  does matter for `b_shape` (~10%), whose median should be quoted.
+- **The MAP cannot settle it either**: modes span ~2000 nats and 7–13 h of
+  `cycle_length`, the best was never found twice in ~200 starts, and more
+  searching keeps finding better ones.
+- **The budget is not settling.** The `b_shape` prior's share reads 0.50
+  (n=3) → 0.43 (n=4) → **0.513 (n=6)**, range widening to 0.64 h. The
+  replicate spread stays comparable to the effect being measured.
+- **Bound asymmetry is ruled out** (+0.033 h, n=4). The `[30, 60]` arm's
+  +0.471 h is the prior-width confound named at submission, not bound
+  distance.
 
 ## Package state, 2026-10-02 — `b_shape` can now be supplied as data
 
