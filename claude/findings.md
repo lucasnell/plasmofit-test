@@ -1853,3 +1853,100 @@ component of the MLE-to-posterior gap is the one the notes already name and
 have never isolated: **the MLE fixes `sd_iRBC` at truth where the fit
 estimates it.** That is a single simulation arm, and it is now the cheapest
 untried thing on this question.
+
+### Design A: the hierarchy on `cycle_length` earns its keep
+
+`_scripts/wockner-designA-score.R`, output `_data/designA-score.log`. Fits are
+`wockner-fit.R` configs 23-26, SLURM 29538, all COMPLETED. The last third of
+every series is masked -- 306 of 1130 observations, every series keeping 3-6
+-- all four model variants are fitted on the remainder, and each is scored on
+the window none of them saw.
+
+**No importance sampling is involved and none of its diagnostics apply.**
+These points were genuinely not fitted, which is the whole reason the design
+exists: observation-level `loo` is the weak comparison by
+`archer_log_lik()`'s own docs, and trial-level `loo` is broken here, Pareto
+k > 0.7 for all 13 units in every model.
+
+Cells: `held_out` is the log pointwise predictive density summed over the 306
+observations none of these models were fitted on, computed as
+`log(mean_s exp(log_lik[s, i]))` per observation; `in_sample` the same over
+the 824 that were fitted. **Higher is better**, both in log units. `vs_ref`
+is the **paired** held-out difference against `no_pool` over the same points,
+with the standard error of that paired difference; positive favours the row.
+
+| model | `held_out` | `in_sample` | `vs_ref` (se) | z | max R-hat |
+|---|---|---|---|---|---|
+| `no_pool` (hierarchy kept) | **−332.3** | −604.5 | 0 | — | 1.03 |
+| `pooled_cl` (one cycle length) | −335.5 | −606.4 | **−3.27** (0.72) | **−4.53** | 1.02 |
+| `pooled_R` | −330.9 | −609.4 | +1.25 (2.70) | 0.46 | **1.08 — VOID** |
+| `pooled_both` | −330.4 | −609.9 | +1.80 (2.73) | 0.66 | 1.02 |
+
+**Collapsing `cycle_length` to a single value costs held-out predictive
+accuracy, by 3.27 log units at z = −4.5.** Read the direction carefully:
+`no_pool` is the model that *keeps* the hierarchy. So the hierarchy earns its
+keep, and **this reverses the lean of every weak comparison before it**,
+which put the two indistinguishable (observation-level `loo`: −1.38, se 1.03,
+z −1.34; and see "Cycle-length hierarchy").
+
+Why this test can see what the others could not is the thing it was designed
+for: each series keeps 3-6 points, so its initial conditions and error scale
+stay informed, and `no_pool` can adapt `eta_cl` per trial where `pooled_cl`
+cannot. A cycle-length error then accumulates as phase drift across the
+held-out window instead of being absorbed by a neighbouring observation.
+
+**`pooled_R` is void**: max R-hat 1.08, min n_eff 55.5. Nothing about that row
+counts, per the project's own gate.
+
+**`pooled_both` is not evidence against this.** Its +1.80 carries se 2.73 --
+four times `pooled_cl`'s -- because it differs from `no_pool` in two
+structures at once rather than one, so its predictions are less correlated
+with the reference and the paired se is larger. The interval comfortably
+contains `pooled_cl`'s −3.27. It neither supports nor contradicts; it is
+imprecise.
+
+**Pending**: the quarter-mask sensitivity (configs 27-30, SLURM 29575) is
+running. Both fractions were fixed before any fit, so whichever way it reads
+it is reported, not consulted and discarded. A verdict holding at one
+fraction and not the other is a finding about the design's sensitivity.
+
+### Budget and bound geometry at n=6
+
+`_scripts/wockner-schedule-sim-analyze.R`, output `_data/schedsim-analyze.log`.
+SLURM 29543 and 29544, all COMPLETED.
+
+Cells: paired change in cycle-length bias in hours, arm minus `default` on
+the same simulated dataset, **negative means the change reduced the bias**;
+`n_pair` counts replicates where both converged.
+
+| arm | `n_pair` | mean change | range | was (n=4) |
+|---|---|---|---|---|
+| `wide_bshape` | 6 | **−0.513 h** | −0.865 to −0.228 | −0.433 |
+| `wide_nuis` | 6 | −0.460 h | −1.08 to −0.071 | −0.423 |
+| `wide_total0` | 6 | +0.147 h | −0.156 to +0.430 | +0.099 |
+| `cl_move` | 4 | **+0.033 h** | −0.111 to +0.157 | +0.059 |
+| `cl_wide_move` | 5 | **+0.471 h** | +0.030 to +0.796 | +0.030 |
+
+**The `b_shape` prior's share has gone 0.50 (n=3) → 0.43 (n=4) → 0.513
+(n=6)**, with the range widening to 0.64 h. It is not settling: the
+replicate spread remains comparable to the effect, which is the honest
+headline of this whole decomposition.
+
+**Bound geometry splits in two, and only now is it readable.** `cl_move`
+keeps the 15 h width and centres it on the truth, isolating asymmetry: +0.033
+h at n=4, nothing. `cl_wide_move` moves *and* widens, and at n=5 it is
+**+0.471 h and positive in every replicate** -- widening the window makes the
+bias worse. That is the confound named when the arms were submitted: holding
+`cl_prior_center` at 48 h fixes the prior's location but not its width in
+hours, and a wider window spans more hours at the same `sd_logit_cl`. So
+`cl_wide_move` is measuring prior width, not bound distance. **Bound
+asymmetry remains ruled out; neither arm is anywhere near the −1.5 h needed.**
+
+**Convergence.** `default-rep4` converged on its **third** seed
+(`SCHEDSIM_FIT_SEED=1123581321`: R-hat 1.01, 28 divergences, min ESS 240,
+against 1.22/478/13 originally), so the decision rule's "stop after a third
+failure" was not triggered. New failures appeared among the new replicates --
+`default-rep5`, `default-rep6`, `wide-rep6`, `wide_nuis-rep6`,
+`cl_move-rep2` on its new seed -- which is why `n_pair` is 6 and not 7.
+Nuisance recovery barely moved at n=6-7: `default` `b_shape` 9.01 (was 8.77),
+`R` −22.6%, `log10_total0` +99.5%.
