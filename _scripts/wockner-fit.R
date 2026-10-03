@@ -296,7 +296,27 @@ CONFIGS <- list(
     daA_pooled_both = list(model = "pooled_both", data = list(sd_log10_total0 = 1,
                                                             b_shape = 400,
                                                             max_shape = 1000,
-                                                            hold_out = "ho_last_third"))
+                                                            hold_out = "ho_last_third")),
+    ## ---- Design A at a quarter, 27-30 ----------------------------------
+    ## Identical to 23-26 except the mask. Running both fractions is what
+    ## makes the third defensible: the choice was fixed before any fit ran
+    ## and the sensitivity is reported rather than consulted and discarded.
+    daQ_no_pool    = list(model = "no_pool",    data = list(sd_log10_total0 = 1,
+                                                            b_shape = 400,
+                                                            max_shape = 1000,
+                                                            hold_out = "ho_last_quarter")),
+    daQ_pooled_cl  = list(model = "pooled_cl",  data = list(sd_log10_total0 = 1,
+                                                            b_shape = 400,
+                                                            max_shape = 1000,
+                                                            hold_out = "ho_last_quarter")),
+    daQ_pooled_R   = list(model = "pooled_R",   data = list(sd_log10_total0 = 1,
+                                                            b_shape = 400,
+                                                            max_shape = 1000,
+                                                            hold_out = "ho_last_quarter")),
+    daQ_pooled_both = list(model = "pooled_both", data = list(sd_log10_total0 = 1,
+                                                            b_shape = 400,
+                                                            max_shape = 1000,
+                                                            hold_out = "ho_last_quarter"))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -389,7 +409,13 @@ paras_df <- paras_df |>
     group_by(id) |>
     arrange(time, .by_group = TRUE) |>
     mutate(ho_last_third = as.integer(
-        row_number() > n() - pmax(1L, as.integer(floor(n() / 3))))) |>
+        row_number() > n() - pmax(1L, as.integer(floor(n() / 3)))),
+        ## The pre-registered sensitivity. Both fractions are run so the
+        ## fraction cannot be chosen after seeing the answer; a quarter holds
+        ## out 218 of 1130 against a third's 306, and both leave every series
+        ## 3-6 retained points.
+        ho_last_quarter = as.integer(
+        row_number() > n() - pmax(1L, as.integer(floor(n() / 4))))) |>
     ungroup()
 
 d <- do.call(archer_stan_data,
