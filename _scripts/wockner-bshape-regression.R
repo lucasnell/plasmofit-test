@@ -45,7 +45,15 @@ PAIRS <- tribble(
     ## difference it shows is run-to-run variation, including the separate
     ## step-size and mass-matrix adaptation each run performs. A and B have to
     ## be read against THIS, not against 2 or 3.
-    "N",  "np_wide_total0-null",     "np_wide_total0-rebuild", "NULL: seed only")
+    "N",  "np_wide_total0-null",     "np_wide_total0-rebuild", "NULL: seed only",
+    ## Thread 6. IDENTICAL source (e61fb47, the commit that produced the
+    ## September fits) rebuilt today into its own library, same seed, same
+    ## data -- so every difference is the rebuild alone, with no code change
+    ## mixed in. D1 has b_shape free, D2 has it pinned by a tight prior: if
+    ## drift is a property of the weakly identified directions it should
+    ## appear in both.
+    "D1", "np_wide_total0-drift",    "np_wide_total0",         "DRIFT: rebuild only, b_shape free",
+    "D2", "np_bs400-drift",          "np_bs400",               "DRIFT: rebuild only, b_shape pinned")
 
 ## Posterior mean and its Monte Carlo standard error for every scalar entry.
 summ_of <- function(cfg) {

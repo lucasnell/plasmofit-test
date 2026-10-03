@@ -156,19 +156,24 @@ Roughly in priority order.
    to the population mean, the same location `pooled_cl` gives, so it can
    only win on calibration. That likely explains why trial-level `loo` put
    `pooled_cl` marginally ahead.
-6. **Build-to-build drift in the weakly identified directions.** New,
-   2026-10-02. Two fits of the same specification from different package
-   builds differ by **2.5-3.5x Monte Carlo error** in `mu_logit_R` and the
-   `(log10_total0, R)` ridge, where two fits from the SAME build differ by
-   exactly 1x (the null is calibrated: mean |z| 0.85 against 0.798 expected).
-   See `findings.md`, "The null run". So any `R` or `mu_logit_R` number
-   carries irreproducibility across rebuilds beyond its stated MCSE, and no
-   interval this project reports captures it. Not yet separated from the
-   `b_shape` change that shipped in the same rebuild -- that needs the
-   pre-change code rebuilt and refitted, ~2.5 h plus a reinstall that would
-   clobber the current one. Worth doing before any `R` figure is published;
-   not worth doing to clear the `b_shape` change, which the per-block split
-   already clears.
+6. ~~**Build-to-build drift in the weakly identified directions.**~~
+   **CLOSED 2026-10-03, and the original claim was wrong.** The pre-change
+   source was rebuilt into its own library and refitted at the same seed, so
+   the comparison is identical source across two builds with nothing else
+   mixed in. Drift is **mean |z| 0.79** (`b_shape` free) and **0.76**
+   (pinned), against a seed-only null of 0.85 -- at or BELOW it. **There is
+   no detectable rebuild drift**, and the caveat that `R` carries
+   irreproducibility beyond its MCSE is **withdrawn**.
+   The 2.5-3.5x that prompted this thread came from comparisons that crossed
+   the `b_shape` code change, not from rebuilding. Of those, only
+   `np_wide_total0` (1.23) exceeds the null; `np_bs400` (0.92) and the new
+   data path (0.95) sit inside it. That one figure is unexplained, and with
+   the null itself measured once there is nothing to say how far a single
+   comparison should scatter. **If it matters, the fix is several null runs,
+   not more rebuilds** -- `WOCKFIT_SEED` makes them cheap.
+   Beware: the first attempt at this read mean |z| 25.5 because the two fits
+   had different group level ORDERS, from an edit made while the job was
+   running. See `gotchas.md`.
 7. **`cl_prior_center` decision.** Decide whether the default should move
    off 48 h. Demoted: the simulation showed the prior carries less of the
    error than thought (weight 0.113), so this mostly does not fix anything.

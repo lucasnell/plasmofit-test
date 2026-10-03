@@ -186,3 +186,24 @@ orientation and the current state of play.*
   whole time. The fit is always written before the summary, and
   `SCHEDSIM_REBUILD=1` regenerates a missing summary in a minute. **Check
   `_data/` before re-running anything a failed job was supposed to produce.**
+- **Editing the data-building step of `wockner-fit.R` changes the group level
+  ORDER, which silently invalidates every entry-wise comparison across that
+  change.** Adding `group_by(id) |> arrange(time, .by_group = TRUE)` for the
+  Design A hold-out mask reordered the rows, and although
+  `archer_stan_data()` sorts internally, the factor levels it derives came
+  out in a different order. The level SETS are identical, so every fit is
+  internally correct and anything averaged over groups is unaffected --
+  `cycle_length` agreed to 0.06 h. But `sd_iRBC[6]` then names a different
+  (trial, cohort) group in the two fits, and comparing them index by index
+  compares unrelated quantities: thread 6's drift read **mean |z| 25.5, max
+  272** against a null of 0.85. Realigned by level name it is **0.79**.
+  - Check `identical(attr(d, "levels"), attr(d2, "levels"))` before any
+    entry-wise comparison of two fits. `_scripts/drift-realign.R` does the
+    remapping, and note it must key on the FIRST index only -- `b_off_vec` is
+    `array[n] unit_vector[2]`, so keying on block length skips it and leaves
+    max |z| at 53.
+  - **This happened because the script was edited while a job was reading
+    it**, which is the hazard recorded three entries above. The job did not
+    die, as that entry warns it might; it completed and produced a fit that
+    was correct but not comparable. **A clean exit is not evidence the edit
+    was safe.**
