@@ -161,7 +161,26 @@ ARMS <- list(
     cl_move     = list(model = "no_pool",   data = list(sd_logit_cl = 1),
                        build = list(min_cl = 37.5, max_cl = 52.5)),
     cl_wide_move = list(model = "no_pool",  data = list(sd_logit_cl = 1),
-                        build = list(min_cl = 30, max_cl = 60))
+                        build = list(min_cl = 30, max_cl = 60)),
+    ## The last named component of the MLE-to-posterior gap that has never
+    ## been isolated. findings.md's ladder runs: per-trial MLE -0.195 h,
+    ## pooled MLE +0.544 h, fitted posterior +1.56 to +1.71 h. Widening the
+    ## nuisance priors accounts for ~0.5 h of that, and the notes name two
+    ## remaining differences between the MLE and the fit -- marginalisation,
+    ## which the MAP check could not settle, and this one: the MLE fixes
+    ## sd_iRBC at the truth where the fit estimates it.
+    ##
+    ## `fix_sd` passes the simulation's own sd_iRBC into archer_stan_data(),
+    ## so the arm differs from `default` in that alone. It is a BUILD-time
+    ## argument for the same reason the bounds are: it carries a companion
+    ## flag and sizes a parameter, so writing it over the built list would
+    ## leave the model still estimating sd_iRBC.
+    ##
+    ## Diagnostic only. Fixing an error scale at a value taken from the truth
+    ## is available in simulation and nowhere else; this measures a cost, it
+    ## does not propose a method.
+    fix_sd      = list(model = "no_pool",   data = list(sd_logit_cl = 1),
+                       fix_sd = TRUE)
 )
 
 CONFIGS <- expand_grid(arm = names(ARMS), rep = seq_along(REP_SEEDS)) |>
@@ -370,10 +389,20 @@ cat(sprintf("  sim : mean %.3f sd %.3f range %.2f-%.2f\n\n",
 ## post-hoc override of the built list would leave stale. The DESIGN is
 ## identical either way -- same times, same group codes -- so the data
 ## simulated above are unaffected and only the fit's bounds move.
-d_fit <- if (length(arm$build %||% list()) > 0) {
+## `fix_sd` needs the simulation's own error scale, which is only known once
+## `truth` has been read, so it is folded into the build arguments here
+## rather than written into ARMS as a literal.
+arm_build <- arm$build %||% list()
+if (isTRUE(arm$fix_sd)) {
+    arm_build$sd_iRBC <- truth$sd_iRBC
+    cat("  sd_iRBC FIXED at the simulated truth,", length(truth$sd_iRBC),
+        "values, range", sprintf("%.3f-%.3f", min(truth$sd_iRBC),
+                                 max(truth$sd_iRBC)), "\n")
+}
+
+d_fit <- if (length(arm_build) > 0) {
     cat("  build overrides:",
-        paste(names(arm$build), unlist(arm$build), sep = " = ",
-              collapse = ", "), "\n")
+        paste(names(arm_build), collapse = ", "), "\n")
     df <- do.call(archer_stan_data,
                   c(list(paras_df, series = "id", time = "time",
                          abundance = "para", grp_init = "inoc",
@@ -381,7 +410,7 @@ d_fit <- if (length(arm$build %||% list()) > 0) {
                          grp_sd = "obs_error", calc_log_lik = 0L,
                          mean_log_b_shape = 2, sd_log_b_shape = 0.5,
                          mean_log10_total0 = 1, sd_log10_total0 = 0.25),
-                    arm$build))
+                    arm_build))
     stopifnot(identical(as.integer(df$grp_cl), as.integer(d$grp_cl)),
               identical(df$n_total_obs, d$n_total_obs),
               isTRUE(all.equal(df$ts, d$ts)))

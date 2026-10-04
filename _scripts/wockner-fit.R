@@ -317,6 +317,47 @@ CONFIGS <- list(
                                                             b_shape = 400,
                                                             max_shape = 1000,
                                                             hold_out = "ho_last_quarter"))
+    ,
+    ## ---- the horizon ladder, 31-36 -------------------------------------
+    ## Design A gave a mask-dependent answer: pooled_cl is 3.27 log units
+    ## behind at the last-third mask and 0.04 behind at the last-quarter.
+    ## Decomposing the third-mask fits showed 89% of the deficit sits on the
+    ## points the quarter mask ALSO holds out, so it is not a horizon effect
+    ## -- the two differ in what the models were TRAINED on.
+    ##
+    ## This ladder separates those. The masks NEST (k = 1, 2, 3 points from
+    ## the end of each series, capped at n - 3 so none keeps fewer than 3),
+    ## so the k=1 points are held out by all three rungs. Scoring every rung
+    ## on THAT common window holds the scored observations fixed and varies
+    ## only how much was withheld from training -- which is the quantity the
+    ## decomposition identified and neither Design A mask isolates.
+    ##
+    ## Two models only. The question is pooled_cl against no_pool; pooled_R
+    ## and pooled_both would double the cost to answer a different one.
+    daH1_no_pool   = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           hold_out = "ho_k1")),
+    daH1_pooled_cl = list(model = "pooled_cl", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           hold_out = "ho_k1")),
+    daH2_no_pool   = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           hold_out = "ho_k2")),
+    daH2_pooled_cl = list(model = "pooled_cl", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           hold_out = "ho_k2")),
+    daH3_no_pool   = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           hold_out = "ho_k3")),
+    daH3_pooled_cl = list(model = "pooled_cl", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           hold_out = "ho_k3"))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -405,18 +446,40 @@ paras_df <- read_csv("wockner-cleaned.csv", col_types = "cccdcdd") |>
 ## third is taken because it scores 306 held-out points against 218, which is
 ## more power on the comparison. A quarter is the sensitivity to run if the
 ## answer comes out marginal.
+## NOTE: rank(), not arrange(). Ordering the rows here changes the order of
+## the group factor levels archer_stan_data() derives, so `sd_iRBC[6]` comes
+## to mean a different (trial, cohort) group than it does in every fit made
+## before the mask existed -- which silently invalidated thread 6's first
+## drift measurement (mean |z| 25.5 against a null of 0.85; see
+## claude/gotchas.md). rank() computes the same mask without touching row
+## order, so fits made from here on realign with the archive.
 paras_df <- paras_df |>
     group_by(id) |>
-    arrange(time, .by_group = TRUE) |>
+    mutate(.n_obs_series = n(),
+           .time_rank = rank(time, ties.method = "first")) |>
     mutate(ho_last_third = as.integer(
-        row_number() > n() - pmax(1L, as.integer(floor(n() / 3)))),
+        .time_rank > .n_obs_series -
+            pmax(1L, as.integer(floor(.n_obs_series / 3)))),
         ## The pre-registered sensitivity. Both fractions are run so the
         ## fraction cannot be chosen after seeing the answer; a quarter holds
         ## out 218 of 1130 against a third's 306, and both leave every series
         ## 3-6 retained points.
         ho_last_quarter = as.integer(
-        row_number() > n() - pmax(1L, as.integer(floor(n() / 4))))) |>
-    ungroup()
+        .time_rank > .n_obs_series -
+            pmax(1L, as.integer(floor(.n_obs_series / 4)))),
+        ## Horizon ladder. Fixed k rather than a fraction, so "how far ahead"
+        ## is the same question in every series, capped at n - 3 so none is
+        ## left with fewer than 3 retained points. These NEST: the k = 1
+        ## points are held out by all three, which is what lets every rung be
+        ## scored on one common window while only the TRAINING set varies.
+        ho_k1 = as.integer(.time_rank >
+                           .n_obs_series - pmin(1L, .n_obs_series - 3L)),
+        ho_k2 = as.integer(.time_rank >
+                           .n_obs_series - pmin(2L, .n_obs_series - 3L)),
+        ho_k3 = as.integer(.time_rank >
+                           .n_obs_series - pmin(3L, .n_obs_series - 3L))) |>
+    ungroup() |>
+    select(-.n_obs_series, -.time_rank)
 
 d <- do.call(archer_stan_data,
              c(list(data = paras_df,
