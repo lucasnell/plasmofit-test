@@ -21,25 +21,59 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-04
 
-**Nothing is running.** Queue empty, both repos committed.
+**9 tasks running**, mailing on `END,FAIL`:
 
-### Next, in priority order
+| job | n | what |
+|---|---|---|
+| 29591 | 6 | **horizon ladder**, configs 31–36: k = 1, 2, 3 × `no_pool`, `pooled_cl` |
+| 29592 | 3 | **`fix_sd` arm**, schedule-sim tasks 64–66 |
 
-1. **Fix the Design A mask so it stops reordering rows.** It uses
-   `group_by(id) |> arrange(time)`, which changed the group level order and
-   silently invalidated entry-wise comparison with every earlier fit (see
-   `gotchas.md`). Replace with `rank(time)` within group — row order
-   untouched, same mask. Safe now: nothing is reading the script.
-2. **The `sd_iRBC` arm** — the last named component of the MLE-to-posterior
-   gap nobody has isolated. One simulation arm, paired against `default`.
-3. **Decide what to do about the hierarchy question**, which Design A left
-   open rather than closed. The mask-dependence is itself informative: the
-   advantage appears only when the deepest points are withheld from
-   training. A horizon ladder (mask the last 1, 2, 3 points per series, two
-   models only — `no_pool` and `pooled_cl`) would map that out for ~6 fits.
-4. **More null runs** only if the one unexplained regression figure matters
+**Do not edit `_scripts/wockner-fit.R` or `_scripts/wockner-schedule-sim.R`,
+and do not reinstall the package, until these drain.**
+
+### How to read them
+
+**29591, the horizon ladder.** The masks nest, so the k=1 points (177 of
+1130) are held out by all three rungs. **Score every rung on that common
+window** — that is the whole design: scored observations fixed, training set
+varying. `_scripts/wockner-designA-score.R` scores a single mask; the ladder
+needs a variant that takes the scoring subset from `ho_k1` while reading each
+rung's own fits. If `pooled_cl`'s deficit grows as more is withheld from
+training, the Design A mask-dependence is explained and the hierarchy's
+advantage is a small-training-set effect, not a horizon one.
+
+**29592, `fix_sd`.** Re-run `_scripts/wockner-schedule-sim-analyze.R`; it
+globs. The arm pairs against `default` like every other. If the paired change
+is large and negative, estimating the error scale is a real part of the
+MLE-to-posterior gap and the remaining unexplained share shrinks. If it is
+near zero, the gap is marginalisation after all — which the MAP check could
+not test, and which would then need a different instrument entirely.
+
+### Then
+
+1. **Thread 2 remains the open scientific question.** After `fix_sd` there is
+   no named, untested component of the MLE-to-posterior gap left. It becomes
+   idea-limited.
+2. **More null runs** only if the one unexplained regression figure matters
    (`np_wide_total0` across the b_shape change: 1.23 against a 0.85 null,
    where both drift pairs are 0.76–0.79).
+3. **Thread 5, Design B**, still argued against — and Design A's
+   mask-dependence does not change that.
+
+## Settled, 2026-10-04
+
+- **The hierarchy question is NOT settled.** Design A is mask-dependent:
+  −3.27 (z −4.5) at the last third, −0.04 (z −0.1) at the last quarter. 89%
+  of the third-mask deficit sits on points the quarter also holds out, so it
+  is a training-set effect, not a horizon one. An earlier claim that the
+  hierarchy earns its keep is **withdrawn**.
+- **The Design A mask no longer reorders rows** (`rank(time)`, not
+  `arrange`). Mask identical at 306 points; the rebuilt data list matches the
+  September group level order again. `daA_*` and `daQ_*` are the boundary —
+  they carry the old ordering and are internally consistent.
+- **`sd_iRBC` can be supplied as data** (package `94b6d99`), which is what
+  makes the `fix_sd` arm possible. Diagnostic only: it exists for simulation,
+  where the generating value is known.
 
 ## Settled, 2026-10-03
 
