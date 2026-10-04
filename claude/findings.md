@@ -1950,3 +1950,68 @@ failure" was not triggered. New failures appeared among the new replicates --
 `cl_move-rep2` on its new seed -- which is why `n_pair` is 6 and not 7.
 Nuisance recovery barely moved at n=6-7: `default` `b_shape` 9.01 (was 8.77),
 `R` −22.6%, `log10_total0` +99.5%.
+
+### Design A's verdict is mask-dependent, so it does not settle the hierarchy
+
+`_scripts/wockner-designA-score.R` with `PREFIX=daQ_` (output
+`_data/designQ-score.log`) and `_scripts/designA-horizon.R` (output
+`_data/designA-horizon.log`). Fits are configs 27-30, SLURM 29575, all
+COMPLETED and all clearing R-hat < 1.05 -- including `pooled_R`, which was
+void at the third mask.
+
+**The pre-registered sensitivity disagrees with the headline.** Cells: as in
+"Design A" -- held-out log pointwise predictive density summed over the
+masked observations, and the paired difference against `no_pool` over those
+same points with its standard error. Negative means the row predicts worse
+than `no_pool`, which is the model that *keeps* the hierarchy.
+
+| mask | held out | `pooled_cl` vs `no_pool` (se) | z |
+|---|---|---|---|
+| last third | 306 | **−3.27** (0.72) | **−4.53** |
+| last quarter | 218 | **−0.04** (0.54) | **−0.08** |
+
+Both fractions were fixed before any fit ran, so neither can be preferred for
+reading better. **The disagreement is the result.**
+
+**Where it comes from, and it is not the scoring window.** The masks nest:
+both hold out the final `k` observations of each series, `k = floor(n/3)` and
+`floor(n/4)`, so the quarter's 218 points are a subset of the third's 306 and
+the 88 that differ lie deeper in each series' tail. That makes the third-mask
+fits decomposable with no refitting.
+
+Cells: paired difference against `no_pool` in log units, computed from the
+**third-mask fits only**, split by subset of their held-out window;
+`per obs` divides by the number of points so 218 and 88 are comparable.
+Negative means worse than `no_pool`.
+
+| model | shared 218: diff (se) | deeper 88: diff (se) | per obs, shared | per obs, deeper |
+|---|---|---|---|---|
+| `pooled_cl` | **−2.92** (0.66) | −0.35 (0.28) | −0.0134 | −0.0040 |
+| `pooled_R` | −2.17 (2.51) | **+3.42** (0.95) | −0.0100 | +0.0389 |
+| `pooled_both` | −1.49 (2.56) | **+3.29** (0.88) | −0.0069 | +0.0374 |
+
+**89% of `pooled_cl`'s deficit sits on the 218 points the quarter mask also
+holds out**, and per observation those points are *worse* (−0.0134) than the
+88 deeper ones (−0.0040). So the obvious explanation -- that the hierarchy
+needs a longer horizon for phase drift to accumulate -- is **wrong**. The
+deficit is not concentrated where the extra horizon is.
+
+**The difference is what the models were fitted on.** The same 218
+observations score −2.92 under fits that never saw the 88 deepest points, and
+−0.04 under fits that did. Withholding those 88 points from training is what
+produces the hierarchy's advantage; restoring them removes it.
+
+**So Design A does not establish that the hierarchy earns its keep.** It
+gives a strong signal under one pre-registered mask and nothing under the
+other, and the difference traces to the training set rather than to the
+scoring window. **The previous section's reversal is withdrawn**: the
+hierarchy question is not settled, and the honest statement remains the one
+the weak comparisons gave -- no robust detectable benefit -- now supported by
+a test that is not broken but is mask-sensitive.
+
+**An observation that is not part of this and needs its own test**: `pooled_R`
+and `pooled_both` predict the 88 deepest points *better* than `no_pool`, by
++3.42 (se 0.95) and +3.29 (se 0.88). `pooled_R` is void at this mask on the
+earlier R-hat failure, but `pooled_both` is not. Pooling `R` helping deep
+into a series is a different claim from anything examined here and rests on
+one subset of one mask.

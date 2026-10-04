@@ -19,47 +19,38 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Resume here, 2026-10-03
+## Resume here, 2026-10-04
 
-**4 tasks running**: SLURM **29575**, Design A at the quarter mask (configs
-27–30), ~2 h, mailing on `END,FAIL`. Everything else from the 26-task batch
-is read back and written up. Both repos committed.
+**Nothing is running.** Queue empty, both repos committed.
 
-**Do not edit `_scripts/wockner-fit.R` while 29575 runs.** Doing exactly that
-is what corrupted thread 6's first measurement — see the gotcha; the job
-completed cleanly and still produced an incomparable fit.
+### Next, in priority order
 
-### When 29575 lands
-
-`PREFIX=daQ_ srun ... Rscript --vanilla _scripts/wockner-designA-score.R`,
-then report it beside the third-mask result. Both fractions were fixed before
-any fit ran; a verdict holding at one and not the other is a finding about
-the design's sensitivity, not grounds for preferring either.
-
-### Then, in priority order
-
-1. **Fix the mask so it stops reordering rows.** The Design A mask uses
+1. **Fix the Design A mask so it stops reordering rows.** It uses
    `group_by(id) |> arrange(time)`, which changed the group level order and
-   silently invalidated entry-wise comparison with every earlier fit.
-   Replace it with a `rank(time)` within group, which leaves row order
-   untouched. **Only after 29575 drains.**
+   silently invalidated entry-wise comparison with every earlier fit (see
+   `gotchas.md`). Replace with `rank(time)` within group — row order
+   untouched, same mask. Safe now: nothing is reading the script.
 2. **The `sd_iRBC` arm** — the last named component of the MLE-to-posterior
-   gap nobody has isolated. The MLE fixes `sd_iRBC` at truth where the fit
-   estimates it. One simulation arm, paired against `default`.
-3. **More null runs** if the one unexplained regression figure matters:
-   `np_wide_total0` across the b_shape change sits at mean |z| 1.23 where
-   the null is 0.85 and both drift pairs are 0.76–0.79. With the null
-   measured once, nothing says how far a single comparison should scatter.
-   `WOCKFIT_SEED` makes extra nulls cheap.
-4. **Thread 2 is out of cheap suspects.** Bound asymmetry is ruled out
-   (+0.033 h at n=4). What remains of the ~1.5 h is idea-limited, not
-   compute-limited.
+   gap nobody has isolated. One simulation arm, paired against `default`.
+3. **Decide what to do about the hierarchy question**, which Design A left
+   open rather than closed. The mask-dependence is itself informative: the
+   advantage appears only when the deepest points are withheld from
+   training. A horizon ladder (mask the last 1, 2, 3 points per series, two
+   models only — `no_pool` and `pooled_cl`) would map that out for ~6 fits.
+4. **More null runs** only if the one unexplained regression figure matters
+   (`np_wide_total0` across the b_shape change: 1.23 against a 0.85 null,
+   where both drift pairs are 0.76–0.79).
 
 ## Settled, 2026-10-03
 
-- **The hierarchy on `cycle_length` earns its keep.** Design A: collapsing it
-  to one value costs **3.27 held-out log units, z −4.5**. This reverses the
-  lean of every weak comparison before it. `pooled_R` void (R-hat 1.08).
+- **The hierarchy question is NOT settled, and Design A says why.** At the
+  last-third mask, collapsing `cycle_length` costs 3.27 held-out log units
+  (z −4.5); at the pre-registered last-quarter mask, −0.04 (z −0.1). 89% of
+  the third-mask deficit sits on points the quarter mask also holds out, so
+  it is not a horizon effect — the two differ in what the models were
+  TRAINED on, not what they were scored on. **An earlier claim here that the
+  hierarchy earns its keep is withdrawn.** Running both fractions is what
+  caught it.
 - **There is no rebuild drift.** Identical source rebuilt and refitted at the
   same seed gives mean |z| 0.79 and 0.76 against a seed-only null of 0.85.
   Thread 6 is closed and the caveat that `R` carries irreproducibility beyond

@@ -141,14 +141,17 @@ Roughly in priority order.
    each trajectory combo, `generated quantities` scoring every observation
    whether fitted or not; all-zero reproduces an unmasked fit bit-for-bit,
    asserted in `tests/testthat/test-holdout.R`). Design A then masked the
-   last third of every series and scored the held-out window:
-   **collapsing `cycle_length` to a single value costs 3.27 log units at
-   z = −4.5**, so the hierarchy earns its keep. Every weak comparison before
-   it had the two indistinguishable. See `findings.md`, "Design A".
-   `pooled_R` is void there on R-hat 1.08 and `pooled_both` is imprecise.
-   **Still open within this**: the quarter-mask sensitivity (SLURM 29575) was
-   fixed before any fit ran and must be reported beside the third, whichever
-   way it reads. And a masked fit scores a held-out WINDOW, not a held-out
+   last third of every series and scored the held-out window.
+   **The answer is mask-dependent and so the hierarchy question is NOT
+   settled.** At the last third, collapsing `cycle_length` costs 3.27 log
+   units (z −4.5); at the last quarter, −0.04 (z −0.1). Both fractions were
+   fixed before any fit ran. Decomposing the third-mask fits shows 89% of the
+   deficit sits on the 218 points the quarter mask *also* holds out, so it is
+   not a horizon effect -- the difference is that the quarter-mask fits were
+   TRAINED on the 88 deepest points and the third-mask fits were not. See
+   `findings.md`, "Design A's verdict is mask-dependent".
+   **This is what running both fractions was for.** A single mask would have
+   reported a reversal that does not hold. And a masked fit scores a held-out WINDOW, not a held-out
    TRIAL -- so this answers whether per-trial cycle lengths predict better,
    not whether a never-seen trial would be predicted better, which is thread
    5's question and remains structurally near-rigged.
