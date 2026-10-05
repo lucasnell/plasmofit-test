@@ -2088,3 +2088,95 @@ this is n = 2 — thin, but the effect is an order of magnitude short of the
 untestable by the MAP route — the joint surface has no usable mode — **there
 is no named, untested component of that gap left.** Thread 2 is now
 idea-limited rather than compute-limited, and that is the honest state of it.
+
+### Phase-period compensation: refuted, and the fits mistime the oscillation
+
+`_scripts/schedsim-phase-period.R`, outputs per replicate. Post-hoc on three
+converged `default` simulation fits, no refitting.
+
+The hypothesis, suggested by two numbers in the recovery table never read
+together: `cycle_length` recovers +1.9 h and `b_offset` +0.115 cycles, and a
+longer period loses phase over the window while a larger initial offset gains
+it back. If the data pinned the **phase at observation times** and only
+weakly separated period from offset, `cycle_length`'s bias would be one
+coordinate of a flat ridge rather than an error the data could correct.
+
+Cells: averaged over the 177 series. `err_cl_h` is posterior mean
+`cycle_length` minus the truth, in **hours**; `cl_in_cycles` converts it to
+the phase it costs over the mean observation span. The remaining columns are
+in **cycles**: `err_bo` for the initial offset, `err_first`/`err_last` for the
+phase `frac(b_offset + t / cycle_length)` at each series' first and last
+observation, `sd_last` the posterior **circular** sd of that phase. `cor` is
+the within-draw posterior correlation between a series' `cycle_length` and
+its `b_offset`. Phase summaries are circular means.
+
+| replicate | `err_cl_h` | `cl_in_cycles` | `err_bo` | `err_first` | `err_last` | `sd_last` | `cor` |
+|---|---|---|---|---|---|---|---|
+| rep1 | +2.56 | −0.231 | +0.118 | −0.314 | **−0.408** | 0.174 | +0.16 |
+| rep2 | +1.12 | −0.101 | +0.067 | −0.148 | **−0.191** | 0.196 | −0.02 |
+| rep3 | +2.13 | −0.192 | +0.134 | −0.258 | **−0.342** | 0.192 | −0.02 |
+
+**The hypothesis is refuted, and backwards.** The phase at the last
+observation is recovered about **1.8x worse** than the period that supposedly
+produces it (0.408 against 0.231 cycles, 0.191 against 0.101, 0.342 against
+0.192 — a strikingly consistent ratio). And `cycle_length` and `b_offset` are
+essentially **uncorrelated** in the posterior (|r| <= 0.16), so there is no
+ridge between them for the bias to be a coordinate of. `b_offset` does not
+cancel the period error; it offsets about 60% of it on the group averages and
+leaves a large residual.
+
+**What it does show, which is new.** The fitted trajectories are
+systematically **phase-lagged**, and the lag **grows along the series**:
+−0.31 to −0.41 cycles in rep1, −0.15 to −0.19 in rep2, −0.26 to −0.34 in
+rep3, each growing by a consistent factor of ~1.3 from first observation to
+last. At the last observation that is 8-18 h of mistiming on a 45 h cycle.
+The posterior circular sd of that phase is 0.17-0.20 cycles, so the data do
+not pin the timing either.
+
+**This reframes the cycle-length bias.** It is not an isolated parameter
+sitting slightly off: the fit does not track the oscillation's timing, and
+the period error is one symptom. Whatever explains thread 2 has to explain a
+growing phase lag as well as a long period.
+
+**A methodological note worth keeping.** The first version of this script
+took an arithmetic mean of wrapped phase differences. On a quantity whose
+posterior spread is a quarter of a cycle that is pulled toward zero, and it
+reported phase errors roughly a third too small -- small enough to look like
+the hypothesis was supported. Circular quantities need circular means; the
+numbers above are circular throughout.
+
+### The cycle-length prior's location was never tested, only its width
+
+Arithmetic, no fitting: `qlogis`/`plogis` over the prior
+`logit((cl - 35) / 15) ~ normal(logit((center - 35) / 15), sd_logit_cl)`.
+
+Cells: the implied prior on `cycle_length` in **hours**, by Monte Carlo over
+2e6 draws. `center` is `cl_prior_center`. The simulated truth is 45.012 h.
+
+| `center` | `sd_logit_cl` | prior mean | prior median | 90% interval |
+|---|---|---|---|---|
+| 48 | 1 | **47.44** | 48.00 | 43.3-49.6 |
+| 48 | 2 | 46.41 | 48.00 | 37.9-49.9 |
+| 48 | 3 | 45.57 | 48.00 | 35.7-50.0 |
+| 45 | 1 | 44.60 | 45.01 | -- |
+| 42 | 1 | 42.09 | 42.00 | -- |
+
+**The prior's mean sits 2.4 h above the truth**, and the observed posterior
+means (46.2-47.6 h) lie between the two. **Widening `sd_logit_cl` leaves the
+median pinned at 48.00** and drags the mean down only slowly through the
+bounds -- so the test that closed this question ("quadrupling the prior
+variance moves the estimate 0.15 h") varied the prior's **width** and never
+its **location**. The normal-normal weight calculation elsewhere in this file
+(+0.271 h) is also computed on the logit scale, where the asymmetry that
+produces the 2.4 h gap does not appear.
+
+A crude check from the arms already run: `wide` (sd 2) moves the prior mean
+1.03 h and the measured bias by 0.15 h, implying a prior weight near 0.15,
+which against a 2.4 h displacement would be ~0.36 h of upward bias -- more
+than the 0.15 h on record, less than the ~1.5 h at issue. **That is an
+estimate from a linear argument on a non-linear prior and should not be
+quoted**; the direct test is an arm with `cl_prior_center` at the truth,
+which is diagnostic in simulation exactly as `fix_sd` was, and is the one
+cheap thing thread 2 has left. `wockner-fit.R` configs 5 and 6
+(`np_center45`, `np_center42`) were written for the real data and never
+submitted.
