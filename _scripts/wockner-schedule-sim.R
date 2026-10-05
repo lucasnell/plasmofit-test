@@ -180,7 +180,35 @@ ARMS <- list(
     ## is available in simulation and nowhere else; this measures a cost, it
     ## does not propose a method.
     fix_sd      = list(model = "no_pool",   data = list(sd_logit_cl = 1),
-                       fix_sd = TRUE)
+                       fix_sd = TRUE),
+    ## The cycle-length prior's LOCATION, which has never been varied -- only
+    ## its width. On the logit scale between [35, 50] a normal centred at
+    ## cl_prior_center = 48 implies a prior MEAN of 47.44 h in hours, 2.43 h
+    ## above the simulated truth of 45.012, and widening sd_logit_cl leaves
+    ## the median pinned at 48.00 while dragging the mean down only slowly
+    ## through the bounds. So "quadrupling the prior variance moves the
+    ## estimate 0.15 h" closed a question it never asked.
+    ##
+    ## Two displacements, read together with `default`, give three points:
+    ##
+    ##   default           centre 48      prior mean 47.44 h   +2.43 h
+    ##   cl_center_truth   centre = truth prior mean 44.60 h   -0.41 h
+    ##   cl_center_low     centre 42      prior mean 42.09 h   -2.92 h
+    ##
+    ## The SLOPE of posterior bias against prior-mean displacement is the
+    ## prior's weight, measured rather than assumed -- which matters because
+    ## the figure on record (+0.271 h) comes from a normal-normal
+    ## approximation on the logit scale, where the asymmetry producing the
+    ## 2.43 h gap does not appear.
+    ##
+    ## cl_prior_center is a BUILD argument: it feeds mean_logit_cl, so writing
+    ## it over the built list would leave the prior unchanged. Centring on the
+    ## truth is diagnostic, available in simulation and nowhere else, exactly
+    ## as fix_sd is.
+    cl_center_truth = list(model = "no_pool", data = list(sd_logit_cl = 1),
+                           center_at_truth = TRUE),
+    cl_center_low   = list(model = "no_pool", data = list(sd_logit_cl = 1),
+                           build = list(cl_prior_center = 42))
 )
 
 CONFIGS <- expand_grid(arm = names(ARMS), rep = seq_along(REP_SEEDS)) |>
@@ -393,6 +421,11 @@ cat(sprintf("  sim : mean %.3f sd %.3f range %.2f-%.2f\n\n",
 ## `truth` has been read, so it is folded into the build arguments here
 ## rather than written into ARMS as a literal.
 arm_build <- arm$build %||% list()
+if (isTRUE(arm$center_at_truth)) {
+    arm_build$cl_prior_center <- truth$cycle_length
+    cat("  cl_prior_center set to the simulated truth,",
+        sprintf("%.4f h\n", truth$cycle_length))
+}
 if (isTRUE(arm$fix_sd)) {
     arm_build$sd_iRBC <- truth$sd_iRBC
     cat("  sd_iRBC FIXED at the simulated truth,", length(truth$sd_iRBC),
