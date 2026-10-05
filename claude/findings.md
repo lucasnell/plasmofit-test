@@ -2242,3 +2242,98 @@ biologically motivated choice, not an arbitrary one. Whether to move it is a
 scientific judgement about which evidence to believe, not a technical fix —
 which is thread 7, and separate from measuring the prior's weight (SLURM
 29612).
+
+### Phase volume at commensurate periods: refuted
+
+`_scripts/phase-volume-test.R`, output `_data/phase-volume-test.log`, on
+`default-rep1`. No MCMC: every parameter held at the simulated truth except a
+common phase shift applied to all `b_offset` groups, scanned over
+`cycle_length` 42-50 h at 0.25 h by 5 degrees.
+
+The hypothesis was that periods commensurate with the 12 h sampling grid --
+87.8% of within-series intervals -- carry extra parameter-space volume,
+because fewer distinct phases are observed there and more `b_offset` fits
+equally well. A posterior mean integrates over volume where a maximum does
+not, which is the split this project keeps seeing.
+
+The coverage asymmetry is real and large. Cells: `eff. phases` is
+`1 / sum(p_i^2)` over 36 phase bins of all 1130 observation times at that
+period, 36 if uniform; `max gap` the largest gap between sorted phases, in
+cycles. Deterministic, from the observation times alone.
+
+| period | eff. phases | max gap |
+|---|---|---|
+| 45.012 h (truth) | 7.8 | 0.134 |
+| 48 h (prior centre) | **3.7** | 0.250 |
+
+**But it does not become likelihood volume.** The profile likelihood (maximum
+over phase) and the phase-integrated likelihood peak at **the same place**,
+45.75 h, and the integrated-minus-profile difference at 48 h is **−0.10 log
+units** relative to the truth -- essentially nothing, and the wrong sign.
+Degenerate phase coverage does not mean more of phase space fits; the
+likelihood is set by trajectory shape, not by how many distinct phases are
+sampled. **Refuted.**
+
+Worth keeping from it: with every nuisance at the truth, the profile
+likelihood on this replicate still peaks **+0.74 h** high. Part of the bias
+is present in the likelihood itself, before any prior or marginalisation.
+
+### The cycle-length prior's location is worth ~0.44 h, not 0.15 h, and not the answer
+
+SLURM 29612, arms `cl_center_truth` and `cl_center_low`, 6 fits, all
+COMPLETED and all converged. Read with
+`_scripts/wockner-schedule-sim-analyze.R`.
+
+Cells: paired change in cycle-length bias in hours, arm minus `default` on
+the same simulated dataset, **negative means the change reduced the bias**;
+`displacement` is that arm's prior MEAN in hours minus the simulated truth of
+45.012 h, so `default` sits at +2.43 h by construction and is the reference.
+`slope` is the bias change over the displacement change from `default`,
+which is the prior's weight.
+
+| arm | displacement | `n_pair` | mean change | range | slope |
+|---|---|---|---|---|---|
+| `default` | +2.43 h | — | 0 (reference) | — | — |
+| `cl_center_truth` | −0.41 h | 3 | **−0.436 h** | −0.51 to −0.29 | 0.154 |
+| `cl_center_low` | −2.93 h | 3 | **−0.637 h** | −0.76 to −0.51 | 0.119 |
+
+**The prior's location is worth about three times what the record says.**
+Centring it removes 0.44 h where the figure on file was 0.15 h — because
+that figure came from varying the prior's **width**, which leaves the median
+pinned at 48.00 and barely moves the mean.
+
+**The slope is ~0.12-0.15 and it flattens**: the first 2.84 h of displacement
+buys 0.436 h, the next 2.52 h buys only 0.201 h. So the prior behaves like a
+weight near 0.15 that saturates, not like a free lever.
+
+**And it is not the explanation.** With the prior centred on the truth the
+residual bias is **+2.07, +0.85, +1.68 h**, mean **1.53 h**. Pushing the
+prior 2.93 h *below* the truth still leaves ~1.3 h. **A correctly located
+prior does not fix this**, which settles a question that has been ambiguous
+in this file since the schedule-bias simulation: the prior is worth more than
+recorded and is still not the problem.
+
+### Budget, everything measured to date
+
+Cells: paired change in cycle-length bias in hours against `default` on the
+same simulated datasets; **negative reduces the bias**. `n` is paired
+replicates. These are single interventions against a common baseline and are
+**not additive** -- `wide_nuis` already shows that widening both nuisance
+priors (−0.46) is not the sum of widening each (−0.51 and +0.15).
+
+| intervention | n | change | status |
+|---|---|---|---|
+| `b_shape` prior widened | 6 | **−0.513 h** | the largest single lever |
+| both nuisance priors widened | 6 | −0.460 h | not additive |
+| prior located on the truth | 3 | **−0.436 h** | new; was recorded as 0.15 h |
+| prior located 2.9 h below truth | 3 | −0.637 h | saturating |
+| hierarchy removed (`no_hier`) | 2 | ~−0.25 h | from the earlier ladder |
+| `log10_total0` prior widened | 6 | +0.147 h | wrong sign |
+| `sd_iRBC` fixed at truth | 2 | +0.104 h | wrong sign |
+| bounds centred, same width | 4 | +0.033 h | nothing |
+| bounds moved and widened | 5 | +0.471 h | prior-width confound |
+
+**Against a `default` bias of about +1.97 h, the best single intervention
+removes 0.51 h and the two largest together could not remove 1 h.** Every
+named mechanism has now been measured. The remainder, ~1.0-1.5 h, has no
+candidate attached to it.
