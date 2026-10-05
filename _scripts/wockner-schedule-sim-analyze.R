@@ -33,7 +33,7 @@ suppressPackageStartupMessages({
 ## wockner-schedule-sim.R would silently never appear in the paired tables --
 ## which is exactly what happened to cl_move and cl_wide_move.
 PAIRED_ARMS <- c("default", "wide_bshape", "wide_total0", "wide_nuis",
-                 "cl_move", "cl_wide_move")
+                 "cl_move", "cl_wide_move", "fix_sd")
 
 res_files <- list.files("_data", "^wock-schedsim-RES-.*[.]rds$", full.names = TRUE)
 if (length(res_files) == 0) stop("no wock-schedsim-RES-*.rds found in _data/")

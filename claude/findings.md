@@ -2015,3 +2015,76 @@ and `pooled_both` predict the 88 deepest points *better* than `no_pool`, by
 earlier R-hat failure, but `pooled_both` is not. Pooling `R` helping deep
 into a series is a different claim from anything examined here and rests on
 one subset of one mask.
+
+### The horizon ladder: no training-set trend, and the one signal is void
+
+`_scripts/wockner-horizon-score.R`, output `_data/horizon-score.log`. Configs
+31-36, SLURM 29591, all COMPLETED. Masks hold out the last k = 1, 2, 3
+observations of each series, capped at n − 3, so 177, 350 and 479 of 1130.
+They **nest**, so the k = 1 points are held out by every rung.
+
+**Every row below is scored on the same 177 observations.** The horizon is
+therefore identical across rows and only the training set varies, which is
+the quantity Design A's decomposition identified and which neither of its
+masks isolates.
+
+Cells: log pointwise predictive density summed over those same 177 held-out
+observations, computed per observation as `log(mean_s exp(log_lik[s,i]))`, in
+log units, higher better. `withheld` is how many of the 1130 that rung's fits
+were denied in training. `diff` is the paired `pooled_cl` minus `no_pool`
+over those points with the standard error of the paired difference;
+**negative means collapsing `cycle_length` predicts worse**. `max R-hat` is
+each rung's worse of the two fits.
+
+| rung | withheld | `no_pool` | `pooled_cl` | diff (se) | z | max R-hat |
+|---|---|---|---|---|---|---|
+| k = 1 | 177 | −186.1 | −186.4 | −0.29 (0.65) | −0.46 | 1.02 |
+| k = 2 | 350 | −241.6 | −243.3 | **−1.73** (0.56) | **−3.08** | **1.15 — VOID** |
+| k = 3 | 479 | −298.3 | −297.9 | +0.44 (0.64) | +0.70 | 1.03 |
+
+**There is no training-set trend**: the slope is +0.0019 log units per
+observation withheld, which is nothing, and the sign is not even consistent.
+At k = 1 and k = 3, both of which converge, `pooled_cl` is indistinguishable
+from `no_pool`.
+
+**The only rung with a signal is the only rung that fails the gate.**
+`daH2_no_pool` has max R-hat **1.15** and 312 divergences, so by the
+project's own rule everything about that row is void. Its −1.73 cannot be
+used, and a reseed of that one fit is what would complete the ladder.
+
+**So Design A's third-mask result does not reproduce when the scoring window
+is held fixed.** Together with its mask-dependence, the position is that
+**no robust evidence has been produced that the hierarchy on `cycle_length`
+earns its keep** — and equally none that it costs. That is where the weak
+comparisons always were; what is new is that it now rests on tests that are
+not broken.
+
+### `fix_sd`: estimating the error scale is not the missing piece
+
+`_scripts/wockner-schedule-sim.R` arm `fix_sd`, SLURM 29592, read by
+`_scripts/wockner-schedule-sim-analyze.R`. The arm passes the simulation's own
+`sd_iRBC` (27 values, 0.396-0.786) into `archer_stan_data()`, so it differs
+from `default` in that alone.
+
+This was the last **named** difference between the maximum-likelihood ladder
+and the fitted posterior that had never been isolated: the MLE fixes
+`sd_iRBC` at the truth where the fit estimates it.
+
+Cells: paired change in cycle-length bias in hours, `fix_sd` minus `default`
+on the same simulated dataset; **negative would mean fixing the error scale
+reduced the bias**. `n_pair` is replicates where both converged.
+
+| arm | `n_pair` | mean change | range |
+|---|---|---|---|
+| `fix_sd` | 2 | **+0.104 h** | +0.027 to +0.181 |
+| `wide_bshape` (for scale) | 6 | −0.513 h | −0.865 to −0.228 |
+
+**It does not reduce the bias; it slightly increases it**, and both available
+replicates agree in sign. `fix_sd-rep1` failed the gate (max R-hat 1.06), so
+this is n = 2 — thin, but the effect is an order of magnitude short of the
+~1.5 h at issue and has the wrong sign, which n = 2 is adequate to establish.
+
+**So the MLE-to-posterior gap is not the error scale.** With marginalisation
+untestable by the MAP route — the joint surface has no usable mode — **there
+is no named, untested component of that gap left.** Thread 2 is now
+idea-limited rather than compute-limited, and that is the honest state of it.
