@@ -19,80 +19,46 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Resume here, 2026-10-05 (evening)
+## Resume here, 2026-10-05 (late)
 
-**Nothing is running.** Queue empty, both repos committed.
+**3 tasks running**: SLURM **29628**, the `fix_bshape` arm (tasks 85–87),
+~1 h, mailing on `END,FAIL`. **Do not edit
+`_scripts/wockner-schedule-sim.R` while it runs.**
 
-### Thread 2: every named mechanism is now measured, and none of them is it
+### How to read 29628
 
-Against a `default` cycle-length bias of about **+1.97 h** in simulation,
-paired single interventions:
+Re-run `_scripts/wockner-schedule-sim-analyze.R`; it globs and `fix_bshape`
+is in `PAIRED_ARMS`. It pairs against `default` like every other arm.
 
-| intervention | n | change |
-|---|---|---|
-| `b_shape` prior widened | 6 | **−0.513 h** |
-| both nuisance priors widened | 6 | −0.460 h |
-| prior located on the truth | 3 | **−0.436 h** |
-| prior located 2.9 h below truth | 3 | −0.637 h |
-| hierarchy removed | 2 | ~−0.25 h |
-| `log10_total0` prior widened | 6 | +0.147 h |
-| `sd_iRBC` fixed at truth | 2 | +0.104 h |
-| bounds centred | 4 | +0.033 h |
+- **Large and negative** → the bias is the cost of not knowing synchrony,
+  which also ties thread 5 (`n_c` fixing the desynchronisation rate) to
+  thread 2.
+- **Near zero**, as `fix_sd` was (+0.104 h) → **no single nuisance carries
+  it** and the cost is joint. That is a harder result and would make SBC the
+  next instrument rather than more arms.
 
-Cells: paired change in bias in hours against `default` on the same simulated
-datasets; negative reduces it. Not additive. **The best single lever removes
-0.51 h and the two largest together could not remove 1 h.** Roughly
-1.0–1.5 h has no candidate attached to it.
+### Closed today
 
-Closed this round, both negative:
+- **The horizon ladder is flat.** The reseeded `daH2_no_pool` converges
+  (R-hat 1.017 vs 1.154) and its rung falls from z −3.08 to **z −1.78**. No
+  rung reaches |z| = 2; slope +0.0020. The one signal was carried by the
+  non-converged fit. With Design A's mask-dependence already on record:
+  **no robust evidence the hierarchy earns its keep, and none that it costs.**
+- **Phase volume refuted on all three replicates** — profile and integrated
+  likelihoods peak together and the differential volume at 48 h is negative
+  every time.
+- **The bias is located, if not explained.** With every nuisance at truth the
+  likelihood prefers **+0.41 h** of the +1.97 h — about a fifth, noise-driven,
+  tracking the full bias replicate for replicate. The other four fifths is
+  the cost of **estimating** the nuisances, of which prior location is 0.44 h.
 
-- **Phase volume at commensurate periods.** The coverage asymmetry is real
-  (7.8 effective phases at the truth, 3.7 at 48 h) but does not become
-  likelihood volume: profile and phase-integrated likelihoods peak at the
-  same place and the differential volume at 48 h is −0.10 log units.
-- **Prior location.** Worth 0.44 h, three times the 0.15 h on record — that
-  figure varied the prior's *width*, which leaves the median pinned at 48.
-  But a truth-centred prior still leaves 1.53 h, and a prior 2.9 h *below*
-  the truth leaves ~1.3 h.
+### Then
 
-One thing kept from the refuted test: with every nuisance held at the truth,
-the profile likelihood still peaks **+0.74 h** high. Part of the bias is in
-the likelihood itself, before any prior or marginalisation — which is where
-the next idea should probably start.
-
-### Next
-
-1. **Test whether `b_shape` is absorbing the desynchronisation rate.**
-   `n_c` fixes how fast the model desynchronises — Erlang(`n_c`, lambda) per
-   cycle, so sd after k cycles is `sqrt(k / n_c)` — and it is sized for
-   numerical accuracy, not biology. At the default 96 the chain adds 0.224
-   cycles of spread over the window, which is **larger than the initial
-   spread at any plausible `b_shape`** (0.090 cycles at 14.9, 0.044 at 65,
-   0.018 at 400). So late-time oscillation amplitude is dominated by a decay
-   rate that is fixed, and `b_shape` is the only free knob. A `b_shape` that
-   runs to 65+ when its prior is relaxed may be reporting on `n_c`.
-   - **Real-data version, 1 fit**: `np_wide_bshape` refitted at `n_c = 192`.
-     If the freed `b_shape` comes down substantially, the two are confounded
-     and every `b_shape` number in this project is partly an `n_c` number.
-     Size it first — `n_c` doubles the state dimension to 384, so expect
-     well over the usual ~1.5 h, and check `check_erlang_window()` passes.
-   - **Simulation version, cleaner mechanistically**: simulate at `n_c = 192`
-     (slower decay) and fit at `n_c = 96`. If `b_shape` compensates upward,
-     that is the confound demonstrated directly rather than inferred.
-   See thread 5 for the arithmetic. Raised 2026-10-05.
-2. **Simulation-based calibration** (the agreed option 2). Draw θ from the
-   prior, simulate, fit, check rank uniformity. It is the only remaining way
-   to ask whether the posterior is *correct* and the bias is an ordinary
-   property of evaluating at one fixed truth, rather than a defect. Expensive
-   — it needs many simulate-fit cycles — so size it before launching.
-3. **Reseed `daH2_no_pool`** — one fit, closes the horizon ladder.
-   `sbatch --array=33 --export=ALL,WOCKFIT_SEED=1123581321,WOCKFIT_SUFFIX=-seed2 _scripts/wockner-fit.sh`
-4. **The +0.74 h likelihood-level bias** on rep1 with nuisances at truth is
-   unexplained and was measured on one replicate. Repeating the profile scan
-   on rep2 and rep3 is minutes, not hours, and would say whether it is
-   systematic.
-5. **More null runs** only if the one unexplained regression figure matters.
-6. **Thread 6, Design B** — still argued against.
+1. **Thread 5's `n_c` / `b_shape` confound** — item 1 on the list below;
+   `fix_bshape` bears on it directly.
+2. **SBC**, if `fix_bshape` comes back near zero. Sized at ~38 core-hours for
+   N=100 with short chains (L=100 draws), ~1.5 h wall clock at 25 concurrent.
+3. **More null runs** only if the one unexplained regression figure matters.
 
 ## Settled, 2026-10-04
 
