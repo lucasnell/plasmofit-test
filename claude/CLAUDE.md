@@ -19,46 +19,55 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Resume here, 2026-10-04
+## Resume here, 2026-10-05
 
-**9 tasks running**, mailing on `END,FAIL`:
+**Nothing is running.** Queue empty, both repos committed.
 
-| job | n | what |
-|---|---|---|
-| 29591 | 6 | **horizon ladder**, configs 31–36: k = 1, 2, 3 × `no_pool`, `pooled_cl` |
-| 29592 | 3 | **`fix_sd` arm**, schedule-sim tasks 64–66 |
+### The one loose end
 
-**Do not edit `_scripts/wockner-fit.R` or `_scripts/wockner-schedule-sim.R`,
-and do not reinstall the package, until these drain.**
+`daH2_no_pool` (horizon rung k = 2) failed the gate at max R-hat **1.15**
+with 312 divergences, and it is the only rung that showed a signal. Reseeding
+that single fit would complete the ladder:
 
-### How to read them
+```
+sbatch --array=33 --export=ALL,WOCKFIT_SEED=1123581321,WOCKFIT_SUFFIX=-seed2 \
+    _scripts/wockner-fit.sh
+```
 
-**29591, the horizon ladder.** The masks nest, so the k=1 points (177 of
-1130) are held out by all three rungs. **Score every rung on that common
-window** — that is the whole design: scored observations fixed, training set
-varying. `_scripts/wockner-designA-score.R` scores a single mask; the ladder
-needs a variant that takes the scoring subset from `ho_k1` while reading each
-rung's own fits. If `pooled_cl`'s deficit grows as more is withheld from
-training, the Design A mask-dependence is explained and the hierarchy's
-advantage is a small-training-set effect, not a horizon one.
+Then add `daH2_no_pool-seed2` to `_scripts/wockner-horizon-score.R`'s rung 2.
+The other two rungs both converge and both read null, so this is unlikely to
+change the conclusion — but the void rung is the one that didn't.
 
-**29592, `fix_sd`.** Re-run `_scripts/wockner-schedule-sim-analyze.R`; it
-globs. The arm pairs against `default` like every other. If the paired change
-is large and negative, estimating the error scale is a real part of the
-MLE-to-posterior gap and the remaining unexplained share shrinks. If it is
-near zero, the gap is marginalisation after all — which the MAP check could
-not test, and which would then need a different instrument entirely.
+### Where the science stands
 
-### Then
+- **The hierarchy question: no robust evidence either way.** Design A is
+  mask-dependent (−3.27 at the third, −0.04 at the quarter), and the horizon
+  ladder, which holds the scoring window fixed at 177 points and varies only
+  the training set, shows no trend (slope +0.002 log units per observation
+  withheld, sign inconsistent). That is where the weak comparisons always
+  were; what is new is that it now rests on tests that are not broken.
+- **Thread 2 is idea-limited.** `fix_sd` was the last named untested
+  component of the MLE-to-posterior gap and it is +0.104 h — wrong sign,
+  order of magnitude short. Marginalisation cannot be tested by the MAP
+  route. **More fits will not move this**; what is needed is a different idea
+  about how a correctly-specified posterior mean sits 1.5 h from the truth.
+- **What is solid**: the `log10_total0` prior was misspecified (104.7 elpd);
+  `R` and `b_shape` are not identified; `b_shape` is better fixed than
+  estimated (+28 to +37 elpd) with the ladder plateauing near 400; the
+  anchor regression passes; there is no rebuild drift.
 
-1. **Thread 2 remains the open scientific question.** After `fix_sd` there is
-   no named, untested component of the MLE-to-posterior gap left. It becomes
-   idea-limited.
-2. **More null runs** only if the one unexplained regression figure matters
-   (`np_wide_total0` across the b_shape change: 1.23 against a 0.85 null,
-   where both drift pairs are 0.76–0.79).
-3. **Thread 5, Design B**, still argued against — and Design A's
-   mask-dependence does not change that.
+### Still open, in priority order
+
+1. **Reseed `daH2_no_pool`** — one fit, closes the ladder.
+2. **A different idea for thread 2.** Candidates nobody has tried: the
+   `b_offset`/`cycle_length` phase-period coupling (posterior correlation
+   median +0.52 but ranging −0.93 to +0.67 across groups, flagged long ago as
+   not generalising); and whether the bias is a property of the posterior
+   *mean as an estimator* rather than of the model, which the symmetric
+   marginal and the unusable joint mode leave genuinely open.
+3. **More null runs** only if the one unexplained regression figure matters
+   (1.23 against a 0.85 null, both drift pairs 0.76–0.79).
+4. **Thread 5, Design B** — still argued against.
 
 ## Settled, 2026-10-04
 

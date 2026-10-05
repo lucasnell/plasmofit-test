@@ -81,6 +81,16 @@ Roughly in priority order.
    bias**: it bounds the priors' share of the reported 45.3 h from below and
    cannot show the remainder is biological. The ~1.07 h unexplained in the
    simulation budget is untouched by it.
+   **2026-10-05: the last named component is eliminated and this thread is
+   now IDEA-LIMITED.** The MLE-to-posterior gap -- per-trial MLE −0.195 h,
+   pooled MLE +0.544 h, fitted posterior +1.56 to +1.71 h -- had two named
+   untested components left. The MAP check could not test marginalisation
+   (the joint surface has no usable mode: modes span ~2000 nats and 7-13 h,
+   the best never found twice in ~200 starts). `fix_sd` tested the other and
+   it is **+0.104 h**, the wrong sign and an order of magnitude short. There
+   is nothing named left to try, and more fits will not help; what is needed
+   is a different idea about where a correctly-specified posterior mean can
+   sit 1.5 h from the truth.
    **Answered 2026-09-25, and it does not shrink the remainder.** Simulating
    from a truth whose `b_shape` is 65 and fitting with both nuisance priors
    widened still leaves **+1.83 h** of cycle-length bias; the `pooled_cl`
