@@ -2410,3 +2410,94 @@ makes possible: fix each nuisance at its simulated truth one at a time and
 see which one's estimation carries the 1.56 h. `fix_sd` is done and does not
 (+0.104 h). **`b_shape` fixed at the truth is untested**, is the parameter
 this project has repeatedly found unidentified, and is one arm.
+
+### `b_shape` is the nuisance whose estimation carries the bias
+
+`_scripts/wockner-schedule-sim-fixbshape.sh` (SLURM 29628, tasks 85-87),
+read by `_scripts/wockner-schedule-sim-analyze.R`, saved output
+`_data/schedsim-analyze-2026-10-05.txt`.
+
+`fix_bshape` pins `b_shape` at the 14 values the data were simulated from
+(range 10.41-21.78) and estimates everything else, so it pairs against
+`default` on the identical simulated datasets.
+
+Cells: `delta` is that replicate's mean posterior `cycle_length` minus
+`default`'s on the same simulated data, in hours; negative means the arm
+reduces the bias. `n_pair` counts replicates where both arms converged.
+`default` totals +1.97 h over reps 1-3.
+
+| arm | what it removes | n_pair | mean delta | range |
+|---|---|---|---|---|
+| **`fix_bshape`** | `b_shape` uncertainty entirely | **1** | **−0.919** | — |
+| `wide_bshape` | most of the `b_shape` prior's pull | 6 | **−0.513** | −0.865 to −0.228 |
+| `wide_nuis` | all five nuisance priors at once | 6 | −0.46 | −1.08 to −0.071 |
+| `cl_center_low` | prior location on `cycle_length` | 3 | −0.637 | −0.757 to −0.508 |
+| `cl_center_truth` | prior location, set to truth | 3 | −0.436 | −0.51 to −0.289 |
+| `fix_sd` | `sd_iRBC` uncertainty entirely | 2 | +0.104 | +0.027 to +0.181 |
+| `wide_total0` | the `log10_total0` prior | 6 | +0.147 | −0.156 to +0.43 |
+
+**Knowing `b_shape` removes about half the bias.** On the one replicate that
+converged, −0.919 h of +2.58 h. Across all three unfiltered the paired
+differences are −0.919, −1.151, and −0.974, mean −1.015 h: the answer does
+not depend on which replicates are admitted, which matters because two of
+the three `fix_bshape` fits are excluded as non-converged (below).
+
+**The corroboration that does not rest on those fits is `wide_bshape`**:
+6 converged pairs, every one negative, mean −0.513 h. Merely widening the
+`b_shape` prior buys half of what pinning it at the truth buys. That is a
+dose-response in the right direction, from well-converged fits, and it is
+why the conclusion stands despite `fix_bshape`'s n_pair of 1.
+
+**And `b_shape` carries essentially all of the nuisance-prior effect.**
+`wide_nuis` widens all five and gains −0.46 h, no more than `wide_bshape`
+alone at −0.513 h. `fix_sd` and `wide_total0` are both nil and the wrong
+sign. Of the nuisances, only `b_shape` moves `cycle_length`.
+
+**Budget.** Of +1.97 h: `b_shape` estimation ~0.92 h, the likelihood with
+every nuisance known +0.41 h, prior location ~0.44 h. Those sum to 1.77 of
+1.97. **The arms cannot simply be added** -- `cl_center_truth` and
+`fix_bshape` both work by removing uncertainty and plausibly overlap -- so
+read this as the pieces being of the right order to close the budget, not
+as an exact decomposition.
+
+#### What this does and does not say about thread 5
+
+It says `b_shape` is **weakly identified**, and that paying to estimate it
+costs `cycle_length` about an hour. It does **not** say the desynchronisation
+rate is wrong: in simulation `n_c` is identical in the generating and fitted
+model, so the decay rate is correct by construction, exactly as thread 5
+already records. These are two separate claims and only the first is tested
+here.
+
+The link is that both concern the same parameter. `b_shape` is the only free
+synchrony knob, the chain's own decay dominates the late-window amplitude,
+and `b_shape` runs to 65+ when its prior is relaxed. If on **real** data the
+fixed decay rate is wrong, `b_shape` is where that error would land -- and
+this result shows that errors landing in `b_shape` propagate into
+`cycle_length`. That raises thread 5 from a misspecification risk with no
+known consequence to one with a measured channel to the headline estimate.
+
+#### Sampler health, and why two of three are being refit
+
+Fixing a parameter at the truth made sampling **worse** in every replicate,
+not better:
+
+Cells: divergences out of 4000 post-warmup draws, max R-hat, min bulk ESS.
+
+| rep | `default` | `fix_bshape` |
+|---|---|---|
+| 1 | 53 div, 1.030, ESS 93 | 67 div, 1.029, ESS 200 |
+| 2 | 25 div, 1.015, ESS 204 | **586 div, 1.343, ESS 10** |
+| 3 | 35 div, 1.022, ESS 169 | **222 div, 1.066, ESS 53** |
+
+The analyzer's convergence filter drops reps 2 and 3, leaving n_pair = 1.
+Reps 2 and 3 are being refit on a second sampler seed
+(`_scripts/wockner-schedule-sim-fixbshape-seed2.sh`); the simulated data are
+unchanged, so they still pair against the same `default` fits. The reseed is
+triggered by the diagnostics alone and would have been run whichever way the
+biases pointed -- precedent is the `daH2_no_pool` reseed, where R-hat
+1.154 -> 1.017 moved a rung from z −3.08 to z −1.78.
+
+That the geometry gets harder when a parameter is **removed** is itself
+worth noting: it is the signature of `b_shape` having been absorbing
+something, so that pinning it forces the conflict into the parameters left.

@@ -50,6 +50,19 @@ Roughly in priority order.
    on where it is pinned -- 44.0 h at 50 down to 43.6 h at 250 (see
    `findings.md`, "The `b_shape` ladder"). **Any cycle-length number is now
    conditional on that choice and must be reported with the ladder.**
+   **Attributed 2026-10-05**: `b_shape` is the nuisance that carries it.
+   Pinning it at the simulated truth (`fix_bshape`) removes **−0.92 h** of
+   +1.97 h, and merely widening its prior (`wide_bshape`, 6 converged pairs,
+   every one negative) removes **−0.51 h**. `fix_sd` (+0.104) and
+   `wide_total0` (+0.147) remove nothing, and `wide_nuis` — all five widened
+   — gains no more than `wide_bshape` alone. **Of the nuisances only
+   `b_shape` moves `cycle_length`.** With the likelihood's own +0.41 h and
+   prior location's ~0.44 h, the budget is of the right order to close, but
+   the arms overlap and must not be summed. See `findings.md`, "`b_shape` is
+   the nuisance whose estimation carries the bias".
+   **Open**: `fix_bshape` has only one converged pair of three; reps 2 and 3
+   are refitting on a second seed. The conclusion rests on `wide_bshape`
+   until they land.
    Checked and closed:
    - ~~Prior pull on `cycle_length` (explanation 1).~~ Quadrupling the prior
      variance moves the estimate 0.15 h.
@@ -196,6 +209,18 @@ Roughly in priority order.
    **This cannot explain the simulated cycle-length bias**: the simulation
    generates from the same model with the same `n_c`, so the decay rate
    matches by construction. It is a real-data misspecification risk only.
+   **Upgraded 2026-10-05, and the sentence above still stands.** `fix_bshape`
+   showed that errors landing in `b_shape` propagate into `cycle_length`:
+   pinning it at the truth removes −0.92 h of the +1.97 h bias, and of the
+   five nuisances it is the only one that moves `cycle_length` at all.
+   That does **not** make the decay rate the cause of the simulated bias —
+   `n_c` is identical in the generating and fitted model, so the rate is
+   right by construction, as above. What it changes is the stakes on real
+   data: `b_shape` is the only free synchrony knob, so a wrong fixed decay
+   rate would land there, and there is now a **measured channel** from
+   `b_shape` to the headline estimate. This moves from "misspecification risk
+   with no known consequence" to "misspecification risk with a quantified
+   route to the number we report".
    **The connection worth testing if it is ever pursued**: initial synchrony
    and decay rate trade off against the observed late-time oscillation
    amplitude. `b_shape` 14.9 gives an initial sd of 0.090 cycles, 65 gives

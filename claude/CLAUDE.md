@@ -19,25 +19,57 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Resume here, 2026-10-05 (late)
+## Resume here, 2026-10-06
 
-**3 tasks running**: SLURM **29628**, the `fix_bshape` arm (tasks 85–87),
-~1 h, mailing on `END,FAIL`. **Do not edit
-`_scripts/wockner-schedule-sim.R` while it runs.**
+**2 tasks queued or running**: the SLURM job from
+`_scripts/wockner-schedule-sim-fixbshape-seed2.sh`, `fix_bshape` reps 2 and 3
+reseeded (`SCHEDSIM_FIT_SEED=2`, tasks 86–87), ~1 h, mailing on `END,FAIL`.
+**Do not edit `_scripts/wockner-schedule-sim.R` while it runs.**
+If it is not in `squeue` and
+`_data/wock-schedsim-RES-fix_bshape-rep2-seed2.rds` does not exist, **it was
+never submitted** — submit it.
 
-### How to read 29628
+### 29628 answered thread 2: `b_shape` carries the bias
 
-Re-run `_scripts/wockner-schedule-sim-analyze.R`; it globs and `fix_bshape`
-is in `PAIRED_ARMS`. It pairs against `default` like every other arm.
+Pinning `b_shape` at the simulated truth removes **−0.92 h** of the +1.97 h,
+and widening its prior (`wide_bshape`, 6 converged pairs, all negative)
+removes **−0.51 h**. `fix_sd` (+0.104) and `wide_total0` (+0.147) remove
+nothing; `wide_nuis` with all five widened gains no more than `wide_bshape`
+alone. **Of the five nuisances only `b_shape` moves `cycle_length`.**
+Full table and the budget in `findings.md`, "`b_shape` is the nuisance whose
+estimation carries the bias"; saved output
+`_data/schedsim-analyze-2026-10-05.txt`.
 
-- **Large and negative** → the bias is the cost of not knowing synchrony,
-  which also ties thread 5 (`n_c` fixing the desynchronisation rate) to
-  thread 2.
-- **Near zero**, as `fix_sd` was (+0.104 h) → **no single nuisance carries
-  it** and the cost is joint. That is a harder result and would make SBC the
-  next instrument rather than more arms.
+**The caveat that drives the reseed**: fixing `b_shape` made sampling worse,
+not better (divergences 53→67, 25→586, 35→222), and the analyzer drops reps
+2 and 3, leaving **n_pair = 1**. The unfiltered paired differences are
+−0.919, −1.151, −0.974, so the answer does not depend on which replicates are
+admitted — but until the reseeds land **the claim rests on `wide_bshape`**,
+which is 6 well-converged pairs, all negative.
 
-### Closed today
+### How to read the reseeds
+
+Re-run `_scripts/wockner-schedule-sim-analyze.R` (it globs; configs land as
+`fix_bshape-rep2-seed2` and `fix_bshape-rep3-seed2`).
+
+- **Converge and stay near −0.9 to −1.2** → thread 2 is attributed at
+  n_pair = 3, and the next move is thread 5's `n_c` / `b_shape` confound.
+- **Converge and the delta shrinks toward zero** → the attribution was an
+  artefact of the bad geometry; fall back to `wide_bshape`'s −0.51 h as the
+  defensible number, and say so.
+- **Still do not converge** → report `fix_bshape` as n_pair = 1 with the
+  caveat, lean on `wide_bshape`, and **do not reseed a third time**. A
+  parameter whose removal breaks the geometry twice is itself the finding.
+
+### What this does NOT say
+
+It does **not** say the desynchronisation rate is wrong. In simulation `n_c`
+is identical in the generating and fitted model, so the decay rate is right
+by construction — thread 5 already records this. The result is that
+`b_shape` is weakly identified and that paying to estimate it costs
+`cycle_length` about an hour. Do not let these two merge in the write-up.
+
+### Closed 2026-10-05
 
 - **The horizon ladder is flat.** The reseeded `daH2_no_pool` converges
   (R-hat 1.017 vs 1.154) and its rung falls from z −3.08 to **z −1.78**. No
@@ -47,17 +79,21 @@ is in `PAIRED_ARMS`. It pairs against `default` like every other arm.
 - **Phase volume refuted on all three replicates** — profile and integrated
   likelihoods peak together and the differential volume at 48 h is negative
   every time.
-- **The bias is located, if not explained.** With every nuisance at truth the
-  likelihood prefers **+0.41 h** of the +1.97 h — about a fifth, noise-driven,
-  tracking the full bias replicate for replicate. The other four fifths is
-  the cost of **estimating** the nuisances, of which prior location is 0.44 h.
+- **The bias is located.** With every nuisance at truth the likelihood
+  prefers **+0.41 h** of the +1.97 h — about a fifth, noise-driven, tracking
+  the full bias replicate for replicate. The other four fifths is the cost
+  of **estimating** the nuisances, and 29628 shows that cost is `b_shape`'s.
 
 ### Then
 
-1. **Thread 5's `n_c` / `b_shape` confound** — item 1 on the list below;
-   `fix_bshape` bears on it directly.
-2. **SBC**, if `fix_bshape` comes back near zero. Sized at ~38 core-hours for
-   N=100 with short chains (L=100 draws), ~1.5 h wall clock at 25 concurrent.
+1. **Thread 5's `n_c` / `b_shape` confound** — now the live thread, and
+   29628 gives it a measured channel to the headline estimate. Real-data
+   version (`np_wide_bshape` at `n_c = 192`; **size it first**, the state
+   dimension doubles to 384) and simulation version (simulate at 192, fit
+   at 96).
+2. **SBC** is no longer the forced next step — it was the branch for
+   `fix_bshape` coming back near zero, and it did not. Keep it for
+   calibration, not for attribution.
 3. **More null runs** only if the one unexplained regression figure matters.
 
 ## Settled, 2026-10-04
