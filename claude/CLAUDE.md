@@ -19,53 +19,60 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–10, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Resume here, 2026-10-05
+## Resume here, 2026-10-05 (evening)
 
-**6 tasks running**: SLURM **29612**, the cycle-length prior's **location**
-(arms `cl_center_truth` and `cl_center_low`, tasks 71–73 and 78–80), ~2 h,
-mailing on `END,FAIL`.
+**Nothing is running.** Queue empty, both repos committed.
 
-**Do not edit `_scripts/wockner-schedule-sim.R` while it runs.**
+### Thread 2: every named mechanism is now measured, and none of them is it
 
-### How to read 29612
+Against a `default` cycle-length bias of about **+1.97 h** in simulation,
+paired single interventions:
 
-Re-run `_scripts/wockner-schedule-sim-analyze.R`; it globs and both arms are
-now in `PAIRED_ARMS`. Read it as a **slope**, not three separate contrasts:
-posterior cycle-length bias against prior-mean displacement from the truth,
-across three arms —
+| intervention | n | change |
+|---|---|---|
+| `b_shape` prior widened | 6 | **−0.513 h** |
+| both nuisance priors widened | 6 | −0.460 h |
+| prior located on the truth | 3 | **−0.436 h** |
+| prior located 2.9 h below truth | 3 | −0.637 h |
+| hierarchy removed | 2 | ~−0.25 h |
+| `log10_total0` prior widened | 6 | +0.147 h |
+| `sd_iRBC` fixed at truth | 2 | +0.104 h |
+| bounds centred | 4 | +0.033 h |
 
-| arm | `cl_prior_center` | prior mean | displacement |
-|---|---|---|---|
-| `default` | 48 | 47.44 h | **+2.43 h** |
-| `cl_center_truth` | = truth | 44.61 h | **−0.41 h** |
-| `cl_center_low` | 42 | 42.09 h | **−2.93 h** |
+Cells: paired change in bias in hours against `default` on the same simulated
+datasets; negative reduces it. Not additive. **The best single lever removes
+0.51 h and the two largest together could not remove 1 h.** Roughly
+1.0–1.5 h has no candidate attached to it.
 
-That slope is the prior's weight, measured. **If it is near 0.15**, the prior
-explains ~0.36 h of the ~1.5 h and thread 2 keeps most of its gap. **If it is
-much larger**, the prior explains more than this project has believed since
-the schedule-bias simulation, and the 0.15 h on record was an artefact of
-testing width instead of location.
+Closed this round, both negative:
 
-### Correction: there is no separate phase-lag problem
+- **Phase volume at commensurate periods.** The coverage asymmetry is real
+  (7.8 effective phases at the truth, 3.7 at 48 h) but does not become
+  likelihood volume: profile and phase-integrated likelihoods peak at the
+  same place and the differential volume at 48 h is −0.10 log units.
+- **Prior location.** Worth 0.44 h, three times the 0.15 h on record — that
+  figure varied the prior's *width*, which leaves the median pinned at 48.
+  But a truth-centred prior still leaves 1.53 h, and a prior 2.9 h *below*
+  the truth leaves ~1.3 h.
 
-An earlier note here called a growing phase lag a new open lead. **It is
-not.** `phi(t) = b_offset + t / cycle_length`, so a period biased long
-produces a lag growing linearly in t by algebra — verified exactly,
-`max |predicted − observed| = 0`. It is the cycle-length bias restated.
-Thread 2 is the only problem here, and it has not grown a second part.
+One thing kept from the refuted test: with every nuisance held at the truth,
+the profile likelihood still peaks **+0.74 h** high. Part of the bias is in
+the likelihood itself, before any prior or marginalisation — which is where
+the next idea should probably start.
 
-What the decomposition did add: the period term is tight and systematic
-(−0.21 cycles, IQR 0.03) while the `b_offset` error is wide and centred near
-zero (median −0.016, range −0.21 to +0.50). So `b_offset` contributes spread,
-not bias — and the recovery table's "+45%" for it is a mean set by a tail,
-like `b_shape`'s.
+### Next
 
-### Still open, in priority order
-
-1. **Read 29612** as above.
-2. **Reseed `daH2_no_pool`** — one fit, closes the horizon ladder; it is the
-   only rung that showed a signal and the only one that failed the gate.
+1. **Simulation-based calibration** (the agreed option 2). Draw θ from the
+   prior, simulate, fit, check rank uniformity. It is the only remaining way
+   to ask whether the posterior is *correct* and the bias is an ordinary
+   property of evaluating at one fixed truth, rather than a defect. Expensive
+   — it needs many simulate-fit cycles — so size it before launching.
+2. **Reseed `daH2_no_pool`** — one fit, closes the horizon ladder.
    `sbatch --array=33 --export=ALL,WOCKFIT_SEED=1123581321,WOCKFIT_SUFFIX=-seed2 _scripts/wockner-fit.sh`
+3. **The +0.74 h likelihood-level bias** on rep1 with nuisances at truth is
+   unexplained and was measured on one replicate. Repeating the profile scan
+   on rep2 and rep3 is minutes, not hours, and would say whether it is
+   systematic.
 4. **More null runs** only if the one unexplained regression figure matters.
 5. **Thread 5, Design B** — still argued against.
 
