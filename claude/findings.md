@@ -2337,3 +2337,76 @@ priors (−0.46) is not the sum of widening each (−0.51 and +0.15).
 removes 0.51 h and the two largest together could not remove 1 h.** Every
 named mechanism has now been measured. The remainder, ~1.0-1.5 h, has no
 candidate attached to it.
+
+### The horizon ladder, completed: flat
+
+`_scripts/wockner-horizon-score.R`. `daH2_no_pool` failed the gate on its
+first seed (max R-hat 1.154, 312 divergences, min ESS 28) and was refit as
+`daH2_no_pool-seed2` (SLURM 29622: **1.017, 88, 165**). The reseed is used in
+its place and the failed fit stays on disk. All six fits now converge.
+
+Cells as before: every row scored on the **same 177 observations** (the k = 1
+points, held out by all three rungs), so the horizon is fixed and only the
+training set varies. `diff` is paired `pooled_cl` minus `no_pool` over those
+points with the standard error of the paired difference; negative means
+collapsing `cycle_length` predicts worse.
+
+| rung | withheld | diff (se) | z | was, with the failed fit |
+|---|---|---|---|---|
+| k = 1 | 177 | −0.29 (0.65) | −0.46 | −0.29 |
+| k = 2 | 350 | **−1.26** (0.71) | **−1.78** | −1.73, z −3.08 |
+| k = 3 | 479 | +0.44 (0.64) | +0.70 | +0.44 |
+
+**No rung now reaches |z| = 2**, and the slope is +0.0020 log units per
+observation withheld — flat, with an inconsistent sign. The one signal in the
+earlier version was carried by the fit that failed to converge; on a seed
+that converges it falls to z = −1.78.
+
+**So Design A's third-mask result does not reproduce when the scoring window
+is held fixed.** With the mask-dependence already on record, the position is
+settled as far as this design can settle it: **no robust evidence that the
+hierarchy on `cycle_length` earns its keep, and none that it costs.**
+
+### Where the bias sits: the likelihood explains about a fifth of it
+
+`_scripts/phase-volume-test.R` on all three converged `default` replicates.
+Every parameter held at the simulated truth except a common phase shift.
+
+Cells: `profile` is where the maximum-over-phase log likelihood peaks and
+`integrated` where the phase-integrated likelihood peaks, both in hours, with
+the bias against the 45.012 h truth; `volume` is the integrated-minus-profile
+difference at 48 h relative to the truth, in log units, positive meaning more
+phase-space fits at 48. `posterior` is that replicate's full fitted bias from
+the schedule simulation, for scale. Grid 0.25 h by 5 degrees.
+
+| replicate | profile | integrated | volume at 48 | posterior |
+|---|---|---|---|---|
+| rep1 | +0.74 | +0.74 | −0.10 | +2.58 |
+| rep2 | −0.01 | +0.24 | −0.06 | +1.14 |
+| rep3 | +0.49 | +0.49 | −0.18 | +2.19 |
+| **mean** | **+0.41** | **+0.49** | — | **+1.97** |
+
+**The volume hypothesis is refuted in all three.** Profile and integrated
+peak at the same place in two of them and one grid step apart in the third,
+and the differential volume at 48 h is negative every time — less phase-space
+fits there, not more.
+
+**The likelihood carries about a fifth of the bias.** With every nuisance
+known, the likelihood still prefers +0.41 h on average. It is not a constant
+offset: +0.74, −0.01, +0.49, so it is noise-driven. And it **tracks the full
+bias across replicates** — rep1 highest in both, rep2 lowest in both, rep3
+between — so the same noise realisations that make the posterior worse also
+make the likelihood worse.
+
+**The other four fifths come from estimating the nuisances.** ~1.56 h appears
+only when `b_shape`, `R`, `log10_total0`, `sd_iRBC` and `b_offset` are
+estimated rather than known, and the prior-location test accounts for 0.44 h
+of that. **This is now the sharpest statement of thread 2**: the bias is
+mostly the cost of not knowing the nuisance parameters, not a defect in the
+likelihood, the prior, the bounds, the sampling grid, or the error scale.
+
+**The test that follows directly**, and which the package change already
+makes possible: fix each nuisance at its simulated truth one at a time and
+see which one's estimation carries the 1.56 h. `fix_sd` is done and does not
+(+0.104 h). **`b_shape` fixed at the truth is untested**, is the parameter
+this project has repeatedly found unidentified, and is one arm.
