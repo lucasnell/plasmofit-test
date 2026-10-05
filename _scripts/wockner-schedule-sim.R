@@ -208,7 +208,24 @@ ARMS <- list(
     cl_center_truth = list(model = "no_pool", data = list(sd_logit_cl = 1),
                            center_at_truth = TRUE),
     cl_center_low   = list(model = "no_pool", data = list(sd_logit_cl = 1),
-                           build = list(cl_prior_center = 42))
+                           build = list(cl_prior_center = 42)),
+    ## The profile scans put only about a fifth of the cycle-length bias in
+    ## the likelihood with every nuisance known (+0.41 h of +1.97 h). The
+    ## other four fifths appear when the nuisances are ESTIMATED rather than
+    ## known, and prior location accounts for 0.44 h of that. This fixes the
+    ## nuisance most often found unidentified -- b_shape -- at the value the
+    ## data were simulated from, so the arm differs from `default` in that
+    ## alone.
+    ##
+    ## `fix_sd` is the same test for the error scale and carries none of it
+    ## (+0.104 h, wrong sign). If this one carries a large share, the bias is
+    ## the cost of not knowing synchrony; if it does not, no single nuisance
+    ## does and the cost is joint.
+    ##
+    ## Diagnostic, like fix_sd and cl_center_truth: fixing a parameter at the
+    ## truth is available in simulation and nowhere else.
+    fix_bshape  = list(model = "no_pool",   data = list(sd_logit_cl = 1),
+                       fix_bshape = TRUE)
 )
 
 CONFIGS <- expand_grid(arm = names(ARMS), rep = seq_along(REP_SEEDS)) |>
@@ -425,6 +442,12 @@ if (isTRUE(arm$center_at_truth)) {
     arm_build$cl_prior_center <- truth$cycle_length
     cat("  cl_prior_center set to the simulated truth,",
         sprintf("%.4f h\n", truth$cycle_length))
+}
+if (isTRUE(arm$fix_bshape)) {
+    arm_build$b_shape <- truth$b_shape
+    cat("  b_shape FIXED at the simulated truth,", length(truth$b_shape),
+        "values, range", sprintf("%.2f-%.2f", min(truth$b_shape),
+                                 max(truth$b_shape)), "\n")
 }
 if (isTRUE(arm$fix_sd)) {
     arm_build$sd_iRBC <- truth$sd_iRBC

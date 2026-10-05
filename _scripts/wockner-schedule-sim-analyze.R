@@ -34,7 +34,7 @@ suppressPackageStartupMessages({
 ## which is exactly what happened to cl_move and cl_wide_move.
 PAIRED_ARMS <- c("default", "wide_bshape", "wide_total0", "wide_nuis",
                  "cl_move", "cl_wide_move", "fix_sd",
-                 "cl_center_truth", "cl_center_low")
+                 "cl_center_truth", "cl_center_low", "fix_bshape")
 
 res_files <- list.files("_data", "^wock-schedsim-RES-.*[.]rds$", full.names = TRUE)
 if (length(res_files) == 0) stop("no wock-schedsim-RES-*.rds found in _data/")
