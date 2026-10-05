@@ -21,53 +21,50 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-05
 
-**Nothing is running.** Queue empty, both repos committed.
+**6 tasks running**: SLURM **29612**, the cycle-length prior's **location**
+(arms `cl_center_truth` and `cl_center_low`, tasks 71–73 and 78–80), ~2 h,
+mailing on `END,FAIL`.
 
-### The one loose end
+**Do not edit `_scripts/wockner-schedule-sim.R` while it runs.**
 
-`daH2_no_pool` (horizon rung k = 2) failed the gate at max R-hat **1.15**
-with 312 divergences, and it is the only rung that showed a signal. Reseeding
-that single fit would complete the ladder:
+### How to read 29612
 
-```
-sbatch --array=33 --export=ALL,WOCKFIT_SEED=1123581321,WOCKFIT_SUFFIX=-seed2 \
-    _scripts/wockner-fit.sh
-```
+Re-run `_scripts/wockner-schedule-sim-analyze.R`; it globs and both arms are
+now in `PAIRED_ARMS`. Read it as a **slope**, not three separate contrasts:
+posterior cycle-length bias against prior-mean displacement from the truth,
+across three arms —
 
-Then add `daH2_no_pool-seed2` to `_scripts/wockner-horizon-score.R`'s rung 2.
-The other two rungs both converge and both read null, so this is unlikely to
-change the conclusion — but the void rung is the one that didn't.
+| arm | `cl_prior_center` | prior mean | displacement |
+|---|---|---|---|
+| `default` | 48 | 47.44 h | **+2.43 h** |
+| `cl_center_truth` | = truth | 44.61 h | **−0.41 h** |
+| `cl_center_low` | 42 | 42.09 h | **−2.93 h** |
 
-### Where the science stands
+That slope is the prior's weight, measured. **If it is near 0.15**, the prior
+explains ~0.36 h of the ~1.5 h and thread 2 keeps most of its gap. **If it is
+much larger**, the prior explains more than this project has believed since
+the schedule-bias simulation, and the 0.15 h on record was an artefact of
+testing width instead of location.
 
-- **The hierarchy question: no robust evidence either way.** Design A is
-  mask-dependent (−3.27 at the third, −0.04 at the quarter), and the horizon
-  ladder, which holds the scoring window fixed at 177 points and varies only
-  the training set, shows no trend (slope +0.002 log units per observation
-  withheld, sign inconsistent). That is where the weak comparisons always
-  were; what is new is that it now rests on tests that are not broken.
-- **Thread 2 is idea-limited.** `fix_sd` was the last named untested
-  component of the MLE-to-posterior gap and it is +0.104 h — wrong sign,
-  order of magnitude short. Marginalisation cannot be tested by the MAP
-  route. **More fits will not move this**; what is needed is a different idea
-  about how a correctly-specified posterior mean sits 1.5 h from the truth.
-- **What is solid**: the `log10_total0` prior was misspecified (104.7 elpd);
-  `R` and `b_shape` are not identified; `b_shape` is better fixed than
-  estimated (+28 to +37 elpd) with the ladder plateauing near 400; the
-  anchor regression passes; there is no rebuild drift.
+### The other open lead, from today
+
+The fits are **systematically phase-lagged and the lag grows along each
+series** — −0.15 to −0.41 cycles at the last observation, growing by ~1.3×
+from first to last, i.e. 8–18 h of mistiming on a 45 h cycle. That is new,
+and it means the cycle-length bias is not an isolated parameter sitting off:
+the fit does not track the oscillation's timing. Any explanation of thread 2
+now has to account for the lag as well as the long period. Nothing is
+currently testing this.
 
 ### Still open, in priority order
 
-1. **Reseed `daH2_no_pool`** — one fit, closes the ladder.
-2. **A different idea for thread 2.** Candidates nobody has tried: the
-   `b_offset`/`cycle_length` phase-period coupling (posterior correlation
-   median +0.52 but ranging −0.93 to +0.67 across groups, flagged long ago as
-   not generalising); and whether the bias is a property of the posterior
-   *mean as an estimator* rather than of the model, which the symmetric
-   marginal and the unusable joint mode leave genuinely open.
-3. **More null runs** only if the one unexplained regression figure matters
-   (1.23 against a 0.85 null, both drift pairs 0.76–0.79).
-4. **Thread 5, Design B** — still argued against.
+1. **Read 29612** as above.
+2. **Reseed `daH2_no_pool`** — one fit, closes the horizon ladder; it is the
+   only rung that showed a signal and the only one that failed the gate.
+   `sbatch --array=33 --export=ALL,WOCKFIT_SEED=1123581321,WOCKFIT_SUFFIX=-seed2 _scripts/wockner-fit.sh`
+3. **The phase lag** — no instrument proposed yet.
+4. **More null runs** only if the one unexplained regression figure matters.
+5. **Thread 5, Design B** — still argued against.
 
 ## Settled, 2026-10-04
 
