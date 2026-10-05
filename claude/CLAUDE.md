@@ -46,15 +46,19 @@ much larger**, the prior explains more than this project has believed since
 the schedule-bias simulation, and the 0.15 h on record was an artefact of
 testing width instead of location.
 
-### The other open lead, from today
+### Correction: there is no separate phase-lag problem
 
-The fits are **systematically phase-lagged and the lag grows along each
-series** — −0.15 to −0.41 cycles at the last observation, growing by ~1.3×
-from first to last, i.e. 8–18 h of mistiming on a 45 h cycle. That is new,
-and it means the cycle-length bias is not an isolated parameter sitting off:
-the fit does not track the oscillation's timing. Any explanation of thread 2
-now has to account for the lag as well as the long period. Nothing is
-currently testing this.
+An earlier note here called a growing phase lag a new open lead. **It is
+not.** `phi(t) = b_offset + t / cycle_length`, so a period biased long
+produces a lag growing linearly in t by algebra — verified exactly,
+`max |predicted − observed| = 0`. It is the cycle-length bias restated.
+Thread 2 is the only problem here, and it has not grown a second part.
+
+What the decomposition did add: the period term is tight and systematic
+(−0.21 cycles, IQR 0.03) while the `b_offset` error is wide and centred near
+zero (median −0.016, range −0.21 to +0.50). So `b_offset` contributes spread,
+not bias — and the recovery table's "+45%" for it is a mean set by a tail,
+like `b_shape`'s.
 
 ### Still open, in priority order
 
@@ -62,7 +66,6 @@ currently testing this.
 2. **Reseed `daH2_no_pool`** — one fit, closes the horizon ladder; it is the
    only rung that showed a signal and the only one that failed the gate.
    `sbatch --array=33 --export=ALL,WOCKFIT_SEED=1123581321,WOCKFIT_SUFFIX=-seed2 _scripts/wockner-fit.sh`
-3. **The phase lag** — no instrument proposed yet.
 4. **More null runs** only if the one unexplained regression figure matters.
 5. **Thread 5, Design B** — still argued against.
 

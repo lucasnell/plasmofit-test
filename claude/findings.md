@@ -2125,18 +2125,32 @@ ridge between them for the bias to be a coordinate of. `b_offset` does not
 cancel the period error; it offsets about 60% of it on the group averages and
 leaves a large residual.
 
-**What it does show, which is new.** The fitted trajectories are
-systematically **phase-lagged**, and the lag **grows along the series**:
-−0.31 to −0.41 cycles in rep1, −0.15 to −0.19 in rep2, −0.26 to −0.34 in
-rep3, each growing by a consistent factor of ~1.3 from first observation to
-last. At the last observation that is 8-18 h of mistiming on a 45 h cycle.
-The posterior circular sd of that phase is 0.17-0.20 cycles, so the data do
-not pin the timing either.
+**The "growing phase lag" is NOT a separate phenomenon, and an earlier
+version of this section wrongly presented it as one.** Since
+`phi(t) = b_offset + t / cycle_length`, the phase error decomposes
+*algebraically* as `err_bo + t * (1/cl_est - 1/cl_true)` -- checked directly,
+`max |predicted - observed| = 0` to machine precision. A period biased long
+therefore MUST produce a lag growing linearly in t. Observing one is the
+cycle-length bias restated, not evidence of anything further, and there is no
+separate thing here to explain or fix.
 
-**This reframes the cycle-length bias.** It is not an isolated parameter
-sitting slightly off: the fit does not track the oscillation's timing, and
-the period error is one symptom. Whatever explains thread 2 has to explain a
-growing phase lag as well as a long period.
+**What the decomposition does show**, per series and unaveraged, for rep1 at
+the last observation. Cells: quartiles over the 177 series of each term, in
+cycles. `drift` is the period term `t * (1/cl_est - 1/cl_true)`, `err_bo` the
+initial-offset error, `total` their sum.
+
+| term | min | q25 | median | q75 | max |
+|---|---|---|---|---|---|
+| `drift` | −0.263 | −0.234 | **−0.213** | −0.203 | −0.186 |
+| `err_bo` | −0.212 | −0.155 | **−0.016** | +0.365 | +0.495 |
+| `total` | −0.418 | −0.389 | −0.249 | +0.151 | +0.252 |
+
+**The period term is tight and systematic; the offset term is wide and
+centred near zero.** So the phase error is driven by the period, with
+`b_offset` adding spread rather than bias. Note this also qualifies the
+nuisance-recovery table's "`b_offset` recovers +45%": that is a MEAN over
+groups, and the median per-series error is −0.016 cycles. As with `b_shape`,
+the mean is being set by a tail.
 
 **A methodological note worth keeping.** The first version of this script
 took an arithmetic mean of wrapped phase differences. On a quantity whose
