@@ -16,18 +16,24 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/scripts.md` | what each script does, the `CONFIGS`/arm mechanics, `_data/` naming, how to run on the cluster |
 | `claude/gotchas.md` | **before running or editing anything** — the traps that have cost hours each |
 | `claude/findings.md` | the modelling results: hierarchy, pooling offset, schedule-bias simulation, nuisance priors |
-| `claude/threads.md` | open threads 1–10, in priority order |
+| `claude/threads.md` | open threads 1–13, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
 ## Resume here, 2026-10-06
 
-**2 tasks queued or running**: the SLURM job from
-`_scripts/wockner-schedule-sim-fixbshape-seed2.sh`, `fix_bshape` reps 2 and 3
-reseeded (`SCHEDSIM_FIT_SEED=2`, tasks 86–87), ~1 h, mailing on `END,FAIL`.
-**Do not edit `_scripts/wockner-schedule-sim.R` while it runs.**
-If it is not in `squeue` and
-`_data/wock-schedsim-RES-fix_bshape-rep2-seed2.rds` does not exist, **it was
-never submitted** — submit it.
+**4 tasks running**, submitted 2026-10-05, both mailing on `END,FAIL`:
+
+- **29631** (tasks 86-87) — `fix_bshape` reps 2 and 3 reseeded,
+  `SCHEDSIM_FIT_SEED=2`, ~1 h. Reads `_scripts/wockner-schedule-sim.R`:
+  **do not edit that file while it runs.**
+- **29633** (tasks 37-38) — thread 5's `n_c` ladder on real data, `np_nc192`
+  and `np_nc384` against the `n_c = 96` baseline `np_wide_both` (entry 11).
+  ~2.9 h at 192, 384 extrapolated and possibly ~6 h. Reads
+  `_scripts/wockner-fit.R`: **do not edit that file while it runs.**
+
+If either is absent from `squeue` and its outputs are missing, it was never
+submitted — `_data/wock-schedsim-RES-fix_bshape-rep2-seed2.rds` for 29631,
+`_data/wock-fit-np_nc192.rds` for 29633.
 
 ### 29628 answered thread 2: `b_shape` carries the bias
 
@@ -84,16 +90,38 @@ by construction — thread 5 already records this. The result is that
   the full bias replicate for replicate. The other four fifths is the cost
   of **estimating** the nuisances, and 29628 shows that cost is `b_shape`'s.
 
+### How to read 29633 (thread 5)
+
+The ladder changes `n_c` and nothing else, so `np_wide_both` (96), `np_nc192`,
+`np_nc384` are comparable. The stage distribution's sd after the 4.80-cycle
+Wockner window is 0.224 cycles at 96, 0.158 at 192, 0.112 at 384: raising
+`n_c` makes the model desynchronise more slowly.
+
+**Prediction recorded before the fits ran**, and repeated in `wockner-fit.R`
+and the sbatch:
+
+- **`b_shape` falls monotonically** toward the 14-19 the tight prior gave →
+  it had been absorbing a too-fast desynchronisation rate, and `n_c` is a
+  real misspecification, not just a numerical setting.
+- **`b_shape` stays at 65+** → it is pinned by something in the data and the
+  decay rate is not what drives it. Thread 5 then reverts to a noted risk.
+- **Non-monotonic** → neither conclusion. Do not read it as either.
+
+Watch `cycle_length` alongside `b_shape`: **the confound only matters if
+moving `n_c` moves the headline number.** Sizing is in
+`_scripts/nc-sizing.R`, saved output `_data/nc-sizing-2026-10-05.txt`
+(per-leapfrog cost 1.81x from 96 to 192, so the cost is near-linear in `n_c`,
+not quadratic).
+
 ### Then
 
-1. **Thread 5's `n_c` / `b_shape` confound** — now the live thread, and
-   29628 gives it a measured channel to the headline estimate. Real-data
-   version (`np_wide_bshape` at `n_c = 192`; **size it first**, the state
-   dimension doubles to 384) and simulation version (simulate at 192, fit
-   at 96).
-2. **SBC** is no longer the forced next step — it was the branch for
-   `fix_bshape` coming back near zero, and it did not. Keep it for
-   calibration, not for attribution.
+1. **SBC is parked** as thread 13 in `threads.md`, with the conditions that
+   would unpark it. It was the branch for `fix_bshape` returning near zero,
+   which it did not. Do not run it merely because it is cheap: it is a
+   correctness check on code that has not changed.
+2. **Thread 5's simulation half** — simulate at `n_c = 192`, fit at 96 — is
+   the companion to 29633 and needs `_scripts/wockner-schedule-sim.R`, so it
+   must wait for 29631 to finish.
 3. **More null runs** only if the one unexplained regression figure matters.
 
 ## Settled, 2026-10-04

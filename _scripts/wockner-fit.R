@@ -357,7 +357,45 @@ CONFIGS <- list(
     daH3_pooled_cl = list(model = "pooled_cl", data = list(sd_log10_total0 = 1,
                                                            b_shape = 400,
                                                            max_shape = 1000,
-                                                           hold_out = "ho_k3"))
+                                                           hold_out = "ho_k3")),
+    ## ---- thread 5: the n_c / b_shape confound, 37-38 --------------------
+    ## n_c is the number of sequential exponential compartments, so transit
+    ## over one cycle is Erlang(n_c, n_c / cycle_length) and the stage
+    ## distribution's sd after k cycles is sqrt(k / n_c) CYCLES. Over the
+    ## Wockner window (k = 4.80) that is 0.224 cycles at n_c = 96, 0.158 at
+    ## 192, 0.112 at 384. So n_c alone fixes how fast the model lets the
+    ## parasites desynchronise -- and check_erlang_window() picks it for
+    ## numerical accuracy, never for biology.
+    ##
+    ## b_shape is the only free synchrony knob, and the chain's own decay
+    ## dominates the late-window oscillation amplitude (b_shape 14.9 gives an
+    ## initial sd of 0.090 cycles, 65 gives 0.044 -- both far below the 0.224
+    ## the chain adds). So if the fixed decay rate is wrong, b_shape is where
+    ## that error has to land. fix_bshape showed errors landing in b_shape
+    ## propagate to cycle_length at -0.92 h, which is what makes this worth
+    ## running rather than merely noting.
+    ##
+    ## Baseline is np_wide_both (entry 11): same priors, n_c = 96. These
+    ## change n_c and nothing else, so the three are a ladder.
+    ##
+    ## THE PREDICTION, recorded before the fits are run. If b_shape has been
+    ## absorbing a too-fast desynchronisation rate, then slowing the decay by
+    ## raising n_c should let b_shape FALL back toward the 14-19 the tight
+    ## prior gave, monotonically along the ladder. If b_shape is instead
+    ## pinned by something real in the data, it should sit at 65+ regardless.
+    ## A non-monotonic result means neither and should not be read as either.
+    ## Watch cycle_length alongside it: the confound only matters if moving
+    ## n_c moves the headline number.
+    ##
+    ## Cost measured, not guessed: _scripts/nc-sizing.R puts the per-leapfrog
+    ## cost at 1.81x going 96 -> 192, so ~2.9 h against np_wide_both's 1.58 h
+    ## slowest chain. 384 is extrapolated, not measured.
+    np_nc192       = list(model = "no_pool",   data = list(sd_log_b_shape = 1.5,
+                                                           sd_log10_total0 = 1,
+                                                           n_c = 192L)),
+    np_nc384       = list(model = "no_pool",   data = list(sd_log_b_shape = 1.5,
+                                                           sd_log10_total0 = 1,
+                                                           n_c = 384L))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.

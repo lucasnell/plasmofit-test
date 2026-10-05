@@ -179,8 +179,15 @@ Roughly in priority order.
    not whether a never-seen trial would be predicted better, which is thread
    5's question and remains structurally near-rigged.
 5. **`n_c` sets the desynchronisation rate and was chosen for numerical
-   accuracy.** Raised 2026-10-05, **not to be pursued until the bias work
-   needs it** — recorded so it is not lost.
+   accuracy.** Raised 2026-10-05, parked the same day, and **unparked
+   2026-10-05 (late)** once `fix_bshape` gave it a measured channel to the
+   headline estimate. **IN FLIGHT: SLURM 29633**, entries 37-38
+   (`np_nc192`, `np_nc384`) against the `n_c = 96` baseline `np_wide_both`.
+   The prediction is recorded before the fits in `wockner-fit.R`, in
+   `_scripts/wockner-fit-nc.sh`, and in `CLAUDE.md`. Cost measured in
+   `_scripts/nc-sizing.R`: 1.81x per leapfrog from 96 to 192, so near-linear
+   in `n_c`, not quadratic. The simulation half (simulate at 192, fit at 96)
+   still needs `wockner-schedule-sim.R` and must wait for 29631.
    `build_A` uses `lambda = n_c / cycle_length` over `n_c` sequential
    exponential compartments, so transit over one cycle is Erlang(`n_c`,
    lambda) and the stage distribution's sd after k cycles is
@@ -295,3 +302,30 @@ Roughly in priority order.
     correlation. The simulation has since killed 1 and found against 2, so
     these would now be confirming on real data that the prior is not the
     story -- worth something, no longer decisive.
+13. **SBC (simulation-based calibration), parked 2026-10-05 with a condition
+    for unparking.** Sized but never run: ~38 core-hours for N = 100 with
+    short chains (L = 100 draws), ~1.5 h wall clock at 25 concurrent.
+    **Why it is parked.** It was the pre-registered branch for `fix_bshape`
+    coming back near zero, which would have meant no single nuisance carried
+    the cycle-length bias and the cost was joint -- a diffuse result that
+    needs a calibration instrument rather than another arm. `fix_bshape` came
+    back at **-0.92 h**, so the bias is attributed to `b_shape` and the arms
+    are still working. Running SBC now would answer a question that is no
+    longer the blocking one.
+    **What SBC would and would not tell us.** It checks that the posterior is
+    calibrated under the model's own prior -- that is, over datasets drawn
+    from the prior predictive. It therefore speaks to whether the *sampler
+    and model code* are correct, not to whether the cycle-length bias is real
+    on Wockner-like designs. The schedule simulation already answers the
+    latter directly and at the design we care about, which is why it has been
+    the instrument throughout.
+    **Unpark it if** any of these happen:
+    - the `fix_bshape` reseeds come back and the attribution collapses toward
+      zero, putting us back in the joint-cost branch;
+    - a cycle-length number is going into a manuscript and we need a
+      calibration statement to accompany it;
+    - thread 5's `n_c` work changes the model (not just its settings), since
+      a structural change reopens whether the code is right.
+    **Do not** run it merely because it is cheap and sitting there. It is a
+    correctness check on code that has not changed, and the open questions
+    are about identification, not implementation.
