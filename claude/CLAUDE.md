@@ -62,19 +62,37 @@ the next idea should probably start.
 
 ### Next
 
-1. **Simulation-based calibration** (the agreed option 2). Draw θ from the
+1. **Test whether `b_shape` is absorbing the desynchronisation rate.**
+   `n_c` fixes how fast the model desynchronises — Erlang(`n_c`, lambda) per
+   cycle, so sd after k cycles is `sqrt(k / n_c)` — and it is sized for
+   numerical accuracy, not biology. At the default 96 the chain adds 0.224
+   cycles of spread over the window, which is **larger than the initial
+   spread at any plausible `b_shape`** (0.090 cycles at 14.9, 0.044 at 65,
+   0.018 at 400). So late-time oscillation amplitude is dominated by a decay
+   rate that is fixed, and `b_shape` is the only free knob. A `b_shape` that
+   runs to 65+ when its prior is relaxed may be reporting on `n_c`.
+   - **Real-data version, 1 fit**: `np_wide_bshape` refitted at `n_c = 192`.
+     If the freed `b_shape` comes down substantially, the two are confounded
+     and every `b_shape` number in this project is partly an `n_c` number.
+     Size it first — `n_c` doubles the state dimension to 384, so expect
+     well over the usual ~1.5 h, and check `check_erlang_window()` passes.
+   - **Simulation version, cleaner mechanistically**: simulate at `n_c = 192`
+     (slower decay) and fit at `n_c = 96`. If `b_shape` compensates upward,
+     that is the confound demonstrated directly rather than inferred.
+   See thread 5 for the arithmetic. Raised 2026-10-05.
+2. **Simulation-based calibration** (the agreed option 2). Draw θ from the
    prior, simulate, fit, check rank uniformity. It is the only remaining way
    to ask whether the posterior is *correct* and the bias is an ordinary
    property of evaluating at one fixed truth, rather than a defect. Expensive
    — it needs many simulate-fit cycles — so size it before launching.
-2. **Reseed `daH2_no_pool`** — one fit, closes the horizon ladder.
+3. **Reseed `daH2_no_pool`** — one fit, closes the horizon ladder.
    `sbatch --array=33 --export=ALL,WOCKFIT_SEED=1123581321,WOCKFIT_SUFFIX=-seed2 _scripts/wockner-fit.sh`
-3. **The +0.74 h likelihood-level bias** on rep1 with nuisances at truth is
+4. **The +0.74 h likelihood-level bias** on rep1 with nuisances at truth is
    unexplained and was measured on one replicate. Repeating the profile scan
    on rep2 and rep3 is minutes, not hours, and would say whether it is
    systematic.
-4. **More null runs** only if the one unexplained regression figure matters.
-5. **Thread 5, Design B** — still argued against.
+5. **More null runs** only if the one unexplained regression figure matters.
+6. **Thread 6, Design B** — still argued against.
 
 ## Settled, 2026-10-04
 
