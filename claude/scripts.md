@@ -152,3 +152,14 @@ are working *on* `biohpc`, three things change:
   saved fit is ~54 MB compressed and `rstan::extract` on it is memory-hungry;
   `wockner-pooling-offset.R` and `wockner-cl-clustering.R` both load a full
   fit. `srun -N 1 -n 1 -c 4 --mem=8G --pty R --vanilla` (or `Rscript`).
+
+## Reference library
+
+Papers bearing on thread 2, kept here so a search is not repeated.
+
+| work | why it matters |
+|---|---|
+| Greischar, Reece, Savill, Mideo (2023) *Trends Parasitol* 39(8) — in this repo as `mmcm.pdf`, supplement `mmc1.pdf` | PMR estimates are biased in SYNCHRONOUS infections, worst when initial median parasite age is offset from sampling by ~12 h, because samples land where parasites are sequestered. Asynchronous infections estimate fine. The two controlling quantities are this model's `b_shape` and `b_offset`. |
+| Greischar, Reece, Savill, Mideo (2019) *Trends Parasitol*, "The Challenge of Quantifying Synchrony in Malaria Parasites" | Synchrony is hard to quantify from data of this kind — corroborates `b_shape` being unidentified here rather than badly fitted. |
+| Subudhi et al. (2020) *Nat Commun* 11, "Malaria parasites regulate intra-erythrocytic development duration via serpentine receptor 10" | The IDC completes in multiples of 24 h under circadian coordination. Makes `cl_prior_center = 48` a biologically motivated choice rather than an arbitrary one. |
+| O'Donnell, Greischar, Reece (2021) *Parasite Immunol* 43 | IDC duration is plastic and shortens when mistimed relative to host rhythms — relevant to whether a single `cycle_length` per trial is the right structure at all. |

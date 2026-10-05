@@ -2194,3 +2194,51 @@ which is diagnostic in simulation exactly as `fix_sd` was, and is the one
 cheap thing thread 2 has left. `wockner-fit.R` configs 5 and 6
 (`np_center45`, `np_center42`) were written for the real data and never
 submitted.
+
+### Literature: the bias is a known property of this estimation problem
+
+Checked before searching outward, per the project's own habit: `mmcm.pdf`
+(Greischar et al., *Trends in Parasitology* 39(8), 2023) is in this repo and
+is directly about estimation bias in exactly this system. Supplemented with
+an OpenAlex search; the relevant works are recorded in `claude/scripts.md`'s
+reference list rather than re-summarised here.
+
+**What `mmcm.pdf` establishes, for PMR rather than cycle length:**
+
+- Estimates "systematically overestimate the multiplication rate in
+  **synchronized** infections", and "the estimates for initially
+  **asynchronous** infections are close to the true values and do not vary
+  depending on the initial median parasite age".
+- "the largest errors in PMR estimates when the initial median parasite age
+  is **offset from the sampling time by roughly 12 h**", because "some of the
+  samples occur when most parasites are sequestered".
+- "Even moderate levels of synchrony generate exaggerated PMRs ... estimates
+  are especially poor with higher levels of synchrony."
+
+**Why this maps onto thread 2.** The two quantities that paper identifies as
+controlling the bias are exactly the two this model parameterises and cannot
+identify: synchrony is `b_shape` and initial median parasite age is
+`b_offset`. The Wockner sampling grid is **12 h** for 87.8% of intervals,
+which is the offset the paper reports as worst. And Design A pinned `b_shape`
+at 400 — near-maximal synchrony, which that paper reports as the regime where
+estimates are *especially* poor.
+
+**What it does not establish.** It is about PMR (`R` here), not
+`cycle_length`, and it uses a different estimator (regression and maximum
+observed ratio, not a fitted mechanistic posterior). It makes the
+phase-and-synchrony dependence a **hypothesis worth testing here**, not a
+result that transfers.
+
+**The testable prediction**: the cycle-length bias should vary systematically
+with the true `b_offset` relative to the 12 h sampling grid, and should be
+larger at high `b_shape`. Every simulation replicate so far shares one true
+`b_offset`, so nothing run to date could have seen this. Varying it is one
+new arm dimension.
+
+**Also relevant, and it cuts the other way on `cl_prior_center`**: the IDC is
+reported to complete in multiples of 24 h under circadian coordination
+(Subudhi et al. 2020, *Nat Commun*), so `cl_prior_center = 48` is a
+biologically motivated choice, not an arbitrary one. Whether to move it is a
+scientific judgement about which evidence to believe, not a technical fix —
+which is thread 7, and separate from measuring the prior's weight (SLURM
+29612).
