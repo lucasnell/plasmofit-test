@@ -165,13 +165,53 @@ Roughly in priority order.
    TRIAL -- so this answers whether per-trial cycle lengths predict better,
    not whether a never-seen trial would be predicted better, which is thread
    5's question and remains structurally near-rigged.
-5. **Design B, only if A is ambiguous.** True leave-one-trial-out K-fold,
+5. **`n_c` sets the desynchronisation rate and was chosen for numerical
+   accuracy.** Raised 2026-10-05, **not to be pursued until the bias work
+   needs it** — recorded so it is not lost.
+   `build_A` uses `lambda = n_c / cycle_length` over `n_c` sequential
+   exponential compartments, so transit over one cycle is Erlang(`n_c`,
+   lambda) and the stage distribution's sd after k cycles is
+   `sqrt(k / n_c)` **cycles**. Over the Wockner window (k = 4.80):
+
+   | `n_c` | sd after 1 cycle | sd after 4.8 cycles |
+   |---|---|---|
+   | 48 | 0.144 cyc | 0.316 cyc = 14.2 h |
+   | **96 (default)** | **0.102 cyc** | **0.224 cyc = 10.1 h** |
+   | 192 | 0.072 cyc | 0.158 cyc = 7.1 h |
+   | 384 | 0.051 cyc | 0.112 cyc = 5.0 h |
+
+   Cells: sd of the stage distribution, in cycles and in hours at a 45.012 h
+   period, from the Erlang transit time. Deterministic, no data.
+
+   So **the model already desynchronises deterministically**, and the rate is
+   fixed entirely by `n_c` — which `check_erlang_window()` sizes for
+   numerical accuracy ("roughly `n_c >= 6 * max(time) / min_cl`"), not for
+   biology. The two uses are coupled: raising `n_c` for a longer window or a
+   shorter `min_cl` also makes the parasites desynchronise more slowly.
+   Nothing in this project has ever checked that rate against data.
+   **There is no demographic stochasticity anywhere in the model** — the
+   trajectory is deterministic given parameters and all noise is
+   observational — so the stochastic half of the decay has no representation
+   at all.
+   **This cannot explain the simulated cycle-length bias**: the simulation
+   generates from the same model with the same `n_c`, so the decay rate
+   matches by construction. It is a real-data misspecification risk only.
+   **The connection worth testing if it is ever pursued**: initial synchrony
+   and decay rate trade off against the observed late-time oscillation
+   amplitude. `b_shape` 14.9 gives an initial sd of 0.090 cycles, 65 gives
+   0.044, 400 gives 0.018 — all smaller than the 0.224 cycles the chain adds
+   by the end of the window. So at late times the amplitude is dominated by
+   the decay, which is fixed, and `b_shape` is the only free knob. A `b_shape`
+   that runs to 65+ when its prior is relaxed may be absorbing a
+   desynchronisation rate that is wrong, which would tie this to the
+   `b_shape` non-identification rather than to the cycle-length bias.
+6. **Design B, only if A is ambiguous.** True leave-one-trial-out K-fold,
    13 folds x 2-4 models. Note it is structurally near-rigged against the
    hierarchy: for a never-seen trial, `no_pool`'s point prediction collapses
    to the population mean, the same location `pooled_cl` gives, so it can
    only win on calibration. That likely explains why trial-level `loo` put
    `pooled_cl` marginally ahead.
-6. ~~**Build-to-build drift in the weakly identified directions.**~~
+7. ~~**Build-to-build drift in the weakly identified directions.**~~
    **CLOSED 2026-10-03, and the original claim was wrong.** The pre-change
    source was rebuilt into its own library and refitted at the same seed, so
    the comparison is identical source across two builds with nothing else
@@ -189,12 +229,12 @@ Roughly in priority order.
    Beware: the first attempt at this read mean |z| 25.5 because the two fits
    had different group level ORDERS, from an edit made while the job was
    running. See `gotchas.md`.
-7. **`cl_prior_center` decision.** Decide whether the default should move
+8. **`cl_prior_center` decision.** Decide whether the default should move
    off 48 h. Demoted: the simulation showed the prior carries less of the
    error than thought (weight 0.113), so this mostly does not fix anything.
    Matters for reporting a cycle-length number; mostly cancels for model
    comparison.
-8. `_scripts/test-archer-fit.R` (the driver script, not the package's
+9. `_scripts/test-archer-fit.R` (the driver script, not the package's
    `tests/testthat/test-archer-fit.R`) has not been run to completion with a
    full-length fit; it has only been smoke-tested with a short one, where
    recovery was good (23/23 parameters inside their 95% intervals, max |z|
@@ -204,12 +244,12 @@ Roughly in priority order.
 
 ### Lower priority
 
-9. **More schedule-simulation replicates**, and more posterior-draw
+10. **More schedule-simulation replicates**, and more posterior-draw
    replicates specifically -- there are only two usable ones. The
    correlation question is limited by noise realizations, not by compute.
    Add seeds to `REP_SEEDS` in `wockner-schedule-sim.R` and widen the array,
    or submit more `SCHEDSIM_TRUTH_DRAW` values; ~2 h wall clock each.
-10. ~~**Re-run the two non-converged replicates with a different fit seed.**~~
+11. ~~**Re-run the two non-converged replicates with a different fit seed.**~~
    **Done**, `SCHEDSIM_FIT_SEED=415926535`. **Qualified 2026-10-01**: a new
    seed is not always enough. Of three refits at
    `SCHEDSIM_FIT_SEED=1618033989`, two converged and `default-rep4` did not
@@ -224,7 +264,7 @@ Roughly in priority order.
    posterior-draw result is therefore n=3, not n=2: +1.68, +1.82, +0.86,
    mean +1.45. Worth noting for any future replicate that fails: try another
    fit seed before concluding anything about the dataset.
-11. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
+12. **Submit the cycle-length prior sensitivity runs.** `wockner-fit.R`
     entries 3-7, `--array=3-7`. Written but never submitted. Demoted: these
     were to discriminate explanation 1 from 2-3 for the sampling-density
     correlation. The simulation has since killed 1 and found against 2, so
