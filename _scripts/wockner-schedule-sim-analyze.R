@@ -34,7 +34,15 @@ suppressPackageStartupMessages({
 ## which is exactly what happened to cl_move and cl_wide_move.
 PAIRED_ARMS <- c("default", "wide_bshape", "wide_total0", "wide_nuis",
                  "cl_move", "cl_wide_move", "fix_sd",
-                 "cl_center_truth", "cl_center_low", "fix_bshape")
+                 "cl_center_truth", "cl_center_low", "fix_bshape",
+                 ## sim96_fit192 generates at n_c = 96 like `default` and with
+                 ## the same noise seed, so it shares its simulated data and
+                 ## pairs validly. sim192_fit96 and sim192_fit192 generate at
+                 ## 192, so their data are DIFFERENT from `default`'s --
+                 ## pairing them against it would difference two datasets, not
+                 ## two fits. They are read against the true cycle_length
+                 ## instead, by _scripts/nc-2x2-read.R.
+                 "sim96_fit192")
 
 res_files <- list.files("_data", "^wock-schedsim-RES-.*[.]rds$", full.names = TRUE)
 if (length(res_files) == 0) stop("no wock-schedsim-RES-*.rds found in _data/")

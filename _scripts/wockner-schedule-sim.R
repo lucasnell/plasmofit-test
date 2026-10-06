@@ -225,7 +225,40 @@ ARMS <- list(
     ## Diagnostic, like fix_sd and cl_center_truth: fixing a parameter at the
     ## truth is available in simulation and nowhere else.
     fix_bshape  = list(model = "no_pool",   data = list(sd_logit_cl = 1),
-                       fix_bshape = TRUE)
+                       fix_bshape = TRUE),
+    ## ---- thread 5: n_c misspecification, a 2x2 ---------------------------
+    ## The real-data n_c ladder (SLURM 29633) found cycle_length moving -3.20 h
+    ## from n_c = 96 to 384 with b_shape falling alongside it. Real data cannot
+    ## say which end is right, because there is no truth to miss. These arms
+    ## put a truth in by generating at one n_c and fitting at another.
+    ##
+    ## `sim_n_c` sets the n_c used to GENERATE; `build$n_c` sets the n_c used
+    ## to FIT. With `default` (96/96) already run, the four cells are:
+    ##
+    ##            fit 96              fit 192
+    ##   gen 96   default             sim96_fit192
+    ##   gen 192  sim192_fit96        sim192_fit192
+    ##
+    ## The diagonal is correctly specified and measures estimator bias at each
+    ## n_c. The off-diagonal measures what MISSPECIFYING n_c manufactures.
+    ##
+    ## `sim96_fit192` is the one that bears on the real-data result directly:
+    ## if fitting at an n_c ABOVE the truth drags cycle_length down, then the
+    ## -3.20 h seen on real data could be an artefact of over-large n_c rather
+    ## than a correction, and elpd preferring it would not settle the period.
+    ##
+    ## Pairing: `sim96_fit192` shares its simulated data with `default` (same
+    ## generating n_c, same noise seed), so it pairs against it and is in
+    ## PAIRED_ARMS. The two gen-192 arms share data with EACH OTHER, not with
+    ## `default`, so they are NOT in PAIRED_ARMS -- pairing them against it
+    ## would difference two different datasets. Read those two against the
+    ## true cycle_length instead.
+    sim192_fit96  = list(model = "no_pool", data = list(sd_logit_cl = 1),
+                         sim_n_c = 192L),
+    sim192_fit192 = list(model = "no_pool", data = list(sd_logit_cl = 1),
+                         sim_n_c = 192L, build = list(n_c = 192L)),
+    sim96_fit192  = list(model = "no_pool", data = list(sd_logit_cl = 1),
+                         build = list(n_c = 192L))
 )
 
 CONFIGS <- expand_grid(arm = names(ARMS), rep = seq_along(REP_SEEDS)) |>
@@ -398,14 +431,26 @@ cat(sprintf("true cycle_length: %.4f h, identical for all %d trials\n\n",
 ends <- cumsum(d$n_obs)
 starts <- ends - d$n_obs + 1L
 
+## n_c used to GENERATE. Defaults to the fit's, which is what every arm before
+## the 2x2 did; an arm setting `sim_n_c` decouples them. n_c enters both calls
+## as a plain scalar and `mu` does not depend on it, so no second
+## archer_stan_data() build is needed. The DESIGN cannot move either: `d`
+## still supplies ts, dt_full and every group code, and n_c reaches the
+## generator only as that scalar.
+sim_n_c <- as.integer(arm$sim_n_c %||% d$n_c)
+if (sim_n_c != d$n_c) {
+    cat(sprintf("  GENERATING at n_c = %d, fitting at n_c = %d\n",
+                sim_n_c, as.integer(arm$build$n_c %||% d$n_c)))
+}
+
 y_hat <- numeric(d$n_total_obs)
 for (i in seq_len(d$n_ts)) {
     ix <- starts[i]:ends[i]
-    y0 <- plasmofit:::generate_starts(truth$cycle_length, d$n_c,
+    y0 <- plasmofit:::generate_starts(truth$cycle_length, sim_n_c,
                                       truth$b_shape[d$grp_init[i]],
                                       truth$b_offset[d$grp_init[i]],
                                       truth$log10_total0[d$grp_init[i]])
-    y_hat[ix] <- plasmofit:::mat_exp_series(y0, truth$cycle_length, d$n_c,
+    y_hat[ix] <- plasmofit:::mat_exp_series(y0, truth$cycle_length, sim_n_c,
                                             truth$R[d$grp_R[i]], d$mu,
                                             d$ts[ix], d$dt_full)
 }
@@ -624,6 +669,7 @@ summ <- list(
                              "sd_iRBC")],
     sd_logit_cl = arm$data$sd_logit_cl,
     seed_noise = seed_noise, seed_fit = seed_fit,
+    sim_n_c = sim_n_c, fit_n_c = as.integer(d_fit$n_c),
     true_cl = truth$cycle_length,
     per_trial = per_trial,
     r_means = r_means,

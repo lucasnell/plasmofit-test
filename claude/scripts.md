@@ -163,3 +163,23 @@ Papers bearing on thread 2, kept here so a search is not repeated.
 | Greischar, Reece, Savill, Mideo (2019) *Trends Parasitol*, "The Challenge of Quantifying Synchrony in Malaria Parasites" | Synchrony is hard to quantify from data of this kind — corroborates `b_shape` being unidentified here rather than badly fitted. |
 | Subudhi et al. (2020) *Nat Commun* 11, "Malaria parasites regulate intra-erythrocytic development duration via serpentine receptor 10" | The IDC completes in multiples of 24 h under circadian coordination. Makes `cl_prior_center = 48` a biologically motivated choice rather than an arbitrary one. |
 | O'Donnell, Greischar, Reece (2021) *Parasite Immunol* 43 | IDC duration is plastic and shortens when mistimed relative to host rhythms — relevant to whether a single `cycle_length` per trial is the right structure at all. |
+
+## `n_c` work, 2026-10-05/06
+
+- `_scripts/nc-sizing.R` — times probe fits at each `n_c` and reports the
+  per-leapfrog cost ratio. **A lower bound, not an estimate**: the leapfrog
+  count also rises (see `gotchas.md`).
+- `_scripts/wockner-fit-nc.sh` — entries 37-38, the real-data `n_c` ladder
+  with `b_shape` estimated. SLURM 29633, done.
+- `_scripts/nc-ladder-read.R` — reads that ladder: `b_shape`, `cycle_length`,
+  sampler health across `n_c`.
+- `_scripts/nc-numerical-check.R` — short probe fits with `run_check = 1`, to
+  separate a numerical explanation from a structural one via `max_rel_diff`.
+  Answered: structural.
+- `_scripts/wockner-fit-nc-bs400.sh` — entries 39-40, the same ladder with
+  `b_shape` pinned at 400. SLURM 29635.
+- `_scripts/wockner-schedule-sim-nc2x2.sh` — tasks 92-94, 99-101, 106-108,
+  the simulation 2x2. SLURM 29637. Arms use `sim_n_c` (generate) and
+  `build$n_c` (fit), which `wockner-schedule-sim.R` now decouples.
+- `_scripts/nc-2x2-read.R` — reads the 2x2 and prints the two contrasts with
+  the rule for reading each.

@@ -19,89 +19,101 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/threads.md` | open threads 1–13, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
-## Resume here, 2026-10-06
+## Resume here, 2026-10-06 (late)
 
-**Nothing running.** Two jobs finished: 29631 (`fix_bshape` reseeds) and
-29633 (the `n_c` ladder). Both are read and written up below.
+**11 tasks running**, both mailing on `END,FAIL`:
 
-**Written but NOT submitted**: `_scripts/wockner-fit-nc-bs400.sh`, entries
-39–40, the test that decides whether the `n_c` finding touches the headline
-number. See "The decision that is waiting" below.
+- **29635** (tasks 39–40) — `np_bs400_nc192`, `np_bs400_nc384`: does the `n_c`
+  effect survive a **pinned** `b_shape`? ~6 h and ~16 h. Reads
+  `_scripts/wockner-fit.R`: **do not edit while it runs.**
+- **29637** (tasks 92–94, 99–101, 106–108) — the `n_c` **2x2** in simulation,
+  where there is a truth to miss. ~3 h. Reads
+  `_scripts/wockner-schedule-sim.R`: **do not edit while it runs.**
 
-### `n_c` is a biological assumption, not a numerical setting — and it is wrong at 96
+Read 29635 with `loo_compare` against `np_bs400_data` (entry 22, `n_c = 96`)
+and `_scripts/nc-ladder-read.R`; read 29637 with `_scripts/nc-2x2-read.R`.
 
-The headline result of 29633. `np_wide_both` (96), `np_nc192`, `np_nc384`
-differ in `n_c` and nothing else.
+### Why both, and what each can say
 
-| `n_c` | stage sd after the window | `b_shape` | `cycle_length` | elpd |
-|---|---|---|---|---|
-| 96 | 0.224 cyc | 64.45 | 44.25 | −926.2 |
-| 192 | 0.158 cyc | 61.57 | 42.07 | −857.6 |
-| 384 | 0.112 cyc | **25.94** | **41.04** | **−854.4** |
+The real-data ladder (29633) found `cycle_length` moving **−3.20 h** from
+`n_c` 96 → 384 with `b_shape` falling alongside, `n_c = 96` losing **71.8
+elpd**, and the arithmetic faithful to 8e−13 so the effect is structural.
+**Real data cannot say which end is right** — there is no truth to miss, and
+elpd scores prediction on the observed window, which an amplitude/period
+tradeoff can win while getting the period wrong.
 
-- **`b_shape` falls monotonically**, the predicted branch, and not from bound
-  truncation (`max_shape` 250, largest group mean 100.6).
-- **`cycle_length` moves −3.20 h** — larger than the entire +1.97 h simulated
-  bias this project has been chasing.
-- **`n_c = 96` is 71.8 elpd worse than 384** (se 13.2, z −5.4); 192 vs 384 is
-  −3.2 (se 5.0). **The ladder plateaus at 192.**
-- **The effect is STRUCTURAL, not numerical.** `max_rel_diff` at `n_c = 96` is
-  8e−13, so the series solution is faithful to one part in 10^12 and
-  `check_erlang_window()` was doing its job. The 96 model is computed
-  correctly and simply fits worse. **No earlier fit is suspect arithmetic.**
+- **29635** asks whether it touches the **production** configuration, where
+  `b_shape` is pinned at 400 and cannot absorb anything. Outcomes recorded in
+  advance in `wockner-fit.R` and the sbatch: largely gone → the production
+  estimate stands; persists → it is off by ~3 h and **every cycle-length
+  number must be requalified by `n_c`**; larger → `b_shape` was compensating.
+- **29637** supplies the truth. Generating `n_c` and fitting `n_c` are now
+  decoupled, so the four cells separate **estimator** bias from
+  **misspecification** bias:
 
-Full table, caveats, and the sizing lesson in `findings.md`, "`n_c` is a
-biological assumption, not a numerical setting".
+| | fit 96 | fit 192 |
+|---|---|---|
+| **gen 96** | `default` (+1.97 h) | `sim96_fit192` |
+| **gen 192** | `sim192_fit96` | `sim192_fit192` |
 
-### The decision that is waiting
+  **`sim96_fit192` is the cell that could overturn the real-data result.** If
+  fitting ABOVE the true `n_c` drags `cycle_length` down, the −3.20 h is an
+  artefact of over-large `n_c`, not a correction.
 
-29633 ran with `b_shape` **estimated**, which is correct for asking whether
-`b_shape` absorbs the decay rate but is **not** the production configuration,
-where `b_shape` is pinned at 400 for +28 to +37 elpd. **Nothing about any
-reported cycle length changes until entries 39–40 come back.**
+### The hypothesis the 2x2 tests
 
-`sbatch _scripts/wockner-fit-nc-bs400.sh` — 2 tasks, ~6 h and ~16 h (measured
-on 29633, not extrapolated). Outcomes recorded in advance in `wockner-fit.R`
-and the sbatch:
+The simulation says the `n_c = 96` estimator reads **+1.97 h high**.
+`np_wide_both` is 44.24 h; minus 1.97 gives **42.27 h**; `np_nc192` measures
+**42.07 h**. Two independent routes within 0.2 h, which would make the
+cycle-length bias and the `n_c` misspecification **one phenomenon**. It is a
+hypothesis, not a result: the +1.97 h was measured generating *and* fitting at
+96, so it is estimator bias in a correctly specified model and the agreement
+may be coincidence.
 
-- **Effect largely gone** → the sensitivity was `b_shape` absorbing a wrong
-  decay rate; the production estimate stands.
-- **Effect persists** → `n_c` is misspecified independently of `b_shape`, the
-  production estimate is off by ~3 h, and **every cycle-length number in
-  `findings.md` must be requalified by `n_c` as well as by the `b_shape`
-  ladder.**
-- **Effect larger** → `b_shape` was partly compensating, and pinning it
-  exposes more of the error.
+### The mechanism, which holds either way
 
-### `fix_bshape` reseeds: answer reproduces, gate still fails
+`cycle_length` is set by an **amplitude–period tradeoff** with `n_c` fixed by
+assumption on one side. The model matches the oscillation either with high
+amplitude and a short period or low amplitude and a long one; `n_c = 96`
+decays fast, killing amplitude, so the fit buys it back with higher `b_shape`
+**and** a longer period. That is why both fell together along the ladder, and
+the same trade shows at fixed `n_c` (pinning `b_shape` at 400 gives 43.65 h
+against 44.24 h). **This is why the headline number was never as well
+determined as it looked**, independent of which end wins.
 
-rep2 −0.011 → **−0.117** (R-hat 1.343 → 1.055, ESS 10 → 60); rep3 +1.219 →
-**+1.239** (R-hat 1.066 → 1.052). **The biases reproduce**, so rep2's
-near-zero was not an artefact of bad geometry. Paired deltas across all three
-are −0.919, −1.257, −0.955, mean **−1.044 h**.
+### Standing conclusions
 
-**Both still fail the 1.05 gate**, so the analyzer still reports n_pair = 1.
-The pre-registered rule was followed: report n_pair = 1 with the caveat, lean
-on `wide_bshape` (−0.513 h over 6 clean pairs), **do not reseed a third
-time.**
-
-### Standing conclusion on thread 2
-
-`b_shape` is the nuisance whose estimation carries the cycle-length bias:
-−0.92 h pinned at truth, −0.51 h merely widened, against `fix_sd` (+0.104)
-and `wide_total0` (+0.147) which carry none. 29633 now shows `b_shape` is
-also where a wrong desynchronisation rate lands. **These are the same
-parameter and the same channel.**
+- **Thread 2 is attributed**: `b_shape` carries the cycle-length bias (−0.92 h
+  pinned at truth, −0.51 h merely widened; `fix_sd` +0.104 and `wide_total0`
+  +0.147 carry none). `fix_bshape` stands at n_pair = 1 — both reseeds
+  reproduced their biases but stayed just above the 1.05 gate, and the
+  pre-registered rule says no third reseed.
+- **The hierarchy question has no robust evidence either way** (Design A
+  mask-dependent, horizon ladder flat).
+- **`n_c = 96` predicts worse than 192 by 71.8 elpd, structurally.** This does
+  **not** yet license changing any reported cycle length.
 
 ### Then
 
-1. **Submit 39–40** (above). Nothing else should move first — it can
+1. **Read 29635 and 29637.** Nothing else should move first — either can
    invalidate cycle-length numbers.
-2. **Thread 5's simulation half** — simulate at `n_c = 192`, fit at 96 —
-   needs `_scripts/wockner-schedule-sim.R`, now free. This measures the bias
-   `n_c` misspecification induces, which the real-data ladder cannot.
-3. **SBC** stays parked as thread 13, with unparking conditions.
+2. **If 29635 says the effect persists**, the `b_shape` ladder and Design A
+   were all run at `n_c = 96` and need redoing at 192. Scope that only after
+   reading it.
+3. **SBC** stays parked as thread 13.
 4. **More null runs** only if the one unexplained regression figure matters.
+
+### Housekeeping done 2026-10-06
+
+- Package repo **committed and pushed** to `origin/main` at `8dde0c1`. The
+  generated Rcpp bindings had been left at `ocombo_len` while the Stan sources
+  moved to `ocombo_len_fit`, so the committed tree was inconsistent; the
+  regenerated files match the installed binary that is running the fits.
+  `src/*.o`, `*.so`, `*.dll` are now gitignored.
+- `/home2/lan68/plasmofit/.prechange/` **deleted** (494 MB). Its `src` was a
+  registered worktree at `e61fb47`, verified an ancestor of `main`, so nothing
+  unique was in it; removed with `git worktree remove` before `rm -rf`.
+
 
 ## Settled, 2026-10-04
 

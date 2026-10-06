@@ -2616,3 +2616,71 @@ on the production fit. Per-gradient cost and the number of gradients are
 separate multipliers and a probe that fixes the iteration count only measures
 the first. Multiply them next time, or treat a per-leapfrog probe as a lower
 bound.
+
+### The `n_c` 2x2: separating estimator bias from misspecification bias
+
+**IN FLIGHT, SLURM 29637.** Recorded here before the results so the reading
+rule is fixed in advance.
+
+The real-data ladder cannot say which end is right, because real data has no
+truth to miss, and elpd scores prediction on the observed window -- which an
+amplitude/period tradeoff can win while getting the period wrong. These arms
+put a truth in. `wockner-schedule-sim.R` now decouples the `n_c` used to
+GENERATE (`arm$sim_n_c`) from the one used to FIT (`arm$build$n_c`):
+
+| | fit `n_c` = 96 | fit `n_c` = 192 |
+|---|---|---|
+| **generate 96** | `default` (done, +1.97 h) | `sim96_fit192` |
+| **generate 192** | `sim192_fit96` | `sim192_fit192` |
+
+The diagonal is correctly specified and measures **estimator** bias at each
+`n_c`. The off-diagonal measures what **misspecifying** `n_c` manufactures.
+
+**`sim96_fit192` is the cell that bears on the real-data result**, and it is
+the one that could overturn it. If fitting ABOVE the true `n_c` drags
+`cycle_length` down on data where the truth is 96, then the real-data −3.20 h
+is an artefact of over-large `n_c` rather than a correction, and 71.8 elpd
+would not settle the period.
+
+Pairing, which the data support rather than assume: `sim96_fit192` generates
+at 96 with the same noise seed as `default`, so it shares its simulated data
+exactly -- verified, both give y_sim mean log10 2.7590 on rep 1 -- and it is
+in `PAIRED_ARMS`. The two gen-192 arms share data with **each other** (y_sim
+mean 2.6934), **not** with `default`, so they are deliberately **not** in
+`PAIRED_ARMS`; differencing them against it would difference two datasets
+rather than two fits. They are read against the true `cycle_length` instead,
+by `_scripts/nc-2x2-read.R`.
+
+#### Why this is worth the compute
+
+The real-data move already has an arithmetic coincidence behind it. The
+simulation says the `n_c = 96` estimator reads **+1.97 h high**. Applying that
+to the real-data fit:
+
+| route | value |
+|---|---|
+| `np_wide_both` at `n_c = 96` | 44.24 h |
+| minus the simulated +1.97 h bias | **42.27 h** |
+| `np_nc192`, measured | **42.07 h** |
+
+Two independent routes land within 0.2 h, which would make the +1.97 h bias
+and the `n_c` misspecification one phenomenon rather than two. **That is a
+hypothesis, not a result**: the +1.97 h was measured generating AND fitting at
+96, so it is estimator bias inside a correctly specified model, and the
+agreement may be coincidence. The 2x2 is what tells the difference.
+
+#### The mechanism both results share
+
+The model can match the observed oscillation with high amplitude and a short
+period, or low amplitude and a long one. `n_c` fixes the decay rate, and at 96
+the chain desynchronises fast, killing late-window amplitude; the fit buys it
+back by raising `b_shape` and lengthening the period. Raise `n_c` and
+amplitude comes free, so both compensations relax -- which is why `b_shape`
+and `cycle_length` fell **together** along the ladder. The same trade shows at
+fixed `n_c`: pinning `b_shape` at 400 gives 43.65 h against `np_wide_both`'s
+44.24 h.
+
+**So `cycle_length` is set by an amplitude-period tradeoff with `n_c` fixed by
+assumption on one side of it.** That is the real reason the headline number
+was never as well determined as it looked, and it is independent of which end
+of the ladder turns out to be right.

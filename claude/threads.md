@@ -198,9 +198,24 @@ Roughly in priority order.
    `_scripts/wockner-fit-nc-bs400.sh`, **written and not yet submitted**, ask
    whether the effect survives a pinned `b_shape`. Outcomes recorded in
    advance there and in `wockner-fit.R`.
-   **Also open**: the simulation half -- simulate at `n_c = 192`, fit at 96 --
-   which measures the bias this misspecification induces. The real-data
-   ladder cannot do that, because on real data there is no truth to miss.
+   **IN FLIGHT, SLURM 29635** (entries 39-40, `np_bs400_nc192`,
+   `np_bs400_nc384`): does the effect survive a **pinned** `b_shape`? This
+   gates every reported cycle length.
+   **IN FLIGHT, SLURM 29637**: the simulation **2x2**. Generating `n_c` and
+   fitting `n_c` are now decoupled in `wockner-schedule-sim.R` via
+   `arm$sim_n_c` and `arm$build$n_c`, so the four cells separate ESTIMATOR
+   bias (the correctly specified diagonal) from MISSPECIFICATION bias (the
+   off-diagonal). Arms `sim192_fit96`, `sim192_fit192`, `sim96_fit192`
+   against the existing `default` (96/96). Read with
+   `_scripts/nc-2x2-read.R`; see `findings.md`, "The `n_c` 2x2".
+   **`sim96_fit192` is the cell that could overturn the real-data result**: if
+   fitting ABOVE the true `n_c` drags `cycle_length` down, the -3.20 h is an
+   artefact of over-large `n_c` rather than a correction.
+   **Pairing, deliberately asymmetric**: `sim96_fit192` shares `default`'s
+   simulated data (verified, y_sim mean log10 2.7590 both) and is in
+   `PAIRED_ARMS`; the gen-192 arms share data with each other (2.6934), NOT
+   with `default`, so they are excluded from it and read against the true
+   `cycle_length` instead.
    `build_A` uses `lambda = n_c / cycle_length` over `n_c` sequential
    exponential compartments, so transit over one cycle is Erlang(`n_c`,
    lambda) and the stage distribution's sd after k cycles is
