@@ -2501,3 +2501,108 @@ biases pointed -- precedent is the `daH2_no_pool` reseed, where R-hat
 That the geometry gets harder when a parameter is **removed** is itself
 worth noting: it is the signature of `b_shape` having been absorbing
 something, so that pinning it forces the conflict into the parameters left.
+
+### The `fix_bshape` reseeds: the answer reproduces, the gate still fails
+
+SLURM 29631, `SCHEDSIM_FIT_SEED=2`, reps 2 and 3. Simulated data unchanged, so
+they pair against the same `default` fits.
+
+Cells: `bias` is mean posterior `cycle_length` minus the 45.01 h truth, in
+hours. `delta` is that minus `default`'s on the same data.
+
+| rep | seed | R-hat | div | min ESS | bias | delta vs `default` |
+|---|---|---|---|---|---|---|
+| 2 | original | 1.343 | 586 | 10.2 | −0.011 | −1.151 |
+| 2 | **seed2** | **1.055** | 108 | 60.1 | **−0.117** | **−1.257** |
+| 3 | original | 1.066 | 222 | 52.9 | +1.219 | −0.974 |
+| 3 | **seed2** | **1.052** | 255 | 65.9 | **+1.239** | **−0.955** |
+
+**The biases reproduce.** rep2 moves −0.011 → −0.117 and rep3 +1.219 →
++1.239, while R-hat falls 1.343 → 1.055 and ESS rises 10 → 60. So rep2's
+near-zero bias was **not** an artefact of the bad geometry, which was the
+live alternative. The paired differences across all three replicates are
+−0.919, −1.257, −0.955, mean **−1.044 h**, against −1.015 h before.
+
+**But both reseeds still fail the 1.05 convergence gate** (1.055 and 1.052),
+so the analyzer still reports `fix_bshape` at **n_pair = 1**. The
+pre-registered rule applies and is being followed: report n_pair = 1 with the
+caveat, lean on `wide_bshape`'s −0.513 h over 6 clean pairs, and **do not
+reseed a third time**. Two seeds that both stall just above the gate on the
+same two replicates is itself informative -- pinning `b_shape` makes the
+geometry harder, which is consistent with it having been absorbing something.
+
+### `n_c` is a biological assumption, not a numerical setting
+
+SLURM 29633, entries 37-38. `np_wide_both` (`n_c = 96`), `np_nc192`,
+`np_nc384` differ in `n_c` and nothing else. Scripts
+`_scripts/nc-ladder-read.R` and `_scripts/nc-numerical-check.R`, saved outputs
+`_data/nc-ladder-2026-10-06.txt`, `_data/nc-numerical-check-2026-10-06.txt`,
+`_data/schedsim-analyze-2026-10-06.txt`.
+
+Cells: `b_shape` and `cycle_length` are posterior means averaged over the 14
+and 13 groups; `cycle_length` in hours. `elpd` is observation-level PSIS-LOO.
+`stage sd` is the deterministic stage-distribution sd after the 4.80-cycle
+Wockner window, `sqrt(k / n_c)` cycles.
+
+| `n_c` | stage sd | `b_shape` | `cycle_length` | elpd | R-hat | div |
+|---|---|---|---|---|---|---|
+| 96 | 0.224 cyc | 64.45 | 44.25 | −926.2 | 1.019 | 137 |
+| 192 | 0.158 cyc | 61.57 | 42.07 | −857.6 | 1.032 | 165 |
+| 384 | 0.112 cyc | **25.94** | **41.04** | **−854.4** | 1.055 | 54 |
+
+**`b_shape` falls monotonically, as predicted**: 64.45 → 61.57 → 25.94. The
+prediction was recorded in `wockner-fit.R` before the fits ran. `max_shape` is
+250 and the largest group mean is 100.6, so this is not bound truncation.
+
+**`cycle_length` moves −3.20 h.** That is larger than the entire +1.97 h
+simulated bias this project has spent weeks on, and it is driven by a setting
+`check_erlang_window()` picks for numerical accuracy.
+
+**`n_c = 96` is 71.8 elpd worse than 384** (se 13.2, so z = −5.4). 192 against
+384 is −3.2 (se 5.0): indistinguishable. **The ladder plateaus at 192.**
+
+#### The effect is structural, not numerical
+
+`n_c` does two jobs -- it sets the Erlang shape, and so the desynchronisation
+rate, and it has to be large enough for the series solution to approximate the
+matrix exponential. These have opposite implications, so they were separated.
+
+`max_rel_diff` is the model's own cross-check: generated quantities recomputes
+the trajectory with `matrix_exp` and reports the largest relative difference
+against the series solution the likelihood uses.
+
+| `n_c` | max `max_rel_diff` | median |
+|---|---|---|
+| 96 | 8.05e−13 | 5.04e−13 |
+| 192 | 1.39e−12 | 1.09e−12 |
+
+**At `n_c = 96` the arithmetic is faithful to one part in 10^12.**
+`check_erlang_window()` was doing its job correctly. The `n_c = 96` model is
+computed accurately and simply **fits the data worse**, by a wide margin. So
+this is a statement about the biology the model assumes, not about its
+numerics, and no earlier fit is suspect arithmetic.
+
+#### What this does and does not license
+
+It does **not** yet license changing any reported cycle length. These fits run
+with `b_shape` **estimated** (`sd_log_b_shape = 1.5`), which is the right
+setting for asking whether `b_shape` absorbs the decay rate -- it has to be
+free to move -- but it is **not** the configuration the project has settled
+on, where `b_shape` is pinned at 400 for +28 to +37 elpd. Entries 39-40
+(`np_bs400_nc192`, `np_bs400_nc384`) ask whether the `n_c` effect survives a
+pinned `b_shape`, with the three outcomes recorded in advance.
+
+Caveat on the top rung: `np_nc384` has max R-hat 1.055, just above the 1.05
+gate used elsewhere in this project. Its elpd is statistically tied with
+`np_nc192` (R-hat 1.032), which is the rung the plateau conclusion rests on,
+so the headline comparison does not depend on the marginal fit.
+
+#### Sizing lesson
+
+`nc-sizing.R` predicted ~2.9 h at `n_c = 192`; it took **5 h 47**, and 384
+took **15 h 59**. The probe measured cost **per leapfrog** (1.81x from 96 to
+192) and was right about that, but the leapfrog count **also** rose, 223 → 390
+on the production fit. Per-gradient cost and the number of gradients are
+separate multipliers and a probe that fixes the iteration count only measures
+the first. Multiply them next time, or treat a per-leapfrog probe as a lower
+bound.

@@ -178,16 +178,29 @@ Roughly in priority order.
    TRIAL -- so this answers whether per-trial cycle lengths predict better,
    not whether a never-seen trial would be predicted better, which is thread
    5's question and remains structurally near-rigged.
-5. **`n_c` sets the desynchronisation rate and was chosen for numerical
-   accuracy.** Raised 2026-10-05, parked the same day, and **unparked
-   2026-10-05 (late)** once `fix_bshape` gave it a measured channel to the
-   headline estimate. **IN FLIGHT: SLURM 29633**, entries 37-38
-   (`np_nc192`, `np_nc384`) against the `n_c = 96` baseline `np_wide_both`.
-   The prediction is recorded before the fits in `wockner-fit.R`, in
-   `_scripts/wockner-fit-nc.sh`, and in `CLAUDE.md`. Cost measured in
-   `_scripts/nc-sizing.R`: 1.81x per leapfrog from 96 to 192, so near-linear
-   in `n_c`, not quadratic. The simulation half (simulate at 192, fit at 96)
-   still needs `wockner-schedule-sim.R` and must wait for 29631.
+5. **`n_c` is a biological assumption, not a numerical setting, and 96 is
+   wrong.** Raised, parked, and unparked 2026-10-05; **answered 2026-10-06**
+   by SLURM 29633 (entries 37-38). See `findings.md`, "`n_c` is a biological
+   assumption, not a numerical setting".
+   `b_shape` falls monotonically along the ladder, 64.45 -> 61.57 -> 25.94,
+   which was the predicted branch. `cycle_length` moves **-3.20 h**
+   (44.25 -> 42.07 -> 41.04), larger than the whole +1.97 h simulated bias.
+   **`n_c = 96` is 71.8 elpd worse than 384** (se 13.2); 192 vs 384 is -3.2
+   (se 5.0), so the ladder **plateaus at 192**.
+   **The effect is structural, not numerical**: `max_rel_diff` at `n_c = 96`
+   is 8e-13, so the series solution is faithful to one part in 10^12 and
+   `check_erlang_window()` was doing its job. No earlier fit is suspect
+   arithmetic -- the 96 model is computed correctly and fits worse.
+   **STILL OPEN, and it gates every reported cycle length.** 29633 ran with
+   `b_shape` estimated, which is right for testing the confound but is not
+   the production configuration (`b_shape` pinned at 400). Entries 39-40
+   (`np_bs400_nc192`, `np_bs400_nc384`), script
+   `_scripts/wockner-fit-nc-bs400.sh`, **written and not yet submitted**, ask
+   whether the effect survives a pinned `b_shape`. Outcomes recorded in
+   advance there and in `wockner-fit.R`.
+   **Also open**: the simulation half -- simulate at `n_c = 192`, fit at 96 --
+   which measures the bias this misspecification induces. The real-data
+   ladder cannot do that, because on real data there is no truth to miss.
    `build_A` uses `lambda = n_c / cycle_length` over `n_c` sequential
    exponential compartments, so transit over one cycle is Erlang(`n_c`,
    lambda) and the stage distribution's sd after k cycles is

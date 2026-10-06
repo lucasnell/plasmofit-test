@@ -207,3 +207,31 @@ orientation and the current state of play.*
     die, as that entry warns it might; it completed and produced a fit that
     was correct but not comparable. **A clean exit is not evidence the edit
     was safe.**
+
+## A per-leapfrog cost probe is a lower bound, not an estimate
+
+`_scripts/nc-sizing.R` timed short fits at `n_c = 96` and 192 and reported the
+per-leapfrog cost ratio, 1.81x, which it got right. The production fit still
+took **2x longer than predicted** (5 h 47 against ~2.9 h) because the leapfrog
+count per iteration ALSO rose, 223 -> 390: a harder posterior geometry needs
+more gradient evaluations, not just costlier ones.
+
+**Cost = (cost per gradient) x (gradients per iteration) x iterations.** A
+probe with a fixed short iteration count measures only the first factor, and
+the second moves in the same direction whenever the change makes sampling
+harder. Treat such a probe as a lower bound, or run it long enough for the
+step size to adapt and read the leapfrog count too.
+
+## `gqs()` needs the parameters block, which the saved fits do not keep
+
+Re-running generated quantities on an existing fit (to get `max_rel_diff`
+without refitting) fails with `subscript out of bounds`. `as.matrix(fit)`
+returns parameters, transformed parameters, and generated quantities, but
+`rstan::gqs()` wants exactly the `parameters` block -- and `archer_fit()` does
+not monitor the raw ones (`b_shape_free` is absent; only the transformed
+`b_shape` is saved), so they cannot be reconstructed from a saved fit.
+
+If a generated quantity has to be evaluated at the posterior, monitor the raw
+parameters at fit time. Otherwise fall back to a short fresh run with the flag
+on, and say in the write-up that it is a probe over the sampled region rather
+than the posterior.

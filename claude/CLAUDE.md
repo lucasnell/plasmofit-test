@@ -21,108 +21,87 @@ This file is an index and the current state. **Read the file you need:**
 
 ## Resume here, 2026-10-06
 
-**4 tasks running**, submitted 2026-10-05, both mailing on `END,FAIL`:
+**Nothing running.** Two jobs finished: 29631 (`fix_bshape` reseeds) and
+29633 (the `n_c` ladder). Both are read and written up below.
 
-- **29631** (tasks 86-87) — `fix_bshape` reps 2 and 3 reseeded,
-  `SCHEDSIM_FIT_SEED=2`, ~1 h. Reads `_scripts/wockner-schedule-sim.R`:
-  **do not edit that file while it runs.**
-- **29633** (tasks 37-38) — thread 5's `n_c` ladder on real data, `np_nc192`
-  and `np_nc384` against the `n_c = 96` baseline `np_wide_both` (entry 11).
-  ~2.9 h at 192, 384 extrapolated and possibly ~6 h. Reads
-  `_scripts/wockner-fit.R`: **do not edit that file while it runs.**
+**Written but NOT submitted**: `_scripts/wockner-fit-nc-bs400.sh`, entries
+39–40, the test that decides whether the `n_c` finding touches the headline
+number. See "The decision that is waiting" below.
 
-If either is absent from `squeue` and its outputs are missing, it was never
-submitted — `_data/wock-schedsim-RES-fix_bshape-rep2-seed2.rds` for 29631,
-`_data/wock-fit-np_nc192.rds` for 29633.
+### `n_c` is a biological assumption, not a numerical setting — and it is wrong at 96
 
-### 29628 answered thread 2: `b_shape` carries the bias
+The headline result of 29633. `np_wide_both` (96), `np_nc192`, `np_nc384`
+differ in `n_c` and nothing else.
 
-Pinning `b_shape` at the simulated truth removes **−0.92 h** of the +1.97 h,
-and widening its prior (`wide_bshape`, 6 converged pairs, all negative)
-removes **−0.51 h**. `fix_sd` (+0.104) and `wide_total0` (+0.147) remove
-nothing; `wide_nuis` with all five widened gains no more than `wide_bshape`
-alone. **Of the five nuisances only `b_shape` moves `cycle_length`.**
-Full table and the budget in `findings.md`, "`b_shape` is the nuisance whose
-estimation carries the bias"; saved output
-`_data/schedsim-analyze-2026-10-05.txt`.
+| `n_c` | stage sd after the window | `b_shape` | `cycle_length` | elpd |
+|---|---|---|---|---|
+| 96 | 0.224 cyc | 64.45 | 44.25 | −926.2 |
+| 192 | 0.158 cyc | 61.57 | 42.07 | −857.6 |
+| 384 | 0.112 cyc | **25.94** | **41.04** | **−854.4** |
 
-**The caveat that drives the reseed**: fixing `b_shape` made sampling worse,
-not better (divergences 53→67, 25→586, 35→222), and the analyzer drops reps
-2 and 3, leaving **n_pair = 1**. The unfiltered paired differences are
-−0.919, −1.151, −0.974, so the answer does not depend on which replicates are
-admitted — but until the reseeds land **the claim rests on `wide_bshape`**,
-which is 6 well-converged pairs, all negative.
+- **`b_shape` falls monotonically**, the predicted branch, and not from bound
+  truncation (`max_shape` 250, largest group mean 100.6).
+- **`cycle_length` moves −3.20 h** — larger than the entire +1.97 h simulated
+  bias this project has been chasing.
+- **`n_c = 96` is 71.8 elpd worse than 384** (se 13.2, z −5.4); 192 vs 384 is
+  −3.2 (se 5.0). **The ladder plateaus at 192.**
+- **The effect is STRUCTURAL, not numerical.** `max_rel_diff` at `n_c = 96` is
+  8e−13, so the series solution is faithful to one part in 10^12 and
+  `check_erlang_window()` was doing its job. The 96 model is computed
+  correctly and simply fits worse. **No earlier fit is suspect arithmetic.**
 
-### How to read the reseeds
+Full table, caveats, and the sizing lesson in `findings.md`, "`n_c` is a
+biological assumption, not a numerical setting".
 
-Re-run `_scripts/wockner-schedule-sim-analyze.R` (it globs; configs land as
-`fix_bshape-rep2-seed2` and `fix_bshape-rep3-seed2`).
+### The decision that is waiting
 
-- **Converge and stay near −0.9 to −1.2** → thread 2 is attributed at
-  n_pair = 3, and the next move is thread 5's `n_c` / `b_shape` confound.
-- **Converge and the delta shrinks toward zero** → the attribution was an
-  artefact of the bad geometry; fall back to `wide_bshape`'s −0.51 h as the
-  defensible number, and say so.
-- **Still do not converge** → report `fix_bshape` as n_pair = 1 with the
-  caveat, lean on `wide_bshape`, and **do not reseed a third time**. A
-  parameter whose removal breaks the geometry twice is itself the finding.
+29633 ran with `b_shape` **estimated**, which is correct for asking whether
+`b_shape` absorbs the decay rate but is **not** the production configuration,
+where `b_shape` is pinned at 400 for +28 to +37 elpd. **Nothing about any
+reported cycle length changes until entries 39–40 come back.**
 
-### What this does NOT say
-
-It does **not** say the desynchronisation rate is wrong. In simulation `n_c`
-is identical in the generating and fitted model, so the decay rate is right
-by construction — thread 5 already records this. The result is that
-`b_shape` is weakly identified and that paying to estimate it costs
-`cycle_length` about an hour. Do not let these two merge in the write-up.
-
-### Closed 2026-10-05
-
-- **The horizon ladder is flat.** The reseeded `daH2_no_pool` converges
-  (R-hat 1.017 vs 1.154) and its rung falls from z −3.08 to **z −1.78**. No
-  rung reaches |z| = 2; slope +0.0020. The one signal was carried by the
-  non-converged fit. With Design A's mask-dependence already on record:
-  **no robust evidence the hierarchy earns its keep, and none that it costs.**
-- **Phase volume refuted on all three replicates** — profile and integrated
-  likelihoods peak together and the differential volume at 48 h is negative
-  every time.
-- **The bias is located.** With every nuisance at truth the likelihood
-  prefers **+0.41 h** of the +1.97 h — about a fifth, noise-driven, tracking
-  the full bias replicate for replicate. The other four fifths is the cost
-  of **estimating** the nuisances, and 29628 shows that cost is `b_shape`'s.
-
-### How to read 29633 (thread 5)
-
-The ladder changes `n_c` and nothing else, so `np_wide_both` (96), `np_nc192`,
-`np_nc384` are comparable. The stage distribution's sd after the 4.80-cycle
-Wockner window is 0.224 cycles at 96, 0.158 at 192, 0.112 at 384: raising
-`n_c` makes the model desynchronise more slowly.
-
-**Prediction recorded before the fits ran**, and repeated in `wockner-fit.R`
+`sbatch _scripts/wockner-fit-nc-bs400.sh` — 2 tasks, ~6 h and ~16 h (measured
+on 29633, not extrapolated). Outcomes recorded in advance in `wockner-fit.R`
 and the sbatch:
 
-- **`b_shape` falls monotonically** toward the 14-19 the tight prior gave →
-  it had been absorbing a too-fast desynchronisation rate, and `n_c` is a
-  real misspecification, not just a numerical setting.
-- **`b_shape` stays at 65+** → it is pinned by something in the data and the
-  decay rate is not what drives it. Thread 5 then reverts to a noted risk.
-- **Non-monotonic** → neither conclusion. Do not read it as either.
+- **Effect largely gone** → the sensitivity was `b_shape` absorbing a wrong
+  decay rate; the production estimate stands.
+- **Effect persists** → `n_c` is misspecified independently of `b_shape`, the
+  production estimate is off by ~3 h, and **every cycle-length number in
+  `findings.md` must be requalified by `n_c` as well as by the `b_shape`
+  ladder.**
+- **Effect larger** → `b_shape` was partly compensating, and pinning it
+  exposes more of the error.
 
-Watch `cycle_length` alongside `b_shape`: **the confound only matters if
-moving `n_c` moves the headline number.** Sizing is in
-`_scripts/nc-sizing.R`, saved output `_data/nc-sizing-2026-10-05.txt`
-(per-leapfrog cost 1.81x from 96 to 192, so the cost is near-linear in `n_c`,
-not quadratic).
+### `fix_bshape` reseeds: answer reproduces, gate still fails
+
+rep2 −0.011 → **−0.117** (R-hat 1.343 → 1.055, ESS 10 → 60); rep3 +1.219 →
+**+1.239** (R-hat 1.066 → 1.052). **The biases reproduce**, so rep2's
+near-zero was not an artefact of bad geometry. Paired deltas across all three
+are −0.919, −1.257, −0.955, mean **−1.044 h**.
+
+**Both still fail the 1.05 gate**, so the analyzer still reports n_pair = 1.
+The pre-registered rule was followed: report n_pair = 1 with the caveat, lean
+on `wide_bshape` (−0.513 h over 6 clean pairs), **do not reseed a third
+time.**
+
+### Standing conclusion on thread 2
+
+`b_shape` is the nuisance whose estimation carries the cycle-length bias:
+−0.92 h pinned at truth, −0.51 h merely widened, against `fix_sd` (+0.104)
+and `wide_total0` (+0.147) which carry none. 29633 now shows `b_shape` is
+also where a wrong desynchronisation rate lands. **These are the same
+parameter and the same channel.**
 
 ### Then
 
-1. **SBC is parked** as thread 13 in `threads.md`, with the conditions that
-   would unpark it. It was the branch for `fix_bshape` returning near zero,
-   which it did not. Do not run it merely because it is cheap: it is a
-   correctness check on code that has not changed.
-2. **Thread 5's simulation half** — simulate at `n_c = 192`, fit at 96 — is
-   the companion to 29633 and needs `_scripts/wockner-schedule-sim.R`, so it
-   must wait for 29631 to finish.
-3. **More null runs** only if the one unexplained regression figure matters.
+1. **Submit 39–40** (above). Nothing else should move first — it can
+   invalidate cycle-length numbers.
+2. **Thread 5's simulation half** — simulate at `n_c = 192`, fit at 96 —
+   needs `_scripts/wockner-schedule-sim.R`, now free. This measures the bias
+   `n_c` misspecification induces, which the real-data ladder cannot.
+3. **SBC** stays parked as thread 13, with unparking conditions.
+4. **More null runs** only if the one unexplained regression figure matters.
 
 ## Settled, 2026-10-04
 

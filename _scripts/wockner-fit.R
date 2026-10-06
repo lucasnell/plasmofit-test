@@ -395,6 +395,40 @@ CONFIGS <- list(
                                                            n_c = 192L)),
     np_nc384       = list(model = "no_pool",   data = list(sd_log_b_shape = 1.5,
                                                            sd_log10_total0 = 1,
+                                                           n_c = 384L)),
+    ## ---- thread 5 on the PRODUCTION config, 39-40 -----------------------
+    ## 37-38 ran with b_shape ESTIMATED (sd_log_b_shape = 1.5), which is the
+    ## right setting for testing the confound -- b_shape has to be free to
+    ## move if we are asking whether it absorbs the decay rate. It is not the
+    ## configuration this project has settled on: fixing b_shape at 400 gains
+    ## +28 to +37 elpd and the ladder plateaus there (findings.md, "The
+    ## b_shape ladder").
+    ##
+    ## 37-38 found that raising n_c moves cycle_length by -3.20 h and gains
+    ## 71.8 elpd (se 13.2), and that the n_c = 96 arithmetic is faithful to
+    ## 1e-12, so the effect is structural. These two ask the question that
+    ## decides whether the headline number is affected: does the n_c effect
+    ## SURVIVE when b_shape is pinned and cannot absorb anything?
+    ##
+    ## Baseline is np_bs400_data (entry 22), n_c = 96, same priors.
+    ##
+    ## PREDICTION, recorded before the fits run.
+    ##   - Effect LARGELY GONE -> the n_c sensitivity was b_shape absorbing a
+    ##     wrong decay rate; pinning b_shape removes the channel, and the
+    ##     production cycle-length estimate stands.
+    ##   - Effect PERSISTS at a similar size -> n_c is misspecified
+    ##     independently of b_shape, the production estimate is biased by
+    ##     ~3 h, and every cycle-length number in findings.md has to be
+    ##     requalified by n_c as well as by the b_shape ladder.
+    ##   - Effect LARGER -> b_shape was partly COMPENSATING for the wrong
+    ##     decay rate, and pinning it exposes more of the error.
+    np_bs400_nc192 = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           n_c = 192L)),
+    np_bs400_nc384 = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
                                                            n_c = 384L))
 )
 
