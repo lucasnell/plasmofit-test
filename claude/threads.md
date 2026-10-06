@@ -357,3 +357,66 @@ Roughly in priority order.
     **Do not** run it merely because it is cheap and sitting there. It is a
     correctness check on code that has not changed, and the open questions
     are about identification, not implementation.
+14. **Initial density should vary between individuals, and the model has no
+    term for it.** Raised 2026-10-06, **not to be addressed now**. Sizing in
+    `_scripts/total0-bloodvol-scale.R`.
+    **The mechanism.** `para` is a concentration (iRBC/mL) but `inoc_size` is
+    a COUNT -- 1800, 2300 or 2800, identical for everyone in a cohort. The
+    conversion is a division by blood volume, which differs between people.
+    Two people given the same number of parasites start at different
+    *densities*, and density is what is observed.
+    **What the model does now**, verified rather than assumed:
+    - `archer_stan_data(blood_volume_ml = 5000)` -- one 5 L adult for
+      everyone.
+    - `log10_total0` is `vector[n_grp_init]`, so **14 values over 177
+      series**. There is no per-individual initial-density parameter at all.
+    - `sigma_total0` is the between-GROUP sd around the anchor, not
+      between-individual, so it does not cover this either.
+    **The package's own claim is half right.** The docs say an error in
+    `blood_volume_ml` "is absorbed by the offset, which it is not separately
+    identifiable from". True for the MEAN -- a constant error is exactly what
+    `delta_total0` absorbs. False for the VARIANCE: one offset cannot absorb a
+    spread. The claim should be qualified when this is written up.
+    **But the spread is small.** Blood volume in screened healthy adults has
+    CV roughly 12-20% (Nadler; volume scales sublinearly with weight, and the
+    cohort is weight-screened), so sd on the log10 scale is CV/ln(10):
+
+    | CV | sd (log10) | vs per-series SE | share of obs variance |
+    |---|---|---|---|
+    | 12% | 0.052 | 0.24x | 1.0% |
+    | 15% | 0.065 | 0.30x | 1.5% |
+    | 20% | 0.087 | 0.40x | 2.7% |
+
+    Cells: implied between-individual sd of `log10_total0`; the per-series
+    standard error is mean `sd_iRBC` 0.533 over a median 6 observations,
+    = 0.217 log10.
+    **Verdict: the mechanism is real and correctly identified, and as a free
+    random effect it is not estimable from these data.** It is a quarter to
+    two fifths of the noise on a single series' mean level. Adding a per-series
+    random effect on `log10_total0` would shuffle variance between it and
+    `sd_iRBC` without changing fit, and would add 177 weakly informed
+    parameters. It does **not** threaten the anchor conclusion either: group
+    means average over 13-24 individuals, so the blood-volume component shrinks
+    to about 0.065/sqrt(17) = 0.016 log10 at group level.
+    **The fix worth doing, if the covariate can be got.** Do not estimate it --
+    COMPUTE it. The source volunteer-infection trials record weight (and often
+    height and sex); Nadler's equation turns those into a per-individual blood
+    volume, which makes `log10(inoc_size / blood_volume_i)` a **known**
+    per-series anchor. That converts an unidentifiable variance component into
+    a known offset at the cost of **zero** free parameters, keeping the one
+    shared `delta_total0`. It needs the anchor and `log10_total0` to become
+    per-series, which is a package change.
+    **Blocker**: `wockner-cleaned.csv` has only id, trial, cohort, inoc_size,
+    subject, time, para. No weight, height or sex. This cannot start until
+    subject-level covariates are recovered from the source trials.
+    **What would change the verdict**: a cohort with a wider weight range; a
+    design with more observations per series, which shrinks the per-series SE
+    the effect has to clear; or evidence that the low end is censored, since a
+    persistent offset has the most leverage where the response is floored --
+    see the note below.
+    **Related and separate**: `para` has no zeros and a minimum of exactly
+    1.0 across all 1130 observations, with 8.1% below 10 iRBC/mL. That looks
+    like a floor at the quantitation limit, and the likelihood treats
+    `log10(y + 1)` as normal with no censoring term. Worth a thread of its own
+    eventually; it is where a small persistent per-individual offset would
+    matter most.

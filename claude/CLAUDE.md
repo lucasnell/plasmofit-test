@@ -16,7 +16,7 @@ This file is an index and the current state. **Read the file you need:**
 | `claude/scripts.md` | what each script does, the `CONFIGS`/arm mechanics, `_data/` naming, how to run on the cluster |
 | `claude/gotchas.md` | **before running or editing anything** — the traps that have cost hours each |
 | `claude/findings.md` | the modelling results: hierarchy, pooling offset, schedule-bias simulation, nuisance priors |
-| `claude/threads.md` | open threads 1–13, in priority order |
+| `claude/threads.md` | open threads 1–14, in priority order |
 | `claude/conventions.md` | how to write in these files; **every numeric table must define its cells** |
 
 ## Resume here, 2026-10-06 (late)

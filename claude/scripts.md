@@ -183,3 +183,7 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   `build$n_c` (fit), which `wockner-schedule-sim.R` now decouples.
 - `_scripts/nc-2x2-read.R` — reads the 2x2 and prints the two contrasts with
   the rule for reading each.
+- `_scripts/total0-bloodvol-scale.R` — sizes the between-individual spread in
+  initial density implied by blood-volume variation against the observation
+  error it would have to be detected over. Backs thread 14. Reads a saved fit
+  and the cleaned csv; no fitting.
