@@ -2571,16 +2571,26 @@ matrix exponential. These have opposite implications, so they were separated.
 the trajectory with `matrix_exp` and reports the largest relative difference
 against the series solution the likelihood uses.
 
+Cells: largest and median relative difference over every observation and
+every draw of a short probe run at each `n_c`, with `run_check = 1`.
+
 | `n_c` | max `max_rel_diff` | median |
 |---|---|---|
 | 96 | 8.05e−13 | 5.04e−13 |
 | 192 | 1.39e−12 | 1.09e−12 |
+| 384 | 2.81e−12 | 2.07e−12 |
 
 **At `n_c = 96` the arithmetic is faithful to one part in 10^12.**
 `check_erlang_window()` was doing its job correctly. The `n_c = 96` model is
 computed accurately and simply **fits the data worse**, by a wide margin. So
 this is a statement about the biology the model assumes, not about its
 numerics, and no earlier fit is suspect arithmetic.
+
+**And the error grows mildly WITH `n_c`** -- 8e−13, 1.4e−12, 2.8e−12 -- which
+is expected from more compartments accumulating more rounding. This rules the
+numerical explanation out rather than merely failing to support it: if the
+71.8 elpd gain came from better arithmetic at higher `n_c`, the higher rungs
+would have to be more accurate, and they are slightly less.
 
 #### What this does and does not license
 
