@@ -202,3 +202,12 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   `cycle_length` at one `n_c` best reproduces a trajectory generated at
   another. Also computes the sequestration duty cycle that rules out the
   discretisation channel. Slow (24 optimisations).
+- `_scripts/decay-law-test.R` / `.sh` — thread 15's decay-law screen, one
+  SLURM task per `grp_init` unit. Maximum likelihood with the observation sd
+  profiled out; Gauss-Hermite nodes computed in-script by Golub-Welsch, so
+  no extra package. Note `mat_exp_series` needs STRICTLY INCREASING times,
+  so the trajectory is evaluated at sorted unique times and indexed back.
+- `_scripts/decay-law-read.R` — aggregates the 14 units and reports the
+  matched-parameter comparison.
+- `_scripts/decay-law-validate.R` — checks the `cycle_length` mixture really
+  produces a linear-in-cycles spread before the test is believed.

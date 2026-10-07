@@ -462,13 +462,29 @@ Roughly in priority order.
     than `b_shape`, not worse -- and the 71.8 elpd gap between `n_c` 96 and
     192 is direct evidence that the data constrain the within-window amplitude
     trajectory strongly.
-    **Do the cheap experiment first.** Test the decay law by quadrature over
-    `cycle_length` (linear law) against the current chain (`sqrt` law) at
-    matched flexibility, and compare elpd. That costs ~Q fits and needs no new
-    Stan model. It also **determines what an IPM's kernel should be**, so
-    running it first is strictly ordered before any rewrite. Building a
-    Gaussian-kernel IPM without it means paying a large implementation cost to
-    decouple the rate while keeping a decay law that was never tested.
+    **The decay-law test is RUNNING: SLURM 29684**, 14 tasks, one per
+    `grp_init` unit, ~12 h. `_scripts/decay-law-test.sh`, read with
+    `_scripts/decay-law-read.R`. It decides what an IPM's kernel should be,
+    so it is strictly ordered before any rewrite.
+    Maximum likelihood, not Bayes: a screen whose job is to say whether the
+    Stan work is worth doing. It uses the structural fact that within a
+    `grp_init` unit **every series shares every parameter**, so a unit is one
+    trajectory with its observations as replicates -- 14 units, 6 parameters
+    each, independent.
+    Model A is the chain alone at `n_c` in {96, 192, 384}; model B keeps the
+    chain and adds a lognormal mixture over `cycle_length`, 7 Gauss-Hermite
+    nodes, at `n_c` in {192, 384}. B **nests** A at sigma = 0, so they are
+    compared at a **matched 6 parameters**, A spending one on choosing `n_c`
+    exactly as B spends one on sigma.
+    Validated before launch (`_scripts/decay-law-validate.R`): the mixture
+    really does implement a linear law. The slope of log(-log amplitude
+    ratio) on log(k) is **1.94** at sigma 0.05 against a theoretical 2 for a
+    linear law, where 1 would be the `sqrt` law.
+    Expect sigma around **0.033**: that is the between-parasite CV in cycle
+    duration that reproduces `n_c` = 192's spread of 0.158 cycles at k = 4.8.
+    Cost is roughly **cubic in `n_c`** -- 0.0148 s per trajectory at 96,
+    0.153 at 192, 1.18 at 384, 9.21 at 768 -- which is why this is an array
+    and why `n_c` = 768 is not in the grid.
     **The real cost of an IPM is not runtime.** Once dispersion is free, the
     mesh no longer has to be large for biological reasons, so a coarser mesh
     may suffice and the fit could cost no more than `n_c` = 96-192 does now
