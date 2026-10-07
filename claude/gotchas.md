@@ -235,3 +235,24 @@ If a generated quantity has to be evaluated at the posterior, monitor the raw
 parameters at fit time. Otherwise fall back to a short fresh run with the flag
 on, and say in the write-up that it is a probe over the sampled region rather
 than the posterior.
+
+## A high R-hat can be one stuck chain, and the majority is not the answer
+
+SLURM 29635 returned max R-hat 6.13 and 8.34. The cause was not general
+mixing failure: three of four chains agreed closely (`cycle_length[1]` =
+42.18, 42.28, 42.10) while one sat 96 log-posterior units below them at
+43.09. `lp__` **by chain** showed this immediately where the summary R-hat
+did not.
+
+Two things follow. First, **check `lp__` per chain before diagnosing**: a
+single number cannot distinguish "all chains lost" from "one chain stuck",
+and the fixes differ -- the first wants reparameterisation, the second wants
+inits, a seed, or more warmup. Second, **the agreeing majority is not a
+result**. Dropping the outlier chain and reporting the other three is
+choosing the chains that give a tidy answer, which is exactly the thing this
+project does not do. Refit.
+
+Also: when `calc_log_lik` is on, a stuck chain breaks the LOO as badly as the
+parameters -- `log_lik` entries here had R-hat near 6, so `loo_compare` on
+that fit was meaningless even though it printed cleanly with only a quiet
+`k_psis > 0.7` flag.

@@ -198,19 +198,24 @@ Roughly in priority order.
    `_scripts/wockner-fit-nc-bs400.sh`, **written and not yet submitted**, ask
    whether the effect survives a pinned `b_shape`. Outcomes recorded in
    advance there and in `wockner-fit.R`.
-   **IN FLIGHT, SLURM 29635** (entries 39-40, `np_bs400_nc192`,
-   `np_bs400_nc384`): does the effect survive a **pinned** `b_shape`? This
-   gates every reported cycle length.
-   **IN FLIGHT, SLURM 29637**: the simulation **2x2**. Generating `n_c` and
-   fitting `n_c` are now decoupled in `wockner-schedule-sim.R` via
-   `arm$sim_n_c` and `arm$build$n_c`, so the four cells separate ESTIMATOR
-   bias (the correctly specified diagonal) from MISSPECIFICATION bias (the
-   off-diagonal). Arms `sim192_fit96`, `sim192_fit192`, `sim96_fit192`
-   against the existing `default` (96/96). Read with
-   `_scripts/nc-2x2-read.R`; see `findings.md`, "The `n_c` 2x2".
-   **`sim96_fit192` is the cell that could overturn the real-data result**: if
-   fitting ABOVE the true `n_c` drags `cycle_length` down, the -3.20 h is an
-   artefact of over-large `n_c` rather than a correction.
+   **29637 (the 2x2) ANSWERED 2026-10-07**: misspecifying `n_c` moves
+   `cycle_length` about an hour per factor of two, in BOTH directions --
+   under-specifying inflates by +1.454 h, over-specifying deflates by
+   -1.042 h. `sim96_fit192` was NOT near zero, so part of the real-data
+   -2.17 h is an over-specification artefact, but only part (-1.04
+   manufactured against -2.17 observed, and elpd preferred 192 by 68.6).
+   Correcting both real rungs under one hypothesis, `true n_c = 192`
+   reconciles them better (spread 0.72 h vs 1.13 h) and agrees with the elpd
+   ordering -- suggestive, not decisive. **Both hypotheses put the corrected
+   cycle length in the low 40s, below every raw estimate.**
+   **29635 (the production ladder) FAILED and its question is STILL OPEN.**
+   Max R-hat 6.13 and 8.34, one chain stuck 96 and 70 lp units below the
+   others. Fitted values and `loo_compare` from it are unusable; `log_lik`
+   has R-hat near 6. **Do not report the 3-chain subset.** Retry written and
+   not submitted: `_scripts/wockner-fit-nc-bs400-retry.sh`, entries 41-42,
+   `adapt_delta` 0.95 and a new seed. If a chain still sticks at a similar
+   gap, the mode is real -- report multimodality and stop.
+   **Until the retry lands, no reported cycle length should change.**
    **Pairing, deliberately asymmetric**: `sim96_fit192` shares `default`'s
    simulated data (verified, y_sim mean log10 2.7590 both) and is in
    `PAIRED_ARMS`; the gen-192 arms share data with each other (2.6934), NOT

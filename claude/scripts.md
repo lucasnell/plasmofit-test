@@ -187,3 +187,10 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   initial density implied by blood-volume variation against the observation
   error it would have to be detected over. Backs thread 14. Reads a saved fit
   and the cleaned csv; no fitting.
+- `_scripts/nc-2x2-read.R` — reads the `n_c` 2x2 and prints both
+  misspecification contrasts with the rule for reading each.
+- `_scripts/nc-bias-correct.R` — combines the 2x2 biases with the real-data
+  ladder to ask which hypothesis about the true `n_c` reconciles the rungs.
+  Restricted to replicates 1-3, which all four cells share.
+- `_scripts/wockner-fit-nc-bs400-retry.sh` — entries 41-42, the retry of the
+  non-converged production ladder.

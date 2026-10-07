@@ -429,7 +429,42 @@ CONFIGS <- list(
     np_bs400_nc384 = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
                                                            b_shape = 400,
                                                            max_shape = 1000,
-                                                           n_c = 384L))
+                                                           n_c = 384L)),
+    ## ---- 39-40 retried, 41-42 -------------------------------------------
+    ## 39-40 (SLURM 29635) did not converge: max R-hat 6.13 and 8.34, with ONE
+    ## chain stuck far below the others -- lp__ -929.0 against -832.3/-833.2/
+    ## -836.7 at n_c = 192, and -996.0 against -925.6/-955.3/-957.8 at 384.
+    ## The majority chains agreed with each other (cycle_length[1] 42.18,
+    ## 42.28, 42.10 with the outlier at 43.09), so the information is probably
+    ## there, but a run with a stuck chain is not a posterior and the 3-chain
+    ## subset must not be reported as the answer.
+    ##
+    ## Pinning b_shape is already known to make the geometry harder -- that is
+    ## what fix_bshape found in simulation, where two seeds both stalled just
+    ## above the gate. Pinning it at 400, which is very tight synchrony, AND
+    ## raising n_c appears to compound it. A plausible reading is phase
+    ## multimodality: with sharply synchronised parasites and a period that
+    ## does not quite match, more than one phase alignment can fit locally,
+    ## and b_offset is a unit_vector so those are genuinely separate modes.
+    ##
+    ## This retry changes two things at once, deliberately, because the aim is
+    ## to GET a converged answer rather than to attribute the failure:
+    ## adapt_delta 0.95 with max_treedepth 12, and a different seed via
+    ## WOCKFIT_SEED in the sbatch. If a chain still sticks at the same lp gap,
+    ## the mode is real and should be reported as multimodality rather than
+    ## chased with a third configuration.
+    np_bs400_nc192_t = list(model = "no_pool", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           n_c = 192L),
+                            control = list(adapt_delta = 0.95,
+                                           max_treedepth = 12)),
+    np_bs400_nc384_t = list(model = "no_pool", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 400,
+                                                           max_shape = 1000,
+                                                           n_c = 384L),
+                            control = list(adapt_delta = 0.95,
+                                           max_treedepth = 12))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.

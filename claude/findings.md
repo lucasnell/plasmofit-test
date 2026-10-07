@@ -2684,3 +2684,103 @@ fixed `n_c`: pinning `b_shape` at 400 gives 43.65 h against `np_wide_both`'s
 assumption on one side of it.** That is the real reason the headline number
 was never as well determined as it looked, and it is independent of which end
 of the ladder turns out to be right.
+
+### The `n_c` 2x2: misspecifying `n_c` moves `cycle_length` in both directions
+
+SLURM 29637. Scripts `_scripts/nc-2x2-read.R` and
+`_scripts/nc-bias-correct.R`; saved outputs `_data/nc-2x2-2026-10-07.txt`,
+`_data/nc-bias-correct-2026-10-07.txt`.
+
+Cells: mean posterior `cycle_length` over trials minus the 45.012 h simulated
+truth, in hours, averaged over converged replicates (max R-hat < 1.05) among
+reps 1-3. The diagonal is correctly specified.
+
+| | fit 96 | fit 192 |
+|---|---|---|
+| **gen 96** | **+1.970** (n=3) | **+0.928** (n=3) |
+| **gen 192** | **+3.000** (n=2) | **+1.547** (n=3) |
+
+**Both misspecification directions are real and roughly symmetric.**
+Under-specifying (`gen 192, fit 96`) inflates `cycle_length` by **+1.454 h**
+over the correctly specified cell; over-specifying (`gen 96, fit 192`)
+deflates it by **−1.042 h**. So an `n_c` wrong by a factor of two shifts the
+estimate by about an hour, in the direction you would expect.
+
+**`sim96_fit192` did not come back near zero**, which was one of the three
+pre-registered readings. So over-specifying `n_c` **does** drag
+`cycle_length` down, and part of the real-data −2.17 h from 96 to 192 could
+be that artefact. But only part: the manufactured amount is −1.04 h against
+an observed −2.17 h, and the real-data elpd *preferred* 192 by 68.6, which a
+genuinely over-specified model should not do.
+
+**Estimator bias is also lower at the higher `n_c` when correctly
+specified**: +1.547 at 192/192 against +1.970 at 96/96. Fitting at a higher
+`n_c` is mildly better behaved even with no misspecification to fix.
+
+#### Which hypothesis reconciles the real data
+
+Two rungs corrected under the same hypothesis are two measurements of one
+quantity and should agree. Real fits are `np_wide_both` 44.24 h and
+`np_nc192` 42.07 h.
+
+Cells: real fitted `cycle_length` minus the bias the 2x2 measured for
+(true `n_c` = H, fitted `n_c` = that rung).
+
+| true `n_c` | rung 96 | rung 192 | spread |
+|---|---|---|---|
+| 96 | 42.27 | 41.15 | **1.13 h** |
+| **192** | **41.24** | **40.53** | **0.72 h** |
+
+**`true n_c = 192` reconciles the two rungs better**, 0.72 h against 1.13 h,
+and it agrees in direction with the elpd ordering. This is suggestive, not
+decisive: the gap between 1.13 and 0.72 is well inside the replicate scatter.
+
+**What both hypotheses agree on**: every corrected estimate is **below every
+raw one**. The raw ladder runs 44.24 → 42.07 → 41.04; the corrected values
+run 40.5 to 42.3. So the real cycle length is probably in the low 40s and
+**the +1.97 h bias and the `n_c` sensitivity push the same way**, which is
+the first direct support for them being one phenomenon rather than two.
+
+**Caveats that limit this**, both written into the script header: the 2x2
+arms use the schedule simulation's priors (`sd_log_b_shape` 0.5) while the
+real ladder uses the widened one (1.5), so the biases transfer only
+approximately; and the simulated truth of 45.012 h is itself taken from an
+`n_c = 96` fit, so if 96 inflates then the biases were measured in the wrong
+neighbourhood. `gen 192, fit 96` also has only 2 converged replicates.
+
+### The production `n_c` ladder did not converge, and is not reportable
+
+SLURM 29635, entries 39-40 (`np_bs400_nc192`, `np_bs400_nc384`).
+
+| fit | max R-hat | div | `lp__` by chain |
+|---|---|---|---|
+| `np_bs400_data` (96) | 1.047 | 191 | — |
+| `np_bs400_nc192` | **6.13** | 275 | −929.0, −832.3, −833.2, −836.7 |
+| `np_bs400_nc384` | **8.34** | 158 | −996.0, −925.6, −955.3, −957.8 |
+
+**One chain is stuck far below the others** in each, by 96 and 70 log units.
+The majority chains agree with each other -- `cycle_length[1]` is 42.18,
+42.28, 42.10 with the outlier at 43.09 -- so the information is probably
+there, but **a run with a stuck chain is not a posterior**. The fitted values
+(41.24 h, 38.73 h) and the `loo_compare` from this job are **not usable**:
+`log_lik` itself has R-hat near 6, so the LOO is as unreliable as the
+parameters. **Nothing here licenses any statement about whether the `n_c`
+effect survives a pinned `b_shape`** -- that question is still open.
+
+Reporting the three agreeing chains would be choosing the chains that give a
+tidy answer, so it is not done.
+
+**Why it probably failed.** Pinning `b_shape` is already known to harden the
+geometry: `fix_bshape` found exactly that in simulation, where two seeds both
+stalled just above the gate. Pinning at 400 -- very tight synchrony -- and
+raising `n_c` appears to compound it. The likely mechanism is phase
+multimodality: sharply synchronised parasites with a slightly mismatched
+period admit more than one local phase alignment, and `b_offset` is an
+`array[n] unit_vector[2]`, so those are separate modes rather than a ridge.
+
+**The retry** is entries 41-42, `_scripts/wockner-fit-nc-bs400-retry.sh`:
+`adapt_delta` 0.95, `max_treedepth` 12, and a different seed. It changes two
+things at once on purpose, because the aim is to get a converged answer
+rather than to attribute the failure. **If a chain still sticks at a similar
+lp gap, the mode is real**: report it as multimodality, show both modes, and
+do not chase it with a third configuration.
