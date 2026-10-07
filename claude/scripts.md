@@ -194,3 +194,11 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   Restricted to replicates 1-3, which all four cells share.
 - `_scripts/wockner-fit-nc-bs400-retry.sh` — entries 41-42, the retry of the
   non-converged production ladder.
+- `_scripts/nc-period-check.R` — deterministic, noiseless: measures the
+  observable peak-to-peak period against the `cycle_length` that generated
+  it, across `n_c` and `b_shape`. Peaks refined sub-grid. This is the script
+  behind the mechanism for thread 5.
+- `_scripts/nc-mechanism.R` — the same question by least squares: which
+  `cycle_length` at one `n_c` best reproduces a trajectory generated at
+  another. Also computes the sequestration duty cycle that rules out the
+  discretisation channel. Slow (24 optimisations).

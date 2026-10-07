@@ -2784,3 +2784,114 @@ things at once on purpose, because the aim is to get a converged answer
 rather than to attribute the failure. **If a chain still sticks at a similar
 lp gap, the mode is real**: report it as multimodality, show both modes, and
 do not chase it with a third configuration.
+
+### Why `cycle_length` shifts with `n_c`: the observable period is not the parameter
+
+`_scripts/nc-mechanism.R`, saved output `_data/nc-mechanism-2026-10-07.txt`.
+Everything here is **deterministic and noiseless** -- no priors, no sampler,
+no estimation -- so whatever appears is built into the model's forward map.
+
+Reading the source turned up two channels that `n_c` controls, with opposite
+status.
+
+#### Channel A, sequestration-grid discretisation: RULED OUT, wrong sign
+
+`make_log_y_vals` puts the circulating fraction on a logistic in **absolute
+developmental age**, centred at `p3 = 18.5802` h, and evaluates it at age
+`k * cycle_length / n_c` for compartment `k`. The grid spacing is therefore
+`cycle_length / n_c` hours, and the source documents an O(1/n_c) delay in
+sequestration onset from the Archer convention `q[1] = 0`. That looked like a
+candidate.
+
+Cells: `duty_cycle` is `mean(y_vals)`, the average probability of not being
+sequestered over one cycle, at `cycle_length` = 45.012 h.
+
+| `n_c` | step (h) | duty cycle |
+|---|---|---|
+| 96 | 0.469 | 0.39765 |
+| 192 | 0.234 | 0.40019 |
+| 384 | 0.117 | 0.40146 |
+| 1536 | 0.029 | 0.40242 |
+
+The duty cycle **rises** with `n_c`. Since `d(duty)/d(cycle_length)` is
+−0.00895 per hour, offsetting the 96 → 192 change of +0.00254 would require
+`cycle_length` to **increase by +0.284 h**. The observed shift is **−2.17 h**.
+**Wrong sign and roughly eight times too small**, so this channel is not the
+explanation and in fact slightly opposes the effect. It does converge away as
+`n_c` grows, as a discretisation artefact should.
+
+#### Channel B, the one-sided observation window: CONFIRMED
+
+`_scripts/nc-period-check.R`, saved output
+`_data/nc-period-check-2026-10-07.txt`. Peak times are refined sub-grid by a
+parabola through each maximum and its neighbours; without that every interval
+lands on the 0.25 h sampling grid, which is coarser than the differences
+being measured.
+
+Cells: the third peak-to-peak interval of the detrended log10 trajectory
+minus the `cycle_length` that generated it, in hours, so a negative value
+means the observable period runs SHORT of the parameter. Amplitude is the sd
+of the detrended series across `n_c` 96 → 192 → 384.
+
+| `b_shape` | `n_c` = 96 | 192 | 384 | 96 → 384 | amplitude |
+|---|---|---|---|---|---|
+| 15 | **−0.77** | −0.28 | −0.05 | **0.72 h** | 0.305 → 0.405 → 0.496 |
+| 400 | **−0.74** | −0.14 | +0.24 | **0.98 h** | 0.390 → 0.547 → 0.719 |
+
+**At `n_c = 96` the observable period is about 0.75 h SHORTER than the
+`cycle_length` parameter that produced it, and the deficit closes as `n_c`
+rises.** So a fit at `n_c = 96` must **inflate** `cycle_length` to reproduce
+a given observed period. That is the sign seen on real data.
+
+**The mechanism.** Sequestration at 18.58 h of a ~45 h cycle means only the
+first ~40% of the cycle is visible: the observation window is **one-sided**.
+The stage distribution broadens at a rate `n_c` fixes -- sd after k cycles is
+`cycle_length * sqrt(k / n_c)`. Convolving a **broadening, right-skewed**
+age distribution with a **one-sided** visibility window moves the centroid of
+the *visible* subpopulation, and keeps moving it as the distribution spreads.
+The peak of the circulating signal therefore drifts relative to the true cycle
+boundary, and that drift reads as a period change.
+
+It is progressive, as that account requires. At `n_c = 96`, `b_shape` 15 the
+successive intervals are 44.617, 44.346, 44.241 rather than constant,
+shortening as the spread accumulates -- and still drifting at the third
+interval, so the figures above are "by the third cycle", not a converged
+steady state. Over a longer window the deficit would grow further.
+
+**This is the Greischar & Childs mechanism applied to period rather than
+multiplication rate** -- some developmental ages are easier to sample than
+others, and the age distribution changes over the infection (see
+`references.md`). Their paper is prior art on the same interaction.
+
+#### How much of the real-data shift this accounts for
+
+The forward map gives **0.72 h** (`b_shape` 15) and **0.98 h**
+(`b_shape` 400) across `n_c` 96 → 384, against a real-data shift of
+**3.2 h**. So roughly **a quarter to a third** is deterministic, and the rest
+comes from estimation -- priors, sparse sampling, and the nuisance trade-offs
+the 2x2 measured, where misspecification alone cost 1.0-1.45 h. Those two
+accountings are consistent with each other, which is the first time the
+real-data shift has been reconciled with anything.
+
+#### A prediction for the retry, recorded before it runs
+
+The forward-map effect is **larger at `b_shape` 400 than at 15** (0.98 h vs
+0.72 h across the same rungs), and the amplitude difference is larger too.
+This survives sub-grid peak refinement, so it is not a sampling-grid
+artefact.
+So the production configuration should be **more** `n_c`-sensitive, not less:
+entries 41-42 should show the effect **persisting and somewhat larger**, not
+vanishing. If the retry converges and the effect is gone, this account is
+wrong.
+
+#### What this means for `n_c` as a modelling choice
+
+`n_c` is doing two jobs that pull in opposite directions. As a numerical
+discretisation it should be as large as affordable, and Channel A does
+converge away. As the **Erlang shape it is also the desynchronisation rate**,
+and that does **not** converge: at `n_c` = infinity the chain is
+deterministic and there is no desynchronisation at all, which is
+biologically wrong in the other direction. **Raising `n_c` to fix the
+numerics simultaneously removes a biological process**, and the model has no
+separate parameter for that rate. That is the real finding, and it is why
+elpd keeps improving with `n_c` without that settling what the period is.
