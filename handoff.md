@@ -1,5 +1,67 @@
 # Handoff — 2026-10-07
 
+## State of play right now — read this first
+
+**One job running: SLURM 29684, the decay-law test.** 14 tasks, one per
+`grp_init` unit, submitted 2026-10-07 13:20, **~6 h** (8 h possible). Nothing
+else is queued.
+
+```bash
+cd /home2/lan68/plasmofit/plasmofit-test
+squeue -u lan68                                  # empty means it finished
+ls _data/decay-law-unit*.rds | wc -l             # expect 14
+/programs/R-4.6.1/bin/Rscript --vanilla _scripts/decay-law-read.R
+```
+
+If fewer than 14 files exist, check `_data/decay-law-<task>.err` and
+`sacct -j 29684`. A missing unit is not fatal — the reader works on whatever
+is present and prints how many it found — but say so when reporting.
+
+**Do not edit `_scripts/decay-law-test.R` while 29684 is running.**
+
+### What 29684 decides, and the rule for reading it
+
+Does synchrony decay as **√(cycles)** (what the Erlang chain and a 1-D
+Gaussian-kernel IPM both give) or **linearly in cycles** (between-parasite
+heterogeneity in cycle duration)? Model A is the chain alone at `n_c` in
+{96, 192, 384}; model B adds a lognormal mixture over `cycle_length`, 7
+Gauss-Hermite nodes, at `n_c` in {192, 384}. B nests A at sigma = 0, so they
+are compared at a **matched 6 parameters**, A spending one on choosing `n_c`
+exactly as B spends one on sigma. `d_ll = ll_B - ll_A`, positive favours
+linear.
+
+- **B clearly ahead and consistent in sign across units** → the decay has a
+  linear component, and **a Gaussian-kernel IPM is the wrong target**,
+  because it would reproduce the √ law it was meant to replace. The fix is
+  rate heterogeneity: a mixture, or a 2-D kernel over (age, rate).
+- **A ahead, or a tie** → the √ law is adequate, and an IPM becomes a
+  reasonable way to decouple the dispersion rate from the numerical mesh.
+- **Mixed signs across units** → the design cannot tell, and the choice has
+  to be made on biology rather than on these data.
+
+A couple of units of total `d_ll` is noise at this parameter count. Expect
+sigma around **0.033** if the linear law holds — that is the between-parasite
+CV in cycle duration reproducing `n_c` = 192's spread of 0.158 cycles at
+k = 4.8.
+
+**Partial signal already visible**, not the headline and not to be reported
+as a result: model A's own choice of `n_c` is coming out 192 > 96 in every
+task so far, with 192 and 384 effectively tied in task 1 (−31.219 vs
+−31.251). That is the same ordering and plateau the Bayesian 71.8 elpd result
+gave, reached by maximum likelihood with no priors — independent
+corroboration that `n_c` = 96 is genuinely worse.
+
+### Nothing else is running, and one thing is waiting
+
+`_scripts/wockner-fit-nc-bs400-retry.sh` is **written and deliberately not
+submitted**. It retries the production `n_c` ladder (`b_shape` pinned at 400)
+after SLURM 29635 failed to converge. **Submit a reseed-only version of entry
+41 first** — see "Open follow-ups" below for why the script as written is
+badly costed.
+
+**Until that question is settled, no reported cycle-length number should
+change.** That is the single most important standing constraint right now.
+
 ## Session topic
 
 Reading back two jobs on the `n_c` question, then working out **why**
@@ -32,9 +94,12 @@ from `new-project.sh`.
 
 ## Open follow-ups
 
-- [ ] Read SLURM 29684 with `_scripts/decay-law-read.R` (~12 h from
-      2026-10-07 13:20). Reading rules are in the script and in
-      `claude/threads.md` thread 15.
+- [ ] Read SLURM 29684 with `_scripts/decay-law-read.R`. **~6 h from
+      2026-10-07 13:20**, measured: model A takes 38 min per unit (61 s, 459
+      s, 1777 s at `n_c` 96/192/384) and model B costs ~7x the same `n_c`
+      because each likelihood runs seven quadrature nodes. B at 384 is the
+      dominant term and is extrapolated, so 8 h is possible. Reading rules
+      are in the script and in `claude/threads.md` thread 15.
 - [ ] Resubmit the production `n_c` ladder — **reseed-only first**, entry 41
       (`n_c` = 192) alone, ~9 h. The written retry
       (`_scripts/wockner-fit-nc-bs400-retry.sh`) adds `adapt_delta` 0.95 and

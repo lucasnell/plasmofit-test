@@ -46,7 +46,7 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 |---|---|---|
 | Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Nothing. Leans on `wide_bshape`, 6 clean pairs |
 | `n_c` as a biological assumption | **Established** that 96 is wrong by 71.8 elpd, structurally; mechanism explained | Production ladder retry, written and unsubmitted |
-| Decay law (√ vs linear) | **Running**, SLURM 29684, 14 tasks, ~12 h | Read with `_scripts/decay-law-read.R` |
+| Decay law (√ vs linear) | **Running**, SLURM 29684, 14 tasks, ~6 h (measured) | Read with `_scripts/decay-law-read.R` |
 | Age-structure rewrite (IPM) | **Gated** on the decay law | Do not start before it reads out |
 | Hierarchy / model comparison | **Closed** — no robust evidence either way | Nothing unless a design argument changes |
 | Per-individual initial density | **Scoped**, not estimable as a free effect | Blocked on subject weights |

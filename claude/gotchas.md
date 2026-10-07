@@ -258,3 +258,38 @@ Also: when `calc_log_lik` is on, a stuck chain breaks the LOO as badly as the
 parameters -- `log_lik` entries here had R-hat near 6, so `loo_compare` on
 that fit was meaningless even though it printed cleanly with only a quiet
 `k_psis > 0.7` flag.
+
+## `mat_exp_series` needs strictly increasing times, and fails silently inside an optimiser
+
+A unit's rows are many series sharing a handful of sampling times, so passing
+the observation times straight in gives a vector that is neither sorted nor
+unique. `mat_exp_series` rejects it:
+
+> Error: The array 'ts' is not strictly increasing. Element 7 is 120 while
+> element 6 is 192
+
+Inside a `tryCatch` that returns a large sentinel on error, which is the
+normal way to write an objective function, **this does not look like an
+error**. Every parameter set returns the sentinel, the optimiser reports
+convergence, and the fit comes back with an identical implausible
+log-likelihood for every model and every `n_c`. The first run of
+`_scripts/decay-law-test.R` produced exactly that: five rows of −1e10.
+
+Pass `sort(unique(times))` and index back with `match()`. And when an
+objective returns the same value for every configuration, suspect the
+objective before the model.
+
+## Trajectory cost is roughly CUBIC in `n_c`
+
+Measured, one `mat_exp_series` call: **0.0148 s at `n_c` = 96, 0.153 at 192,
+1.18 at 384, 9.21 at 768** — about 8x per doubling, because the matrix
+exponential is over a `2*n_c` square.
+
+This is the budget that governs every `n_c` experiment. It is why the
+production fit at `n_c` = 384 took 24.5 h against 1.6 h at 96, why the
+decay-law test is a 14-task array rather than one job, and why `n_c` = 768 is
+not in any grid. Anything that multiplies the trajectory count — quadrature
+nodes, replicates, a profile scan — multiplies that cost on top.
+
+Related: `claude/gotchas.md`, "A per-leapfrog cost probe is a lower bound".
+The two compound, since a harder geometry also needs more gradients.
