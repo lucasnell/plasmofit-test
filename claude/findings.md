@@ -2865,20 +2865,54 @@ others, and the age distribution changes over the infection (see
 
 #### How much of the real-data shift this accounts for
 
-The forward map gives **0.72 h** (`b_shape` 15) and **0.98 h**
-(`b_shape` 400) across `n_c` 96 → 384, against a real-data shift of
-**3.2 h**. So roughly **a quarter to a third** is deterministic, and the rest
-comes from estimation -- priors, sparse sampling, and the nuisance trade-offs
-the 2x2 measured, where misspecification alone cost 1.0-1.45 h. Those two
-accountings are consistent with each other, which is the first time the
-real-data shift has been reconciled with anything.
+The peak-interval deficit above is the **period channel alone**. The least
+squares version of the same experiment (`_scripts/nc-mechanism.R`) asks the
+fuller question: which `cycle_length` at the new `n_c` best reproduces the
+whole trajectory, amplitude included.
+
+Cells: `cycle_length` minus 45.012 h, where that value best reproduces a
+trajectory generated at `n_c` = 96, in hours. Window 96 h is closest to the
+Wockner span of 72-120 h. `free` re-optimises `R` and `log10_total0` too.
+
+| `b_shape` | fit `n_c` | 48 h | 96 h | 144 h | 96 h, free |
+|---|---|---|---|---|---|
+| 15 | 192 | −1.15 | **−1.01** | −0.83 | −0.99 |
+| 15 | 384 | −1.79 | **−1.64** | −1.33 | −1.58 |
+| 400 | 192 | −1.81 | **−1.41** | −1.10 | −1.38 |
+| 400 | 384 | −3.02 | **−2.35** | −1.82 | −2.33 |
+
+Against real-data shifts of **−2.17 h** (96 → 192) and **−3.20 h**
+(96 → 384). `np_wide_both` fitted `b_shape` at 64.45, between the two rows.
+So at the relevant window the forward map accounts for roughly **half to two
+thirds** of the real shift, not the quarter the period channel alone
+suggested. **Correction to the earlier figure in this file's history.**
+
+Re-optimising the nuisances barely changes anything (−1.01 vs −0.99,
+−1.64 vs −1.58), so the shift is not an artefact of `R` or `log10_total0`
+absorbing something.
+
+#### The pre-registered reading rule for this script did not work
+
+`nc-mechanism.R` was written to separate the channels by window length:
+constant across windows meaning the within-cycle channel, growing meaning
+the accumulating one. **The shift SHRINKS with window length** in every cell,
+which the rule had no reading for.
+
+The explanation is that window length changes two things at once, so the rule
+was badly designed. A longer window does accumulate more desynchronisation,
+but it also **pins the period far more tightly**: three peaks have to align
+instead of one, so least squares simply cannot move `cycle_length` as far.
+The second effect dominates. The window trend therefore measures how
+identified the period is, not which channel causes the bias, and the
+peak-interval test is the clean instrument for that. Recorded rather than
+quietly dropped, because the rule was pre-registered.
 
 #### A prediction for the retry, recorded before it runs
 
-The forward-map effect is **larger at `b_shape` 400 than at 15** (0.98 h vs
-0.72 h across the same rungs), and the amplitude difference is larger too.
-This survives sub-grid peak refinement, so it is not a sampling-grid
-artefact.
+The forward-map effect is **larger at `b_shape` 400 than at 15** in **every
+one of the twelve cells** of the least-squares table, by 0.4 to 1.2 h, as
+well as in the peak-interval test (0.98 h vs 0.72 h) where it survives
+sub-grid refinement.
 So the production configuration should be **more** `n_c`-sensitive, not less:
 entries 41-42 should show the effect **persisting and somewhat larger**, not
 vanishing. If the retry converges and the effect is gone, this account is
