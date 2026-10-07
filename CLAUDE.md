@@ -33,7 +33,6 @@ claude/references.md, not as authorship. -->
   - `claude/scripts.md` — what each script does, arm/config mechanics, `_data/` naming
   - `claude/threads.md` — the long-form record behind `TODO.md`
   - `claude/references.md` — external papers that bear on the model
-  - `claude/conventions.md` — how to write in these files
 
 ## How this project works
 
@@ -47,8 +46,23 @@ claude/references.md, not as authorship. -->
   posterior and is not reported, even when most chains agree. Check `lp__` per
   chain before diagnosing: one stuck chain and a general failure want
   different fixes.
-- **Every table of numbers must say what is in its cells** — see
-  `claude/conventions.md`. A number here is never self-describing.
+- **Every table of numbers must say what is in its cells.** A number here is
+  never self-describing: `8.89` could be a posterior mean, a median, one
+  group's value or a mean over groups, and `−40%` could be relative to a
+  truth, to another arm, or to a prior. State it once, immediately above the
+  table, covering as applicable: **what the number is** (posterior mean,
+  median, mean over groups, sum, difference, ratio); **its units** (hours,
+  log10 units, percent of what); **what it is relative to**, and which
+  direction is better or less biased; **what it is aggregated over** (groups,
+  trials, replicates, draws) and how many; and **whether it is paired**, since
+  paired and unpaired numbers of the same quantity differ here by more than
+  the effects being measured. The column header is not enough — it names the
+  quantity but not how it was computed, and the whole value of these notes is
+  that a number can be re-derived a month later. The same applies to a number
+  quoted in prose: write "posterior mean over 14 `grp_init` groups", not "the
+  estimate", and name the script and saved output it came from. Purely
+  descriptive tables — the script list, the `_data/` naming key — are exempt,
+  since their cells are prose.
 - **Grouping structure**, which governs almost every design decision:
   `grp_init` = trial × inoculum size (14 units), `grp_R` = `grp_cl` = trial
   (13), `grp_sd` = trial × cohort (27). **Within one `grp_init` unit every

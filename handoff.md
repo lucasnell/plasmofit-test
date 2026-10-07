@@ -84,7 +84,15 @@ patched.
 created at the repo root from `new-project.sh`. The detailed files in
 `claude/` are unchanged and still hold everything: `findings.md` (results),
 `gotchas.md` (read before running anything), `scripts.md`, `threads.md`
-(long-form behind `TODO.md`), `references.md`, `conventions.md`.
-**`claude/CLAUDE.md` is now the one redundant file** — its stable content went
-to the root `CLAUDE.md`, its status to `PROJECT_INDEX.md`, and its "Resume
-here" block to this file. It has not been deleted; that needs a decision.
+(long-form behind `TODO.md`) and `references.md`.
+**`claude/CLAUDE.md` and `claude/conventions.md` were deleted** (approved
+2026-10-07, recoverable from git history). `claude/CLAUDE.md` was superseded —
+stable content to the root `CLAUDE.md`, status to `PROJECT_INDEX.md`, resume
+block to this file — and partly stale: its "Package state" section still said
+the package was on branch `fixed-b-shape` and unpushed, untrue since
+`8dde0c1`. Before deleting, two items that existed **only** there were
+migrated to `findings.md`: the bound-asymmetry result and the "Known thin
+spots" caveats, now "Standing caveats on the evidence". All eight distinctive
+figures from its 2026-09-25 sections were confirmed present in `findings.md`.
+`conventions.md` was folded into the root `CLAUDE.md` under "How this project
+works".

@@ -5,8 +5,8 @@
 the last session in `handoff.md`. (These four replaced `claude/CLAUDE.md`
 as the top layer on 2026-10-07.)*
 
-Every numeric table below states what is in its cells; see
-`conventions.md`. Roughly chronological, so a later section can overturn
+Every numeric table below states what is in its cells; the rule is in the
+repo-root `CLAUDE.md`. Roughly chronological, so a later section can overturn
 an earlier one -- `PROJECT_INDEX.md` says which conclusions
 are current.
 
