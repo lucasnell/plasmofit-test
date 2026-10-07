@@ -1,11 +1,13 @@
 # Findings: the hierarchy, the schedule-bias simulation, and the priors
 
-*Split out of `CLAUDE.md`, which is now an index. See `CLAUDE.md` for
-orientation and the current state of play.*
+*Detail file. Orientation and settled decisions are in the repo-root
+`CLAUDE.md`; current status in `PROJECT_INDEX.md`; live work in `TODO.md`;
+the last session in `handoff.md`. (These four replaced `claude/CLAUDE.md`
+as the top layer on 2026-10-07.)*
 
 Every numeric table below states what is in its cells; see
 `conventions.md`. Roughly chronological, so a later section can overturn
-an earlier one -- the state of play in `CLAUDE.md` says which conclusions
+an earlier one -- `PROJECT_INDEX.md` says which conclusions
 are current.
 
 ## Cycle-length hierarchy: no_pool vs pooled_cl
@@ -2929,3 +2931,45 @@ biologically wrong in the other direction. **Raising `n_c` to fix the
 numerics simultaneously removes a biological process**, and the model has no
 separate parameter for that rate. That is the real finding, and it is why
 elpd keeps improving with `n_c` without that settling what the period is.
+
+### Bound asymmetry is ruled out
+
+Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only
+record. Settled 2026-10-03.
+
+Cells: paired change in the simulated cycle-length bias, in hours, against
+the `default` arm on the same simulated data; negative means the arm reduces
+the bias.
+
+Moving the `[min_cl, max_cl]` window so the truth sits asymmetrically within
+it changes the bias by **+0.033 h** (n = 4) — nothing, and the wrong sign for
+the ~1.5 h that needed explaining. The `[30, 60]` arm's **+0.471 h** is the
+prior-width confound that was named at submission, not bound distance:
+widening the window also widens the implied prior on `cycle_length`.
+
+Together with the earlier bound-geometry result (+0.059 h centred, +0.03 h
+moved and widened), **the bounds carry none of the cycle-length bias.**
+
+### Standing caveats on the evidence
+
+Migrated 2026-10-07 from the old `claude/CLAUDE.md` ("Known thin spots"),
+where they were the only record. These are properties of the design and the
+evidence base, not of any one result, and they still hold.
+
+- **The real-data prior comparisons are n = 1 by construction** — one
+  dataset, one fit per setting — so a shift gets a Monte Carlo z, not a
+  confidence interval. A `mean_z` says a shift beats MCMC noise and nothing
+  more.
+- **Divergences are non-zero in every panel fit** and reach 4.0% in
+  `pl_wide_both`, so every posterior mean in the prior panel is a mean over
+  an imperfectly explored posterior.
+- **The pooling offset (−0.509 h) is about 0.4 of the within-fit posterior sd**
+  of one trial's `cycle_length` (1.28 h under `no_pool` with both priors
+  corrected). It is small relative to the uncertainty it sits inside.
+- **The schedule simulation rests on three noise realisations**, and the
+  posterior-draw variant on three, usable only after a refit on a second
+  seed. Several paired arms have n_pair of 1 or 2 after the convergence gate.
+- **No cycle-length number is yet biological.** The work so far bounds the
+  priors' share of the bias from below, attributes it to `b_shape`, and shows
+  `n_c` moves the estimate by more than the bias being chased. It does not
+  yet deliver a defensible period.

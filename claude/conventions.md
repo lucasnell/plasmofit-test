@@ -1,7 +1,9 @@
 # Writing conventions for these notes
 
-*Split out of `CLAUDE.md`, which is now an index. See `CLAUDE.md` for
-orientation and the current state of play.*
+*Detail file. Orientation and settled decisions are in the repo-root
+`CLAUDE.md`; current status in `PROJECT_INDEX.md`; live work in `TODO.md`;
+the last session in `handoff.md`. (These four replaced `claude/CLAUDE.md`
+as the top layer on 2026-10-07.)*
 
 **Every table must say what is in its cells.** This applies to every file in
 `claude/`. A number here is almost never
