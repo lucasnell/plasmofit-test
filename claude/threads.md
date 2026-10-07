@@ -425,3 +425,55 @@ Roughly in priority order.
     `log10(y + 1)` as normal with no censoring term. Worth a thread of its own
     eventually; it is where a small persistent per-individual offset would
     matter most.
+15. **Should the age structure be an IPM (or any transport-with-dispersion
+    form) instead of a binned Erlang chain?** Raised 2026-10-07. **Not
+    started.** The diagnosis in `findings.md`, "Why `cycle_length` shifts with
+    `n_c`", is what motivates it: `n_c` is simultaneously the numerical mesh
+    and the desynchronisation rate, because transit is Erlang(`n_c`,
+    `n_c`/`cycle_length`) with variance `cycle_length^2 / n_c`. Refining the
+    mesh necessarily changes the biology, and the model has no separate
+    parameter for the rate. An IPM specifies the kernel independently of the
+    quadrature mesh, so it **does** fix that defect. The instinct is right.
+    **But a standard 1-D IPM in age keeps the SAME decay law.** With a
+    development kernel `a' ~ Normal(a + g*dt, sigma^2*dt)`, repeated
+    convolution gives variance `sigma^2 * t`, so sd grows as `sqrt(t)` --
+    exactly what the Erlang chain gives. It decouples the RATE from the mesh
+    and leaves the FUNCTIONAL FORM untouched. So an IPM is the right fix only
+    if `sqrt(t)` is the law you want.
+    **The competing law is between-parasite rate heterogeneity.** If cycle
+    duration varies between parasites with CV `c`, a parasite 1% fast is 1%
+    further ahead every cycle, so the spread grows **linearly** in k, not as
+    `sqrt(k)`. Biologically this is at least as plausible as within-parasite
+    stochasticity, and the two are different models of the same phenomenon.
+    Representing it inside an IPM needs a **2-D** kernel over (age,
+    developmental rate), which is much more expensive than the 1-D version.
+    Outside one it is a mixture: quadrature over `cycle_length` with Q nodes,
+    costing roughly Q times the current fit.
+    **The design limits what can be asked.** Observations start at **72 h,
+    1.6 cycles in**, and run to 216 h (4.8 cycles): 387, 524 and 218
+    observations in cycles 2-3, 3-4 and 4-5, and effectively none before. Over
+    that range `sqrt(k)` grows by 1.73x and `k` by 3.0x, so the laws are
+    distinguishable in principle, but there is no early anchor.
+    **This also explains why `b_shape` is unidentified**, which the notes have
+    recorded as a fact without a cause: `b_shape` describes the stage
+    distribution at t = 0, **1.6 cycles before the first observation**, so it
+    is pure backward extrapolation. A dispersion rate would govern change
+    WITHIN the observed window instead, so it should be **better** identified
+    than `b_shape`, not worse -- and the 71.8 elpd gap between `n_c` 96 and
+    192 is direct evidence that the data constrain the within-window amplitude
+    trajectory strongly.
+    **Do the cheap experiment first.** Test the decay law by quadrature over
+    `cycle_length` (linear law) against the current chain (`sqrt` law) at
+    matched flexibility, and compare elpd. That costs ~Q fits and needs no new
+    Stan model. It also **determines what an IPM's kernel should be**, so
+    running it first is strictly ordered before any rewrite. Building a
+    Gaussian-kernel IPM without it means paying a large implementation cost to
+    decouple the rate while keeping a decay law that was never tested.
+    **The real cost of an IPM is not runtime.** Once dispersion is free, the
+    mesh no longer has to be large for biological reasons, so a coarser mesh
+    may suffice and the fit could cost no more than `n_c` = 96-192 does now
+    (1.6-5.8 h). The cost is that it discards the validated Erlang-window
+    series solution and its `matrix_exp` cross-check (`max_rel_diff`, good to
+    1e-12), requires revalidating the whole numerical path, and makes **every
+    existing fit incomparable**. That is a project-scale change, not a
+    parameter change.
