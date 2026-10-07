@@ -1,6 +1,7 @@
 
-## Greischar & Childs, "Extraordinary parasite multiplication rates in human
-## malaria infections", Trends in Parasitology (opinion)
+## Greischar & Childs (2023), "Extraordinary parasite multiplication rates in
+## human malaria infections", Trends in Parasitology 39(8),
+## doi 10.1016/j.pt.2023.05.006
 
 `mmcm.pdf` (article) and `mmc1.pdf` (supplement) in the repo root, untracked.
 Argues that established methods return implausibly large parasite

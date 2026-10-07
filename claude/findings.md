@@ -2200,8 +2200,9 @@ submitted.
 ### Literature: the bias is a known property of this estimation problem
 
 Checked before searching outward, per the project's own habit: `mmcm.pdf`
-(Greischar et al., *Trends in Parasitology* 39(8), 2023) is in this repo and
-is directly about estimation bias in exactly this system. Supplemented with
+(Greischar & Childs, *Trends in Parasitology* 39(8), 2023) sits at the repo
+root, untracked, and is directly about estimation bias in exactly this
+system. Supplemented with
 an OpenAlex search; the relevant works are recorded in `claude/scripts.md`'s
 reference list rather than re-summarised here.
 

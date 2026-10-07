@@ -157,6 +157,20 @@ the least-squares table). If the retry converges and the effect is gone, the
 whole mechanistic account is wrong and should be revisited rather than
 patched.
 
+**A citation was wrong and is fixed.** `claude/scripts.md` attributed
+`mmcm.pdf` to "Greischar, Reece, Savill, Mideo (2023)". The PDF's own citation
+block says **Greischar & Childs (2023), *Trends in Parasitology* 39(8), doi
+10.1016/j.pt.2023.05.006**. The authors had been transposed from the adjacent
+2019 synchrony entry; journal, volume and year were right. The content summary
+on that line is unaffected — it quotes the paper directly and those quotes
+check out. Corrected in `scripts.md`, `findings.md`, `references.md` and
+`PROJECT_INDEX.md`. Worth knowing because a wrong attribution in notes
+propagates into a manuscript.
+
+**The two PDFs are untracked**, deliberately: they are published articles and
+this repo is public. Every reference to them now says so, because a clone
+will not have them.
+
 **Notes restructuring.** `CLAUDE.md`, `PROJECT_INDEX.md` and `TODO.md` were
 created at the repo root from `new-project.sh`. The detailed files in
 `claude/` are unchanged and still hold everything: `findings.md` (results),

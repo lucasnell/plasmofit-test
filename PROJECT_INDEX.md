@@ -58,8 +58,10 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 - Analysis repo: `github.com/lucasnell/plasmofit-test` (this folder)
 - Data: `_data/wockner-cleaned.csv`
 - Results in full: `claude/findings.md`
-- Prior art on the same confound: Greischar & Childs, `mmcm.pdf` / `mmc1.pdf`,
-  and `claude/references.md`
+- Prior art on the same confound: Greischar & Childs (2023) *Trends
+  Parasitol* 39(8). PDFs at the repo root as `mmcm.pdf` / `mmc1.pdf`,
+  **untracked** (published, and this repo is public), so a clone will not
+  have them. Summary in `claude/references.md`.
 
 ## Decision log
 
