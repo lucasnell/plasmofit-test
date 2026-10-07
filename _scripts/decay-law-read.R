@@ -15,7 +15,22 @@ suppressPackageStartupMessages({library(dplyr); library(tibble); library(readr)}
 f <- list.files("_data", "^decay-law-unit[0-9]+[.]rds$", full.names = TRUE)
 if (length(f) == 0) stop("no decay-law-unit*.rds in _data/")
 r <- bind_rows(lapply(f, readRDS))
-cat("units read:", length(unique(r$unit)), "of 14\n\n")
+
+## Guard against a partial file. The job writes five rows per unit -- model A
+## at n_c 96/192/384 and model B at 192/384 -- and only at the very end. A
+## file with fewer rows is a leftover from an interrupted or differently
+## configured run, and silently comparing it would drop whole rungs from that
+## unit. This happened once: a killed smoke test left a 3-row unit07.
+EXPECTED <- 5L
+bad <- r |> count(unit, name = "rows") |> filter(rows != EXPECTED)
+if (nrow(bad) > 0) {
+    print(as.data.frame(bad))
+    stop("unit(s) above do not have ", EXPECTED, " rows -- interrupted or ",
+         "stale files. Delete them and re-run the task, or fix before trusting ",
+         "the comparison.")
+}
+cat("units read:", length(unique(r$unit)), "of 14, all with",
+    EXPECTED, "rows\n\n")
 
 A <- r |> filter(model == "A_sqrt")    |> group_by(unit) |>
      slice_max(ll, n = 1, with_ties = FALSE) |> ungroup()

@@ -3,8 +3,11 @@
 ## State of play right now — read this first
 
 **One job running: SLURM 29684, the decay-law test.** 14 tasks, one per
-`grp_init` unit, submitted 2026-10-07 13:20, **~6 h** (8 h possible). Nothing
-else is queued.
+`grp_init` unit, started 2026-10-07 13:06. **Expect 6–9 h**, so done between
+roughly 19:00 and 22:00. Units differ about twofold in cost — model A takes
+66 min on unit 7 against 38 min on unit 1 — and model B at `n_c` = 384 is
+~7x A(384) and is the dominant term, so the slowest unit sets the wall time.
+Nothing else is queued.
 
 ```bash
 cd /home2/lan68/plasmofit/plasmofit-test
@@ -16,6 +19,13 @@ ls _data/decay-law-unit*.rds | wc -l             # expect 14
 If fewer than 14 files exist, check `_data/decay-law-<task>.err` and
 `sacct -j 29684`. A missing unit is not fatal — the reader works on whatever
 is present and prints how many it found — but say so when reporting.
+
+**The reader refuses any unit that does not have exactly 5 rows** (model A at
+`n_c` 96/192/384, model B at 192/384). The job writes all five at once at the
+very end, so a short file is a leftover from an interrupted or differently
+configured run. One caused trouble this session: a killed smoke test left a
+3-row `unit07.rds`, which would have silently dropped both 384 rungs from
+that unit's comparison. It was deleted and the guard added.
 
 **Do not edit `_scripts/decay-law-test.R` while 29684 is running.**
 
@@ -69,7 +79,9 @@ Reading back two jobs on the `n_c` question, then working out **why**
 explained, one job dead on convergence, and a new test running that decides
 whether a structural rewrite is worth doing. Housekeeping: both repos
 committed and pushed, 494 MB of scratch deleted, and these four files created
-from `new-project.sh`.
+from `new-project.sh`, and `claude/CLAUDE.md` plus `claude/conventions.md`
+deleted after their unique content was migrated. All of it is committed
+and pushed; `git log --oneline -10` shows the session.
 
 ## Key decisions
 

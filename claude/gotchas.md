@@ -293,3 +293,24 @@ nodes, replicates, a profile scan — multiplies that cost on top.
 
 Related: `claude/gotchas.md`, "A per-leapfrog cost probe is a lower bound".
 The two compound, since a harder geometry also needs more gradients.
+
+## A killed run can still leave a results file that looks valid
+
+`_scripts/decay-law-test.R` writes one RDS per unit, with five rows, at the
+very end. A smoke test run with a reduced `n_c` grid completed its three fits
+and wrote a **3-row** file under the same name before being killed. The real
+SLURM task for that unit was still running and had not written yet, so for
+about an hour a stale file sat in `_data/` that the reader would have treated
+as a finished unit -- silently dropping both `n_c` = 384 rungs from that
+unit's comparison and changing which model won there.
+
+Two habits, both now built in:
+
+- **Name scratch runs differently from production runs**, or run them in a
+  separate directory. A smoke test that writes to the production path is a
+  trap even when it is deleted afterwards, because the window between writing
+  and deleting is live.
+- **Make the reader assert the expected shape**, not just the presence of a
+  file. `decay-law-read.R` now stops if any unit does not have exactly five
+  rows. A file existing is not evidence that the run that produced it
+  finished, or that it was configured the way the current script is.

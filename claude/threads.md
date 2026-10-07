@@ -465,7 +465,7 @@ Roughly in priority order.
     192 is direct evidence that the data constrain the within-window amplitude
     trajectory strongly.
     **The decay-law test is RUNNING: SLURM 29684**, 14 tasks, one per
-    `grp_init` unit, ~6 h measured. `_scripts/decay-law-test.sh`, read with
+    `grp_init` unit, 6-9 h. `_scripts/decay-law-test.sh`, read with
     `_scripts/decay-law-read.R`. It decides what an IPM's kernel should be,
     so it is strictly ordered before any rewrite.
     Maximum likelihood, not Bayes: a screen whose job is to say whether the

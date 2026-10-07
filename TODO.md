@@ -12,7 +12,7 @@ match where a thread exists. This file is the actionable layer. -->
 ### In progress
 
 - [ ] **Decay-law test — SLURM 29684**, 14 tasks, one per `grp_init` unit,
-      **~6 h** (measured, not the ~12 h first estimated: model A takes 38
+      **6-9 h** (measured, not the ~12 h first estimated: model A takes 38-66
       min per unit and most optimisations converge well short of `maxit`;
       model B at `n_c` = 384 is the dominant term and is extrapolated at ~7x
       A(384), so 8 h is possible). Submitted 2026-10-07 13:20. Does
