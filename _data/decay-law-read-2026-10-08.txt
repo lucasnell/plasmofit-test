@@ -1,0 +1,143 @@
+units read: 14 of 14, all with 5 rows
+
+=== decay law, per grp_init unit ===
+Cells: ll is the maximised profile log-likelihood with the observation
+sd profiled out; both models are matched at 6 parameters, A spending
+one on its choice of n_c and B one on sigma. d_ll > 0 favours the
+LINEAR law. sigma is the fitted log-sd of cycle duration between
+parasites, i.e. its coefficient of variation.
+
+                unit   n     ll_A A_n_c     ll_B B_n_c     sigma       d_ll
+1     ACT451840|1800  45  -31.219   192  -31.121   384 3.385e-02  9.715e-02
+2        DSM265|1800  57  -26.575   384  -26.621   384 1.870e-03 -4.630e-02
+3       DSMOZ_2|2800  41  -37.814   384  -37.814   384 3.752e-04 -5.605e-06
+4   EFITA_OZGAM|2800 119  -65.911   384  -65.930   384 7.421e-03 -1.867e-02
+5    Ferroquine|1800  61  -24.877   384  -24.877   384 2.284e-07  6.391e-08
+6        KAE609|1800  55  -28.857   384  -28.873   384 1.690e-03 -1.512e-02
+7    MMV048_PIB|1800  34   -3.831   384   -3.831   384 1.589e-11  1.186e-06
+8  MMV048_PartB|2800 116 -102.439   192 -102.370   192 2.940e-02  6.878e-02
+9    Mefloquine|1800 132 -100.547   192 -100.477   384 2.914e-02  6.928e-02
+10 OZ439/DSM265|1800  76  -48.525   384  -49.047   384 1.721e-02 -5.215e-01
+11        OZ439|1800 116  -90.410   192  -88.961   384 3.684e-02  1.449e+00
+12  Piperaquine|1800 160 -132.080   384 -131.683   384 2.020e-02  3.963e-01
+13  SJ733IBSMCS|2300  67  -48.863   384  -48.863   384 2.133e-07 -5.323e-06
+14  SJ733IBSMCS|2800  51  -30.798   384  -30.745   384 2.367e-02  5.272e-02
+
+total d_ll (B - A): +1.53 over 14 units | B wins 8, A wins 6
+median fitted sigma: 0.0123 | range 0.0000-0.0368
+A's chosen n_c: 192x4, 384x10
+
+Reading it. Both models have the same parameter count, so d_ll is
+directly comparable and a couple of units of total d_ll is noise.
+ - B clearly ahead AND consistent in sign -> the decay has a linear
+   component, and a 1-D IPM with a Gaussian kernel is the WRONG target
+   because it reproduces the sqrt law it would be replacing.
+ - A ahead or a tie -> the sqrt law is adequate, and an IPM is then a
+   reasonable way to decouple the RATE from the mesh.
+ - Mixed signs across units -> the design cannot tell, and the choice
+   has to be made on biology rather than on these data.
+
+
+=== nesting check: B - A at MATCHED n_c ===
+Cells: difference in maximised profile log-likelihood, B minus A, at
+the same n_c, one row per unit x n_c. B contains A at sigma = 0, so
+every cell must be >= 0. Negative cells are optimiser shortfall and
+their magnitude is this test's noise floor.
+
+               unit n_c  A_sqrt B_linear      gap
+1 OZ439/DSM265|1800 384  -48.53   -49.05 -0.52146
+2  Piperaquine|1800 192 -132.09  -132.31 -0.21635
+3       DSM265|1800 192  -28.08   -28.14 -0.05532
+4 OZ439/DSM265|1800 192  -50.35   -50.40 -0.04694
+5       DSM265|1800 384  -26.58   -26.62 -0.04630
+6  EFITA_OZGAM|2800 384  -65.91   -65.93 -0.01867
+7  SJ733IBSMCS|2800 192  -30.85   -30.87 -0.01753
+8       KAE609|1800 384  -28.86   -28.87 -0.01512
+
+nesting violations: 15 of 28 cells negative | worst -0.521 | median violation -0.0151
+noise floor (worst violation): 0.521 log-likelihood units
+
+Per-unit d_ll against that floor:
+                unit   n       d_ll clears_floor
+1         OZ439|1800 116  1.449e+00         TRUE
+2   Piperaquine|1800 160  3.963e-01        FALSE
+3     ACT451840|1800  45  9.715e-02        FALSE
+4    Mefloquine|1800 132  6.928e-02        FALSE
+5  MMV048_PartB|2800 116  6.878e-02        FALSE
+6   SJ733IBSMCS|2800  51  5.272e-02        FALSE
+7    MMV048_PIB|1800  34  1.186e-06        FALSE
+8    Ferroquine|1800  61  6.391e-08        FALSE
+9   SJ733IBSMCS|2300  67 -5.323e-06        FALSE
+10      DSMOZ_2|2800  41 -5.605e-06        FALSE
+11       KAE609|1800  55 -1.512e-02        FALSE
+12  EFITA_OZGAM|2800 119 -1.867e-02        FALSE
+13       DSM265|1800  57 -4.630e-02        FALSE
+14 OZ439/DSM265|1800  76 -5.215e-01        FALSE
+
+units whose gain clears the noise floor: 1 of 14
+
+
+=== by-product: model A as a likelihood profile over n_c ===
+Cells: maximised profile log-likelihood of model A at each n_c, and the
+gain of 192 and of 384 over 96, per unit, in log-likelihood units.
+Positive means the higher n_c fits better. No priors are involved.
+
+                unit   n     nc96    nc192     nc384     g192      g384
+1     ACT451840|1800  45  -32.507  -31.219  -31.2508  1.28848  1.256242
+2        DSM265|1800  57  -32.044  -28.083  -26.5751  3.96122  5.469368
+3       DSMOZ_2|2800  41  -39.006  -37.849  -37.8140  1.15635  1.191627
+4   EFITA_OZGAM|2800 119  -75.129  -66.020  -65.9113  9.10918  9.217882
+5    Ferroquine|1800  61  -34.512  -25.844  -24.8775  8.66769  9.634221
+6        KAE609|1800  55  -36.584  -30.362  -28.8574  6.22285  7.726952
+7    Mefloquine|1800 132 -105.709 -100.547 -100.5567  5.16259  5.152391
+8  MMV048_PartB|2800 116 -102.735 -102.439 -102.8059  0.29542 -0.071283
+9    MMV048_PIB|1800  34  -18.254   -8.009   -3.8307 10.24525 14.423566
+10 OZ439/DSM265|1800  76  -58.526  -50.352  -48.5253  8.17434 10.001199
+11        OZ439|1800 116  -90.742  -90.410  -90.6056  0.33222  0.136332
+12  Piperaquine|1800 160 -142.930 -132.092 -132.0796 10.83750 10.850273
+13  SJ733IBSMCS|2300  67  -52.787  -49.629  -48.8634  3.15823  3.923877
+14  SJ733IBSMCS|2800  51  -34.664  -30.853  -30.7981  3.81092  3.865657
+    g384_192
+1  -0.032237
+2   1.508147
+3   0.035276
+4   0.108701
+5   0.966529
+6   1.504104
+7  -0.010199
+8  -0.366707
+9   4.178315
+10  1.826858
+11 -0.195891
+12  0.012777
+13  0.765644
+14  0.054740
+
+summed over 14 units: 192 over 96 = +72.4 | 384 over 96 = +82.8 | 384 over 192 = +10.4
+units where 192 beats 96: 14/14 | where 384 beats 192: 10/14
+
+
+=== power: what a linear component of the predicted size could buy ===
+Cells: d_ll is the maximised gain of B over A, which bounds from above the
+gain at the pre-registered sigma = 0.033. sigma_hat is where B's optimiser
+actually landed.
+
+                unit   n sigma_hat       d_ll near_target
+1         OZ439|1800 116 3.684e-02  1.449e+00        TRUE
+2     ACT451840|1800  45 3.385e-02  9.715e-02        TRUE
+3  MMV048_PartB|2800 116 2.940e-02  6.878e-02        TRUE
+4    Mefloquine|1800 132 2.914e-02  6.928e-02        TRUE
+5   SJ733IBSMCS|2800  51 2.367e-02  5.272e-02        TRUE
+6   Piperaquine|1800 160 2.020e-02  3.963e-01       FALSE
+7  OZ439/DSM265|1800  76 1.721e-02 -5.215e-01       FALSE
+8   EFITA_OZGAM|2800 119 7.421e-03 -1.867e-02       FALSE
+9        DSM265|1800  57 1.870e-03 -4.630e-02       FALSE
+10       KAE609|1800  55 1.690e-03 -1.512e-02       FALSE
+11      DSMOZ_2|2800  41 3.752e-04 -5.605e-06       FALSE
+12   Ferroquine|1800  61 2.284e-07  6.391e-08       FALSE
+13  SJ733IBSMCS|2300  67 2.133e-07 -5.323e-06       FALSE
+14   MMV048_PIB|1800  34 1.589e-11  1.186e-06       FALSE
+
+units landing within 0.01 of the predicted sigma: 5 | their gains: +1.449, +0.097, +0.069, +0.069, +0.053
+upper bound on the gain from sigma = 0.033, excluding the one unit
+that clears the noise floor: at most +0.396, median +0.0000

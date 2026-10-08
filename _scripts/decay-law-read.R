@@ -8,7 +8,10 @@
 ## the grid exactly as B spends one on sigma.
 ##
 ##   cd /home2/lan68/plasmofit/plasmofit-test
-##   Rscript --vanilla _scripts/decay-law-read.R
+##   Rscript --vanilla _scripts/decay-law-read.R | tee _data/decay-law-read-$(date +%F).txt
+##
+## The saved output is tracked -- see the exceptions in _data/.gitignore --
+## because numbers from it are quoted in the notes.
 
 suppressPackageStartupMessages({library(dplyr); library(tibble); library(readr)})
 

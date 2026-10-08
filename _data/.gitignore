@@ -3,3 +3,11 @@
 *.err
 *.out
 *.log
+
+# Exceptions: the saved reader output behind a claim in the notes. Everything
+# else here is a fit or a log and stays on the cluster -- 726 files, 5.2 GB --
+# but a number quoted in findings.md has to be re-derivable from the repo
+# alone, and these are a few KB each. Add a pattern here when a reader's output
+# is cited; do not loosen the patterns above.
+!decay-law-read-*.txt
+!nc-768-read-*.txt

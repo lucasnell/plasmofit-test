@@ -15,7 +15,10 @@
 ## predicts +1.5, which falls in the plateau branch.
 ##
 ##   cd /home2/lan68/plasmofit/plasmofit-test
-##   Rscript --vanilla _scripts/nc-768-read.R
+##   Rscript --vanilla _scripts/nc-768-read.R | tee _data/nc-768-read-$(date +%F).txt
+##
+## The saved output is tracked -- see the exceptions in _data/.gitignore --
+## because numbers from it are quoted in the notes.
 
 suppressPackageStartupMessages({library(dplyr); library(tidyr)})
 

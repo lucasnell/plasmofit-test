@@ -33,6 +33,8 @@ claude/references.md, not as authorship. -->
   - `claude/scripts.md` — what each script does, arm/config mechanics, `_data/` naming
   - `claude/threads.md` — the long-form record behind `TODO.md`
   - `claude/references.md` — external papers that bear on the model
+  - `claude/ipm-decision.md` — the age-structure design decision: chain plus
+    a parameter, or an IPM, with the floor argument that settles it
 
 ## How this project works
 

@@ -26,6 +26,13 @@ Neither script may be edited while its job runs.
 
 ### What 30524 decides, and the rule for reading it
 
+**The full case for and against is already written**, in
+`claude/ipm-decision.md`, drafted while 30524 was still running so the
+reading rule could not be reverse-engineered from the answer. It covers the
+floor argument below, the two concrete designs, the numerical-diffusion
+hazard that makes a spectral scheme the right default for an IPM, and two
+things that hold whichever way 30524 reads.
+
 **The IPM question reduces to one inequality.** In the Erlang chain, transit
 time has mean `cycle_length` and coefficient of variation **`1/√n_c`**. For a
 fixed stage count the Erlang is the **minimum-variance** case — minimising
@@ -181,10 +188,11 @@ adjacent 2019 entry.
 **The two PDFs at the repo root are untracked**, deliberately: they are
 published articles and this repo is public. A fresh clone will not have them.
 
-**Everything in `_data/` is gitignored**, so all fits and saved outputs —
-including `_data/decay-law-read-2026-10-08.txt`, which is the evidence behind
-the numbers above — exist only on the cluster filesystem.
-
+**Almost everything in `_data/` is gitignored**, so the fits — 726 files,
+5.2 GB — exist only on the cluster filesystem. The exception, added
+2026-10-08: `decay-law-read-*.txt` and `nc-768-read-*.txt` are negated in
+`_data/.gitignore` and tracked, because numbers from them are quoted in the
+notes and have to be re-derivable from the repo alone.
 **Where things live.** Root `CLAUDE.md` (stable context and settled
 decisions), `PROJECT_INDEX.md` (status, workstreams, decision log), `TODO.md`
 (actionable layer), this file. The detail is in `claude/`: `findings.md`

@@ -42,7 +42,9 @@ match where a thread exists. This file is the actionable layer. -->
       the `matrix_exp` cross-check: **non-uniform stage rates**
       (hypoexponential rather than Erlang), which changes the generator's
       diagonal, not the framework. One parameter frees the transit variance —
-      but only **upward**, since Erlang is the minimum-variance case.
+      but only **upward**, since Erlang is the minimum-variance case. The
+      full case for and against, written before 30524 read out, is in
+      `claude/ipm-decision.md`.
 - [ ] **If a chain sticks again in 30525** at a similar lp gap, the mode is
       real. Report it as multimodality, show both modes, and move to entry 41
       (`adapt_delta` 0.95, `max_treedepth` 12,
