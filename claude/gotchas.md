@@ -440,3 +440,30 @@ Three distinct causes were separated, and only one was noise:
 Note that loess residuals at the two END rungs are unreliable, so judge the
 interior by whether the first differences reverse sign where the profile
 should be monotone.
+
+## Validate AFTER saving, and make a regression check one-sided when it should be
+
+`_scripts/nc-profile-fast.R` carried a built-in check that its chain rungs
+reproduced SLURM 29684's saved log-likelihoods, and stopped if any differed by
+more than 0.01. Two things were wrong with it, and together they cost six
+tasks of SLURM 30641 about 2.5 hours each.
+
+**It was two-sided when the situation had become one-sided.** The check was
+written for a run with the same two optimiser starts as 29684, where the
+values should match exactly. The re-run used eight starts, and **more starts
+can only raise a maximised log-likelihood**, so a higher value is an
+improvement and not drift. Six tasks improved by up to **+0.757** ll units at
+a single rung and were failed for it. Only a DROP below the stored value means
+the harness has drifted. **Ask which direction a difference can legitimately
+go before writing the comparison**, and re-ask it whenever the thing being
+compared changes.
+
+**It ran before `saveRDS`.** Every fit had completed; the stop threw all of it
+away. **A check that destroys the work it validates is worse than no check.**
+Write the results first, then judge them — a bad result on disk can be ignored
+or deleted, while a result never written has to be recomputed.
+
+The improvements are themselves a measurement and are now reported rather than
+treated as a fault: with eight starts the chain rungs beat the two-start run
+by up to 0.757 ll units on one unit, which is a third of the 2.39 roughness
+the chain profile showed.
