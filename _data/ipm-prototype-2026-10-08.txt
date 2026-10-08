@@ -1,0 +1,84 @@
+=== 1. the Poisson convolution reproduces mat_exp_series ===
+Cells: max over the 7 observation times of |convolution - mat_exp_series|
+/ mat_exp_series, at cycle_length 45, b_shape 400, R 8, mu 0. This is a
+reimplementation from the ODE's structure, not a refactor, so agreement
+at 1e-12 is an independent check of both.
+
+  n_c =  96 : max rel err = 4.145e-12
+  n_c = 192 : max rel err = 1.012e-12
+  n_c = 384 : max rel err = 8.306e-13
+
+=== 2. a continuous kernel is NOT a reparameterisation of the chain ===
+Cells: max over the 7 times of |log10(IPM) - log10(chain)|, in log10
+units, at mesh M = n_c with the kernel's variance matched to the chain's.
+The only difference is the kernel: the chain's stage at time t is exactly
+POISSON, a lattice distribution, while both IPM kernels are continuous.
+For scale, the residual sd of these ML fits is about 0.48 log10 units.
+
+  n_c =  96 : gaussian 0.0135 | gamma 0.0120
+  n_c = 192 : gaussian 0.0331 | gamma 0.0310
+  n_c = 384 : gaussian 0.0623 | gamma 0.0595
+
+The gamma keeps the chain's right skew and the gaussian does not, yet
+they differ by under 0.003 log10 units, so SKEW IS NOT THE GAP. The gap
+grows with n_c, which is the opposite of the kernel-shape argument, and
+the next table says why.
+
+=== 3. the gap is one point, and it is the deepest trough ===
+Cells: the chain's predicted circulating parasitaemia and the gamma IPM's,
+per observation time, at n_c = 384; dlog10 is log10(IPM) - log10(chain).
+The observable spans four orders of magnitude across the cycle because
+sequestration hides ~60% of it, and at a trough the value is set by the
+TAIL of the age distribution -- exactly where a lattice Poisson and a
+continuous gamma differ.
+
+    t cycles      chain        ipm      dlog10
+1  72   1.60      33988      38974  0.05945337
+2  96   2.13   15709947   15714806  0.00013428
+3 120   2.67    9649168    9777504  0.00573811
+4 144   3.20   88791503   88932655  0.00068985
+5 168   3.73  326327492  325334600 -0.00132341
+6 192   4.27  446225221  447099884  0.00085044
+7 216   4.80 5147897229 5131682450 -0.00137009
+
+trough / peak ratio in the chain: 7e-06. All of the discrepancy is at
+t = 72 h; the other six times agree to 0.006 log10 units or better.
+Troughs are also where low-end censoring is an open question (TODO), so
+this is the one place the kernel choice and a known data issue coincide.
+
+=== 4. the decoupling, which is the whole point ===
+Cells: max |log10 difference| from the chain at n_c = 384, the dispersion
+the data prefer. Row 1 is the chain forced onto a coarse mesh, which also
+coarsens its dispersion because it has only one knob. The IPM rows use
+the SAME coarse mesh with the fine dispersion dialled in.
+
+  chain, n_c = 96 (mesh and rate locked together) : 1.5888
+  IPM gamma, M =  96, n_eff = 384                 : 0.0638
+  IPM gamma, M = 192, n_eff = 384                 : 0.0605
+
+A factor of about 25 in log10 units. Mesh and rate are separated.
+
+=== 5. dispersion is continuous for the IPM and quantised for the chain ===
+Cells: sigma_c is the sd in hours of a parasite's age advance after one
+cycle; the last column is the stage distribution's sd at the final
+observation. The chain reaches only these rows, at cubic cost to move
+between them; the IPM reaches any value at a fixed mesh and fixed cost.
+
+  n_c sigma_c_h sd_at_4.8_cycles_h
+1  96     4.593             10.062
+2 192     3.248              7.115
+3 384     2.296              5.031
+4 768     1.624              3.558
+
+=== 6. cost ===
+Cells: seconds for one 7-point trajectory, median of 5 runs.
+mat_exp_series exponentiates a 2*n_c square matrix, which is cubic; the
+convolutions are one FFT pair per time point.
+
+  n_c =  96 : mat_exp  0.0150 | poisson-conv  0.0060 | ipm-gamma  0.0070 | speedup     2x
+  n_c = 192 : mat_exp  0.1540 | poisson-conv  0.0090 | ipm-gamma  0.0110 | speedup    14x
+  n_c = 384 : mat_exp  1.1790 | poisson-conv  0.0280 | ipm-gamma  0.0310 | speedup    38x
+
+The speedup is available WITHOUT any rewrite: the Poisson convolution is
+the same model as mat_exp_series, agreeing to 1e-12, and it is the column
+to port if cost is the motive rather than decoupling.

@@ -11,3 +11,5 @@
 # is cited; do not loosen the patterns above.
 !decay-law-read-*.txt
 !nc-768-read-*.txt
+!nc-dispersion-profile-*.txt
+!ipm-prototype-*.txt

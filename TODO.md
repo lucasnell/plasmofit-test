@@ -78,6 +78,12 @@ match where a thread exists. This file is the actionable layer. -->
       cross-check, and making every existing fit incomparable.
 
 ### Done
+- [x] **IPM prototype built and validated (2026-10-08).** The exact chain is
+      a convolution in absolute developmental age: reproduces `mat_exp_series`
+      to 1e-12 and runs 38x faster at `n_c` = 384, with no rewrite. An IPM is
+      a different model, not a reparameterisation -- a continuous kernel
+      differs from the chain's lattice Poisson by 0.06 log10 units at the
+      deepest trough. `claude/ipm-decision.md` has the write-up.
 
 - [x] **Decay-law test (29684), 2026-10-08: cannot tell, and says why.** All 14
       tasks COMPLETED, 9–21 h each. Total `d_ll` +1.53, 8–6 on sign, +1.449 of
@@ -176,3 +182,18 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] Design A: mask-dependent, so the hierarchy claim is withdrawn.
 - [x] Horizon ladder: flat once the non-converged rung is reseeded.
 - [x] Design B: argued against as structurally near-rigged; not run.
+
+## Forward-map speedup, opened 2026-10-08 (thread 15)
+
+### Next
+
+- [ ] **Decide whether to port the Poisson convolution into the package.** It
+      is the *same* model as `mat_exp_series`, agreeing to 1e-12, and runs 38x
+      faster at `n_c` = 384 and 14x at 192 (`_scripts/ipm-prototype.R`). That
+      would make the `n_c` ladder cheap enough to extend, and a production
+      `n_c` = 768 fit feasible where it is currently ~540 h. **Independent of
+      the IPM decision** — it changes no model and invalidates no fit. Needs:
+      a Stan implementation of the convolution (FFT is not available in Stan,
+      so a direct lattice convolution, which is O(n_c * window) rather than
+      O(n_c^3)), gradient checks, and the same `max_rel_diff` cross-check
+      against `mat_exp_series` that the current path has.

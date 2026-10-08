@@ -111,6 +111,56 @@ multimodality, show both modes, and move to entry 41 (`adapt_delta` 0.95,
 unsubmitted) rather than reseeding a third time. That retry costs 2.5–5×
 because the sampler already saturated treedepth in 46–61% of transitions.
 
+## The IPM prototype is built and validated, and it moved the decision
+
+`_scripts/ipm-prototype.R`, output `_data/ipm-prototype-2026-10-08.txt`
+(tracked), full write-up in `claude/ipm-decision.md`. Run it with:
+
+```bash
+/programs/R-4.6.1/bin/Rscript --vanilla _scripts/ipm-prototype.R \
+  | tee _data/ipm-prototype-$(date +%F).txt
+```
+
+**The exact chain is a convolution.** Work in *absolute* developmental age
+instead of age modulo the cycle: transport is then a pure-birth process, with
+a parasite at the starting stage plus Poisson(`lambda * t`), no wrap and no
+boundary condition. Growth becomes the weight `R^divisions` and sequestration
+becomes a weight too, because circulating status resets at division. It
+reproduces `mat_exp_series` to **1e-12** and runs **38x faster at `n_c` =
+384**.
+
+That is the same model, so **the speedup needs no rewrite**. It removes cost
+as a reason to build an IPM and leaves only the decoupling argument, which is
+the honest way to argue it. It is also an independent reimplementation from
+the ODE, so it is a second cross-check alongside `matrix_exp`.
+
+**Two corrections to `claude/ipm-decision.md`, found by validating.**
+
+1. An IPM is **not** a reparameterisation of the chain. The stage at time `t`
+   is exactly **Poisson, a lattice distribution**, and any continuous kernel
+   differs in the tails: 0.0135, 0.0331, 0.0623 log10 units at `n_c`
+   96/192/384, growing with `n_c`, against a residual sd of about 0.48. Skew
+   is not the cause — a gamma kernel preserves the right skew exactly and
+   lands within 0.003 of a gaussian. The cause is the **troughs**, where the
+   observable is four orders of magnitude down and is set by the tail of the
+   age distribution. At `n_c` = 384 the whole gap sits at one time, 72 h.
+   Troughs are also where low-end censoring is open, so any IPM fit must be
+   compared with the chain **at the troughs**, not on an average.
+2. The **numerical-diffusion hazard does not arise**. There is no time
+   stepping, so nothing accumulates; the kernel is applied analytically once
+   per observation time. The spectral-scheme recommendation is superseded.
+
+**The decoupling does work.** Against the chain at `n_c` = 384, the chain at
+96 is 1.589 log10 units away while the gamma IPM at mesh 96 with `n_eff` = 384
+is 0.064 — a factor of 25.
+
+**Two subtleties a fresh implementation would plausibly get wrong in silence.**
+The chain applies the sequestration hazard with a **one-stage lag**, so the
+circulating fraction is `G[k-1]` and not `y[k]`; using `y[k]` costs 12% at the
+first observation. And first-cycle parasites have not been reset, so their
+weight depends on where they started. Both were caught by validating against
+`mat_exp_series` rather than by reading the source.
+
 ## What 29684 decided: the decay-law test cannot tell
 
 All 14 tasks COMPLETED, every `.err` empty, 9:07 to 21:04 elapsed. The 6–9 h

@@ -563,6 +563,37 @@ Roughly in priority order.
     Cost is roughly **cubic in `n_c`** -- 0.0148 s per trajectory at 96,
     0.153 at 192, 1.18 at 384, 9.21 at 768 -- which is why this is an array
     and why `n_c` = 768 is not in the grid.
+    **PROTOTYPE BUILT AND VALIDATED 2026-10-08**, `_scripts/ipm-prototype.R`,
+    output `_data/ipm-prototype-2026-10-08.txt`, full write-up in
+    `claude/ipm-decision.md`. Three results.
+    **(a) The exact chain is a convolution.** In ABSOLUTE developmental age,
+    transport is a pure-birth process -- stage at time t is the starting stage
+    plus Poisson(lambda*t), with no wrap and no boundary condition -- growth is
+    the weight R^divisions, and sequestration is a weight too, because
+    circulating status resets at division. Reproduces `mat_exp_series` to
+    **1e-12** and runs **38x faster** at `n_c` = 384. It is the same model, so
+    the speedup needs no rewrite, which removes COST as a reason to build an
+    IPM and leaves only decoupling.
+    **(b) An IPM is NOT a reparameterisation**, correcting what this thread
+    said earlier. The stage at time t is exactly POISSON, a lattice
+    distribution, and any continuous kernel differs from it in the tails. At
+    matched mesh and matched variance the gap is 0.0135, 0.0331 and 0.0623
+    log10 units at `n_c` 96/192/384 -- GROWING with `n_c` -- against a residual
+    sd of about 0.48. Skew is not the cause: a gamma kernel preserves the right
+    skew exactly and lands within 0.003 of a gaussian. The cause is the
+    troughs, where the observable is four orders of magnitude down and is set
+    by the TAIL of the age distribution. At `n_c` = 384 the whole gap sits at
+    ONE time, t = 72 h; the other six agree to 0.006 or better. Troughs are
+    also where low-end censoring is open, so the two issues coincide there.
+    **(c) The decoupling works.** Against the chain at `n_c` = 384: the chain
+    at 96 is 1.589 log10 units away, while the gamma IPM at mesh 96 with
+    `n_eff` = 384 is 0.064. A factor of 25.
+    Two subtleties the validation caught, both of which a fresh implementation
+    would plausibly get wrong in silence. The chain applies the sequestration
+    hazard with a ONE-STAGE LAG, so the circulating fraction is G[k-1] and not
+    y[k]; using y[k] costs 12% at the first observation. And first-cycle
+    parasites have not been reset, so their weight depends on where they
+    started -- separable, so it costs one extra convolution.
     **The real cost of an IPM is not runtime.** Once dispersion is free, the
     mesh no longer has to be large for biological reasons, so a coarser mesh
     may suffice and the fit could cost no more than `n_c` = 96-192 does now

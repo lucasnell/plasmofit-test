@@ -61,7 +61,7 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 - Analysis repo: `github.com/lucasnell/plasmofit-test` (this folder)
 - Data: `_data/wockner-cleaned.csv`
 - Results in full: `claude/findings.md`
-- Age-structure design decision, written before SLURM 30524 read out: `claude/ipm-decision.md`
+- Age-structure design decision and the validated prototype: `claude/ipm-decision.md`
 - Prior art on the same confound: Greischar & Childs (2023) *Trends
   Parasitol* 39(8). PDFs at the repo root as `mmcm.pdf` / `mmc1.pdf`,
   **untracked** (published, and this repo is public), so a clone will not
@@ -92,3 +92,5 @@ Append-only. Supersede a line with a new one rather than editing it.
 | 2026-10-08 | Reseed entry 39, not entry 41 | 41-42 already carry `adapt_delta` 0.95 and `max_treedepth` 12, so a reseed-only run means 39; earlier notes said 41 and were wrong |
 | 2026-10-08 | Never take more than half the node | `cbsugreischar` is one shared node (256 CPUs, 1,031,340 MB); arrays that would exceed 128 CPUs or 515,670 MB get `--array=1-N%M`. Rule and the formula for M are in `CLAUDE.md` |
 | 2026-10-08 | Judge the dispersion profile on whether it is bounded in the fine direction, not on an interior maximum | A saturating profile never has an interior maximum, and saturation means the data do not exclude zero dispersion — which argues against an IPM rather than for it |
+| 2026-10-08 | The exact chain is a convolution, not only a matrix exponential | In absolute developmental age, transport is pure-birth, growth and sequestration are weights; reproduces `mat_exp_series` to 1e-12 and runs 38x faster at `n_c` = 384, so cost is no longer a reason to rewrite |
+| 2026-10-08 | An IPM is a different model, not a reparameterisation | The stage at time t is exactly Poisson, a lattice distribution; any continuous kernel differs in the tails, worth 0.06 log10 units at the deepest trough and growing with `n_c` |

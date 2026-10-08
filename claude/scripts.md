@@ -237,3 +237,12 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   non-converged fit — see `claude/gotchas.md`.
 - `_scripts/decay-law-validate.R` — checks the `cycle_length` mixture really
   produces a linear-in-cycles spread before the test is believed.
+- `_scripts/ipm-prototype.R` — prototypes and validates a
+  transport-with-dispersion forward map against the Erlang chain. Its main
+  by-product is that **the exact chain is a convolution**: in absolute
+  developmental age, transport is a pure-birth process, growth is the weight
+  `R^divisions`, and sequestration is a weight too because circulating status
+  resets at division. Reproduces `mat_exp_series` to 1e-12 and runs 38x faster
+  at `n_c` = 384. Also measures where a continuous kernel departs from the
+  chain's lattice Poisson, which is the troughs. Output
+  `_data/ipm-prototype-<date>.txt`, tracked.

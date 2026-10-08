@@ -211,3 +211,108 @@ estimate, not a rate. That argues **against** building one, the opposite of
 what the structural argument alone suggests. On the three rungs already on
 disk the reader says *still climbing*: the top rung still buys +10.36
 log-likelihood units, which is why both 30524 and 30527 exist.
+
+## What the prototype found, 2026-10-08
+
+`_scripts/ipm-prototype.R`, output `_data/ipm-prototype-2026-10-08.txt`.
+Three results, two of which correct this memo above.
+
+### The exact chain is a convolution, and it is 38x faster
+
+Work in **absolute** developmental age rather than age modulo the cycle. Then
+transport is a pure-birth process — a parasite's absolute stage after time `t`
+is its starting stage plus Poisson(`lambda * t`) — with no wrap and no
+boundary condition. Growth becomes a weight, `R^d` for `d = floor((j-1)/n_c)`
+divisions, and sequestration becomes a weight too, because circulating status
+is a function of position within the cycle and **resets at division** (the ODE
+sends both `N[n_c]` and `S[n_c]` into `N[1]`).
+
+So the whole trajectory is a convolution evaluated once per observation time.
+It reproduces `mat_exp_series` to **1e-12**, the same order as the package's
+own `matrix_exp` cross-check, and runs **38x faster at `n_c` = 384** (1.179 s
+against 0.031 s). It is a reimplementation from the ODE's structure, not a
+refactor, so the agreement is an independent check of both.
+
+**This changes the cost calculus.** The speedup needs no rewrite and no new
+model: it is the same model, agreeing to 1e-12. If cost is the motive, port
+the convolution. The IPM is then only for decoupling, which is the honest way
+to argue it.
+
+Two subtleties the validation caught, both of which a fresh implementation
+would plausibly get wrong in silence:
+
+1. The chain applies the sequestration hazard with a **one-stage lag** — the
+   transition from stage `k-1` to `k` uses `q[k-1]` — so the circulating
+   fraction is `G[k-1]`, not `y[k]`. This is the O(1/`n_c`) delay the Stan
+   source documents. Using `y[k]` costs 12% at the first observation.
+2. Parasites in their **first cycle** have not been reset, so their weight
+   depends on where they started. It is separable, so it costs one extra
+   convolution rather than breaking the method.
+
+### Correction: an IPM is not a reparameterisation of the chain
+
+The memo says above that a Gaussian kernel gives the same sqrt law, so an IPM
+"is a change of parameterisation, not of mechanism". **That is wrong.** The
+chain's stage at time `t` is exactly **Poisson — a lattice distribution** —
+and any continuous kernel differs from it in the tails.
+
+Measured at matched mesh and matched variance, in log10 units, which is the
+scale the likelihood works on (the residual sd of these fits is about 0.48):
+
+| `n_c` | gaussian | gamma |
+|---|---|---|
+| 96 | 0.0135 | 0.0120 |
+| 192 | 0.0331 | 0.0310 |
+| 384 | 0.0623 | 0.0595 |
+
+**The gap grows with `n_c`, and skew is not the cause.** A gamma kernel
+preserves the chain's right skew exactly — `Gamma(shape = n_eff*t/cl, scale =
+cl/n_eff)` is the chain with *continuous* `n_c` — and it lands within 0.003 of
+the Gaussian. The cause is the troughs: the observable spans four orders of
+magnitude across the cycle because sequestration hides ~60% of it, and at a
+trough the value is set by the **tail** of the age distribution, which is
+exactly where a lattice Poisson and a continuous kernel part company. At
+`n_c` = 384 the entire 0.0595 sits at **one** time, `t` = 72 h, the deepest
+trough; the other six agree to 0.006 or better.
+
+Troughs are also where **low-end censoring** is an open question in `TODO.md`,
+so this is the one place where the kernel choice and a known data issue
+coincide. Any IPM fit has to be compared with the chain at the troughs
+specifically, not on an average.
+
+### Correction: the numerical-diffusion hazard does not arise
+
+The memo recommends a spectral scheme because advection on a mesh adds
+artificial spreading. **There is no time stepping at all**, so there is
+nothing to accumulate: the kernel is applied analytically, once per
+observation time. The spectral recommendation is superseded by something
+simpler and strictly better.
+
+### The decoupling works, and here is the number
+
+Max |log10 difference| from the chain at `n_c` = 384, which is the dispersion
+the data prefer:
+
+| forward map | difference |
+|---|---|
+| chain at `n_c` = 96 — mesh and rate locked together | **1.589** |
+| IPM gamma, mesh M = 96, `n_eff` = 384 | 0.064 |
+| IPM gamma, mesh M = 192, `n_eff` = 384 | 0.061 |
+
+A factor of 25. A coarse mesh with the fine dispersion dialled in is a close
+match to the fine chain, while the coarse chain is not — mesh and rate have
+been separated, which is the thing the whole design argument rests on.
+
+### What this does to the three options
+
+**Option A** (non-uniform stage rates) is unchanged and still cheapest.
+
+**Option B** (IPM) is cheaper to build than this memo assumed, because the
+convolution machinery is already written and validated, and `n_eff` in the
+gamma kernel is a one-line continuous parameter. But it is a **different
+model**, not a reparameterisation, so every fit would have to be redone and
+compared at the troughs.
+
+**Option C** (change nothing) gains a new argument: port the Poisson
+convolution, keep the model exactly as it is, and spend the 38x on more
+replicates and a finer `n_c` ladder rather than on a rewrite.
