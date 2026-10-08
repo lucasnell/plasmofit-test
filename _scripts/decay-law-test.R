@@ -52,8 +52,25 @@ gauss_hermite <- function(n) {
 ## exponential is over a 2*n_c square. Model B multiplies that by QNODE, so
 ## the grid is chosen to keep one unit inside a few hours and the work is
 ## split one SLURM task per grp_init unit.
-NC_A   <- c(96L, 192L, 384L)   # model A: the sqrt law, slope set by n_c
-NC_B   <- c(192L, 384L)        # model B: sigma adds a linear component
+##
+## MODE, added 2026-10-08. The default reruns the whole screen. Mode "a768"
+## runs model A alone at n_c = 768 and writes to a separate file, to extend
+## the n_c profile by one rung without touching the finished results. It is
+## model A only because the question it answers is whether the Erlang family
+## is still gaining as the mesh refines -- model B is irrelevant to that and
+## costs 7x.
+MODE <- Sys.getenv("DECAY_MODE", "full")
+if (!MODE %in% c("full", "a768")) stop("DECAY_MODE must be full or a768")
+
+if (MODE == "full") {
+    NC_A <- c(96L, 192L, 384L)  # model A: the sqrt law, slope set by n_c
+    NC_B <- c(192L, 384L)       # model B: sigma adds a linear component
+    OUT  <- "_data/decay-law-unit%02d.rds"
+} else {
+    NC_A <- 768L
+    NC_B <- integer(0)
+    OUT  <- "_data/decay-law-a768-unit%02d.rds"
+}
 QNODE  <- 7L
 MU     <- 0
 DTF    <- 12                   # gcd of the observation times
@@ -167,8 +184,8 @@ for (nc in NC_B) {
                 exp(o$par[6]), proc.time()[["elapsed"]] - t0)); flush.console()
 }
 r <- bind_rows(res)
-saveRDS(r, sprintf("_data/decay-law-unit%02d.rds", task))
-cat("\nwrote _data/decay-law-unit", sprintf("%02d", task), ".rds\n", sep = "")
+saveRDS(r, sprintf(OUT, task))
+cat("\nwrote ", sprintf(OUT, task), "\n", sep = "")
 print(as.data.frame(r), digits = 5)
 
 ## Aggregation lives in _scripts/decay-law-read.R, because each task here

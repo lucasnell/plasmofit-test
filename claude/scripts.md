@@ -215,5 +215,17 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   floor), a power bound on what a linear component at the predicted sigma
   could buy, and model A read as a priors-free likelihood profile over
   `n_c`. Output saved as `_data/decay-law-read-<date>.txt`.
+- `_scripts/decay-law-768.sh` — extends model A alone to `n_c` = 768 by
+  setting `DECAY_MODE=a768`, which switches `decay-law-test.R` to model A at
+  768 only and writes `_data/decay-law-a768-unit*.rds`. The finished screen
+  is untouched. The pre-registered reading rule is in the sbatch header.
+- `_scripts/nc-768-read.R` — merges the screen and the extension and applies
+  that rule, reporting the gain at each rung of the `n_c` profile. Guards on
+  exactly 4 model-A rows per unit.
+- `_scripts/wockner-fit-nc-bs400-reseed.sh` — reseed-only retry of **entry
+  39** (`np_bs400_nc192`), the plain config. Entries 41-42 already carry
+  `adapt_delta` 0.95 and `max_treedepth` 12, so they are not reseed-only.
+  Sets `WOCKFIT_SUFFIX=-seed2`, without which the rerun would overwrite the
+  non-converged fit — see `claude/gotchas.md`.
 - `_scripts/decay-law-validate.R` — checks the `cycle_length` mixture really
   produces a linear-in-cycles spread before the test is believed.

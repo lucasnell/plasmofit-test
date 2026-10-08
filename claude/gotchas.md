@@ -349,3 +349,29 @@ the *number* of evaluations, which the factor does not capture. This is the
 same failure mode as the per-leapfrog probe recorded above: a cost model that
 holds the iteration count fixed measures only one of the two terms. **Measure
 the expensive model directly on one unit before sizing an array around it.**
+
+## `wockner-fit.R` output names carry no seed, so a reseed overwrites
+
+The output paths are built from `cfg_name` alone — `wock-fit-<cfg>.rds`,
+`wock-data-`, `wock-fit-LOO-`, `wock-fit-RES-`. `WOCKFIT_SEED` changes the
+sampler and **nothing in the filename**. So rerunning a config with a new seed
+and no suffix silently overwrites the earlier fit, which in a reseed is
+precisely the non-converged run that justifies the rerun.
+
+**Always set `WOCKFIT_SUFFIX` when reseeding.** It appends to `cfg_name`
+before any path is built, so all four outputs land beside the originals.
+
+A related trap caught at the same time. "Reseed-only run of entry 41" is a
+contradiction: entries 39-40 are `np_bs400_nc192`/`_nc384` plain, and **41-42
+are the same configs with `adapt_delta` 0.95 and `max_treedepth` 12 already
+baked in**. Reseeding without other changes means rerunning **39**, not 41.
+Earlier notes said 41 and were wrong. **Check a config's index against its
+contents before submitting** — `wockner-fit.R` is 42 entries and the index is
+the only thing the array range knows about:
+
+```r
+p <- parse("_scripts/wockner-fit.R")
+k <- which(vapply(p, function(e) is.call(e) && identical(e[[1]], as.name("<-")) &&
+                  identical(e[[2]], as.name("CONFIGS")), logical(1)))
+str(eval(p[[k]][[3]])[[39]])
+```

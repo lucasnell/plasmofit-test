@@ -482,6 +482,45 @@ Roughly in priority order.
     optimisers landed within 0.01 of 0.033 and gained +1.449, +0.097, +0.069,
     +0.069, +0.053. A linear component of exactly the predicted size is nearly
     free over 1130 observations.
+    **THE DECIDING RUNG IS RUNNING: SLURM 30524**, submitted 2026-10-08, 14
+    tasks, model A only at `n_c` = 768. `_scripts/decay-law-768.sh`, read with
+    `_scripts/nc-768-read.R`. Mechanism: `_scripts/decay-law-test.R` gained a
+    `DECAY_MODE` env var so the same likelihood code serves both runs and the
+    extension writes to `_data/decay-law-a768-unit*.rds`, leaving the finished
+    screen untouched.
+    **The question it answers, which the decay-law test did not.** In the
+    chain, transit time has mean `cycle_length` and coefficient of variation
+    **`1/√n_c`**, and for a fixed stage count the Erlang is the
+    **minimum-variance** case: minimising Σ1/λᵢ² subject to Σ1/λᵢ = mean puts
+    all rates equal. So `1/√n_c` is a **floor** the family cannot go under, and
+    the IPM question reduces to whether the data's preferred dispersion sits
+    at that floor or below it.
+    - **At the floor** → the coupling is not distorting the fit. Pick `n_c` by
+      elpd; free the stage rates only if dispersion *above* the floor is
+      wanted (non-uniform rates give a hypoexponential, keeps the generator
+      bidiagonal and keeps `mat_exp_series`).
+    - **Below the floor** → the data want transit closer to deterministic than
+      the chain reaches at any affordable `n_c`, the family is fighting them,
+      and an IPM's free dispersion width is justified on evidence.
+    **Pre-registered rule, fixed before submission.** Gains so far are +72.4
+    (96→192) and +10.4 (192→384), ratio 0.14, so geometric decay predicts
+    **+1.5** for 384→768. Plateau if the summed gain is **< +3 and fewer than
+    9/14 units positive**; still climbing if **≥ +8 and ≥ 10/14**; anything
+    between is ambiguous and goes back to biology.
+    **Why the two existing pieces of evidence disagree, and why this settles
+    it.** Bayesian elpd put 192 and 384 tied (−3.2, se 5.0), implying a
+    plateau; the ML profile from 29684 put 384 ahead by +10.4 summed in 10/14
+    units, implying the preference is still drifting. Out-of-sample is the
+    better criterion but it is one comparison with se 5.0. The ML profile is a
+    fairer instrument here than in-sample comparisons usually are, because
+    `n_c` is a fixed structural choice and **every rung has the same parameter
+    count**, so there is no complexity to penalise.
+    **Cost.** One trajectory measured 2026-10-08 at **1.925 s at `n_c` = 384
+    and 14.894 s at 768**, ratio 7.74, consistent with the cubic scaling
+    already recorded. Model A at 384 took 1777 s per unit in 29684, so ~4 h per
+    unit and 2-7 h across units. **Do not extrapolate to a production Stan
+    fit**: at 768 that would be ~540 h, which is why this is the ML screen and
+    not a ladder rung.
     **So this thread is not unblocked by evidence.** The branch that would have
     killed a Gaussian-kernel IPM did not fire; neither did the branch that
     would have endorsed one. An IPM cannot be justified by "the √ law is

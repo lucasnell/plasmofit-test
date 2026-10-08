@@ -8,7 +8,8 @@ reportable yet**. Two live issues block it: the production `n_c` ladder failed
 to converge, and the age-structure model conflates a numerical mesh with a
 biological rate. The decay-law test (SLURM 29684) has read out and **could
 not distinguish the two decay laws**, so the structural fix is now a
-judgement call rather than something the data decide.
+judgement call — with one cheap piece of evidence left, SLURM 30524, which
+tests whether the data want dispersion below the Erlang floor.
 
 ## The question
 
@@ -46,9 +47,9 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 | Workstream | State | Next |
 |---|---|---|
 | Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Nothing. Leans on `wide_bshape`, 6 clean pairs |
-| `n_c` as a biological assumption | **Established** that 96 is wrong: 71.8 elpd under Bayes, and +72.4 log-likelihood units in 14 of 14 units with no priors | Production ladder retry, written and unsubmitted |
-| Decay law (√ vs linear) | **Indecisive**, 29684 complete: at the predicted sigma a linear component buys at most +0.4 log-likelihood units | Nothing further; a rerun cannot create power |
-| Age-structure rewrite (IPM) | **Unblocked but unjustified by evidence** | Needs a judgement call from Lucas, weighed against discarding every existing fit |
+| `n_c` as a biological assumption | **Established** that 96 is wrong: 71.8 elpd under Bayes, and +72.4 log-likelihood units in 14 of 14 units with no priors | Reseed of the ladder running, SLURM 30525 |
+| Decay law (√ vs linear) | **Indecisive**, 29684 complete: at the predicted sigma a linear component buys at most +0.4 log-likelihood units | Closed; a rerun cannot create power |
+| Age-structure rewrite (IPM) | **Gated on SLURM 30524**, the `n_c` = 768 rung: does the preferred dispersion sit at the Erlang floor (`1/√n_c`) or below it? | Read with `_scripts/nc-768-read.R`, rule pre-registered |
 | Hierarchy / model comparison | **Closed** — no robust evidence either way | Nothing unless a design argument changes |
 | Per-individual initial density | **Scoped**, not estimable as a free effect | Blocked on subject weights |
 | Package | Pushed, `8dde0c1`; generated bindings now match the Stan sources | — |
@@ -85,3 +86,5 @@ Append-only. Supersede a line with a new one rather than editing it.
 | 2026-10-07 | Hold all cycle-length numbers until the production `n_c` ladder converges | The failed run leaves open whether the effect survives a pinned `b_shape` |
 | 2026-10-08 | Do not treat the √ decay law as established | 29684 could not distinguish it from linear: at the predicted sigma = 0.033 a linear component buys at most +0.396 and typically +0.0000 log-likelihood units over 1130 observations |
 | 2026-10-08 | A nested model scoring worse counts as optimiser failure, not evidence | B contains A at sigma = 0, so six negative `d_ll` values are impossible as evidence; their worst, 0.521, is the noise floor |
+| 2026-10-08 | Settle the IPM question on the Erlang variance floor, not on the decay law | Transit CV is `1/√n_c` and Erlang is the minimum-variance case at fixed stage count, so the only thing a chain cannot do is go below that floor |
+| 2026-10-08 | Reseed entry 39, not entry 41 | 41-42 already carry `adapt_delta` 0.95 and `max_treedepth` 12, so a reseed-only run means 39; earlier notes said 41 and were wrong |

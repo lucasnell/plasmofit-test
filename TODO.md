@@ -11,41 +11,55 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **Resubmit the production `n_c` ladder.** This is now the only thing
-      standing between the project and a reportable cycle length. 29635 failed
-      (max R-hat 6.13 and 8.34, one chain stuck 96 and 70 lp units below the
-      others). `_scripts/wockner-fit-nc-bs400-retry.sh` is written but **the
-      costing says reseed-only first**: the sampler already saturated
-      `max_treedepth` in 46–61% of transitions, so `adapt_delta` 0.95 plus
-      `max_treedepth` 12 costs 2.5–5× (entry 41 ~21–42 h, entry 42 ~60–120 h,
-      which exceeds the script's 3-day walltime). Reseeding alone targets the
-      observed failure and costs ~9 h at `n_c` = 192.
+- [ ] **`n_c` = 768 extension of the ML profile — SLURM 30524**, 14 tasks,
+      submitted 2026-10-08. **~4 h per unit, 2–7 h across units** (one
+      trajectory measured at 1.925 s at `n_c` = 384 and 14.894 s at 768, ratio
+      7.74, consistent with cubic; model A at 384 took 1777 s per unit in
+      29684). Model A only. **Decides the IPM question**: the chain's transit
+      coefficient of variation is `1/√n_c`, and Erlang is the minimum-variance
+      case for a fixed stage count, so that is a floor the family cannot go
+      under. A plateau means the floor is reachable and no rewrite is
+      justified; still climbing means the family is fighting the data. Read
+      with `_scripts/nc-768-read.R`; the rule is pre-registered in
+      `_scripts/decay-law-768.sh` and in the reader.
+- [ ] **Reseed of the production `n_c` ladder — SLURM 30525**, entry 39
+      (`np_bs400_nc192`), submitted 2026-10-08, **~8.5 h** (29635 entry 39 ran
+      8:20:35). Writes with `WOCKFIT_SUFFIX=-seed2` so it lands beside the
+      failed fit instead of overwriting it. Decides whether the `n_c` effect
+      on `cycle_length` survives a pinned `b_shape`; the deterministic tests
+      predict it persists and grows. **Until it lands, no reported
+      cycle-length number should change.**
 
 ### Next
 
-- [ ] **Decide the `n_c` default** once the above lands. 96 is wrong — by 71.8
+- [ ] **Decide the `n_c` default** once 30525 lands. 96 is wrong — by 71.8
       elpd under the Bayesian comparison and by +72.4 log-likelihood units in
       14 of 14 units under a priors-free maximum-likelihood profile. 192 and
       384 are tied on elpd with `b_shape` free; the ML profile puts 384 ahead
       of 192 by +10.4 summed, in 10 of 14 units.
-- [ ] **Give the desynchronisation rate its own parameter.** The real defect:
-      `n_c` is both the numerical mesh and the biological rate, and raising it
-      to fix the numerics removes a biological process. **The decay-law test
-      did not determine the form** — see below — so the form is now a biology
-      judgement, not something these data settle.
+- [ ] **Give the desynchronisation rate its own parameter**, if 30524 says a
+      rewrite is not justified. Cheapest form that keeps `mat_exp_series` and
+      the `matrix_exp` cross-check: **non-uniform stage rates**
+      (hypoexponential rather than Erlang), which changes the generator's
+      diagonal, not the framework. One parameter frees the transit variance —
+      but only **upward**, since Erlang is the minimum-variance case.
+- [ ] **If a chain sticks again in 30525** at a similar lp gap, the mode is
+      real. Report it as multimodality, show both modes, and move to entry 41
+      (`adapt_delta` 0.95, `max_treedepth` 12,
+      `_scripts/wockner-fit-nc-bs400-retry.sh`) rather than reseeding a third
+      time.
 
 ### Blocked
 
-- [ ] **IPM / transport-with-dispersion rewrite** — **no longer blocked on
-      evidence, because the evidence came back indecisive.** The decay-law test
-      could not distinguish √ from linear: at the predicted sigma = 0.033 a
-      linear component buys at most +0.396 and typically +0.0000
-      log-likelihood units over 1130 observations. So an IPM cannot be
-      justified by "√ is established", and a 1-D Gaussian-kernel IPM would
-      reproduce √ by construction. **Deciding this needs a judgement call from
-      Lucas**, weighed against the cost: discarding the validated Erlang-window
-      series and its `matrix_exp` cross-check, and making every existing fit
-      incomparable.
+- [ ] **IPM / transport-with-dispersion rewrite** — **blocked on SLURM 30524**,
+      which is the last cheap evidence available. The decay-law test could not
+      distinguish √ from linear, so an IPM cannot be justified by appeal to
+      the decay law, and a 1-D Gaussian-kernel IPM would reproduce √ by
+      construction. What 30524 can still establish is whether the data want
+      dispersion **below the Erlang floor**, which is the one thing a chain
+      cannot deliver at any affordable `n_c`. Cost if it goes ahead:
+      discarding the validated Erlang-window series and its `matrix_exp`
+      cross-check, and making every existing fit incomparable.
 
 ### Done
 
