@@ -2,7 +2,7 @@
 
 ## State of play right now — read this first
 
-**Three jobs running**, all submitted 2026-10-08 after 29684 read out.
+**Four jobs running**, all submitted 2026-10-08 after 29684 read out.
 
 ```bash
 cd /home2/lan68/plasmofit/plasmofit-test
@@ -110,6 +110,28 @@ multimodality, show both modes, and move to entry 41 (`adapt_delta` 0.95,
 `max_treedepth` 12, `_scripts/wockner-fit-nc-bs400-retry.sh`, still
 unsubmitted) rather than reseeding a third time. That retry costs 2.5–5×
 because the sampler already saturated treedepth in 46–61% of transitions.
+
+**SLURM 30576 — the dense dispersion profile, 14 tasks, ~5-9 min.** Built on
+the convolution forward map, so it does in minutes what 30527 is spending
+hours on, and much more besides.
+
+```bash
+ls _data/nc-profile-fast-unit*.rds | wc -l            # expect 14
+/programs/R-4.6.1/bin/Rscript --vanilla _scripts/nc-profile-fast-read.R \
+  | tee _data/nc-profile-fast-$(date +%F).txt
+```
+
+It gives the exact chain at **nine** integer rungs (64-1024), the gamma-kernel
+IPM at a **fixed mesh** with **sixteen continuous** `n_eff` (48-4096), and a
+mesh-convergence check at M = 384. The script **stops** if the chain rungs
+disagree with 29684 by more than 0.01 log-likelihood units, so the convolution
+harness cannot drift from `mat_exp_series` unnoticed. Validated before
+submission on unit 1: it reproduced 29684 at `n_c` 96/192/384 to **1e-6**, in
+12 s instead of 1777 s.
+
+**30527 is deliberately not cancelled.** It computes three of the same rungs on
+the production `mat_exp_series` path, so the two keep each other honest. If
+they ever disagree, believe `mat_exp_series` and investigate the convolution.
 
 ## The IPM prototype is built and validated, and it moved the decision
 

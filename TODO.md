@@ -11,6 +11,19 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
+- [ ] **Dense dispersion profile — SLURM 30576**, 14 tasks, submitted
+      2026-10-08, **~5–9 min per unit**. Uses the convolution forward map,
+      which is the same model as `mat_exp_series` to 1e-12 but 148x faster on
+      a whole unit fit (12 s against 1777 s at `n_c` = 384). Gives the exact
+      chain at **nine** integer rungs 64–1024, the gamma-kernel IPM at a fixed
+      mesh with **sixteen continuous** `n_eff`, and a mesh-convergence check.
+      **Stops if the chain rungs disagree with 29684 by more than 0.01**, so
+      the two paths keep each other honest. Read with
+      `_scripts/nc-profile-fast-read.R`; the rule is the one pre-registered in
+      `nc-dispersion-profile-read.R`. This supersedes 30527 on coverage, but
+      30527 is **deliberately not cancelled** because it is the production
+      `mat_exp_series` path and is the cross-check.
+
 - [ ] **`n_c` = 768 extension of the ML profile — SLURM 30524**, 14 tasks,
       submitted 2026-10-08. **~4 h per unit, 2–7 h across units** (one
       trajectory measured at 1.925 s at `n_c` = 384 and 14.894 s at 768, ratio

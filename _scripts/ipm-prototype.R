@@ -34,63 +34,18 @@ suppressPackageStartupMessages(library(plasmofit))
 CL <- 45; BS <- 400; BO <- 0.3; LT0 <- 5.5; RR <- 8; MU <- 0
 TS <- c(72, 96, 120, 144, 168, 192, 216); DTF <- 12
 
-## Weights shared by both forward maps, on a mesh of M cells per cycle.
-## G[k+1] = prod_{j<=k} (1 - q_j) = y[k]/y[1], with G[1] = 1 for k = 0.
-mesh_weights <- function(M, cl = CL, bs = BS, bo = BO, lt0 = LT0) {
-    y <- plasmofit:::make_y_vals(cl, M)
-    w <- plasmofit:::beta_starts(M, bs, bo, 10^lt0)
-    G <- c(1, y / y[1])
-    list(y = y, w = w, G = G, w0 = w * y / G[seq_len(M)])
-}
+## The forward maps live in one place, so this script and the fitting script
+## cannot drift apart. The derivation and its two load-bearing subtleties are
+## documented there.
+source("_scripts/convolution-forward-map.R")
 
-## Given a kernel over non-negative cell offsets, apply the weights. Shared by
-## the chain and the IPM so the ONLY difference between them is the kernel.
-apply_kernel <- function(k, M, wts, R, mu, t) {
-    u0 <- convolve(wts$w0, rev(k), type = "open")
-    u  <- convolve(wts$w,  rev(k), type = "open")
-    j <- seq_along(u); d <- (j - 1) %/% M; p <- (j - 1) %% M + 1
-    g0 <- numeric(length(u)); g0[j <= M] <- wts$G[j[j <= M]]
-    exp(-mu * t) * (sum(u0 * g0) + sum((u * R^d * wts$G[p])[d >= 1]))
-}
-
-## ---- the chain, exactly, as a Poisson convolution -----------------------
-chain_conv <- function(ts, cl = CL, n_c, R = RR, mu = MU, wts = NULL) {
-    if (is.null(wts)) wts <- mesh_weights(n_c, cl)
-    lam <- n_c / cl
-    vapply(ts, function(t) {
-        m <- lam * t; hi <- ceiling(m + 12 * sqrt(m) + 12)
-        apply_kernel(dpois(0:hi, m), n_c, wts, R, mu, t)
-    }, 0)
-}
-
-## ---- the IPM: same structure, continuous kernel, dispersion FREE --------
-## Two kernels, both taking the mesh M and the dispersion separately, which is
-## the entire point. The chain is the special case M = n_c with the kernel's
-## variance matched to L*t/n_c.
-##   gaussian - sigma_c is the sd in hours of the age advance after ONE cycle.
-##   gamma    - n_eff plays the role of n_c but is CONTINUOUS. Gamma(shape =
-##              n_eff*t/cl, scale = cl/n_eff) has the chain's mean and
-##              variance and keeps its right skew.
-ipm_gauss <- function(ts, cl = CL, M, sigma_c, R = RR, mu = MU, wts = NULL) {
-    if (is.null(wts)) wts <- mesh_weights(M, cl)
-    h <- cl / M
-    vapply(ts, function(t) {
-        sd_a <- sigma_c * sqrt(t / cl)
-        hi <- ceiling((t + 12 * sd_a) / h) + 12
-        k <- dnorm(seq.int(0, hi) * h, mean = t, sd = sd_a) * h
-        apply_kernel(k / sum(k), M, wts, R, mu, t)
-    }, 0)
-}
-ipm_gamma <- function(ts, cl = CL, M, n_eff, R = RR, mu = MU, wts = NULL) {
-    if (is.null(wts)) wts <- mesh_weights(M, cl)
-    h <- cl / M
-    vapply(ts, function(t) {
-        hi <- ceiling((t + 12 * sqrt(cl * t / n_eff)) / h) + 12
-        e <- (seq.int(0, hi + 1) - 0.5) * h; e[1] <- 0
-        k <- diff(pgamma(e, shape = n_eff * t / cl, scale = cl / n_eff))
-        apply_kernel(k / sum(k), M, wts, R, mu, t)
-    }, 0)
-}
+mesh_weights <- function(M, cl = CL) cfm_weights(M, cl, BS, BO, LT0)
+chain_conv <- function(ts, cl = CL, n_c, R = RR, mu = MU)
+    cfm_chain(ts, cl, n_c, R, mu, BS, BO, LT0)
+ipm_gauss <- function(ts, cl = CL, M, sigma_c, R = RR, mu = MU)
+    cfm_gauss(ts, cl, M, sigma_c, R, mu, BS, BO, LT0)
+ipm_gamma <- function(ts, cl = CL, M, n_eff, R = RR, mu = MU)
+    cfm_gamma(ts, cl, M, n_eff, R, mu, BS, BO, LT0)
 
 ## The likelihood is normal on log10(y + 1), so discrepancies are measured in
 ## log10 units, not as relative error. A relative error is dominated by the
@@ -175,10 +130,10 @@ cat("Cells: seconds for one 7-point trajectory, median of 5 runs.\n",
 tm <- function(f, n = 5) median(replicate(n, system.time(f())[["elapsed"]]))
 for (n_c in c(96L, 192L, 384L)) {
     y0 <- plasmofit:::generate_starts(CL, n_c, BS, BO, LT0)
-    wts <- mesh_weights(n_c)
+
     a <- tm(function() plasmofit:::mat_exp_series(y0, CL, n_c, RR, MU, TS, DTF))
-    b <- tm(function() chain_conv(TS, n_c = n_c, wts = wts))
-    cc <- tm(function() ipm_gamma(TS, M = n_c, n_eff = n_c, wts = wts))
+    b <- tm(function() chain_conv(TS, n_c = n_c))
+    cc <- tm(function() ipm_gamma(TS, M = n_c, n_eff = n_c))
     cat(sprintf("  n_c = %3d : mat_exp %7.4f | poisson-conv %7.4f | ipm-gamma %7.4f | speedup %5.0fx\n",
                 n_c, a, b, cc, a / cc))
 }

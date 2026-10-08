@@ -75,9 +75,9 @@ Cells: seconds for one 7-point trajectory, median of 5 runs.
 mat_exp_series exponentiates a 2*n_c square matrix, which is cubic; the
 convolutions are one FFT pair per time point.
 
-  n_c =  96 : mat_exp  0.0150 | poisson-conv  0.0060 | ipm-gamma  0.0070 | speedup     2x
-  n_c = 192 : mat_exp  0.1540 | poisson-conv  0.0090 | ipm-gamma  0.0110 | speedup    14x
-  n_c = 384 : mat_exp  1.1790 | poisson-conv  0.0280 | ipm-gamma  0.0310 | speedup    38x
+  n_c =  96 : mat_exp  0.0160 | poisson-conv  0.0060 | ipm-gamma  0.0070 | speedup     2x
+  n_c = 192 : mat_exp  0.1550 | poisson-conv  0.0090 | ipm-gamma  0.0110 | speedup    14x
+  n_c = 384 : mat_exp  1.1930 | poisson-conv  0.0280 | ipm-gamma  0.0310 | speedup    38x
 
 The speedup is available WITHOUT any rewrite: the Poisson convolution is
 the same model as mat_exp_series, agreeing to 1e-12, and it is the column

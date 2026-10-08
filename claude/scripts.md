@@ -246,3 +246,19 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   at `n_c` = 384. Also measures where a continuous kernel departs from the
   chain's lattice Poisson, which is the troughs. Output
   `_data/ipm-prototype-<date>.txt`, tracked.
+- `_scripts/convolution-forward-map.R` — the chain and its continuous
+  relaxations as convolutions in absolute developmental age. **Sourced**, not
+  duplicated, by `ipm-prototype.R` and `nc-profile-fast.R`, so there is one
+  implementation. `cfm_chain` is the exact chain (integer `n_c`, equals
+  `mat_exp_series` to 1e-12); `cfm_gamma` is the chain with **continuous**
+  `n_eff` at an independent mesh; `cfm_gauss` drops the skew.
+- `_scripts/nc-profile-fast.R` / `.sh` — the dispersion profile, densely: the
+  exact chain at nine integer rungs 64–1024, the gamma IPM at a fixed mesh of
+  192 with sixteen continuous `n_eff` from 48 to 4096, and a mesh-convergence
+  check at M = 384. **Stops** if the chain rungs disagree with SLURM 29684's
+  saved log-likelihoods by more than 0.01, so the convolution harness cannot
+  drift from `mat_exp_series` unnoticed.
+- `_scripts/nc-profile-fast-read.R` — applies the rule pre-registered in
+  `nc-dispersion-profile-read.R` to both profiles, reports the mesh check, and
+  gives the `cycle_length` spread across the 2-log-likelihood interval, which
+  is the honest uncertainty from this assumption alone.
