@@ -3138,6 +3138,69 @@ A factor of 25. A coarse mesh with the fine dispersion dialled in is close to
 the fine chain; the coarse chain is not. That is the design argument's one
 empirical claim, and it holds.
 
+### SLURM 30576: the profiles are not readable, and why
+
+`_scripts/nc-profile-fast.R`, output `_data/nc-profile-fast-2026-10-08.txt`
+(tracked). All 14 tasks COMPLETED, 17–38 min each, 392 fits, 393.5
+CPU-minutes. **Every unit's built-in regression check passed at 1e−11 or
+better** against SLURM 29684's saved log-likelihoods, so the convolution
+forward map is sound and this is not a forward-map problem.
+
+**The profiles are rougher than the rule that reads them.** A profile
+likelihood in a smooth parameter is smooth, so deviation from a smooth fit is
+a lower bound on the optimiser's error. Cells are the maximum over rungs of
+|pooled `ll` − loess fit in log(knot)|, in log-likelihood units, against the
+**2-unit** currency the pre-registered rule is written in.
+
+| profile | rungs | max deviation | sd |
+|---|---|---|---|
+| exact chain | 9 | 2.39 | 1.48 |
+| gamma IPM, mesh fixed at 192 | 16 | **7.17** | 3.66 |
+
+The reader now measures this first and returns **NO VERDICT** above 2 units.
+Both profiles trip it. **No conclusion about the dispersion is drawn from this
+run.**
+
+**Three causes, only one of them noise.**
+
+1. **A bound in the screen, not noise.** `b_shape` hit the 5000 cap in 13–14
+   of 14 units at every rung with `n_eff` ≤ 157, and in 2 of 14 up to 382.
+   Those rungs report a **lower bound** on `ll`, not a maximum. The finding
+   behind it is real and worth keeping: **at coarse dispersion the fit wants
+   more initial synchrony than the screen allows.** It does not threaten the
+   location of the optimum, which sits ~100 units above that arm in the
+   bound-free region.
+2. **Optimiser noise, about 2.3 units.** An interior dip at `n_eff` 691.7 and
+   930.4 (first differences −1.30, −1.01) that recovers by +5.01 at 1251.4,
+   with no unit at the bound.
+3. **One unit's optimiser failure, worth 11.29 units.** The pooled profile
+   dropped 11.10 units at the finest rung, `n_eff` = 4096, which looked like a
+   turnover. `_scripts/profile-noise-check.R` refitted that rung with eight
+   starts instead of two: **DSM265|1800 alone gained +11.29**, accounting for
+   the entire pooled drop.
+
+**A correction, and the reason it is instructive.** The mesh-convergence check
+refitted `n_eff` = 4096 at a mesh twice as fine and shifted it by only 0.50,
+which reads as confirmation that the drop was real rather than a
+discretisation artefact. It is not. **Both meshes ran the same Nelder-Mead
+harness from the same two starts**, so both inherited the same failure.
+Agreement between two instances of one optimiser is not independent
+confirmation of anything. Recorded in `claude/gotchas.md`.
+
+**What the run does establish**, none of it about the dispersion:
+
+- The convolution harness reproduces `mat_exp_series` through a full
+  optimisation, not merely on a single trajectory: 1e−11 or better on all 14
+  units at `n_c` 96, 192 and 384.
+- The screen's `b_shape` cap of 5000 binds at coarse dispersion.
+- Two starts are not enough at fine rungs, where the likelihood surface is
+  harder. The cost of eight is affordable now and was not before.
+
+**A bug of mine, fixed.** `NE_CHECK` in `nc-profile-fast.R` was not drawn from
+`NE_IPM`, so two of three mesh comparisons paired against nothing and the
+reader crashed on `NA`. Only the comparison at `n_eff` = 4096 was valid — and
+that is the one the correction above shows was misleading anyway.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

@@ -1,0 +1,18 @@
+Cells: ll is the maximised profile log-likelihood for ONE unit at one
+n_eff, gamma kernel, mesh 192. ll2 uses the two starts the production
+script uses; ll8 adds six more. gain = ll8 - ll2, and can only be >= 0.
+Any gain near or above the 2-unit currency means the production profile
+is under-optimised at that rung.
+
+  ACT451840|1800       n_eff   930.4  ll2  -31.2620  ll8  -31.2620  gain +0.0000  (74 s)
+  ACT451840|1800       n_eff  2264.0  ll2  -31.3720  ll8  -31.2570  gain +0.1150  (62 s)
+  ACT451840|1800       n_eff  4096.0  ll2  -31.2537  ll8  -31.2537  gain +0.0000  (51 s)
+  DSM265|1800          n_eff   930.4  ll2  -26.8188  ll8  -26.4113  gain +0.4075  (101 s)
+  DSM265|1800          n_eff  2264.0  ll2  -26.3317  ll8  -26.3317  gain +0.0000  (93 s)
+  DSM265|1800          n_eff  4096.0  ll2  -37.5098  ll8  -26.2234  gain +11.2864  (66 s)
+
+max gain 11.286 | mean gain 1.968 | rungs with gain > 1 ll unit: 1 of 6
+UNDER-OPTIMISED. The production profile understates ll at these rungs,
+so its shape is partly an artefact of where the optimiser stopped.
+Re-run nc-profile-fast.R with the larger start list before reading any
+verdict from it.

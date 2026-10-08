@@ -11,47 +11,18 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **Dense dispersion profile — SLURM 30576**, 14 tasks, submitted
-      2026-10-08. **~30 min per unit, ~45 min for the slowest** (measured, not
-      the ~5-9 min first estimated: cost is SUPER-LINEAR in `n_c` because the
-      optimiser takes more iterations at the fine rungs, 9 s at `n_c` = 128
-      against 237 s at 1024). Uses the convolution forward map,
-      which is the same model as `mat_exp_series` to 1e-12 but 148x faster on
-      a whole unit fit (12 s against 1777 s at `n_c` = 384). Gives the exact
-      chain at **nine** integer rungs 64–1024, the gamma-kernel IPM at a fixed
-      mesh with **sixteen continuous** `n_eff`, and a mesh-convergence check.
-      **Stops if the chain rungs disagree with 29684 by more than 0.01**, so
-      the two paths keep each other honest. Read with
-      `_scripts/nc-profile-fast-read.R`; the rule is the one pre-registered in
-      `nc-dispersion-profile-read.R`. This supersedes 30527 on coverage, but
-      30527 is **deliberately not cancelled** because it is the production
-      `mat_exp_series` path and is the cross-check.
-
-- [ ] **`n_c` = 768 extension of the ML profile — SLURM 30524**, 14 tasks,
-      submitted 2026-10-08. **~4 h per unit, 2–7 h across units** (one
-      trajectory measured at 1.925 s at `n_c` = 384 and 14.894 s at 768, ratio
-      7.74, consistent with cubic; model A at 384 took 1777 s per unit in
-      29684). Model A only. **Decides the IPM question**: the chain's transit
-      coefficient of variation is `1/√n_c`, and Erlang is the minimum-variance
-      case for a fixed stage count, so that is a floor the family cannot go
-      under. A plateau means the floor is reachable and no rewrite is
-      justified; still climbing means the family is fighting the data. Read
-      with `_scripts/nc-768-read.R`; the rule is pre-registered in
-      `_scripts/decay-law-768.sh` and in the reader.
-- [ ] **Dispersion-magnitude profile — SLURM 30527**, 14 tasks, submitted
-      2026-10-08, **~1.3 h per unit, 1–3 h across units**. Model A at `n_c` =
-      128, 256, 512, filling the gaps between 96/192/384 (29684) and 768
-      (30524). **Transit CV is `1/√n_c`**, so profiling the maximised
-      log-likelihood over `n_c` with `b_shape` free at every rung *is* a
-      profile likelihood in the dispersion magnitude with the initial-spread
-      nuisance concentrated out — the identifiability question asked with code
-      already validated. Also records the fitted `b_shape` and `cycle_length`
-      at every rung, which the earlier output dropped, so the
-      `b_shape`/dispersion trade-off can be read directly. Read with
-      `_scripts/nc-dispersion-profile-read.R`; rule pre-registered in the
-      reader. **The prerequisite named in `claude/ipm-decision.md`**: if the
-      profile saturates, an IPM returns `sigma_d` against zero rather than a
-      rate, which argues *against* building one.
+- [ ] **Re-run the dense dispersion profile.** 30576 completed and its
+      forward map checked out at 1e-11, but **both profiles are rougher than
+      the 2-log-likelihood rule that reads them** (2.39 chain, 7.17 gamma
+      IPM), so the reader returns NO VERDICT. Measured cause: two optimiser
+      starts are not enough at fine rungs -- refitting `n_eff` = 4096 with
+      eight starts gained **+11.29 on DSM265|1800 alone**, which is the whole
+      of the 11.10 pooled drop that had looked like a turnover. A re-run needs
+      **eight starts** and the **`b_shape` cap raised or removed** (it binds
+      at 5000 in 13-14 of 14 units for `n_eff` <= 157, so the coarse arm is a
+      lower bound, not a maximum). ~2 h. **Raising the cap is a choice with
+      content**: production pins `b_shape` at 400 with `max_shape` 1000, so a
+      screen reaching 5000 is already outside the production range.
 - [ ] **Reseed of the production `n_c` ladder — SLURM 30525**, entry 39
       (`np_bs400_nc192`), submitted 2026-10-08, **~8.5 h** (29635 entry 39 ran
       8:20:35). Writes with `WOCKFIT_SUFFIX=-seed2` so it lands beside the

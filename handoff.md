@@ -125,28 +125,40 @@ multimodality, show both modes, and move to entry 41 (`adapt_delta` 0.95,
 unsubmitted) rather than reseeding a third time. That retry costs 2.5–5×
 because the sampler already saturated treedepth in 46–61% of transitions.
 
-**SLURM 30576 — the dense dispersion profile, 14 tasks, ~30-45 min.** Built on
-the convolution forward map, so it does in minutes what 30527 is spending
-hours on, and much more besides.
+**SLURM 30576 — FINISHED AND READ, and the answer is NO VERDICT.** All 14
+tasks COMPLETED, 17-38 min each, 392 fits. Every unit's regression check
+against 29684 passed at **1e-11 or better**, so the convolution forward map is
+sound. But both profiles are **rougher than the 2-log-likelihood currency the
+reading rule is written in** -- 2.39 for the chain, 7.17 for the gamma IPM --
+so the reader refuses a verdict and **nothing about the dispersion is
+concluded**. Output `_data/nc-profile-fast-2026-10-08.txt`, full account in
+`claude/findings.md`, "SLURM 30576: the profiles are not readable, and why".
 
-```bash
-ls _data/nc-profile-fast-unit*.rds | wc -l            # expect 14
-/programs/R-4.6.1/bin/Rscript --vanilla _scripts/nc-profile-fast-read.R \
-  | tee _data/nc-profile-fast-$(date +%F).txt
-```
+**The near-miss worth carrying.** The pooled gamma profile dropped 11.10 units
+at its finest rung, which reads as a turnover -- the branch that would make
+dispersion a measured quantity and be the strongest case for an IPM. It was
+**one unit's optimiser failure**: `_scripts/profile-noise-check.R` refit that
+rung with eight starts instead of two and `DSM265|1800` alone gained **+11.29**.
+The mesh-convergence check had moved it by only 0.50, which looked like
+confirmation -- but both meshes ran the same optimiser from the same starts.
+**A resolution check cannot detect optimiser error.** In `gotchas.md`.
 
-It gives the exact chain at **nine** integer rungs (64-1024), the gamma-kernel
-IPM at a **fixed mesh** with **sixteen continuous** `n_eff` (48-4096), and a
-mesh-convergence check at M = 384. The script **stops** if the chain rungs
-disagree with 29684 by more than 0.01 log-likelihood units, so the convolution
-harness cannot drift from `mat_exp_series` unnoticed. Validated before
-submission on unit 1: it reproduced 29684 at `n_c` 96/192/384 to **1e-6**, in
-12 s instead of 1777 s.
+**A re-run needs two changes**, both affordable now and neither affordable
+before the convolution:
 
-**30527 is deliberately not cancelled.** It computes three of the same rungs on
-the production `mat_exp_series` path, so the two keep each other honest. If
-they ever disagree, believe `mat_exp_series` and investigate the convolution.
+1. **Eight starts rather than two** -- measured as necessary, not assumed.
+2. **The `b_shape` cap raised or removed** -- it binds at 5000 in 13-14 of 14
+   units at every rung with `n_eff` <= 157, so the coarse arm of both profiles
+   reports a lower bound rather than a maximum. **This is a choice with
+   content**: production pins `b_shape` at 400 with `max_shape` 1000, so a
+   screen reaching 5000 is already outside the production range and raising it
+   further moves the screen further from the model it informs. Decide before
+   re-running.
 
+**30527 and 30524 are still running and still worth having.** They compute
+some of the same rungs on the production `mat_exp_series` path. Note they use
+the SAME two-start harness, so they will carry the same optimiser weakness --
+read them for agreement on the forward map, not as a check on the optimiser.
 ## The IPM prototype is built and validated, and it moved the decision
 
 `_scripts/ipm-prototype.R`, output `_data/ipm-prototype-2026-10-08.txt`

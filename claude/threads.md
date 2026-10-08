@@ -591,6 +591,31 @@ Roughly in priority order.
     `nc-profile-fast.R` additionally STOPS if its own chain rungs disagree with
     29684 by more than 0.01 log-likelihood units. If the two paths ever
     disagree, believe `mat_exp_series` and investigate the convolution.
+    **30576 READ 2026-10-08: NO VERDICT.** All 14 tasks COMPLETED and every
+    regression check against 29684 passed at 1e-11 or better, so the
+    convolution forward map is sound -- but both profiles are ROUGHER than the
+    2-log-likelihood currency the reading rule is written in: 2.39 for the
+    chain and 7.17 for the gamma IPM. The reader now measures that first and
+    refuses a verdict above 2 units. Numbers and the three-way decomposition
+    are in `findings.md`, "SLURM 30576: the profiles are not readable, and
+    why"; output `_data/nc-profile-fast-2026-10-08.txt`.
+    The decisive diagnostic was `_scripts/profile-noise-check.R`: refitting the
+    finest rung with eight starts instead of two, **DSM265|1800 alone gained
+    +11.29 log-likelihood units**, which is the whole of the 11.10 pooled drop
+    that had looked like a turnover.
+    **The mesh check could never have caught it**, and that is the lesson: it
+    refit the same rung at a mesh twice as fine, shifting it by 0.50, which
+    reads as confirmation -- but both meshes ran the same Nelder-Mead harness
+    from the same two starts and inherited the same failure. A resolution check
+    detects discretisation error only. Recorded in `gotchas.md`.
+    **A real finding survives**: `b_shape` hit the screen's 5000 cap in 13-14
+    of 14 units at every rung with `n_eff` <= 157. At coarse dispersion the fit
+    wants more initial synchrony than the screen allows, so those rungs report
+    a LOWER BOUND on `ll`. It does not move the optimum, which sits ~100 units
+    above that arm in the bound-free region, but it does mean the left arm of
+    both profiles is constrained.
+    **What a re-run needs**: eight starts rather than two, and the `b_shape`
+    cap raised or removed. Both are affordable now and were not before.
     **PROTOTYPE BUILT AND VALIDATED 2026-10-08**, `_scripts/ipm-prototype.R`,
     output `_data/ipm-prototype-2026-10-08.txt`, full write-up in
     `claude/ipm-decision.md`. Three results.

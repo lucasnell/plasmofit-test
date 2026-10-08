@@ -29,7 +29,22 @@ cat("units read:", n_distinct(r$unit), "of 14 |", nrow(r), "fits |",
 bad <- r |> count(unit, name = "rows") |> filter(rows != max(rows))
 if (nrow(bad) > 0) { print(as.data.frame(bad)); stop("units above have the wrong row count") }
 
+## A profile likelihood in a smooth parameter should be SMOOTH, so deviation
+## from a smooth fit measures how far the optimiser stopped short. This has to
+## be checked BEFORE any verdict, because the rule works in 2-log-likelihood
+## units and under-optimisation of that size would invent or erase a turnover.
+## Learned the hard way twice now: the decay-law test (29684) had the same
+## problem, where six nested models scored worse than models they contain.
+roughness <- function(pool, knot_name) {
+    k <- pool[[knot_name]]
+    if (length(k) < 6) return(NA_real_)
+    r <- pool$ll - predict(loess(ll ~ log(k), data = data.frame(ll = pool$ll, k = k),
+                                 span = 0.75, degree = 2))
+    max(abs(r))
+}
+
 verdict <- function(pool, label, knot_name) {
+    rough <- roughness(pool, knot_name)
     best <- pool[[knot_name]][which.max(pool$ll)]
     grid <- pool[[knot_name]]
     within <- grid[pool$ll - max(pool$ll) > -2]
@@ -40,6 +55,17 @@ verdict <- function(pool, label, knot_name) {
     cat(sprintf("best %s = %g | 2-unit interval {%g, %g} | span %.1f | top-rung gain %+.2f\n",
                 knot_name, best, min(within), max(within),
                 max(pool$ll) - min(pool$ll), top_gain))
+    cat(sprintf("roughness (max |deviation from a smooth profile|) = %.2f ll units\n", rough))
+    if (!is.na(rough) && rough > 2) {
+        cat("NO VERDICT. The profile is rougher than the 2-log-likelihood\n",
+            "currency the rule is written in, so the interval above is not\n",
+            "trustworthy and a turnover could be invented or erased by where\n",
+            "the optimiser stopped. Under-optimisation can only push ll DOWN,\n",
+            "so rungs with large negative residuals are the suspects. Refit\n",
+            "with more starts (see _scripts/profile-noise-check.R) and re-read.\n",
+            sep = "")
+        return(invisible(NULL))
+    }
     if (max(pool$ll) - min(pool$ll) < 2) {
         cat("FLAT: the magnitude is not determined. Neither fix helps.\n")
     } else if (bracketed) {
@@ -92,8 +118,17 @@ C <- r |> filter(model %in% c("ipm_gamma", "ipm_gamma_meshcheck")) |>
     pivot_wider(names_from = M, values_from = ll, names_prefix = "M") |>
     filter(!is.na(M384)) |> mutate(shift = M384 - M192)
 print(as.data.frame(C), digits = 6)
-cat(sprintf("\nmax |mesh shift| = %.2f log-likelihood units\n", max(abs(C$shift))))
-if (max(abs(C$shift)) > 2)
+valid <- C[!is.na(C$shift), , drop = FALSE]
+if (nrow(valid) == 0) {
+    cat("\nNo rung was run at BOTH meshes, so the mesh check is empty. The\n",
+        "n_eff values in NE_CHECK must be drawn from NE_IPM for the two to\n",
+        "pair up; they were not. Fix and re-run before trusting section B.\n",
+        sep = "")
+} else {
+    cat(sprintf("\nmax |mesh shift| = %.2f ll units over %d rung(s) run at both meshes\n",
+                max(abs(valid$shift)), nrow(valid)))
+}
+if (nrow(valid) > 0 && max(abs(valid$shift)) > 2)
     cat("WARNING: larger than the 2-unit currency. Treat section B as mesh-dependent.\n")
 
 cat("\n\n=== D. the cycle_length that comes with each rung ===\n")

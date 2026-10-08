@@ -345,3 +345,36 @@ rung disagrees with 29684 by more than 0.01 log-likelihood units.
 `_scripts/nc-dispersion-profile-read.R` before any of this existed: turns over
 / saturates / still climbing / flat, judged on whether the 2-log-likelihood
 interval is bounded in the fine direction.
+
+## 30576 read, 2026-10-08: no verdict, and what a re-run needs
+
+The job completed cleanly and its forward map checked out — every unit matched
+SLURM 29684 to 1e−11 or better — but **both profiles are rougher than the
+2-log-likelihood currency the reading rule uses** (2.39 for the chain, 7.17
+for the gamma IPM), so the reader returns NO VERDICT and **nothing here
+changes the decision above**. Full numbers in `claude/findings.md`.
+
+The thing to carry forward is *why*, because it nearly produced a wrong
+answer. The pooled gamma profile dropped 11.10 units at its finest rung, which
+reads as a turnover — the branch that would have made dispersion a measured
+quantity and been the strongest case for building an IPM. It was **one unit's
+optimiser failure**: refitting with eight starts instead of two,
+`DSM265|1800` alone gained +11.29.
+
+The mesh-convergence check refit that rung at twice the mesh and moved it by
+0.50, which looked like confirmation. It was not: both meshes ran the same
+optimiser from the same starts. **A resolution check cannot detect optimiser
+error.**
+
+So the identifiability question — does an IPM return a rate or a boundary
+value — is still open, and a re-run needs two changes, both affordable now and
+neither affordable before the convolution:
+
+1. **Eight starts rather than two.** Measured as necessary, not assumed.
+2. **The `b_shape` cap raised or removed.** It binds at 5000 in 13–14 of 14
+   units at every rung with `n_eff` ≤ 157, so the whole coarse arm of both
+   profiles reports a lower bound rather than a maximum. Note this is a choice
+   with content: the production Stan model pins `b_shape` at 400 with
+   `max_shape` 1000, so a screen that lets it reach 5000 is already outside the
+   production range, and raising it further moves the screen further from the
+   model it is meant to inform.

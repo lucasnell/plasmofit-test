@@ -394,3 +394,49 @@ k <- which(vapply(p, function(e) is.call(e) && identical(e[[1]], as.name("<-")) 
                   identical(e[[2]], as.name("CONFIGS")), logical(1)))
 str(eval(p[[k]][[3]])[[39]])
 ```
+
+## Two runs of the same optimiser agreeing is not independent confirmation
+
+SLURM 30576's gamma-IPM profile dropped 11.10 log-likelihood units at its
+finest rung, `n_eff` = 4096. The mesh-convergence check refitted that rung at
+a mesh twice as fine and shifted it by only 0.50, which looked like
+confirmation that the drop was a real feature of the likelihood rather than a
+discretisation artefact. It was not. **Both meshes ran the same Nelder-Mead
+harness from the same two starts**, so both inherited the same failure.
+`_scripts/profile-noise-check.R` refitted that rung with eight starts and one
+unit, DSM265|1800, gained **+11.29** — the whole pooled drop, from one unit.
+
+The mesh check was testing the right thing and could never have found this,
+because the thing it varies is not the thing that failed. **A resolution
+check only detects discretisation error; it cannot detect optimiser error, and
+agreement between two instances of the same optimiser says nothing about
+either.** Vary the optimiser as well: more starts, a different method, or a
+warm start from a neighbouring rung.
+
+## Read a profile likelihood for SMOOTHNESS before reading its shape
+
+A profile likelihood in a smooth parameter is smooth, so any wiggle is a lower
+bound on the optimiser's error. Measure it before applying any rule that works
+in log-likelihood units, because under-optimisation can only push `ll` DOWN
+and so can both **invent** a turnover (by depressing a neighbouring rung) and
+**erase** one (by depressing the peak).
+
+`_scripts/nc-profile-fast-read.R` now computes the maximum deviation from a
+loess fit in log(knot) and returns **NO VERDICT** when that exceeds the
+2-log-likelihood currency its rule is written in. On 30576 it was 2.39 for the
+chain and 7.17 for the gamma IPM, so neither profile was readable.
+
+Three distinct causes were separated, and only one was noise:
+
+1. **A bound, not noise.** `b_shape` hit the screen's 5000 cap in 13-14 of 14
+   units at every rung with `n_eff` <= 157. Those rungs report a LOWER BOUND
+   on `ll`, not a maximum. At coarse dispersion the fit wants more initial
+   synchrony than the screen allows.
+2. **Optimiser noise**, about 2.3 units: an interior dip that recovers, with
+   no unit at the bound.
+3. **One unit's optimiser failure** worth 11.29 units, which the pooled sum
+   presented as a feature of the curve.
+
+Note that loess residuals at the two END rungs are unreliable, so judge the
+interior by whether the first differences reverse sign where the profile
+should be monotone.

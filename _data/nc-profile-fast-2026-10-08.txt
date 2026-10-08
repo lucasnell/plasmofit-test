@@ -1,0 +1,114 @@
+units read: 14 of 14 | 392 fits | 393.5 CPU-minutes total
+
+=== A. the exact chain, nine integer rungs ===
+Cells: ll is the SUM over the 14 grp_init units of the maximised profile
+log-likelihood with b_shape free and the observation sd profiled out;
+units are independent so the sum is the joint log-likelihood over all
+1130 observations. cv = 1/sqrt(n_c) is the implied transit coefficient of
+variation. Every rung has the same parameter count. No priors.
+
+   n_c      ll cl_bar   bs_med       cv     d_max
+1   64 -920.14 45.855 4999.406 0.125000 -149.1087
+2   96 -856.13 43.590 4999.975 0.102062  -85.0970
+3  128 -816.70 42.401 4999.984 0.088388  -45.6639
+4  192 -783.71 41.428 4998.765 0.072169  -12.6747
+5  256 -776.25 40.935   54.667 0.062500   -5.2215
+6  384 -773.35 40.960   23.265 0.051031   -2.3186
+7  512 -772.13 41.146   13.520 0.044194   -1.0996
+8  768 -775.37 42.029   10.927 0.036084   -4.3406
+9 1024 -771.03 41.665   10.341 0.031250    0.0000
+
+-- chain --
+best n_c = 1024 | 2-unit interval {512, 1024} | span 149.1 | top-rung gain +4.34
+roughness (max |deviation from a smooth profile|) = 2.39 ll units
+NO VERDICT. The profile is rougher than the 2-log-likelihood
+currency the rule is written in, so the interval above is not
+trustworthy and a turnover could be invented or erased by where
+the optimiser stopped. Under-optimisation can only push ll DOWN,
+so rungs with large negative residuals are the suspects. Refit
+with more starts (see _scripts/profile-noise-check.R) and re-read.
+
+
+=== B. the gamma IPM: mesh FIXED at 192, n_eff continuous ===
+Cells: as above, but the mesh is held fixed and n_eff -- the chain's
+dispersion parameter, made continuous -- is varied. This is the forward
+map an IPM would use. If the chain profile and this one disagree about
+where the optimum is, the chain's answer was partly a mesh effect.
+
+     n_eff      ll cl_bar    bs_med       cv      d_max
+1    48.00 -970.43 48.421 4999.9803 0.144338 -202.70816
+2    64.56 -924.49 46.139 4999.9779 0.124457 -156.76728
+3    86.84 -876.49 44.283 4999.9648 0.107310 -108.76618
+4   116.81 -831.36 42.766 4999.9899 0.092525  -63.64206
+5   157.11 -798.03 41.713 4999.9737 0.079781  -30.30800
+6   211.32 -780.56 41.257 2387.0915 0.068791  -12.84557
+7   284.24 -776.35 41.221   41.3036 0.059314   -8.63460
+8   382.32 -772.50 41.138   21.0546 0.051143   -4.77914
+9   514.25 -772.11 41.159   13.6846 0.044097   -4.39112
+10  691.69 -773.41 41.823   11.5140 0.038023   -5.69160
+11  930.37 -774.42 42.043   10.4695 0.032785   -6.69846
+12 1251.40 -769.40 41.284   10.0840 0.028268   -1.68394
+13 1683.20 -768.84 41.462    9.7109 0.024374   -1.11879
+14 2264.01 -767.72 41.125    9.3252 0.021017    0.00000
+15 3045.22 -768.02 41.504    9.2497 0.018121   -0.29947
+16 4096.00 -779.12 42.303    8.9757 0.015625  -11.39760
+
+-- gamma IPM at fixed mesh --
+best n_eff = 2264.01 | 2-unit interval {1251.4, 3045.22} | span 202.7 | top-rung gain -11.10
+roughness (max |deviation from a smooth profile|) = 7.17 ll units
+NO VERDICT. The profile is rougher than the 2-log-likelihood
+currency the rule is written in, so the interval above is not
+trustworthy and a turnover could be invented or erased by where
+the optimiser stopped. Under-optimisation can only push ll DOWN,
+so rungs with large negative residuals are the suspects. Refit
+with more starts (see _scripts/profile-noise-check.R) and re-read.
+
+
+=== C. is the fixed mesh fine enough? ===
+Cells: the same n_eff fitted at mesh 192 and at mesh 384, summed over
+units. A large shift would mean the rows above are mesh artefacts rather
+than results. Judge against the 2-log-likelihood currency used throughout.
+
+  n_eff     M192     M384     shift
+1    96       NA -860.168        NA
+2   384       NA -773.191        NA
+3  4096 -779.117 -779.614 -0.497346
+
+max |mesh shift| = 0.50 ll units over 1 rung(s) run at both meshes
+
+
+=== D. the cycle_length that comes with each rung ===
+Cells: mean over the 14 units of the fitted cycle_length in hours, and
+the median fitted b_shape, at each rung of both profiles. This is the
+quantity the project is actually trying to report, so its spread across
+the 2-log-likelihood interval is the honest uncertainty from this
+assumption alone.
+
+chain      : cycle_length over the 2-unit interval = 41.15 to 41.66 h (spread 0.52)
+ipm_gamma  : cycle_length over the 2-unit interval = 41.12 to 41.50 h (spread 0.38)
+       model    knot      ll cl_bar    bs_med
+1      chain   64.00 -920.14 45.855 4999.4060
+2      chain   96.00 -856.13 43.590 4999.9748
+3      chain  128.00 -816.70 42.401 4999.9836
+4      chain  192.00 -783.71 41.428 4998.7649
+5      chain  256.00 -776.25 40.935   54.6671
+6      chain  384.00 -773.35 40.960   23.2653
+7      chain  512.00 -772.13 41.146   13.5198
+8      chain  768.00 -775.37 42.029   10.9274
+9      chain 1024.00 -771.03 41.665   10.3414
+10 ipm_gamma   48.00 -970.43 48.421 4999.9803
+11 ipm_gamma   64.56 -924.49 46.139 4999.9779
+12 ipm_gamma   86.84 -876.49 44.283 4999.9648
+13 ipm_gamma  116.81 -831.36 42.766 4999.9899
+14 ipm_gamma  157.11 -798.03 41.713 4999.9737
+15 ipm_gamma  211.32 -780.56 41.257 2387.0915
+16 ipm_gamma  284.24 -776.35 41.221   41.3036
+17 ipm_gamma  382.32 -772.50 41.138   21.0546
+18 ipm_gamma  514.25 -772.11 41.159   13.6846
+19 ipm_gamma  691.69 -773.41 41.823   11.5140
+20 ipm_gamma  930.37 -774.42 42.043   10.4695
+21 ipm_gamma 1251.40 -769.40 41.284   10.0840
+22 ipm_gamma 1683.20 -768.84 41.462    9.7109
+23 ipm_gamma 2264.01 -767.72 41.125    9.3252
+24 ipm_gamma 3045.22 -768.02 41.504    9.2497
+25 ipm_gamma 4096.00 -779.12 42.303    8.9757
