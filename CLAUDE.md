@@ -41,6 +41,40 @@ claude/references.md, not as authorship. -->
 - **Cluster, SLURM.** R is at `/programs/R-4.6.1/bin/Rscript`; the user library
   is only on the login-shell path, so run `bash -lc 'Rscript ...'` or the full
   path. Jobs are array scripts in `_scripts/*.sh`, output to `_data/`.
+- **Never take more than half the node.** `cbsugreischar` is a single shared
+  node: **256 CPUs and 1,031,340 MB**, so the budget is **128 CPUs and 515,670
+  MB**. It is shared with other people's work — at the time of writing 250 of
+  the 256 CPUs and 800 G were allocated to someone else — and the rule is
+  about our own footprint, not about what happens to be free.
+  **If a job, or our jobs taken together, would exceed either half, throttle
+  the array**: write `#SBATCH --array=1-N%M`, where `N` is the number of
+  array tasks and `M` is how many may run at once:
+
+  ```
+  M = floor( min( 128 / cpus-per-task , 515670 / mem-per-task-in-MiB ) )
+  ```
+
+  `%M` caps **simultaneously running** tasks, not the total, so all `N` still
+  run — just fewer at a time. `M` for the profiles this project uses:
+
+  | `--cpus-per-task` | `--mem` | CPU cap | memory cap | **M** |
+  |---|---|---|---|---|
+  | 1 | 8G | 128 | 62 | **62** |
+  | 1 | 16G | 128 | 31 | **31** |
+  | 4 | 16G | 32 | 31 | **31** |
+  | 4 | 24G | 32 | 20 | **20** |
+  | 4 | 48G | 32 | 10 | **10** |
+
+  No script in `_scripts/` currently needs a throttle — the largest array is
+  `wockner-schedule-sim-batch.sh` at 16 tasks × 4 CPUs × 16G = 64 CPUs and
+  262,144 MB, half the budget on memory and half on CPUs. **But the rule binds
+  on the aggregate of everything of ours running at once**, so check `squeue
+  -u lan68` before submitting a second array: that script plus a 14-task 16G
+  array would come to 504,832 MB, inside the limit by 2%.
+  Re-derive the node figures with `sinfo -N -o "%N %c %m"` rather than trusting
+  these if anything looks off. **Disk is not a node resource here** — `/home2`
+  is shared Lustre (755 T, 201 T free) and `--array` throttling does not
+  govern it; `_data/` is 5.2 GB and is the thing to watch.
 - **Never edit a script while a job is reading it.** This has already produced
   one silently invalid result (group factor levels reordered mid-run). Check
   `squeue` first.

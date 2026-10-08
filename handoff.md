@@ -24,6 +24,13 @@ should change.** That is the single most important standing constraint.
 
 Neither script may be edited while its job runs.
 
+**Both jobs are inside the half-node budget**, checked 2026-10-08 against the
+rule now in `CLAUDE.md`: 30524 is 14 x 1 CPU x 16G and 30525 is 4 CPUs x 24G,
+so together **18 of 128 CPUs and 253,952 of 515,670 MB** — 49% of the memory
+budget. Neither needs an `--array=1-N%M` throttle. Both are `PD (Priority)`
+because someone else holds 250 of the node's 256 CPUs, which is a queueing
+fact, not a budget violation.
+
 ### What 30524 decides, and the rule for reading it
 
 **The full case for and against is already written**, in
