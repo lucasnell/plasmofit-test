@@ -189,3 +189,25 @@ doing real work. **Check that before building**, with the same cheap ML
 machinery: profile `sigma_d` with `b_shape` free and see whether the profile
 has curvature. If it does not, B delivers a parameter the data cannot
 estimate, and the honest outcome is C with a clear caveat.
+
+**That check is running: SLURM 30527**, submitted 2026-10-08.
+`_scripts/decay-law-profile.sh` adds `n_c` = 128, 256, 512 so the profile has
+seven rungs spanning a transit CV of 0.102 down to 0.036, and
+`_scripts/nc-dispersion-profile-read.R` reads it. It also records the fitted
+`b_shape` at every rung, which the earlier output dropped, so the
+`b_shape`/dispersion trade-off — the actual confound — can be read directly.
+
+The rule was refined before any new rung existed, because a dry run on the
+three rungs already on disk showed the first draft asked the wrong question.
+It tested for an **interior maximum**, and a profile that saturates toward an
+asymptote never has one. What matters is whether the 2-log-likelihood interval
+is **bounded in the fine direction** — whether the data exclude zero
+dispersion.
+
+**Note which way saturation cuts.** If the profile saturates, the data put an
+upper bound on dispersion and **no lower bound**, so an IPM would return
+`sigma_d` pressed against zero with an interval touching it — a boundary
+estimate, not a rate. That argues **against** building one, the opposite of
+what the structural argument alone suggests. On the three rungs already on
+disk the reader says *still climbing*: the top rung still buys +10.36
+log-likelihood units, which is why both 30524 and 30527 exist.

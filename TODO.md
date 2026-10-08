@@ -22,6 +22,20 @@ match where a thread exists. This file is the actionable layer. -->
       justified; still climbing means the family is fighting the data. Read
       with `_scripts/nc-768-read.R`; the rule is pre-registered in
       `_scripts/decay-law-768.sh` and in the reader.
+- [ ] **Dispersion-magnitude profile — SLURM 30527**, 14 tasks, submitted
+      2026-10-08, **~1.3 h per unit, 1–3 h across units**. Model A at `n_c` =
+      128, 256, 512, filling the gaps between 96/192/384 (29684) and 768
+      (30524). **Transit CV is `1/√n_c`**, so profiling the maximised
+      log-likelihood over `n_c` with `b_shape` free at every rung *is* a
+      profile likelihood in the dispersion magnitude with the initial-spread
+      nuisance concentrated out — the identifiability question asked with code
+      already validated. Also records the fitted `b_shape` and `cycle_length`
+      at every rung, which the earlier output dropped, so the
+      `b_shape`/dispersion trade-off can be read directly. Read with
+      `_scripts/nc-dispersion-profile-read.R`; rule pre-registered in the
+      reader. **The prerequisite named in `claude/ipm-decision.md`**: if the
+      profile saturates, an IPM returns `sigma_d` against zero rather than a
+      rate, which argues *against* building one.
 - [ ] **Reseed of the production `n_c` ladder — SLURM 30525**, entry 39
       (`np_bs400_nc192`), submitted 2026-10-08, **~8.5 h** (29635 entry 39 ran
       8:20:35). Writes with `WOCKFIT_SUFFIX=-seed2` so it lands beside the

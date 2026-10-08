@@ -222,6 +222,14 @@ Papers bearing on thread 2, kept here so a search is not repeated.
 - `_scripts/nc-768-read.R` — merges the screen and the extension and applies
   that rule, reporting the gain at each rung of the `n_c` profile. Guards on
   exactly 4 model-A rows per unit.
+- `_scripts/decay-law-profile.sh` — `DECAY_MODE=profile`, model A at `n_c` =
+  128, 256, 512, writing `_data/decay-law-prof-unit*.rds`. Fills the gaps so
+  the `n_c` profile shows curvature rather than just an ordering.
+- `_scripts/nc-dispersion-profile-read.R` — pools model A across every rung
+  on disk and reads it as a profile likelihood in the dispersion magnitude,
+  since transit CV is `1/√n_c` and `b_shape` is free at every rung. Reports
+  the `b_shape`/dispersion trade-off and applies a pre-registered rule with
+  four branches: turns over, saturates, still climbing, flat.
 - `_scripts/wockner-fit-nc-bs400-reseed.sh` — reseed-only retry of **entry
   39** (`np_bs400_nc192`), the plain config. Entries 41-42 already carry
   `adapt_delta` 0.95 and `max_treedepth` 12, so they are not reseed-only.

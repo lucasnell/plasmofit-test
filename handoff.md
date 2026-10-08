@@ -2,7 +2,7 @@
 
 ## State of play right now — read this first
 
-**Two jobs running**, both submitted 2026-10-08 after 29684 read out.
+**Three jobs running**, all submitted 2026-10-08 after 29684 read out.
 
 ```bash
 cd /home2/lan68/plasmofit/plasmofit-test
@@ -17,19 +17,36 @@ ls _data/decay-law-a768-unit*.rds | wc -l          # expect 14
 /programs/R-4.6.1/bin/Rscript --vanilla _scripts/nc-768-read.R
 ```
 
+**SLURM 30527 — the dispersion-magnitude profile, 14 tasks, ~1-3 h.** Model A
+at `n_c` = 128, 256, 512, filling the gaps so the profile shows curvature.
+Transit CV is `1/√n_c` and `b_shape` is free at every rung, so this is a
+profile likelihood in the dispersion with the initial-spread nuisance
+concentrated out. Answers whether an IPM would deliver a *rate* or a boundary
+value — see `claude/ipm-decision.md`.
+
+```bash
+ls _data/decay-law-prof-unit*.rds | wc -l            # expect 14
+/programs/R-4.6.1/bin/Rscript --vanilla _scripts/nc-dispersion-profile-read.R \
+  | tee _data/nc-dispersion-profile-$(date +%F).txt
+```
+
+That reader needs **every** rung present for **every** unit and refuses
+otherwise, so run it after both 30524 and 30527 have finished, not between.
+
 **SLURM 30525 — reseed of the production `n_c` ladder, entry 39, ~8.5 h.**
 Writes with `WOCKFIT_SUFFIX=-seed2`, so it lands beside the failed fit rather
 than overwriting it. **Until this lands, no reported cycle-length number
 should change.** That is the single most important standing constraint.
 
-Neither script may be edited while its job runs.
+No script any of them reads may be edited while its job runs.
 
-**Both jobs are inside the half-node budget**, checked 2026-10-08 against the
-rule now in `CLAUDE.md`: 30524 is 14 x 1 CPU x 16G and 30525 is 4 CPUs x 24G,
-so together **18 of 128 CPUs and 253,952 of 515,670 MB** — 49% of the memory
-budget. Neither needs an `--array=1-N%M` throttle. Both are `PD (Priority)`
-because someone else holds 250 of the node's 256 CPUs, which is a queueing
-fact, not a budget violation.
+**All three jobs are inside the half-node budget**, checked 2026-10-08 against
+the rule now in `CLAUDE.md`: 30524 is 14 x 1 CPU x 16G, 30527 is 14 x 1 CPU x
+8G, and 30525 is 4 CPUs x 24G, so together **32 of 128 CPUs and 368,640 of
+515,670 MB** — 25% of the CPU budget and 71% of the memory budget. None needs
+an `--array=1-N%M` throttle. All are `PD (Priority)` because someone else
+holds 250 of the node's 256 CPUs, which is a queueing fact, not a budget
+violation.
 
 ### What 30524 decides, and the rule for reading it
 

@@ -60,16 +60,26 @@ gauss_hermite <- function(n) {
 ## is still gaining as the mesh refines -- model B is irrelevant to that and
 ## costs 7x.
 MODE <- Sys.getenv("DECAY_MODE", "full")
-if (!MODE %in% c("full", "a768")) stop("DECAY_MODE must be full or a768")
+if (!MODE %in% c("full", "a768", "profile")) stop("DECAY_MODE must be full, a768 or profile")
 
 if (MODE == "full") {
     NC_A <- c(96L, 192L, 384L)  # model A: the sqrt law, slope set by n_c
     NC_B <- c(192L, 384L)       # model B: sigma adds a linear component
     OUT  <- "_data/decay-law-unit%02d.rds"
-} else {
+} else if (MODE == "a768") {
     NC_A <- 768L
     NC_B <- integer(0)
     OUT  <- "_data/decay-law-a768-unit%02d.rds"
+} else if (MODE == "profile") {
+    ## Intermediate rungs, so the n_c profile has enough points to show
+    ## CURVATURE rather than just an ordering. n_c maps exactly to dispersion
+    ## -- transit CV is 1/sqrt(n_c) -- so profiling over n_c with b_shape free
+    ## at every rung IS a profile likelihood in the dispersion magnitude with
+    ## the initial-spread nuisance concentrated out. Staying inside the sqrt
+    ## family costs nothing, because 29684 showed the form is not learnable.
+    NC_A <- c(128L, 256L, 512L)
+    NC_B <- integer(0)
+    OUT  <- "_data/decay-law-prof-unit%02d.rds"
 }
 QNODE  <- 7L
 MU     <- 0
@@ -170,7 +180,8 @@ for (nc in NC_A) {
     t0 <- proc.time()[["elapsed"]]
     o <- fit_unit(ut, idx, yo, nc, FALSE)
     res[[length(res) + 1]] <- tibble(unit = u, model = "A_sqrt",
-        n_c = nc, sigma = 0, npar = 6, ll = -o$value, n = length(yo))
+        n_c = nc, sigma = 0, npar = 6, ll = -o$value, n = length(yo),
+        cl_hat = 35 + 15 / (1 + exp(-o$par[1])), bs_hat = exp(o$par[2]))
     cat(sprintf("  A n_c=%3d ll %+.3f (%.0f s)\n", nc, -o$value,
                 proc.time()[["elapsed"]] - t0)); flush.console()
 }
@@ -179,7 +190,8 @@ for (nc in NC_B) {
     o <- fit_unit(ut, idx, yo, nc, TRUE)
     res[[length(res) + 1]] <- tibble(unit = u, model = "B_linear",
         n_c = nc, sigma = exp(o$par[6]), npar = 6, ll = -o$value,
-        n = length(yo))
+        n = length(yo),
+        cl_hat = 35 + 15 / (1 + exp(-o$par[1])), bs_hat = exp(o$par[2]))
     cat(sprintf("  B n_c=%3d ll %+.3f sigma %.4f (%.0f s)\n", nc, -o$value,
                 exp(o$par[6]), proc.time()[["elapsed"]] - t0)); flush.console()
 }
