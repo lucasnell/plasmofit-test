@@ -321,3 +321,35 @@ decisions), `PROJECT_INDEX.md` (status, workstreams, decision log), `TODO.md`
 (results, every table's cells defined), `gotchas.md` (**read before running
 anything**), `scripts.md`, `threads.md` (long-form behind `TODO.md`), and
 `references.md`.
+
+## The eight-start re-run: SLURM 30641
+
+Submitted 2026-10-08, 14 tasks, **~70–150 min**, walltime 12 h.
+`_scripts/nc-profile-fast-s8.sh`.
+
+```bash
+ls _data/nc-profile-fast-unit*-s8.rds | wc -l          # expect 14
+/programs/R-4.6.1/bin/Rscript --vanilla _scripts/nc-profile-fast-read.R \
+  | tee _data/nc-profile-fast-$(date +%F).txt
+```
+
+**It changes one thing**: eight optimiser starts instead of two, which was
+measured as necessary and not assumed. It also fixes `NE_CHECK`, which was not
+drawn from `NE_IPM`, so two of three mesh comparisons had paired against
+nothing. **The `b_shape` cap stays at 5000** — raising it is a separate
+modelling choice, not a bug fix, and bundling it in would have confounded the
+two.
+
+**Nothing is overwritten.** `NCPF_TAG=-s8` writes beside the two-start
+results, which stay as the baseline, and `nc-profile-fast.R` now refuses to
+write over an existing output unless `NCPF_FORCE` is set. The reader prefers
+the eight-start set when both are present and reports **what the extra six
+starts bought, per rung** — that difference is a direct measurement of how far
+the two-start optimiser was stopping short, and is worth reading even if the
+verdict still comes back NO VERDICT.
+
+**If it still trips the roughness gate**, do not reach for more starts a third
+time. The next suspects, in order: the `b_shape` cap on the coarse arm, then
+Nelder-Mead itself (try a gradient-free method with restarts, or warm-start
+each rung from its neighbour, which exploits the fact that a profile should be
+smooth).

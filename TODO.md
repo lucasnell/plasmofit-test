@@ -11,18 +11,31 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **Re-run the dense dispersion profile.** 30576 completed and its
+- [ ] **Eight-start re-run of the dispersion profile — SLURM 30641**,
+      submitted 2026-10-08, **~70-150 min** (30576 ran 17-38 min with two
+      starts and each start is an independent `optim()` call, so ~4x;
+      walltime 12 h, the measured worst case times three). Writes with
+      `NCPF_TAG=-s8` so the two-start results survive — their difference is
+      the measurement of how far the optimiser was stopping short, and the
+      reader reports it. Also fixes `NE_CHECK`, which was not drawn from
+      `NE_IPM` so two of three mesh comparisons paired against nothing.
+      **The `b_shape` cap stays at 5000**, deliberately, so this run changes
+      one thing. Why 30576 could not be read: its
       forward map checked out at 1e-11, but **both profiles are rougher than
       the 2-log-likelihood rule that reads them** (2.39 chain, 7.17 gamma
       IPM), so the reader returns NO VERDICT. Measured cause: two optimiser
       starts are not enough at fine rungs -- refitting `n_eff` = 4096 with
       eight starts gained **+11.29 on DSM265|1800 alone**, which is the whole
-      of the 11.10 pooled drop that had looked like a turnover. A re-run needs
-      **eight starts** and the **`b_shape` cap raised or removed** (it binds
-      at 5000 in 13-14 of 14 units for `n_eff` <= 157, so the coarse arm is a
-      lower bound, not a maximum). ~2 h. **Raising the cap is a choice with
-      content**: production pins `b_shape` at 400 with `max_shape` 1000, so a
-      screen reaching 5000 is already outside the production range.
+      of the 11.10 pooled drop that had looked like a turnover.
+- [ ] **Decide whether to raise the `b_shape` cap**, which 30641 does NOT
+      change. It binds at 5000 in 13-14 of 14 units at every rung with
+      `n_eff` <= 157, so the coarse arm of both profiles reports a lower
+      bound rather than a maximum. **This is a modelling choice, not a bug
+      fix**: production pins `b_shape` at 400 with `max_shape` 1000, so a
+      screen reaching 5000 is already outside the production range and
+      raising it further moves the screen further from the model it informs.
+      It does not move the optimum, which sits ~100 ll units above that arm
+      in the bound-free region, so this is about the left arm only.
 - [ ] **Reseed of the production `n_c` ladder — SLURM 30525**, entry 39
       (`np_bs400_nc192`), submitted 2026-10-08, **~8.5 h** (29635 entry 39 ran
       8:20:35). Writes with `WOCKFIT_SUFFIX=-seed2` so it lands beside the

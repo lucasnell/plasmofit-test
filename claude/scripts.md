@@ -262,3 +262,15 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   `nc-dispersion-profile-read.R` to both profiles, reports the mesh check, and
   gives the `cycle_length` spread across the 2-log-likelihood interval, which
   is the honest uncertainty from this assumption alone.
+- `_scripts/profile-noise-check.R` — refits a few rungs of the dispersion
+  profile with eight optimiser starts instead of two and reports what that
+  buys. Built after SLURM 30576's profiles came back rougher than the rule
+  that reads them; it found **+11.29 log-likelihood units on one unit at one
+  rung**, which was the whole of a pooled drop that had looked like a
+  turnover. Output `_data/profile-noise-check-<date>.txt`, tracked.
+- `_scripts/nc-profile-fast-s8.sh` — the eight-start re-run of
+  `nc-profile-fast.R`, via `NCPF_STARTS=8` and `NCPF_TAG=-s8`. The tag makes
+  it land **beside** the two-start results rather than destroying them,
+  because the difference between the two is the measurement of how far the
+  optimiser was stopping short. `nc-profile-fast.R` also **refuses to
+  overwrite** an existing output unless `NCPF_FORCE` is set.

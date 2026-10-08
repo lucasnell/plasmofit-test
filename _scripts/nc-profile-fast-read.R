@@ -21,11 +21,43 @@
 
 suppressPackageStartupMessages({library(dplyr); library(tidyr)})
 
-f <- list.files("_data", "^nc-profile-fast-unit[0-9]+[.]rds$", full.names = TRUE)
-if (length(f) == 0) stop("no nc-profile-fast-unit*.rds in _data/ -- job unfinished")
-r <- bind_rows(lapply(f, readRDS))
-cat("units read:", n_distinct(r$unit), "of 14 |", nrow(r), "fits |",
-    sprintf("%.1f", sum(r$secs) / 60), "CPU-minutes total\n")
+## Two runs may be on disk: the original two-start run (untagged) and the
+## eight-start re-run (-s8). The eight-start set is the one to read, because
+## more starts can only raise a maximised log-likelihood. The DIFFERENCE
+## between them is a direct measurement of how far the two-start optimiser
+## stopped short, which is worth reporting in its own right.
+read_set <- function(pat) {
+    fs <- list.files("_data", pat, full.names = TRUE)
+    if (length(fs) == 0) return(NULL)
+    bind_rows(lapply(fs, readRDS))
+}
+r2 <- read_set("^nc-profile-fast-unit[0-9]+[.]rds$")
+r8 <- read_set("^nc-profile-fast-unit[0-9]+-s8[.]rds$")
+if (is.null(r2) && is.null(r8)) stop("no nc-profile-fast-unit*.rds in _data/")
+r <- if (!is.null(r8)) r8 else r2
+which_set <- if (!is.null(r8)) "eight starts" else "two starts"
+cat("reading the", which_set, "run |", n_distinct(r$unit), "of 14 units |",
+    nrow(r), "fits |", sprintf("%.1f", sum(r$secs)/60), "CPU-minutes\n")
+if (!is.null(r8) && !is.null(r2) && n_distinct(r8$unit) == n_distinct(r2$unit)) {
+    cmp <- inner_join(r2 |> select(unit, model, knot, ll2 = ll),
+                      r8 |> select(unit, model, knot, ll8 = ll),
+                      by = c("unit", "model", "knot")) |>
+           mutate(gain = ll8 - ll2)
+    g <- cmp |> group_by(model, knot) |>
+         summarise(pooled_gain = sum(gain), worst_unit = max(gain), .groups = "drop") |>
+         arrange(desc(pooled_gain))
+    cat("\n=== what the extra six starts bought ===\n")
+    cat("Cells: pooled_gain is the sum over units of (eight-start ll minus\n",
+        "two-start ll) at that rung, which can only be >= 0; worst_unit is the\n",
+        "largest single-unit gain there. Anything near the 2-unit currency means\n",
+        "the two-start profile was shaped by where the optimiser stopped.\n\n", sep = "")
+    print(as.data.frame(head(g, 10)), digits = 4)
+    cat(sprintf("\ntotal gain over all rungs: %.1f ll units | rungs gaining > 2: %d of %d\n",
+                sum(cmp$gain), sum(g$pooled_gain > 2), nrow(g)))
+    if (any(cmp$gain < -1e-6))
+        cat("WARNING:", sum(cmp$gain < -1e-6), "cells went DOWN with more starts,",
+            "which is impossible and means the two sets are not comparable.\n")
+}
 bad <- r |> count(unit, name = "rows") |> filter(rows != max(rows))
 if (nrow(bad) > 0) { print(as.data.frame(bad)); stop("units above have the wrong row count") }
 

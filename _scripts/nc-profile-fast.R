@@ -32,9 +32,47 @@ NC_CHAIN <- c(64L, 96L, 128L, 192L, 256L, 384L, 512L, 768L, 1024L)
 M_IPM    <- 192L                       # mesh held FIXED, which is the point
 NE_IPM   <- round(exp(seq(log(48), log(4096), length.out = 16)), 2)
 M_CHECK  <- 384L                       # mesh-convergence check
-NE_CHECK <- c(96, 384, 4096)
+## MUST be values that appear in NE_IPM, or the reader pairs them against
+## nothing and reports NA. They were not, in the 2026-10-08 run; fixed here.
+## Chosen at the fine end, because that is where the verdict is decided.
+NE_CHECK <- c(514.25, 2264.01, 4096.00)
 MU       <- 0
 TOL      <- 0.01                       # log-likelihood units
+
+## Start count, 2026-10-08. Two starts were MEASURED to be too few at fine
+## rungs: _scripts/profile-noise-check.R refit n_eff = 4096 with eight and
+## DSM265|1800 alone gained +11.29 log-likelihood units, which was the whole
+## of the pooled drop that had looked like a turnover. The first two entries
+## are the original pair, so NCPF_STARTS=2 reproduces the earlier run exactly.
+STARTS_ALL <- list(
+    c( 0.0, log(15),   0.25, 1.0, log(5.5)),
+    c( 0.5, log(60),   0.60, 0.5, log(8)),
+    c(-0.5, log(8),    0.05, 2.0, log(3)),
+    c( 0.9, log(300),  0.85, 0.0, log(15)),
+    c( 0.2, log(1500), 0.40, 1.5, log(6)),
+    c(-0.2, log(40),   0.70, 0.8, log(10)),
+    c( 0.7, log(5),    0.15, 1.2, log(20)),
+    c( 0.0, log(900),  0.95, 0.3, log(4)))
+N_STARTS <- as.integer(Sys.getenv("NCPF_STARTS", "2"))
+if (is.na(N_STARTS) || N_STARTS < 1 || N_STARTS > length(STARTS_ALL))
+    stop("NCPF_STARTS must be 1-", length(STARTS_ALL))
+STARTS <- STARTS_ALL[seq_len(N_STARTS)]
+
+## NCPF_TAG appends to the output name so a re-run lands BESIDE the earlier
+## one instead of destroying the thing it is being compared against.
+TAG <- Sys.getenv("NCPF_TAG", "")
+OUT <- sprintf("_data/nc-profile-fast-unit%%02d%s.rds", TAG)
+cat("starts:", N_STARTS, "| output:", sprintf(OUT, 0), "\n")
+
+## Refuse to destroy an earlier run. The untagged name is the 2026-10-08
+## two-start run, which is the baseline every later run is compared against,
+## and the default TAG is empty so that NCPF_STARTS=2 can reproduce it. Those
+## two facts together make an accidental overwrite easy, so it is blocked.
+check_out <- function(path) {
+    if (file.exists(path) && !nzchar(Sys.getenv("NCPF_FORCE")))
+        stop(path, " already exists. Set NCPF_TAG to write beside it, or ",
+             "NCPF_FORCE=1 to overwrite deliberately.")
+}
 
 d <- read_csv("_data/wockner-cleaned.csv", col_types = "cccdcdd") |>
     mutate(unit = paste(trial, inoc_size, sep = "|"))
@@ -53,6 +91,7 @@ ut  <- sort(unique(du$time)); idx <- match(du$time, ut)
 stopifnot(!is.unsorted(ut, strictly = TRUE), !anyNA(idx))
 cat("unit", task, "of", length(units), ":", u, "|", nrow(du), "observations,",
     length(ut), "distinct times\n"); flush.console()
+check_out(sprintf(OUT, task))
 
 ## Same parameterisation and same profiled normal likelihood on log10(y + 1)
 ## as _scripts/decay-law-test.R, so the numbers are comparable to 29684.
@@ -68,8 +107,6 @@ nll <- function(par, fwd) {
     if (!is.finite(s2) || s2 <= 0) return(1e10)
     0.5 * n * (log(2 * pi * s2) + 1)
 }
-STARTS <- list(c(0, log(15), 0.25, 1, log(5.5)),
-               c(0.5, log(60), 0.6, 0.5, log(8)))
 fit1 <- function(fwd) {
     best <- NULL
     for (s0 in STARTS) {
@@ -130,5 +167,5 @@ if (file.exists(old)) {
     cat("NOTE: no", old, "to check against; regression check skipped.\n")
 }
 
-saveRDS(r, sprintf("_data/nc-profile-fast-unit%02d.rds", task))
-cat("\nwrote _data/nc-profile-fast-unit", sprintf("%02d", task), ".rds\n", sep = "")
+saveRDS(r, sprintf(OUT, task))
+cat("\nwrote ", sprintf(OUT, task), "\n", sep = "")
