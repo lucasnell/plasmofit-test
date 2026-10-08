@@ -3041,6 +3041,103 @@ What it does rule out is a prior artefact. Nothing in model A has a prior, so
 the conclusion that **`n_c` = 96 is structurally wrong** no longer depends on
 any part of the Bayesian specification.
 
+### The exact chain is a convolution, and it runs 38x faster
+
+`_scripts/ipm-prototype.R`, output `_data/ipm-prototype-2026-10-08.txt`
+(tracked). The forward maps live in `_scripts/convolution-forward-map.R` and
+are sourced rather than duplicated. Design reasoning in
+`claude/ipm-decision.md`.
+
+Work in **absolute** developmental age rather than age modulo the cycle, and
+the model's structure collapses:
+
+- **Transport** is a pure-birth process. A parasite's absolute stage after
+  time `t` is its starting stage plus Poisson(`lambda * t`), with
+  `lambda = n_c / cycle_length`. No wrap, no boundary condition.
+- **Growth** is a weight, not a flux: a parasite at absolute stage `j` has
+  divided `d = floor((j-1)/n_c)` times, so it carries `R^d`.
+- **Sequestration** is a weight too, because circulating status is a function
+  of position within the cycle and **resets at division** — the ODE sends both
+  `N[n_c]` and `S[n_c]` into `N[1]`.
+
+So the whole trajectory is a convolution evaluated once per observation time.
+
+Cells below are the maximum over the 7 observation times of
+|convolution − `mat_exp_series`| / `mat_exp_series`, at `cycle_length` 45,
+`b_shape` 400, `R` 8, `mu` 0; and seconds for one 7-point trajectory, median
+of 5 runs.
+
+| `n_c` | max rel err | `mat_exp_series` | convolution | speedup |
+|---|---|---|---|---|
+| 96 | 4.1e−12 | 0.015 s | 0.006 s | 2x |
+| 192 | 1.0e−12 | 0.154 s | 0.009 s | 14x |
+| 384 | 8.3e−13 | 1.179 s | 0.028 s | 38x |
+
+The agreement is the same order as the package's own `matrix_exp`
+cross-check. This is a **reimplementation from the ODE's structure, not a
+refactor**, so it is a second independent check of the forward map. On a whole
+unit fit the gain is larger still — **12 s against 1777 s at `n_c` = 384**,
+148x, because the matrix build dominates at high `n_c` — and it reproduces
+SLURM 29684's maximised log-likelihoods at `n_c` 96/192/384 to **1e−6**.
+
+**Two subtleties, both found by validating rather than by reading the source,
+and either of which a fresh implementation would plausibly get wrong in
+silence.** The chain applies the sequestration hazard with a **one-stage lag**
+— the transition from stage `k−1` to `k` uses `q[k−1]`, the O(1/`n_c`) delay
+the Stan source documents — so the circulating fraction is `G[k−1]` and not
+`y[k]`; using `y[k]` costs 12% at the first observation. And parasites in
+their **first cycle** have not been reset, so their weight depends on where
+they started; it is separable, so it costs one extra convolution. My first two
+weightings were both wrong and only the third reached 1e−12.
+
+**What this changes.** The speedup is the *same model*, so it needs no rewrite
+and invalidates no fit. Cost is therefore no longer a reason to replace the
+age structure, which leaves only the decoupling argument.
+
+### A continuous kernel is not a reparameterisation of the chain
+
+Same script. Cells are the maximum over the 7 times of
+|log10(IPM) − log10(chain)|, in log10 units — the scale the likelihood works
+on — at mesh `M` = `n_c` with the kernel's variance matched to the chain's.
+For scale, the residual sd of these ML fits is about **0.48** log10 units.
+
+| `n_c` | gaussian kernel | gamma kernel |
+|---|---|---|
+| 96 | 0.0135 | 0.0120 |
+| 192 | 0.0331 | 0.0310 |
+| 384 | 0.0623 | 0.0595 |
+
+The chain's stage at time `t` is exactly **Poisson, a lattice distribution**,
+and any continuous kernel differs from it in the tails.
+
+**The gap grows with `n_c`, and skew is not the cause.** A gamma kernel —
+`Gamma(shape = n_eff*t/cl, scale = cl/n_eff)`, which is the chain with
+*continuous* `n_c` — preserves the right skew exactly and lands within 0.003
+of a gaussian. The cause is the **troughs**: sequestration hides ~60% of the
+population, so the observable spans four orders of magnitude across the cycle
+(trough/peak = 7e−6 at `n_c` = 384), and at a trough the value is set by the
+**tail** of the age distribution. At `n_c` = 384 the entire 0.0595 sits at
+**one** time, t = 72 h; the other six agree to 0.006 or better.
+
+Troughs are also where **low-end censoring** is an open question, so this is
+the one place where the kernel choice and a known data issue coincide. Any IPM
+fit must be compared with the chain **at the troughs**, not on an average.
+
+### The mesh and the dispersion rate do separate
+
+Cells are the maximum over the 7 times of |log10 difference| from the chain at
+`n_c` = 384, the dispersion the data prefer.
+
+| forward map | difference |
+|---|---|
+| chain at `n_c` = 96 — mesh and rate locked together | **1.589** |
+| gamma IPM, mesh M = 96, `n_eff` = 384 | 0.064 |
+| gamma IPM, mesh M = 192, `n_eff` = 384 | 0.061 |
+
+A factor of 25. A coarse mesh with the fine dispersion dialled in is close to
+the fine chain; the coarse chain is not. That is the design argument's one
+empirical claim, and it holds.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

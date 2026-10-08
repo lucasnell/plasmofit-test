@@ -8,9 +8,10 @@ reportable yet**. Two live issues block it: the production `n_c` ladder failed
 to converge, and the age-structure model conflates a numerical mesh with a
 biological rate. The decay-law test (SLURM 29684) has read out and **could
 not distinguish the two decay laws**, so the structural fix is now a
-judgement call — with two cheap pieces of evidence left: SLURM 30524 tests
-whether the data want dispersion below the Erlang floor, and SLURM 30527
-profiles whether that dispersion is identified at all.
+judgement call. Four jobs are running on it, and a validated prototype has
+already moved it: the exact chain turns out to be a convolution, 38x faster
+at `n_c` = 384 with no rewrite, so cost is no longer a reason to replace the
+age structure and only the decoupling argument remains.
 
 ## The question
 
@@ -50,7 +51,8 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 | Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Nothing. Leans on `wide_bshape`, 6 clean pairs |
 | `n_c` as a biological assumption | **Established** that 96 is wrong: 71.8 elpd under Bayes, and +72.4 log-likelihood units in 14 of 14 units with no priors | Reseed of the ladder running, SLURM 30525 |
 | Decay law (√ vs linear) | **Indecisive**, 29684 complete: at the predicted sigma a linear component buys at most +0.4 log-likelihood units | Closed; a rerun cannot create power |
-| Age-structure rewrite (IPM) | **Gated on SLURM 30524 and 30527**: is the preferred dispersion below the Erlang floor (`1/√n_c`), and is it identified or pressed to a boundary? | Readers and rules pre-registered; case written in `claude/ipm-decision.md` |
+| Age-structure rewrite (IPM) | **Gated on 30524, 30527 and 30576**: is the preferred dispersion below the Erlang floor, and is it identified or at a boundary? Prototype validated to 1e-12 | Case and prototype findings in `claude/ipm-decision.md` |
+| Forward-map speedup | **Available now, independent of the IPM decision**: the convolution is the same model to 1e-12 and 148x faster on a unit fit | Decide whether to port it into the package (`TODO.md`) |
 | Hierarchy / model comparison | **Closed** — no robust evidence either way | Nothing unless a design argument changes |
 | Per-individual initial density | **Scoped**, not estimable as a free effect | Blocked on subject weights |
 | Package | Pushed, `8dde0c1`; generated bindings now match the Stan sources | — |
@@ -94,3 +96,4 @@ Append-only. Supersede a line with a new one rather than editing it.
 | 2026-10-08 | Judge the dispersion profile on whether it is bounded in the fine direction, not on an interior maximum | A saturating profile never has an interior maximum, and saturation means the data do not exclude zero dispersion — which argues against an IPM rather than for it |
 | 2026-10-08 | The exact chain is a convolution, not only a matrix exponential | In absolute developmental age, transport is pure-birth, growth and sequestration are weights; reproduces `mat_exp_series` to 1e-12 and runs 38x faster at `n_c` = 384, so cost is no longer a reason to rewrite |
 | 2026-10-08 | An IPM is a different model, not a reparameterisation | The stage at time t is exactly Poisson, a lattice distribution; any continuous kernel differs in the tails, worth 0.06 log10 units at the deepest trough and growing with `n_c` |
+| 2026-10-08 | Keep 30527 running although 30576 supersedes it | 30527 is the production `mat_exp_series` path and the convolution's cross-check; if the two ever disagree, believe `mat_exp_series` |

@@ -339,7 +339,7 @@ larger model from two fixed points rather than from the smaller model's
 solution. **Start a nested model's optimiser at its special case**, with the
 extra parameter at the boundary, and the violation becomes impossible.
 
-## Extrapolating one model's cost from another's underestimates
+## Every cost extrapolation in this project has come in low
 
 The decay-law array was estimated at 6-9 h per task from model A's measured
 cost times a factor for model B's quadrature nodes. It ran **9-21 h**, 2.3x
@@ -347,8 +347,27 @@ low on the slowest task. The quadrature multiplies the cost per likelihood
 evaluation, but adding a parameter also changes the optimiser's path and so
 the *number* of evaluations, which the factor does not capture. This is the
 same failure mode as the per-leapfrog probe recorded above: a cost model that
-holds the iteration count fixed measures only one of the two terms. **Measure
-the expensive model directly on one unit before sizing an array around it.**
+holds the iteration count fixed measures only one of the two terms.
+
+**Three misses, all in the same direction**, which is why this is a rule and
+not an anecdote.
+
+| what was extrapolated | predicted | actual | factor |
+|---|---|---|---|
+| production fit, from a per-leapfrog probe | — | — | 2x |
+| model B at `n_c` = 384, from model A's cost | 6-9 h | 9-21 h | 2.3x |
+| `n_c` = 1024, from the cost at 128-384 | ~25 s | 237 s | ~9x |
+
+The third is the clearest: it is the **same model, same machine, same code**,
+extrapolated only across `n_c`, and it still missed by an order of magnitude.
+Per-trajectory cost scaled as expected; the **optimiser's iteration count**
+did not, because the likelihood surface gets harder at fine rungs. Every one
+of these misses has the same shape: a cost model that holds the number of
+evaluations fixed measures only one of the two terms.
+
+**Measure the expensive configuration directly on one unit before sizing an
+array around it**, and when that is not practical, set the walltime from the
+measurement times a factor of three rather than from the extrapolation.
 
 ## `wockner-fit.R` output names carry no seed, so a reseed overwrites
 

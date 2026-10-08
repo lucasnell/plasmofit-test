@@ -12,7 +12,10 @@ match where a thread exists. This file is the actionable layer. -->
 ### In progress
 
 - [ ] **Dense dispersion profile — SLURM 30576**, 14 tasks, submitted
-      2026-10-08, **~5–9 min per unit**. Uses the convolution forward map,
+      2026-10-08. **~30 min per unit, ~45 min for the slowest** (measured, not
+      the ~5-9 min first estimated: cost is SUPER-LINEAR in `n_c` because the
+      optimiser takes more iterations at the fine rungs, 9 s at `n_c` = 128
+      against 237 s at 1024). Uses the convolution forward map,
       which is the same model as `mat_exp_series` to 1e-12 but 148x faster on
       a whole unit fit (12 s against 1777 s at `n_c` = 384). Gives the exact
       chain at **nine** integer rungs 64–1024, the gamma-kernel IPM at a fixed

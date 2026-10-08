@@ -40,13 +40,27 @@ should change.** That is the single most important standing constraint.
 
 No script any of them reads may be edited while its job runs.
 
-**All three jobs are inside the half-node budget**, checked 2026-10-08 against
-the rule now in `CLAUDE.md`: 30524 is 14 x 1 CPU x 16G, 30527 is 14 x 1 CPU x
-8G, and 30525 is 4 CPUs x 24G, so together **32 of 128 CPUs and 368,640 of
-515,670 MB** — 25% of the CPU budget and 71% of the memory budget. None needs
-an `--array=1-N%M` throttle. All are `PD (Priority)` because someone else
-holds 250 of the node's 256 CPUs, which is a queueing fact, not a budget
-violation.
+**All four jobs are inside the half-node budget**, checked 2026-10-08 against
+the rule now in `CLAUDE.md`. 30524 is 14 x 1 CPU x 16G, 30527 is 14 x 1 CPU x
+8G, 30576 is 14 x 1 CPU x 2G, and 30525 is 4 CPUs x 24G, so together **46 of
+128 CPUs and 397,312 of 515,670 MB** -- 36% of the CPU budget and 77% of the
+memory budget. None needs an `--array=1-N%M` throttle. They queued behind
+someone else holding 250 of the node's 256 CPUs, which is a queueing fact,
+not a budget violation.
+
+### Which to read first
+
+They overlap, so read them in this order and stop early if one settles it.
+
+1. **30576** -- widest coverage and it checks itself against 29684. Nine
+   chain rungs and sixteen continuous `n_eff` answer both the floor question
+   and the identifiability question at once.
+2. **30527 and 30524** -- the same question on the production
+   `mat_exp_series` path, at three and one rungs. Their value now is as a
+   **cross-check** of 30576, not as the primary evidence. If they disagree
+   with 30576, believe `mat_exp_series` and investigate the convolution.
+3. **30525** -- a different question entirely, and the only one that unblocks
+   a reportable cycle length.
 
 ### What 30524 decides, and the rule for reading it
 
@@ -111,7 +125,7 @@ multimodality, show both modes, and move to entry 41 (`adapt_delta` 0.95,
 unsubmitted) rather than reseeding a third time. That retry costs 2.5–5×
 because the sampler already saturated treedepth in 46–61% of transitions.
 
-**SLURM 30576 — the dense dispersion profile, 14 tasks, ~5-9 min.** Built on
+**SLURM 30576 — the dense dispersion profile, 14 tasks, ~30-45 min.** Built on
 the convolution forward map, so it does in minutes what 30527 is spending
 hours on, and much more besides.
 

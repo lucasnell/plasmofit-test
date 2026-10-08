@@ -197,7 +197,7 @@ Roughly in priority order.
    `b_shape` estimated, which is right for testing the confound but is not
    the production configuration (`b_shape` pinned at 400). Entries 39-40
    (`np_bs400_nc192`, `np_bs400_nc384`), script
-   `_scripts/wockner-fit-nc-bs400.sh`, **written and not yet submitted**, ask
+   `_scripts/wockner-fit-nc-bs400.sh`, **submitted as SLURM 29635**, ask
    whether the effect survives a pinned `b_shape`. Outcomes recorded in
    advance there and in `wockner-fit.R`.
    **29637 (the 2x2) ANSWERED 2026-10-07**: misspecifying `n_c` moves
@@ -213,11 +213,24 @@ Roughly in priority order.
    **29635 (the production ladder) FAILED and its question is STILL OPEN.**
    Max R-hat 6.13 and 8.34, one chain stuck 96 and 70 lp units below the
    others. Fitted values and `loo_compare` from it are unusable; `log_lik`
-   has R-hat near 6. **Do not report the 3-chain subset.** Retry written and
-   not submitted: `_scripts/wockner-fit-nc-bs400-retry.sh`, entries 41-42,
-   `adapt_delta` 0.95 and a new seed. If a chain still sticks at a similar
-   gap, the mode is real -- report multimodality and stop.
-   **Until the retry lands, no reported cycle length should change.**
+   has R-hat near 6. **Do not report the 3-chain subset.**
+   **THE RESEED IS RUNNING: SLURM 30525**, submitted 2026-10-08, ~8.5 h
+   (29635 entry 39 ran 8:20:35). `_scripts/wockner-fit-nc-bs400-reseed.sh`,
+   **entry 39** and not 41: entries 41-42 already carry `adapt_delta` 0.95 and
+   `max_treedepth` 12, so "a reseed-only run of entry 41" was a contradiction
+   in earlier notes and is corrected. Reseeding changes ONE thing, which is
+   what a single stuck chain calls for; the tuned retry
+   (`_scripts/wockner-fit-nc-bs400-retry.sh`, entries 41-42) stays unsubmitted
+   because the sampler already saturated `max_treedepth` in 46-61% of
+   transitions, so it would cost 2.5-5x and entry 42 would likely exceed its
+   own 3-day walltime.
+   It writes with `WOCKFIT_SUFFIX=-seed2`, **without which it would overwrite
+   the non-converged fit** -- output names are built from the config name
+   alone and the seed never appears in them. Recorded in `gotchas.md`.
+   If a chain sticks again at a similar lp gap, the mode is real: report
+   multimodality, show both modes, and move to entry 41 rather than reseeding
+   a third time.
+   **Until it lands, no reported cycle length should change.**
    **Pairing, deliberately asymmetric**: `sim96_fit192` shares `default`'s
    simulated data (verified, y_sim mean log10 2.7590 both) and is in
    `PAIRED_ARMS`; the gen-192 arms share data with each other (2.6934), NOT
@@ -563,6 +576,21 @@ Roughly in priority order.
     Cost is roughly **cubic in `n_c`** -- 0.0148 s per trajectory at 96,
     0.153 at 192, 1.18 at 384, 9.21 at 768 -- which is why this is an array
     and why `n_c` = 768 is not in the grid.
+    **THE DENSE PROFILE IS RUNNING: SLURM 30576**, submitted 2026-10-08, 14
+    tasks, ~30-45 min. `_scripts/nc-profile-fast.sh`, read with
+    `_scripts/nc-profile-fast-read.R`. It supersedes 30527 on coverage because
+    the convolution forward map fits a whole unit in 12 s where
+    `mat_exp_series` took 1777 s: nine exact-chain rungs from 64 to 1024, and
+    the gamma-kernel IPM at a FIXED mesh of 192 with sixteen CONTINUOUS `n_eff`
+    from 48 to 4096, plus a mesh-convergence check at M = 384.
+    The continuous `n_eff` is the part the discrete ladder structurally could
+    not do: there `n_c` moves the mesh and the rate together, so a profile over
+    it cannot separate "the dispersion is identified" from "the mesh changed".
+    **30527 is deliberately not cancelled.** It computes three of the same
+    rungs on the production `mat_exp_series` path and is the cross-check;
+    `nc-profile-fast.R` additionally STOPS if its own chain rungs disagree with
+    29684 by more than 0.01 log-likelihood units. If the two paths ever
+    disagree, believe `mat_exp_series` and investigate the convolution.
     **PROTOTYPE BUILT AND VALIDATED 2026-10-08**, `_scripts/ipm-prototype.R`,
     output `_data/ipm-prototype-2026-10-08.txt`, full write-up in
     `claude/ipm-decision.md`. Three results.

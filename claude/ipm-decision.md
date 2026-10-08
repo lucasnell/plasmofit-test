@@ -316,3 +316,32 @@ compared at the troughs.
 **Option C** (change nothing) gains a new argument: port the Poisson
 convolution, keep the model exactly as it is, and spend the 38x on more
 replicates and a finer `n_c` ladder rather than on a rewrite.
+
+## The profile that decides it is now dense, and running
+
+**SLURM 30576**, submitted 2026-10-08, 14 tasks, ~30–45 min.
+`_scripts/nc-profile-fast.R`, read with `_scripts/nc-profile-fast-read.R`.
+
+The convolution makes a whole unit fit cost 12 s instead of 1777 s, so the
+profile is no longer limited to three rungs. It now has:
+
+- the **exact chain** at nine integer rungs, 64 to 1024 — the floor question;
+- the **gamma-kernel IPM** at a fixed mesh of 192 with sixteen **continuous**
+  `n_eff`, 48 to 4096 — the identifiability question;
+- a **mesh-convergence check** repeating three rungs at M = 384, so the IPM
+  rows can be shown not to be mesh artefacts.
+
+The continuous `n_eff` is the part the discrete ladder structurally could not
+provide. In the chain, `n_c` moves the mesh and the rate together, so a profile
+over it cannot separate "the dispersion is identified" from "the mesh changed".
+Holding the mesh fixed and varying `n_eff` separates them, and that is the only
+honest way to ask whether an IPM would return a rate or a boundary value.
+
+Validated before submission: on unit 1 it reproduced 29684's maximised
+log-likelihoods at `n_c` 96/192/384 to **1e−6**. The script stops if any chain
+rung disagrees with 29684 by more than 0.01 log-likelihood units.
+
+**The reading rule is unchanged** — the one pre-registered in
+`_scripts/nc-dispersion-profile-read.R` before any of this existed: turns over
+/ saturates / still climbing / flat, judged on whether the 2-log-likelihood
+interval is bounded in the fine direction.
