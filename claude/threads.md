@@ -464,10 +464,47 @@ Roughly in priority order.
     than `b_shape`, not worse -- and the 71.8 elpd gap between `n_c` 96 and
     192 is direct evidence that the data constrain the within-window amplitude
     trajectory strongly.
-    **The decay-law test is RUNNING: SLURM 29684**, 14 tasks, one per
-    `grp_init` unit, 6-9 h. `_scripts/decay-law-test.sh`, read with
-    `_scripts/decay-law-read.R`. It decides what an IPM's kernel should be,
-    so it is strictly ordered before any rewrite.
+    **RESULT, 2026-10-08: the test cannot tell.** All 14 tasks COMPLETED, 9-21
+    h each (the 6-9 h estimate was 2.3x low; B at `n_c` = 384 was extrapolated
+    from A's cost and the extrapolation failed). Full numbers in
+    `claude/findings.md`, "The decay law: the test cannot tell, and it says
+    why"; saved output `_data/decay-law-read-2026-10-08.txt`.
+    Total `d_ll` +1.53 over 14 units, 8 to 6 on sign, and +1.449 of the +1.53
+    comes from one unit. The pre-registered rule called that uninformative.
+    A correction to the rule reaches the same verdict more sharply: **B nests
+    A and A never picks `n_c` = 96, so `d_ll` < 0 is impossible** and the six
+    "A wins" are Nelder-Mead stopping short. The worst violation, −0.521, is
+    the noise floor, and **1 of 14 units clears it**.
+    The decisive number is the **power bound**. A maximised gain is at least
+    the gain at any fixed sigma, so each unit's `d_ll` bounds from above what a
+    linear component at the predicted sigma = 0.033 could buy: **at most +0.396
+    and median +0.0000** outside the one unit above the floor. Five units'
+    optimisers landed within 0.01 of 0.033 and gained +1.449, +0.097, +0.069,
+    +0.069, +0.053. A linear component of exactly the predicted size is nearly
+    free over 1130 observations.
+    **So this thread is not unblocked by evidence.** The branch that would have
+    killed a Gaussian-kernel IPM did not fire; neither did the branch that
+    would have endorsed one. An IPM cannot be justified by "the √ law is
+    established" — it was not beaten, not confirmed — and a 1-D Gaussian-kernel
+    IPM would reproduce √ by construction anyway. **The case rests entirely on
+    the structural argument**: `n_c` is both the mesh and the rate, and that is
+    a biology-and-design judgement, not something these data decide.
+    **If this is worth another attempt**, the fix is cheap to state and
+    expensive to run: `fit_unit()` starts model B from two fixed points and
+    never warm-starts it from A's solution. A third start at A's optimum with a
+    small sigma makes the nesting violation impossible. It would remove the
+    floor, but it cannot create power that the likelihood surface does not
+    have, and it costs the full ~21 h wall again. Sharpening the design — a
+    longer observation window, or units with more cycles — would do more than
+    a better optimiser.
+    **By-product worth more than the test.** Model A alone is a priors-free
+    likelihood profile over `n_c`: 192 beats 96 in **14 of 14 units, summed
+    +72.4 log-likelihood units**, and 384 beats 192 in 10 of 14 summed +10.4.
+    The Bayesian elpd gap was 71.8 on the same 1130 observations. Same
+    ordering, same magnitude, same plateau, no priors anywhere — so **`n_c` =
+    96 being wrong is not a prior artefact**.
+    Design and validation, kept because they explain what the numbers mean:
+    `_scripts/decay-law-test.sh`, read with `_scripts/decay-law-read.R`.
     Maximum likelihood, not Bayes: a screen whose job is to say whether the
     Stan work is worth doing. It uses the structural fact that within a
     `grp_init` unit **every series shares every parameter**, so a unit is one

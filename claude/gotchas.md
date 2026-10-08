@@ -314,3 +314,38 @@ Two habits, both now built in:
   file. `decay-law-read.R` now stops if any unit does not have exactly five
   rows. A file existing is not evidence that the run that produced it
   finished, or that it was configured the way the current script is.
+
+## A nested model that scores worse is an optimiser failure, not evidence
+
+In the decay-law test (SLURM 29684) model B contains model A at sigma = 0, and
+both maximise over the same `n_c` grid in practice, so `ll_B >= ll_A` must hold
+in exact arithmetic. Six of 14 units came back with `ll_B < ll_A`, the worst by
+0.521 log-likelihood units. The pre-registered reading rule counted those as
+wins for A, which they cannot be.
+
+Two lessons, the second more useful than the first.
+
+- **When one model nests another, state the inequality in the reader and
+  assert it.** `_scripts/decay-law-read.R` had the nesting written in its own
+  header comment from the start and still did not use it. The check is one
+  line and it converts a silent misreading into a visible diagnostic.
+- **The violations are the measurement.** Their magnitude is the optimiser's
+  noise floor on that surface, and nothing smaller than the floor counts as
+  signal. That turned an ambiguous 8-to-6 sign split into a clean statement:
+  1 of 14 units clears the floor.
+
+The cause here is warm starts, or the lack of them: `fit_unit()` starts the
+larger model from two fixed points rather than from the smaller model's
+solution. **Start a nested model's optimiser at its special case**, with the
+extra parameter at the boundary, and the violation becomes impossible.
+
+## Extrapolating one model's cost from another's underestimates
+
+The decay-law array was estimated at 6-9 h per task from model A's measured
+cost times a factor for model B's quadrature nodes. It ran **9-21 h**, 2.3x
+low on the slowest task. The quadrature multiplies the cost per likelihood
+evaluation, but adding a parameter also changes the optimiser's path and so
+the *number* of evaluations, which the factor does not capture. This is the
+same failure mode as the per-leapfrog probe recorded above: a cost model that
+holds the iteration count fixed measures only one of the two terms. **Measure
+the expensive model directly on one unit before sizing an array around it.**

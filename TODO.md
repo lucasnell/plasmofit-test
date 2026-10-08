@@ -11,43 +11,52 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **Decay-law test — SLURM 29684**, 14 tasks, one per `grp_init` unit,
-      **6-9 h** (measured, not the ~12 h first estimated: model A takes 38-66
-      min per unit and most optimisations converge well short of `maxit`;
-      model B at `n_c` = 384 is the dominant term and is extrapolated at ~7x
-      A(384), so 8 h is possible). Submitted 2026-10-07 13:20. Does
-      synchrony decay as √(cycles) or
-      linearly? Read with `_scripts/decay-law-read.R`. **Decides whether an
-      IPM is the right target at all**, since a 1-D IPM with a Gaussian
-      kernel reproduces the √ law it would replace.
-
-### Next
-
-- [ ] **Resubmit the production `n_c` ladder.** 29635 failed (max R-hat 6.13
-      and 8.34, one chain stuck 96 and 70 lp units below the others).
-      `_scripts/wockner-fit-nc-bs400-retry.sh` is written but **the costing
-      says reseed-only first**: the sampler already saturated
+- [ ] **Resubmit the production `n_c` ladder.** This is now the only thing
+      standing between the project and a reportable cycle length. 29635 failed
+      (max R-hat 6.13 and 8.34, one chain stuck 96 and 70 lp units below the
+      others). `_scripts/wockner-fit-nc-bs400-retry.sh` is written but **the
+      costing says reseed-only first**: the sampler already saturated
       `max_treedepth` in 46–61% of transitions, so `adapt_delta` 0.95 plus
       `max_treedepth` 12 costs 2.5–5× (entry 41 ~21–42 h, entry 42 ~60–120 h,
       which exceeds the script's 3-day walltime). Reseeding alone targets the
       observed failure and costs ~9 h at `n_c` = 192.
-- [ ] **Decide the `n_c` default** once the above lands. 96 is wrong by 71.8
-      elpd; 192 and 384 are tied on elpd with `b_shape` free.
+
+### Next
+
+- [ ] **Decide the `n_c` default** once the above lands. 96 is wrong — by 71.8
+      elpd under the Bayesian comparison and by +72.4 log-likelihood units in
+      14 of 14 units under a priors-free maximum-likelihood profile. 192 and
+      384 are tied on elpd with `b_shape` free; the ML profile puts 384 ahead
+      of 192 by +10.4 summed, in 10 of 14 units.
 - [ ] **Give the desynchronisation rate its own parameter.** The real defect:
       `n_c` is both the numerical mesh and the biological rate, and raising it
-      to fix the numerics removes a biological process. Form depends on the
-      decay-law result.
+      to fix the numerics removes a biological process. **The decay-law test
+      did not determine the form** — see below — so the form is now a biology
+      judgement, not something these data settle.
 
 ### Blocked
 
-- [ ] **IPM / transport-with-dispersion rewrite** — **blocked on:** the
-      decay-law test (29684), since 2026-10-07. It determines the kernel. Note
-      the cost is not runtime but discarding the validated Erlang-window
+- [ ] **IPM / transport-with-dispersion rewrite** — **no longer blocked on
+      evidence, because the evidence came back indecisive.** The decay-law test
+      could not distinguish √ from linear: at the predicted sigma = 0.033 a
+      linear component buys at most +0.396 and typically +0.0000
+      log-likelihood units over 1130 observations. So an IPM cannot be
+      justified by "√ is established", and a 1-D Gaussian-kernel IPM would
+      reproduce √ by construction. **Deciding this needs a judgement call from
+      Lucas**, weighed against the cost: discarding the validated Erlang-window
       series and its `matrix_exp` cross-check, and making every existing fit
       incomparable.
 
 ### Done
 
+- [x] **Decay-law test (29684), 2026-10-08: cannot tell, and says why.** All 14
+      tasks COMPLETED, 9–21 h each. Total `d_ll` +1.53, 8–6 on sign, +1.449 of
+      it from one unit. B nests A, so the six negatives are optimiser failure,
+      not evidence; the worst, −0.521, is the noise floor and only 1 of 14
+      units clears it. Thread 15 and `claude/findings.md` have the numbers.
+- [x] **`n_c` = 96 is wrong without any prior.** Model A alone is a
+      priors-free likelihood profile: 192 beats 96 in 14 of 14 units, +72.4
+      summed, against the Bayesian 71.8 elpd on the same 1130 observations.
 - [x] Real-data `n_c` ladder with `b_shape` free (29633): `cycle_length` moves
       −3.20 h, `b_shape` falls monotonically, 96 loses 71.8 elpd.
 - [x] Ruled out a numerical cause: `max_rel_diff` is 8e−13 at `n_c` = 96 and

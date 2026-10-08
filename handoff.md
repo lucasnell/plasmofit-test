@@ -1,148 +1,146 @@
-# Handoff — 2026-10-07
+# Handoff — 2026-10-08
 
 ## State of play right now — read this first
 
-**One job running: SLURM 29684, the decay-law test.** 14 tasks, one per
-`grp_init` unit, started 2026-10-07 13:06. **Expect 6–9 h**, so done between
-roughly 19:00 and 22:00. Units differ about twofold in cost — model A takes
-66 min on unit 7 against 38 min on unit 1 — and model B at `n_c` = 384 is
-~7x A(384) and is the dominant term, so the slowest unit sets the wall time.
-Nothing else is queued.
+**Nothing is running.** SLURM 29684, the decay-law test, finished and has been
+read. The queue is empty and nothing is pending submission.
 
-```bash
-cd /home2/lan68/plasmofit/plasmofit-test
-squeue -u lan68                                  # empty means it finished
-ls _data/decay-law-unit*.rds | wc -l             # expect 14
-/programs/R-4.6.1/bin/Rscript --vanilla _scripts/decay-law-read.R
-```
+**One job should be submitted next**, and until it lands no reported
+cycle-length number should change. That is the single most important standing
+constraint. See "The one thing to run next" below.
 
-If fewer than 14 files exist, check `_data/decay-law-<task>.err` and
-`sacct -j 29684`. A missing unit is not fatal — the reader works on whatever
-is present and prints how many it found — but say so when reporting.
+## What 29684 decided: the test cannot tell, and it says why
 
-**The reader refuses any unit that does not have exactly 5 rows** (model A at
-`n_c` 96/192/384, model B at 192/384). The job writes all five at once at the
-very end, so a short file is a leftover from an interrupted or differently
-configured run. One caused trouble this session: a killed smoke test left a
-3-row `unit07.rds`, which would have silently dropped both 384 rungs from
-that unit's comparison. It was deleted and the guard added.
+All 14 tasks COMPLETED, every `.err` empty, 9:07 to 21:04 elapsed each. The
+6-9 h estimate was **2.3x low** — model B at `n_c` = 384 was extrapolated from
+model A's cost, and extrapolating one model's cost from another's does not
+work, because the extra parameter changes the *number* of optimiser
+evaluations as well as the cost of each. Recorded in `claude/gotchas.md`.
 
-**Do not edit `_scripts/decay-law-test.R` while 29684 is running.**
+Full numbers: `claude/findings.md`, section "The decay law: the test cannot
+tell, and it says why". Saved output `_data/decay-law-read-2026-10-08.txt`,
+regenerate with `/programs/R-4.6.1/bin/Rscript --vanilla
+_scripts/decay-law-read.R`.
 
-### What 29684 decides, and the rule for reading it
+The question was whether synchrony decays as **√(cycles)** — what the Erlang
+chain and a 1-D Gaussian-kernel IPM both give — or **linearly in cycles**,
+which is what between-parasite heterogeneity in cycle duration gives.
 
-Does synchrony decay as **√(cycles)** (what the Erlang chain and a 1-D
-Gaussian-kernel IPM both give) or **linearly in cycles** (between-parasite
-heterogeneity in cycle duration)? Model A is the chain alone at `n_c` in
-{96, 192, 384}; model B adds a lognormal mixture over `cycle_length`, 7
-Gauss-Hermite nodes, at `n_c` in {192, 384}. B nests A at sigma = 0, so they
-are compared at a **matched 6 parameters**, A spending one on choosing `n_c`
-exactly as B spends one on sigma. `d_ll = ll_B - ll_A`, positive favours
-linear.
+- Total `d_ll` (model B minus model A) is **+1.53** over 14 units, B ahead in
+  8 and A ahead in 6. **One unit supplies +1.449 of that**; the other 13
+  together give +0.08.
+- **The six negatives are not evidence for A.** B contains A at sigma = 0, and
+  A's maximum is never at `n_c` = 96, so both maximise over the same
+  {192, 384} and `ll_B >= ll_A` must hold. Those six are Nelder-Mead stopping
+  short. Their worst, **−0.521**, is the noise floor, and **1 of 14 units
+  clears it**.
+- **The power bound is the real result.** A maximised gain is at least the
+  gain at any fixed sigma, so each unit's `d_ll` bounds from above what a
+  linear component of the pre-registered size — sigma = 0.033 — could have
+  bought. Outside the one unit above the floor that bound is **at most +0.396,
+  median +0.0000**, over 1130 observations. Five units' optimisers landed
+  within 0.01 of 0.033 and gained +1.449, +0.097, +0.069, +0.069, and +0.053.
 
-- **B clearly ahead and consistent in sign across units** → the decay has a
-  linear component, and **a Gaussian-kernel IPM is the wrong target**,
-  because it would reproduce the √ law it was meant to replace. The fix is
-  rate heterogeneity: a mixture, or a 2-D kernel over (age, rate).
-- **A ahead, or a tie** → the √ law is adequate, and an IPM becomes a
-  reasonable way to decouple the dispersion rate from the numerical mesh.
-- **Mixed signs across units** → the design cannot tell, and the choice has
-  to be made on biology rather than on these data.
+So a linear component of exactly the size the project had reason to expect is
+nearly free in likelihood terms. **The data are indifferent between the two
+laws.** They do not prefer √; √ was simply not beaten.
 
-A couple of units of total `d_ll` is noise at this parameter count. Expect
-sigma around **0.033** if the linear law holds — that is the between-parasite
-CV in cycle duration reproducing `n_c` = 192's spread of 0.158 cycles at
-k = 4.8.
+**Consequence for the IPM (thread 15).** The branch that would have killed a
+Gaussian-kernel IPM did not fire, and neither did the branch that would have
+endorsed one. An IPM **cannot be justified on the grounds that √ is
+established**, and a 1-D IPM with a Gaussian development kernel would
+reproduce √ by construction anyway. The case for it rests entirely on the
+structural argument — `n_c` is simultaneously the numerical mesh and the
+biological desynchronisation rate — which is a biology-and-design judgement.
+That decision is Lucas's, and it is weighed against discarding the validated
+Erlang-window series, its `matrix_exp` cross-check, and the comparability of
+every existing fit.
 
-**Partial signal already visible**, not the headline and not to be reported
-as a result: model A's own choice of `n_c` is coming out 192 > 96 in every
-task so far, with 192 and 384 effectively tied in task 1 (−31.219 vs
-−31.251). That is the same ordering and plateau the Bayesian 71.8 elpd result
-gave, reached by maximum likelihood with no priors — independent
-corroboration that `n_c` = 96 is genuinely worse.
+**A rerun would not fix this.** Warm-starting B from A's solution (see below)
+would remove the noise floor, but it cannot create power the likelihood
+surface does not have, and it costs the full ~21 h wall again. Sharpening the
+design — a longer observation window, units with more cycles — would do more.
 
-### Nothing else is running, and one thing is waiting
+## The by-product, which is worth more than the test
 
-`_scripts/wockner-fit-nc-bs400-retry.sh` is **written and deliberately not
-submitted**. It retries the production `n_c` ladder (`b_shape` pinned at 400)
-after SLURM 29635 failed to converge. **Submit a reseed-only version of entry
-41 first** — see "Open follow-ups" below for why the script as written is
-badly costed.
+Model A alone is a **likelihood profile over `n_c` with no priors anywhere**.
+Cells are differences in maximised profile log-likelihood within a unit,
+summed over the 14 `grp_init` units that hold all 1130 observations.
 
-**Until that question is settled, no reported cycle-length number should
-change.** That is the single most important standing constraint right now.
+| comparison | summed | units favouring the higher `n_c` |
+|---|---|---|
+| 192 over 96 | **+72.4** | **14 of 14** |
+| 384 over 96 | +82.8 | 14 of 14 |
+| 384 over 192 | +10.4 | 10 of 14 |
 
-## Session topic
+The Bayesian comparison on the same observations put 96 **71.8 elpd** (se
+13.2) behind 192, with 192 and 384 tied. Same ordering, same magnitude, same
+plateau, from a different inferential machine with no priors.
 
-Reading back two jobs on the `n_c` question, then working out **why**
-`cycle_length` moves with `n_c` at all. The session ended with the mechanism
-explained, one job dead on convergence, and a new test running that decides
-whether a structural rewrite is worth doing. Housekeeping: both repos
-committed and pushed, 494 MB of scratch deleted, and these four files created
-from `new-project.sh`, and `claude/CLAUDE.md` plus `claude/conventions.md`
-deleted after their unique content was migrated. All of it is committed
-and pushed; `git log --oneline -10` shows the session.
+Two things this is **not**. It is not independent confirmation of the number —
+an in-sample maximised likelihood and an out-of-sample elpd difference are
+different quantities, and agreeing to 0.6 units is coincidence. And the gains
+are concentrated: `MMV048_PIB|1800` and `Piperaquine|1800` give +10.2 and
++10.8 of the +72.4 while `MMV048_PartB|2800` and `OZ439|1800` give +0.30 and
++0.33. What it does rule out is a **prior artefact**: `n_c` = 96 being
+structurally wrong no longer depends on any part of the Bayesian
+specification.
 
-## Key decisions
+## The one thing to run next
 
-- **`n_c` is a biological assumption, not a numerical setting.** 96 predicts
-  71.8 elpd worse than 192 with `b_shape` free. Ruled out an arithmetic cause
-  directly: `max_rel_diff` is 8e−13 at `n_c` = 96 and *grows* with `n_c`, so
-  if better arithmetic were the gain the higher rungs would have to be more
-  accurate, and they are slightly less.
-- **The mechanism is a one-sided observation window meeting a broadening age
-  distribution.** Sequestration starts at a fixed 18.58 h of a ~45 h cycle, so
-  ~40% of the cycle is visible; the stage distribution broadens at a rate
-  `n_c` fixes and is right-skewed; the centroid of the *visible* subpopulation
-  drifts, and that reads as a period change. At `n_c` = 96 the observable
-  period runs ~0.75 h short of the `cycle_length` parameter.
-- **Gate any IPM rewrite on the decay law.** A 1-D IPM with a Gaussian
-  development kernel reproduces the same √t law the Erlang chain gives, so it
-  would decouple the dispersion rate from the mesh without testing the form.
-  SLURM 29684 tests √ against linear first.
-- **Do not report anything from SLURM 29635.** Max R-hat 6.13 and 8.34 from
-  one stuck chain. Three chains agreed, and reporting that subset would be
-  choosing the chains that give a tidy answer.
+Resubmit the production `n_c` ladder. 29635 failed the convergence gate (max
+R-hat 6.13 and 8.34, one chain stuck 96 and 70 lp units below the others) and
+was not reported.
 
-## Open follow-ups
+**Submit a reseed-only version of entry 41 (`n_c` = 192) first, ~9 h.**
+`_scripts/wockner-fit-nc-bs400-retry.sh` is written and **deliberately not
+submitted**: it adds `adapt_delta` 0.95 and `max_treedepth` 12, which costs
+2.5-5x because the sampler already saturated treedepth in 46-61% of
+transitions. Entry 41 would run 21-42 h and entry 42 would likely exceed its
+own 3-day walltime. Reseeding alone targets the observed failure — one stuck
+chain — at a fifth of the cost.
 
-- [ ] Read SLURM 29684 with `_scripts/decay-law-read.R`. **~6 h from
-      2026-10-07 13:20**, measured: model A takes 38 min per unit (61 s, 459
-      s, 1777 s at `n_c` 96/192/384) and model B costs ~7x the same `n_c`
-      because each likelihood runs seven quadrature nodes. B at 384 is the
-      dominant term and is extrapolated, so 8 h is possible. Reading rules
-      are in the script and in `claude/threads.md` thread 15.
-- [ ] Resubmit the production `n_c` ladder — **reseed-only first**, entry 41
-      (`n_c` = 192) alone, ~9 h. The written retry
-      (`_scripts/wockner-fit-nc-bs400-retry.sh`) adds `adapt_delta` 0.95 and
-      `max_treedepth` 12, which costs 2.5–5× because the sampler already
-      saturated treedepth in 46–61% of transitions; entry 42 would likely
-      exceed its own 3-day walltime.
-- [ ] Decide whether to keep `claude/CLAUDE.md` — see below.
+**What it decides.** Whether the `n_c` effect on `cycle_length` survives a
+pinned `b_shape`. The deterministic tests *predict it should persist and be
+larger*: 0.98 h at `b_shape` 400 against 0.72 h at 15, in all twelve cells of
+the least-squares table. **If it converges and the effect is gone, the whole
+mechanistic account is wrong** and should be revisited rather than patched.
+
+## Key decisions this session
+
+- **Do not treat the √ decay law as established.** 29684 could not distinguish
+  it from linear at the amplitude that matters.
+- **A nested model scoring worse is an optimiser failure, not evidence.** This
+  corrected the pre-registered reading rule, which had counted six optimiser
+  failures as wins for model A. The nesting was stated in
+  `decay-law-read.R`'s own header from the start and the rule did not use it.
+  The reader now asserts it.
+- **`n_c` = 96 is wrong without any prior**, from the ML profile.
 
 ## Context for the next session
 
 **What did not work, so it is not retried.**
 
-- *Sequestration-grid discretisation* looked like the obvious cause of the
-  `n_c` shift, and the source even documents an O(1/n_c) delay in
-  sequestration onset. It is **wrong**: the duty cycle *rises* with `n_c`
-  (0.39765 → 0.40242), implying `cycle_length` should rise by +0.284 h against
-  an observed −2.17 h. Wrong sign, eight times too small.
+- *Sequestration-grid discretisation* as the cause of the `n_c` shift is
+  **wrong**: the duty cycle *rises* with `n_c` (0.39765 → 0.40242), implying
+  `cycle_length` should rise by +0.284 h against an observed −2.17 h. Wrong
+  sign, eight times too small.
 - *The pre-registered reading rule for `_scripts/nc-mechanism.R`* — separate
-  the channels by whether the shift is constant or growing with window
-  length — **did not work**. The shift *shrinks* in every cell, because a
-  longer window pins the period harder as well as accumulating more spread,
-  and the second effect dominates. `_scripts/nc-period-check.R` is the clean
-  instrument for the period channel.
-- *A per-leapfrog cost probe* under-predicted the production fit by 2×,
-  because the leapfrog count rises too. Cost is per-gradient × gradients
-  per iteration; a fixed-iteration probe measures only the first.
+  the channels by whether the shift is constant or growing with window length
+  — **did not work**. The shift *shrinks* in every cell, because a longer
+  window pins the period harder as well as accumulating more spread.
+  `_scripts/nc-period-check.R` is the clean instrument for the period channel.
+- *A per-leapfrog cost probe* under-predicted the production fit by 2x, and
+  *extrapolating model B's cost from model A's* under-predicted 29684 by 2.3x.
+  Both have the same cause: a cost model that holds the evaluation count fixed
+  measures only one of the two terms.
 
-**Corrections made to earlier claims in this session.** The forward map
-accounts for **half to two thirds** of the real `n_c` shift, not the quarter
-first estimated from the period channel alone. Both figures are in
-`claude/findings.md`; the later one supersedes.
+**If the decay-law test is ever rerun**, `fit_unit()` in
+`_scripts/decay-law-test.R` starts model B from two fixed points and never
+warm-starts it from model A's solution. A third start at A's optimum with a
+small sigma makes the nesting violation impossible, at the cost of one extra
+optimisation. This is also why the present result is **biased toward A in
+magnitude**, by up to the noise floor.
 
 **A fact worth carrying.** Observations begin at 72 h — **1.6 cycles in** —
 and run to 4.8 cycles. Nothing is observed in the first cycle and a half. That
@@ -150,40 +148,20 @@ is why `b_shape`, which describes t = 0, is unidentified: it is pure backward
 extrapolation. A dispersion rate would govern change *within* the window and
 should be better identified.
 
-**Uncertain.** Whether the `n_c` effect survives a pinned `b_shape` is the
-open question, and the deterministic tests *predict it should persist and be
-larger* (0.98 h at `b_shape` 400 against 0.72 h at 15, in all twelve cells of
-the least-squares table). If the retry converges and the effect is gone, the
-whole mechanistic account is wrong and should be revisited rather than
-patched.
+**Corrections standing from earlier sessions.** The forward map accounts for
+**half to two thirds** of the real `n_c` shift, not the quarter first
+estimated from the period channel alone; both figures are in
+`claude/findings.md` and the later one supersedes. And `mmcm.pdf` is
+**Greischar & Childs (2023)**, *Trends in Parasitology* 39(8), doi
+10.1016/j.pt.2023.05.006 — an earlier note transposed the authors from the
+adjacent 2019 entry.
 
-**A citation was wrong and is fixed.** `claude/scripts.md` attributed
-`mmcm.pdf` to "Greischar, Reece, Savill, Mideo (2023)". The PDF's own citation
-block says **Greischar & Childs (2023), *Trends in Parasitology* 39(8), doi
-10.1016/j.pt.2023.05.006**. The authors had been transposed from the adjacent
-2019 synchrony entry; journal, volume and year were right. The content summary
-on that line is unaffected — it quotes the paper directly and those quotes
-check out. Corrected in `scripts.md`, `findings.md`, `references.md` and
-`PROJECT_INDEX.md`. Worth knowing because a wrong attribution in notes
-propagates into a manuscript.
+**The two PDFs at the repo root are untracked**, deliberately: they are
+published articles and this repo is public. A fresh clone will not have them.
 
-**The two PDFs are untracked**, deliberately: they are published articles and
-this repo is public. Every reference to them now says so, because a clone
-will not have them.
-
-**Notes restructuring.** `CLAUDE.md`, `PROJECT_INDEX.md` and `TODO.md` were
-created at the repo root from `new-project.sh`. The detailed files in
-`claude/` are unchanged and still hold everything: `findings.md` (results),
-`gotchas.md` (read before running anything), `scripts.md`, `threads.md`
-(long-form behind `TODO.md`) and `references.md`.
-**`claude/CLAUDE.md` and `claude/conventions.md` were deleted** (approved
-2026-10-07, recoverable from git history). `claude/CLAUDE.md` was superseded —
-stable content to the root `CLAUDE.md`, status to `PROJECT_INDEX.md`, resume
-block to this file — and partly stale: its "Package state" section still said
-the package was on branch `fixed-b-shape` and unpushed, untrue since
-`8dde0c1`. Before deleting, two items that existed **only** there were
-migrated to `findings.md`: the bound-asymmetry result and the "Known thin
-spots" caveats, now "Standing caveats on the evidence". All eight distinctive
-figures from its 2026-09-25 sections were confirmed present in `findings.md`.
-`conventions.md` was folded into the root `CLAUDE.md` under "How this project
-works".
+**Where things live.** Root `CLAUDE.md` (stable context and settled
+decisions), `PROJECT_INDEX.md` (status, workstreams, decision log), `TODO.md`
+(actionable layer), this file. The detail is in `claude/`: `findings.md`
+(results, every table's cells defined), `gotchas.md` (**read before running
+anything**), `scripts.md`, `threads.md` (long-form behind `TODO.md`), and
+`references.md`.

@@ -210,6 +210,10 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   no extra package. Note `mat_exp_series` needs STRICTLY INCREASING times,
   so the trajectory is evaluated at sorted unique times and indexed back.
 - `_scripts/decay-law-read.R` — aggregates the 14 units and reports the
-  matched-parameter comparison.
+  matched-parameter comparison, a nesting check (B contains A at sigma = 0,
+  so a negative `d_ll` is optimiser failure and its magnitude is the noise
+  floor), a power bound on what a linear component at the predicted sigma
+  could buy, and model A read as a priors-free likelihood profile over
+  `n_c`. Output saved as `_data/decay-law-read-<date>.txt`.
 - `_scripts/decay-law-validate.R` — checks the `cycle_length` mixture really
   produces a linear-in-cycles spread before the test is believed.

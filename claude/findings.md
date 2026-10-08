@@ -2933,6 +2933,114 @@ numerics simultaneously removes a biological process**, and the model has no
 separate parameter for that rate. That is the real finding, and it is why
 elpd keeps improving with `n_c` without that settling what the period is.
 
+### The decay law: the test cannot tell, and it says why
+
+SLURM 29684, 14 tasks, one per `grp_init` unit, submitted 2026-10-07 13:20 and
+finished 2026-10-08 10:10. All 14 COMPLETED, every `.err` empty. Elapsed 9:07
+to 21:04 per task, against a 6-9 h estimate — the extrapolation of model B at
+`n_c` = 384 from model A's cost was **2.3x low**. `_scripts/decay-law-test.R`,
+read with `_scripts/decay-law-read.R`, output saved to
+`_data/decay-law-read-2026-10-08.txt`, per-unit fits in
+`_data/decay-law-unit01..14.rds`.
+
+Maximum likelihood, no priors. Model A is the Erlang chain alone, which gives
+synchrony decaying as √(cycles), at `n_c` in {96, 192, 384}. Model B keeps the
+chain and adds a lognormal mixture over `cycle_length` across 7 Gauss-Hermite
+nodes, which gives a component linear in cycles, at `n_c` in {192, 384}. Both
+are scored at 6 parameters, A spending one on its choice of `n_c` exactly as B
+spends one on sigma. `d_ll = ll_B - ll_A`, positive favours linear.
+
+**Headline: the design cannot distinguish the two laws.** The pre-registered
+rule and a correction to it reach that same verdict by different routes.
+
+**The pre-registered reading.** Total `d_ll` is **+1.53** over 14 units, B
+ahead in 8 and A ahead in 6 — mixed signs, which the rule called
+uninformative. The total is also **not distributed**: one unit (`OZ439|1800`)
+supplies +1.449 of it, so the other 13 together give +0.08.
+
+**The correction, which is a property of the models and not of the result.**
+B contains A at sigma = 0, and A's maximum is never at `n_c` = 96 in any unit,
+so both models maximise over the same {192, 384} and `ll_B >= ll_A` must hold
+in exact arithmetic. **A negative `d_ll` is therefore impossible as evidence**
+and can only be the Nelder-Mead optimiser stopping short. The reading rule, as
+written, counted six optimiser failures as wins for A. The nesting was stated
+at the top of `decay-law-read.R` from the start; the rule simply did not use
+it.
+
+The violations instead measure the noise floor. Cells below are `ll_B - ll_A`
+at **matched** `n_c`, one per unit x `n_c`, in log-likelihood units; every cell
+must be non-negative.
+
+| violations | worst | median violation | noise floor |
+|---|---|---|---|
+| 6 of 28 | −0.521 (`OZ439/DSM265`, `n_c` 384) | −0.0169 | 0.521 |
+
+Against a floor of 0.521, **1 of 14 units clears it**: `OZ439|1800` at +1.449.
+The next largest gain is `Piperaquine|1800` at +0.396, below the floor.
+
+**Power, which is the real finding.** The maximised gain is by definition at
+least the gain at any particular sigma, so each unit's `d_ll` is an **upper
+bound** on what a linear component of the pre-registered size — sigma = 0.033,
+the between-parasite CV in cycle duration that reproduces `n_c` = 192's spread
+of 0.158 cycles at k = 4.8 — could have bought. Five units' optimisers landed
+within 0.01 of that sigma, and their gains are **+1.449, +0.097, +0.069,
++0.069, and +0.053**. Excluding the one unit above the floor, the bound across
+all units is **at most +0.396, median +0.0000**.
+
+So a linear component of exactly the size predicted is nearly free in
+likelihood terms over 1130 observations. The data do not prefer √; they are
+indifferent between the two laws at the amplitude the project has reason to
+expect. That is a statement about this design, not about the biology.
+
+**One caveat on the power bound.** It needs B's optimiser to have found its
+maximum, which in 6 of 14 units it demonstrably did not. For those units the
+bound is not airtight and the true gain could be larger. `fit_unit()` starts B
+from two fixed points and never warm-starts it from A's solution; a third
+start at A's optimum with a small sigma would make the violation impossible
+and cost one extra optimisation. The present result is therefore **biased
+toward A in magnitude**, by up to the floor.
+
+**Consequence for the IPM.** The test was built to gate thread 15, and it does
+not close it either way. The branch that would have killed a Gaussian-kernel
+IPM — B clearly ahead and consistent in sign — did not fire. Neither did the
+branch that would have endorsed one, since √ was not shown adequate, only not
+beaten. An IPM therefore **cannot be justified on the grounds that the √ law
+is established**, and a 1-D IPM with a Gaussian development kernel would still
+reproduce √ by construction. The case for an IPM rests entirely on the
+structural argument — that `n_c` is simultaneously the mesh and the rate — and
+has to be made on biology.
+
+### By-product: the `n_c` result reproduces without priors
+
+Model A on its own is a likelihood profile over `n_c` with no priors anywhere
+in it. Cells are the maximised profile log-likelihood of model A, differenced
+across `n_c` within a unit, in log-likelihood units, summed over the 14
+`grp_init` units that hold all 1130 observations. Positive favours the higher
+`n_c`.
+
+| comparison | summed over 14 units | units favouring the higher `n_c` |
+|---|---|---|
+| 192 over 96 | **+72.4** | **14 of 14** |
+| 384 over 96 | +82.8 | 14 of 14 |
+| 384 over 192 | +10.4 | 10 of 14 |
+
+The Bayesian comparison on the same 1130 observations put `n_c` = 96 **71.8
+elpd** (se 13.2) behind 192, with 192 and 384 effectively tied. The ordering,
+the magnitude and the plateau all reproduce here with no priors, a simplified
+deterministic forward model and a different inferential machine.
+
+Two things that agreement is not. It is **not independent confirmation of the
+number**: an in-sample maximised likelihood and an out-of-sample elpd
+difference are different quantities, and matching to 0.6 units is coincidence.
+And the per-unit gains are concentrated — `MMV048_PIB|1800` and
+`Piperaquine|1800` contribute +10.2 and +10.8 of the +72.4 while
+`MMV048_PartB|2800` and `OZ439|1800` contribute +0.30 and +0.33 — so the
+result is a consistent sign across all 14 units, not a uniform effect.
+
+What it does rule out is a prior artefact. Nothing in model A has a prior, so
+the conclusion that **`n_c` = 96 is structurally wrong** no longer depends on
+any part of the Bayesian specification.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

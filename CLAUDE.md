@@ -110,6 +110,17 @@ claude/references.md, not as authorship. -->
   numerical mesh and the desynchronisation rate, and the model has no separate
   parameter for the rate.**
 
+- **2026-10-08 — The √ decay law is not established, only unbeaten.** The
+  decay-law test (SLURM 29684) could not distinguish synchrony decaying as
+  √(cycles) from a component linear in cycles: at the pre-registered sigma =
+  0.033 a linear component buys at most +0.396 and typically +0.0000
+  log-likelihood units over 1130 observations. **An IPM therefore cannot be
+  justified by appeal to the decay law**, and a 1-D Gaussian-kernel IPM would
+  reproduce √ by construction. A by-product of the same job: model A is a
+  priors-free likelihood profile over `n_c`, and 192 beats 96 in **14 of 14**
+  units by **+72.4** summed log-likelihood units, so **`n_c` = 96 being wrong
+  is not a prior artefact**.
+
 ## Working notes
 
 - Current status: `PROJECT_INDEX.md`
