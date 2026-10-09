@@ -10,6 +10,13 @@
 ## refit is the stronger test, but it costs hours and should not be started
 ## until this passes.
 ##
+##
+## NOTE, 2026-10-09: conv_series() has been REMOVED from the package (revert
+## commit bba580f) because it is slower and less accurate than the
+## Erlang-window series at every n_c this project uses. This script therefore
+## needs a plasmofit built from commit 05c9c1f to run. It is kept because the
+## numbers in claude/findings.md come from it and a claim should name the
+## script that produced it; the saved output beside it is the record.
 ##   cd /home2/lan68/plasmofit/plasmofit-test
 ##   PLASMOFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev \
 ##     Rscript --vanilla _scripts/use-conv-switch-check.R \

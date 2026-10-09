@@ -281,6 +281,12 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   40** (`np_bs400_nc384`), the second rung of the production ladder. Same
   pattern as the entry-39 reseed that worked: one change (the seed), and
   `WOCKFIT_SUFFIX` set so it lands beside the non-converged fit.
+
+**The five `conv-series-*` / `forward-map-*` / `high-nc-*` scripts below need a
+`plasmofit` built from commit `05c9c1f`.** `conv_series()` was removed from the
+package in `bba580f` once it was measured as slower and less accurate than the
+Erlang-window series. They are kept because `claude/findings.md` quotes their
+numbers, and their saved outputs in `_data/` are tracked.
 - `_scripts/conv-series-validate.R` — checks the package's `conv_series()`
   against `mat_exp_series()` in the **installed binary** across 448 parameter
   sets, and times both. `PLASMOFIT_LIB` selects the library, defaulting to the

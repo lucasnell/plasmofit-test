@@ -28,16 +28,10 @@ match where a thread exists. This file is the actionable layer. -->
       stable at **40.93–41.15 h once `n_c` >= 384** and the gains beyond 512
       are under 1.3 ll units over 1130 observations, so the choice is between
       384 and 512 on cost. 96 and 192 are out.
-- [ ] **Install the package to the LIVE library once SLURM 30829 finishes.**
-      `conv_series()` is written, validated and committed (`815f3a0` in the
-      package repo) but is **only in the scratch library**
-      `/home2/lan68/plasmofit/.Rlib-dev`, because reinstalling under a running
-      `rstan` job is not worth the risk. When `squeue` is clear:
-      `cd /home2/lan68/plasmofit/plasmofit && rm -f src/*.o src/*.so &&`
-      `R CMD INSTALL --preclean .` — `~/.Renviron` was fixed on 2026-10-09 so
-      this now works without `R_ENVIRON_USER`. Then re-run
-      `_scripts/conv-series-validate.R` with `PLASMOFIT_LIB=` empty, to verify
-      the **live binary** rather than the scratch one.
+- [x] **Nothing to install.** `conv_series()` was added, measured, and removed
+      again (`bba580f`); the package is byte-identical to `8dde0c1`, which is
+      what is already in the live library. No reinstall is needed and the
+      scratch library `/home2/lan68/plasmofit/.Rlib-dev` can be deleted.
 - [x] **Decided: do NOT use `conv_series()` for fitting.** It is 5x slower
       than the Erlang-window series at `n_c` = 96 and 2.8x at 768 (the
       crossover is near `n_c` ~ 14,000), and it is also LESS accurate at high

@@ -3466,6 +3466,60 @@ and at 1536 1.2e−9. Nothing measured is anywhere near affecting a fit — 1e�
 relative on a log-density of ~1e5 is 1e−4 in absolute units — but the function
 should not be described as exact outside the range it was tested in.
 
+### The convolution was added, measured, and removed
+
+`conv_series()` entered the package on 2026-10-09 (`815f3a0`) and left it the
+same day (`bba580f`). The package is byte-identical to `8dde0c1` either side.
+This section is the record of why, because the measurements are worth keeping
+even though the code is not.
+
+**What it was.** The exact chain written as a convolution in absolute
+developmental age, so transport is a pure-birth process, growth is the weight
+`R^divisions`, and sequestration is a weight too. Validated against
+`mat_exp_series` over 448 parameter sets at `n_c` in {96, 192, 384}: median
+1.85e−13, worst 1.27e−11. Gradients verified against `mat_exp_series` to
+2.2e−12 relative and against central finite differences to 1.2e−7.
+
+**Why it was proposed, and why that reason was wrong.** It is **394x** faster
+than `mat_exp_series` at `n_c` = 384, and that was used to argue `n_c` = 768
+production fits would become affordable. The likelihood never calls
+`mat_exp_series`; it calls `ew_poly_eval`, and `mat_exp_series` appears only
+behind `run_check`. Measured through `grad_log_prob` on all 1130 observations,
+the convolution is **slower**:
+
+| `n_c` | Erlang-window | `conv_series` | ratio |
+|---|---|---|---|
+| 96 | 0.0030 | 0.0155 | 0.19 |
+| 384 | 0.0090 | 0.0420 | 0.21 |
+| 768 | 0.0250 | 0.0720 | 0.35 |
+| 6144 | 0.5360 | 0.6160 | 0.87 |
+
+The gap closes — the series is `n_c^1.26` and the convolution `n_c^0.89` — but
+the crossover is near `n_c` ~ 14,000.
+
+**And it is less accurate exactly where it would have had to pay off**, 5.1e−10
+at `n_c` = 768 against a `mat_exp_series` that is itself stable to 3e−16 across
+step sizes. An FFT convolution carries an absolute error floor while the
+observable at a trough is a small sum of small positive terms.
+
+**What was left was a cross-check** at `n_c` <= 384, duplicating a role
+`mat_exp_series` already fills more accurately, against a cost of ~130 lines of
+Stan plus a `use_conv` switch threaded through four model files and
+`archer_stan_data()`. Removed on that basis.
+
+**What survives, and is the useful part.** Two independently written forward
+maps were shown to agree to **6.4e−14 on `log_prob` and 1.7e−13 on its
+gradient**, on the real data inside the fitted model. That is a stronger
+statement about the Erlang-window series than existed before, and it does not
+depend on the convolution still being present. `mat_exp_series` was also shown
+stable to 3e−16 across step sizes, which had not been established.
+
+The scripts behind every number here are in `_scripts/` and need a `plasmofit`
+built from `05c9c1f`; their outputs in `_data/` are tracked. The R-side
+convolution in `_scripts/convolution-forward-map.R` is untouched and still
+drives the ML screens — it depends only on `make_y_vals()`, `beta_starts()`
+and `generate_starts()`, which all remain.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

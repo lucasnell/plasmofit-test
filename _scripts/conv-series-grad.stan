@@ -1,3 +1,5 @@
+// NOTE, 2026-10-09: needs a plasmofit built from commit 05c9c1f;
+// conv_series() was removed from the package in bba580f.
 // Gradient and log-density check for conv_series(), against mat_exp_series().
 //
 // Parsing proves nothing about reverse-mode autodiff through a complex FFT, so
