@@ -11,19 +11,19 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] Nothing running.
+- [ ] **Entry 40 reseed — SLURM 30829**, submitted 2026-10-09, **~24.5 h**
+      (29635_40 ran 24:34:15; walltime 3 days). `np_bs400_nc384`,
+      `WOCKFIT_SEED=20261009`, `WOCKFIT_SUFFIX=-seed2`. **The only thing
+      blocking a reportable cycle length.** Check `lp__` per chain before the
+      R-hat gate, then compare against entry 39's 41.203 h: the deterministic
+      tests predict the `n_c` effect PERSISTS AND GROWS with `b_shape` pinned
+      (0.98 h at 400 against 0.72 h at 15, all twelve cells). If it converges
+      and the effect is gone, the mechanistic account is wrong and should be
+      revisited, not patched. If a chain sticks again at a similar lp gap the
+      mode is real -- report multimodality and do not reseed a third time.
 
 ### Next
 
-- [ ] **Reseed entry 40 (`np_bs400_nc384`), ~24.5 h.** The only thing left
-      blocking a reportable cycle length. Entry 39 converged on a reseed
-      (SLURM 30525, max R-hat 1.043, 41.20 h) so **one rung of the production
-      ladder exists and the other has never converged**. Use
-      `_scripts/wockner-fit-nc-bs400-reseed.sh` with `--array=40` and a fresh
-      `WOCKFIT_SEED`; `WOCKFIT_SUFFIX` is mandatory or it overwrites the
-      failed fit. Note the tuned retry is now **less** justified than it
-      looked: 30525 saturated `max_treedepth` in only 2% of transitions,
-      against the 46–61% recorded from 29635.
 - [ ] **Decide the `n_c` default.** The ML profile says `cycle_length` is
       stable at **40.93–41.15 h once `n_c` >= 384** and the gains beyond 512
       are under 1.3 ll units over 1130 observations, so the choice is between

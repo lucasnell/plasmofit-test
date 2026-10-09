@@ -2,17 +2,18 @@
 
 ## State of play right now — read this first
 
-**Nothing is running.** All four jobs finished and have been read: 30525 (the
-production reseed), 30641 + 30823 (the eight-start dispersion profile), 30524
-(`n_c` = 768) and 30527 (`n_c` 128/256/512).
+**One job running: SLURM 30829**, the entry 40 reseed, submitted 2026-10-09,
+**~24.5 h**. It is the last rung of the production ladder and the only thing
+blocking a reportable cycle length. Everything else is finished and read:
+30525 (the production reseed), 30641 + 30823 (the eight-start dispersion
+profile), 30524 (`n_c` = 768) and 30527 (`n_c` 128/256/512).
 
-**The age-structure question is answered.** One thing remains before any
-cycle length is reportable, and it is a single job — see "The one thing to run
-next".
+**The age-structure question is answered**, and the IPM is closed. See
+"The job that is running" for how to read 30829 when it lands.
 
 ```bash
 cd /home2/lan68/plasmofit/plasmofit-test
-squeue -u lan68          # empty
+squeue -u lan68          # one job: 30829
 ```
 
 ## The answer: the data constrain the TOTAL spread, not its split
@@ -89,23 +90,38 @@ once `n_c` ≥ 384** (spread 0.22 h across the 2-log-likelihood interval),
 against a 3.20 h span over the original ladder. The large span came from `n_c`
 = 96 and 192, now known to be wrong.
 
-## The one thing to run next
+## The job that is running: SLURM 30829, entry 40
 
-**Reseed entry 40 (`np_bs400_nc384`), ~24.5 h.**
+`_scripts/wockner-fit-nc-bs400-reseed40.sh`. `np_bs400_nc384`,
+`WOCKFIT_SEED=20261009`, `WOCKFIT_SUFFIX=-seed2`, walltime 3 days against a
+measured 24:34:15.
 
-```bash
-sed -e 's/--array=39/--array=40/' -e 's/WOCKFIT_SEED=20261008/WOCKFIT_SEED=20261009/' \
-    _scripts/wockner-fit-nc-bs400-reseed.sh > _scripts/wockner-fit-nc-bs400-reseed40.sh
-# check the header text before submitting -- it still describes entry 39
-```
+**Why it matters.** Entry 39 converged, so one rung of the production ladder
+exists and the other never has. The question the ladder exists to answer —
+does the `n_c` effect on `cycle_length` survive a pinned `b_shape`? — needs
+both and cannot be answered from one.
 
-`WOCKFIT_SUFFIX` is **mandatory** or it overwrites the failed fit; output
-names are built from the config name alone and the seed never appears in them.
+**How to read it.**
 
-Note the tuned retry (`wockner-fit-nc-bs400-retry.sh`, entries 41–42) is now
-**less** justified than it looked: 30525 saturated `max_treedepth` in only 2%
-of transitions with a maximum of 10, against the 46–61% recorded from 29635.
-Reseeding alone is the right move again.
+1. **`lp__` per chain first**, before the R-hat gate. One stuck chain and a
+   general failure want different fixes, and the stuck chain is this config's
+   known failure mode (29635_40: lp__ −996.0 against −925.6, −955.3, −957.8).
+2. **Max R-hat < 1.05.** A run that fails is not a posterior and is not
+   reported, however well the other chains agree.
+3. **Compare `cycle_length` against entry 39's 41.203 h.** The deterministic
+   tests predict the `n_c` effect **persists and grows** with `b_shape`
+   pinned: 0.98 h at `b_shape` 400 against 0.72 h at 15, in all twelve cells
+   of the least-squares table. **If it converges and the effect is gone, the
+   mechanistic account is wrong** and should be revisited, not patched.
+4. For context, the ML profile — `b_shape` free, no priors — puts
+   `cycle_length` at **40.93–41.15 h once `n_c` ≥ 384**.
+
+**If a chain sticks again** at a similar lp gap, the mode is real: report it
+as multimodality, show both modes, and **do not reseed a third time**. The
+tuned retry (`wockner-fit-nc-bs400-retry.sh`) remains unsubmitted and is now
+*less* justified than when written — it raises `max_treedepth` on the strength
+of 46–61% saturation from 29635, but 30525 saturated in only 2% of
+transitions with a maximum of 10.
 
 ## Mistakes made this session, so they are not repeated
 
