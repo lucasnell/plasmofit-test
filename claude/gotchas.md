@@ -502,3 +502,57 @@ turnover.
 
 **Check the sign of every difference before concluding**, because all-positive
 is what this explanation predicts and a single negative would refute it.
+
+## `pgrep -f` and `pkill -f` match their own command line
+
+A watcher built on `pgrep -f "R CMD INSTALL"` reported an install as running
+for **two hours after it had failed**, because the pattern appears in the
+watcher's own arguments, so `pgrep` always found itself. Two `pkill -f`
+attempts on the same pattern then killed the calling shell rather than the
+target.
+
+**Poll the artefact, not the process list.** For a build, wait on a terminal
+line in the log:
+
+```bash
+until grep -qE "^\* DONE|^ERROR:" build.log; do sleep 20; done
+```
+
+That cannot self-match and it reports the outcome as well as the completion.
+If a process really must be matched, break the literal — `"[R] CMD INSTALL"` —
+or kill by PID from `ps`.
+
+## `Rscript --vanilla` hides a broken `~/.Renviron`
+
+Four package installs failed in a row with missing-dependency errors while
+every probe command succeeded, because `~/.Renviron` set `R_LIBS` to an **empty
+directory** and `--vanilla` implies `--no-environ`, so the probes skipped the
+file and the installs did not. `.Renviron` is also read *after* the process
+environment, so setting `R_LIBS` on the command line did not override it.
+
+**Diagnose the environment with the same flags the failing command uses.** To
+override without editing the user's file, point `R_ENVIRON_USER` at a
+replacement:
+
+```bash
+R_ENVIRON_USER=/path/to/dev.Renviron R CMD INSTALL --preclean .
+```
+
+Note `R CMD INSTALL -l DIR` is not a substitute: it drops the user library from
+the search path, so dependencies vanish.
+
+## Never reinstall the package while a production job is sampling
+
+A running `rstan` job holds `plasmofit.so` loaded. Replacing it is *usually*
+survivable on Linux, since the old inode persists for the running process, but
+"usually" is not a trade worth making against a 24-hour fit at the project's
+critical path. **Install to a scratch library and validate there**, then
+install to the live one once `squeue` is clear:
+
+```bash
+mkdir -p /home2/lan68/plasmofit/.Rlib-dev
+# symlink every package except plasmofit into it, then:
+R_ENVIRON_USER=<file pointing R_LIBS at the scratch lib> R CMD INSTALL --preclean .
+```
+
+`_scripts/conv-series-validate.R` takes `PLASMOFIT_LIB` for exactly this.

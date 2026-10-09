@@ -28,11 +28,21 @@ match where a thread exists. This file is the actionable layer. -->
       stable at **40.93–41.15 h once `n_c` >= 384** and the gains beyond 512
       are under 1.3 ll units over 1130 observations, so the choice is between
       384 and 512 on cost. 96 and 192 are out.
-- [ ] **Decide whether to port the Poisson convolution into the package** —
-      see the forward-map workstream below. Independent of everything here.
-
-### Blocked
-
+- [ ] **Install the package to the LIVE library once SLURM 30829 finishes.**
+      `conv_series()` is written, validated and committed (`815f3a0` in the
+      package repo) but is **only in the scratch library**
+      `/home2/lan68/plasmofit/.Rlib-dev`, because reinstalling under a running
+      `rstan` job is not worth the risk. When `squeue` is clear:
+      `cd /home2/lan68/plasmofit/plasmofit && rm -f src/*.o src/*.so &&`
+      `R CMD INSTALL --preclean .` — `~/.Renviron` was fixed on 2026-10-09 so
+      this now works without `R_ENVIRON_USER`. Then re-run
+      `_scripts/conv-series-validate.R` with `PLASMOFIT_LIB=` empty, to verify
+      the **live binary** rather than the scratch one.
+- [ ] **Decide whether to use `conv_series()` in the fitted models.** Adding it
+      to the package is not the same as switching `archer_fit.stan` over. The
+      switch would make `n_c` = 768 production fits feasible (~540 h becomes
+      routine) but changes the forward map every existing fit was made with,
+      so it needs a paired refit at one `n_c` to show the posteriors match.
 - [ ] Nothing.
 
 ### Done

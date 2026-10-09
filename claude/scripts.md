@@ -281,3 +281,14 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   40** (`np_bs400_nc384`), the second rung of the production ladder. Same
   pattern as the entry-39 reseed that worked: one change (the seed), and
   `WOCKFIT_SUFFIX` set so it lands beside the non-converged fit.
+- `_scripts/conv-series-validate.R` — checks the package's `conv_series()`
+  against `mat_exp_series()` in the **installed binary** across 448 parameter
+  sets, and times both. `PLASMOFIT_LIB` selects the library, defaulting to the
+  scratch one used while a production job holds the live install. Stops if any
+  set disagrees by more than 1e-10.
+- `_scripts/conv-series-grad.R` / `.stan` — compiles both forward maps behind a
+  data switch and compares `log_prob` and `grad_log_prob`. Parsing proves
+  nothing about reverse-mode autodiff through a complex FFT, and the validation
+  above exercises only the exposed functions, which carry no autodiff at all.
+  `mat_exp_series` is the reference because its gradients come from Stan's own
+  `matrix_exp`; central finite differences catch an error the two could share.

@@ -13,5 +13,6 @@
 !nc-768-read-*.txt
 !nc-dispersion-profile-*.txt
 !ipm-prototype-*.txt
+!conv-series-*.txt
 !nc-profile-fast-*.txt
 !profile-noise-check-*.txt

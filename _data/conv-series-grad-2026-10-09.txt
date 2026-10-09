@@ -1,0 +1,52 @@
+plasmofit from: /home2/lan68/plasmofit/.Rlib-dev 
+n_c = 96, FFT length M = 1024, 7 observation times
+compiling both paths (a few minutes)...
+
+=== 1. log_prob: conv_series vs mat_exp_series ===
+Cells: log posterior density at identical unconstrained parameter values.
+The two are the same model, so this is an equality check.
+
+            conv            mat        abs_diff
+1    4.904995422    4.904995422 8.881784197e-13
+2  -37.100351206  -37.100351206 7.958078641e-13
+3   -1.593368457   -1.593368457 1.776356839e-14
+4 -225.918603764 -225.918603764 2.012257028e-11
+5 -254.803812833 -254.803812833 1.745092959e-11
+
+worst |difference| = 2.012e-11
+
+=== 2. grad_log_prob: conv_series vs mat_exp_series ===
+Cells: max over the 6 unconstrained parameters of |gradient difference|,
+and the same relative to the gradient's own scale. mat_exp_series is the
+reference because its gradients come from Stan's matrix_exp.
+
+      max_abs         rel grad_scale
+1 9.50706e-12 1.99643e-13   47.62021
+2 1.59872e-12 3.02496e-14   52.85100
+3 5.08837e-12 2.16013e-12    2.35559
+4 4.03020e-11 8.71656e-14  462.36124
+5 3.47882e-11 6.75980e-14  514.63278
+
+worst relative gradient difference = 2.160e-12
+
+=== 3. grad_log_prob vs central finite differences ===
+Cells: max over parameters of |analytic - finite difference| relative to
+the gradient scale, for conv_series. This catches an error the two paths
+could share. h is 1e-4 on the unconstrained scale.
+
+      max_abs         rel
+1 1.87812e-07 3.94396e-09
+2 4.16525e-07 7.88111e-09
+3 2.71470e-07 1.15245e-07
+4 3.12587e-06 6.76066e-09
+5 3.47580e-06 6.75394e-09
+
+worst relative difference from finite differences = 1.152e-07
+
+=== verdict ===
+log_prob agreement      : PASS
+gradient vs mat_exp     : PASS
+gradient vs finite diff : PASS
+
+conv_series differentiates correctly inside Stan. The FFT adjoint is
+sound and the function is safe to put in a fitted model.

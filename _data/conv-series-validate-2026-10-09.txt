@@ -1,0 +1,38 @@
+plasmofit loaded from: /home2/lan68/plasmofit/.Rlib-dev 
+
+=== 1. conv_series vs mat_exp_series over 448 parameter sets ===
+Cells: max over the 7 observation times of |conv - mat| / |mat|, then
+summarised over the grid. log10_total0 is fixed at 5.5 throughout, since
+it only scales the trajectory.
+
+FFT length used: n_c 96 -> M 1024 | n_c 192 -> M 2048 | n_c 384 -> M 4096
+
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+3.321e-14 1.094e-13 1.846e-13 3.574e-13 3.464e-13 1.270e-11 
+
+worst max_rel_diff: 1.270e-11 | sets above 1e-10: 0 of 448
+worst set:  cl n_c  bs bo R mu max_rel_diff
+ 45 384 400  0 8  0     1.27e-11
+
+PASS: every parameter set agrees to better than 1e-10 
+
+=== 2. times that mat_exp_series rejects ===
+Cells: mat_exp_series requires times divisible by dt and strictly
+increasing, because it steps. conv_series has no stepping, so it does
+not. Checked by evaluating at a time BETWEEN two grid points and
+confirming it lands between the two trajectories.
+
+        t conv_series
+1  77.500     4225497
+2 103.250     5639407
+3 150.125    35371778
+mat_exp_series at the same times: rejected, as expected 
+
+=== 3. cost ===
+Cells: seconds for one 7-point trajectory, median of 5 runs, installed
+binary. The matrix exponential is cubic in n_c; the convolution is
+M log M with M roughly linear in n_c.
+
+  n_c =  96 (M =  1024) : mat_exp  0.0150 s | conv  0.0010 s | speedup  15.0x
+  n_c = 192 (M =  2048) : mat_exp  0.1520 s | conv  0.0020 s | speedup  76.0x
+  n_c = 384 (M =  4096) : mat_exp  1.1820 s | conv  0.0030 s | speedup 394.0x
