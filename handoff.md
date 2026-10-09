@@ -194,9 +194,11 @@ Nine, all mine, all in the instruments rather than the science. They are in
    through the interface production uses, and grep the hot path first.
 6. **A cost was extrapolated from the wrong scaling law.** `n_c` = 768 was
    called ~540 h from the matrix exponential's cubic cost; it is ~3 days.
-7. **`pgrep -f` matched its own command line**, twice. A watcher reported a
-   failed build as running for two hours; two `pkill` attempts killed the
-   calling shell. Poll the artefact, not the process list.
+7. **`pgrep -f` matched its own command line**, three times. A watcher
+   reported a failed build as running for two hours; two `pkill` attempts
+   killed the calling shell; and a watcher that DID use the bracket guard
+   still spun for two days, because the guard protects the pattern and its
+   payload named the same file. Poll the artefact, not the process list.
 8. **`Rscript --vanilla` hid a broken `~/.Renviron`** through four failed
    installs, because `--vanilla` implies `--no-environ`. Diagnose with the
    same flags the failing command uses. (Lucas has since emptied the file.)

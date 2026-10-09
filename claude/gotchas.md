@@ -505,11 +505,30 @@ is what this explanation predicts and a single negative would refute it.
 
 ## `pgrep -f` and `pkill -f` match their own command line
 
-A watcher built on `pgrep -f "R CMD INSTALL"` reported an install as running
-for **two hours after it had failed**, because the pattern appears in the
-watcher's own arguments, so `pgrep` always found itself. Two `pkill -f`
-attempts on the same pattern then killed the calling shell rather than the
-target.
+Three instances in one session, in three disguises, so this is a rule and not
+an anecdote.
+
+1. A watcher built on `pgrep -f "R CMD INSTALL"` reported an install as
+   running for **two hours after it had failed**: the pattern appears in the
+   watcher's own arguments, so `pgrep` always found itself.
+2. Two `pkill -f` calls on that same pattern killed the **calling shell**
+   rather than the target.
+3. A watcher that DID use the bracket guard still spun for **two days**. Its
+   loop was
+
+   ```bash
+   until ! pgrep -f "[n]c-mechanism"; do sleep 15; done
+   sed -n '/best-matching/,$p' _data/nc-mechanism-2026-10-07.txt
+   ```
+
+   The guard works: `[n]c-mechanism` cannot match the literal `[n]c-mechanism`
+   in its own pattern. But **`pgrep -f` matches the WHOLE command line**, and
+   the filename on the next line contains the substring `nc-mechanism`. So it
+   matched itself through its own payload, 12,000 times, waiting for a job
+   that had finished two days earlier.
+
+**The bracket trick protects the pattern, not the command.** It is not a
+general fix, and treating it as one is what produced the third failure.
 
 **Poll the artefact, not the process list.** For a build, wait on a terminal
 line in the log:
@@ -518,9 +537,18 @@ line in the log:
 until grep -qE "^\* DONE|^ERROR:" build.log; do sleep 20; done
 ```
 
-That cannot self-match and it reports the outcome as well as the completion.
-If a process really must be matched, break the literal — `"[R] CMD INSTALL"` —
-or kill by PID from `ps`.
+That cannot self-match whatever else is on the command line, and it reports
+the OUTCOME as well as the completion -- the two-hour watcher would have said
+`ERROR:` immediately. For a SLURM array, count the output files or read
+`sacct`. If a process genuinely must be matched, get the PID from `ps` once
+and then act on the PID.
+
+**Check for strays at the end of a long session.** The two-day watcher cost
+nothing but was invisible until looked for:
+
+```bash
+ps -eo pid,etimes,args --no-headers | awk '$2 > 3600' | grep '[s]leep\|[u]ntil'
+```
 
 ## `Rscript --vanilla` hides a broken `~/.Renviron`
 
