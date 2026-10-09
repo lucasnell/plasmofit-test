@@ -16,6 +16,60 @@ cd /home2/lan68/plasmofit/plasmofit-test
 squeue -u lan68          # one job: 30829
 ```
 
+## If this session is gone, start here
+
+Everything below is in the notes; nothing important lives only in the
+conversation. The four root files are `CLAUDE.md` (stable context, settled
+decisions), `PROJECT_INDEX.md` (status, workstreams, decision log), `TODO.md`
+(actionable), and this file. Detail is in `claude/`.
+
+**Step 1 — check the job.**
+
+```bash
+cd /home2/lan68/plasmofit/plasmofit-test
+squeue -u lan68                                   # empty means 30829 finished
+sacct -j 30829 --format=JobID%16,State,Elapsed -X
+ls -la _data/*np_bs400_nc384-seed2*               # expect 4 files
+```
+
+**Step 2 — read it in this order**, which is in "The job that is running"
+above: `lp__` per chain first, then max R-hat < 1.05, then `cycle_length`
+against entry 39's 41.203 h.
+
+```r
+.libPaths("/home/lan68/R/x86_64-pc-linux-gnu-library/4.6")
+library(rstan)
+f <- readRDS("_data/wock-fit-np_bs400_nc384-seed2.rds")
+s <- summary(f)$summary
+max(s[, "Rhat"], na.rm = TRUE)                    # the gate
+colMeans(extract(f, "lp__", permuted = FALSE)[,,1])   # one stuck chain?
+round(s[grep("^cycle_length\\[", rownames(s)), c("mean","sd","Rhat")], 3)
+```
+
+**Step 3 — what the answer means.** Entry 39 (`n_c` = 192) gave 41.203 h. The
+deterministic tests predict the `n_c` effect **persists and grows** with
+`b_shape` pinned — 0.98 h at 400 against 0.72 h at 15, in all twelve cells of
+the least-squares table. If 30829 converges and the effect is gone, the
+mechanistic account is wrong and should be revisited, not patched. For
+context, the priors-free ML profile puts `cycle_length` at **40.93–41.15 h**
+once `n_c` >= 384.
+
+**If a chain sticks again** at a similar lp gap, the mode is real: report
+multimodality, show both modes, and **do not reseed a third time**. Move to
+entry 41 (`_scripts/wockner-fit-nc-bs400-retry.sh`), noting it is now less
+justified than when written — 30525 saturated `max_treedepth` in only 2% of
+transitions against the 46–61% recorded from 29635.
+
+**Nothing else is pending.** No other job is queued, the package is
+byte-identical to `8dde0c1` and needs no reinstall, the scratch library is
+deleted, and both repos are pushed with nothing unpushed. The only untracked
+files are `mmc1.pdf` and `mmcm.pdf`, deliberately so.
+
+**Everything in `_data/` is gitignored except the reader outputs**, which are
+negated in `_data/.gitignore` so any number quoted in the notes can be
+re-derived from the repo alone. The fits themselves — about 5 GB — exist only
+on the cluster filesystem.
+
 ## The answer: the data constrain the TOTAL spread, not its split
 
 This is the result that closes the thread, and everything else follows from
@@ -242,3 +296,4 @@ decisions), `PROJECT_INDEX.md` (status, workstreams, decision log), `TODO.md`
 every table's cells defined), `gotchas.md` (**read before running anything**),
 `scripts.md`, `threads.md`, `references.md`, and `ipm-decision.md` (the
 age-structure design decision, now closed).
+

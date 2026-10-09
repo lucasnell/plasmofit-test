@@ -1,6 +1,7 @@
 # The age-structure decision: chain plus a parameter, or an IPM
 
-Drafted 2026-10-08, while SLURM 30524 is running. Thread 15. This is the
+Drafted 2026-10-08 while SLURM 30524 was running; all jobs it refers to have
+since finished. Thread 15. This is the
 design document behind the `TODO.md` item "Give the desynchronisation rate its
 own parameter"; `claude/threads.md` thread 15 holds the running record and
 `claude/findings.md` holds every number quoted here.
@@ -190,7 +191,7 @@ machinery: profile `sigma_d` with `b_shape` free and see whether the profile
 has curvature. If it does not, B delivers a parameter the data cannot
 estimate, and the honest outcome is C with a clear caveat.
 
-**That check is running: SLURM 30527**, submitted 2026-10-08.
+**That check RAN: SLURM 30527, 2026-10-08, and is reported above.**
 `_scripts/decay-law-profile.sh` adds `n_c` = 128, 256, 512 so the profile has
 seven rungs spanning a transit CV of 0.102 down to 0.036, and
 `_scripts/nc-dispersion-profile-read.R` reads it. It also records the fitted

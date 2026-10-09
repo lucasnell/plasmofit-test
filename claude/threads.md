@@ -505,7 +505,7 @@ Roughly in priority order.
     optimisers landed within 0.01 of 0.033 and gained +1.449, +0.097, +0.069,
     +0.069, +0.053. A linear component of exactly the predicted size is nearly
     free over 1130 observations.
-    **THE DECIDING RUNG IS RUNNING: SLURM 30524**, submitted 2026-10-08, 14
+    **SLURM 30524 (the `n_c` = 768 rung) COMPLETED 2026-10-08**, 14
     tasks, model A only at `n_c` = 768. `_scripts/decay-law-768.sh`, read with
     `_scripts/nc-768-read.R`. Mechanism: `_scripts/decay-law-test.R` gained a
     `DECAY_MODE` env var so the same likelihood code serves both runs and the
@@ -631,7 +631,8 @@ Roughly in priority order.
     **`cycle_length` is stable at 40.93-41.15 h once `n_c` >= 384**, a spread
     of 0.22 h across the 2-log-likelihood interval, against 3.20 h over the
     original ladder. The span came from `n_c` = 96 and 192.
-    **THE DENSE PROFILE IS RUNNING: SLURM 30576**, submitted 2026-10-08, 14
+    **SLURM 30576 (the dense profile) COMPLETED 2026-10-08**, superseded by
+    the eight-start re-run 30641 + 30823; see the RESULT block above. 14
     tasks, ~30-45 min. `_scripts/nc-profile-fast.sh`, read with
     `_scripts/nc-profile-fast-read.R`. It supersedes 30527 on coverage because
     the convolution forward map fits a whole unit in 12 s where
