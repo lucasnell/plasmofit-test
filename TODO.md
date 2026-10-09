@@ -31,7 +31,7 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] **Nothing to install.** `conv_series()` was added, measured, and removed
       again (`bba580f`); the package is byte-identical to `8dde0c1`, which is
       what is already in the live library. No reinstall is needed and the
-      scratch library `/home2/lan68/plasmofit/.Rlib-dev` can be deleted.
+      scratch library `/home2/lan68/plasmofit/.Rlib-dev` has been deleted.
 - [x] **Decided: do NOT use `conv_series()` for fitting.** It is 5x slower
       than the Erlang-window series at `n_c` = 96 and 2.8x at 768 (the
       crossover is near `n_c` ~ 14,000), and it is also LESS accurate at high

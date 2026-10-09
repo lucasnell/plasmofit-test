@@ -607,3 +607,12 @@ specifically, not on an average or a maximum over times.
 A related habit: **do not describe a function as exact outside the range it was
 validated in.** `conv_series` was tested at `n_c` in {96, 192, 384} and called
 an exact alternative; the claim does not survive to 768.
+
+## `wockner-fit.R` pins the library path, so a scratch install cannot reach it
+
+`_scripts/wockner-fit.R:56` sets `.libPaths("/home/lan68/R/x86_64-pc-linux-gnu-library/4.6")`
+explicitly, so a production fit always uses the live library whatever the
+calling environment says. That is the right design, and it means the hazard
+runs one way only: building into a scratch library can never disturb a running
+job, while `R CMD INSTALL` into the live library can. Install to a scratch
+library while anything is sampling; the pin guarantees the job is unaffected.
