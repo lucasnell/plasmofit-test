@@ -378,3 +378,43 @@ neither affordable before the convolution:
    `max_shape` 1000, so a screen that lets it reach 5000 is already outside the
    production range, and raising it further moves the screen further from the
    model it is meant to inform.
+
+---
+
+## DECISION, 2026-10-09: do not build it
+
+The eight-start profiles settle it. Both **SATURATE**: the data put an upper
+bound on dispersion and **no lower bound**, so they do not exclude zero, and
+an IPM would return `sigma_d` pressed against zero with an interval touching
+it — a boundary estimate rather than a measured rate. That was the branch this
+memo identified as arguing *against* building one, and it is the branch that
+fired.
+
+| profile | best | 2-unit interval | top-rung gain | unimodality violation |
+|---|---|---|---|---|
+| exact chain, `n_c` 64–1024 | 1024 | {512, 1024} | +1.30 | 0.00 |
+| gamma IPM, mesh fixed at 192 | `n_eff` 2264 | {1683, 4096} | +0.69 | 0.69 |
+
+**Every argument in this memo has now resolved against the rewrite.**
+
+- **Cost** went first: the exact chain is a convolution, 38× faster per
+  trajectory and 148× on a unit fit, with no rewrite and no change of model.
+- **The decay law** could not distinguish √ from linear, so it never supported
+  a kernel choice.
+- **Identifiability**, the last prop, has come back negative.
+- **Option A (non-uniform stage rates) is also dead**, and for the same
+  reason: it can only *add* dispersion above the Erlang floor, and the data
+  want less, not more.
+
+**Option C is the answer.** Pick `n_c` by elpd, report `cycle_length` with the
+ladder, and state the sensitivity — which is now small: 40.93 to 41.15 h
+across the 2-log-likelihood interval once `n_c` ≥ 384, against 3.20 h over the
+original ladder.
+
+**And the underlying reason is worth more than the decision.** The data
+constrain the **total** stage spread at the end of the window, not how it
+splits between initial synchrony and accumulated desynchronisation: the
+accumulated term varies 2.0–4.4× across rungs while the total varies 12.7–23.8%,
+and `b_shape` falls monotonically with the rung in 14 of 14 units. No
+reparameterisation can recover a quantity the data do not separately identify.
+A rewrite would have moved the problem, not solved it.

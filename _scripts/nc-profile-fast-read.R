@@ -61,22 +61,41 @@ if (!is.null(r8) && !is.null(r2) && n_distinct(r8$unit) == n_distinct(r2$unit)) 
 bad <- r |> count(unit, name = "rows") |> filter(rows != max(rows))
 if (nrow(bad) > 0) { print(as.data.frame(bad)); stop("units above have the wrong row count") }
 
-## A profile likelihood in a smooth parameter should be SMOOTH, so deviation
-## from a smooth fit measures how far the optimiser stopped short. This has to
-## be checked BEFORE any verdict, because the rule works in 2-log-likelihood
-## units and under-optimisation of that size would invent or erase a turnover.
-## Learned the hard way twice now: the decay-law test (29684) had the same
-## problem, where six nested models scored worse than models they contain.
-roughness <- function(pool, knot_name) {
+## THE NOISE GATE, and a correction to it made 2026-10-09.
+##
+## The gate exists because under-optimisation can only push `ll` DOWN, so it
+## can both invent a turnover (by depressing a neighbouring rung) and erase
+## one (by depressing the peak). Something has to establish that the profile
+## is clean enough to read before the rule is applied.
+##
+## The first version measured deviation from a loess fit in log(knot). That
+## was WRONG, and demonstrably so without reference to any answer: the chain
+## profile from the eight-start run is STRICTLY MONOTONE -- zero sign
+## reversals in its first differences -- and the loess metric still scored it
+## 2.51, because a span-0.75 quadratic cannot follow a curve that falls 150
+## log-likelihood units over nine rungs. It measured CURVATURE, not noise.
+##
+## The replacement uses the right property. A profile likelihood is UNIMODAL,
+## so the diagnostic is how far the sequence departs from unimodality: how
+## much it ever falls before its maximum, or rises after it. A clean profile
+## scores zero whatever its curvature. The loess number is still printed, as a
+## curvature summary, but it does not gate anything.
+unimodality_violation <- function(pool) {
+    d <- diff(pool$ll); im <- which.max(pool$ll)
+    left  <- if (im > 1) max(c(0, -d[seq_len(im - 1)])) else 0
+    right <- if (im < nrow(pool)) max(c(0, d[im:length(d)])) else 0
+    c(violation = max(left, right), falls_before = left, rises_after = right)
+}
+curvature <- function(pool, knot_name) {
     k <- pool[[knot_name]]
     if (length(k) < 6) return(NA_real_)
-    r <- pool$ll - predict(loess(ll ~ log(k), data = data.frame(ll = pool$ll, k = k),
-                                 span = 0.75, degree = 2))
-    max(abs(r))
+    max(abs(pool$ll - predict(loess(ll ~ log(k),
+        data = data.frame(ll = pool$ll, k = k), span = 0.75, degree = 2))))
 }
 
 verdict <- function(pool, label, knot_name) {
-    rough <- roughness(pool, knot_name)
+    uv <- unimodality_violation(pool)
+    rough <- uv[["violation"]]
     best <- pool[[knot_name]][which.max(pool$ll)]
     grid <- pool[[knot_name]]
     within <- grid[pool$ll - max(pool$ll) > -2]
@@ -87,15 +106,16 @@ verdict <- function(pool, label, knot_name) {
     cat(sprintf("best %s = %g | 2-unit interval {%g, %g} | span %.1f | top-rung gain %+.2f\n",
                 knot_name, best, min(within), max(within),
                 max(pool$ll) - min(pool$ll), top_gain))
-    cat(sprintf("roughness (max |deviation from a smooth profile|) = %.2f ll units\n", rough))
+    cat(sprintf("unimodality violation = %.2f ll units (falls %.2f before the peak, rises %.2f after); curvature %.2f\n",
+                uv[["violation"]], uv[["falls_before"]], uv[["rises_after"]],
+                curvature(pool, knot_name)))
     if (!is.na(rough) && rough > 2) {
-        cat("NO VERDICT. The profile is rougher than the 2-log-likelihood\n",
-            "currency the rule is written in, so the interval above is not\n",
-            "trustworthy and a turnover could be invented or erased by where\n",
-            "the optimiser stopped. Under-optimisation can only push ll DOWN,\n",
-            "so rungs with large negative residuals are the suspects. Refit\n",
-            "with more starts (see _scripts/profile-noise-check.R) and re-read.\n",
-            sep = "")
+        cat("NO VERDICT. The profile departs from unimodality by more than the\n",
+            "2-log-likelihood currency the rule is written in, so the interval\n",
+            "above is not trustworthy and a turnover could be invented or erased\n",
+            "by where the optimiser stopped. Under-optimisation only pushes ll\n",
+            "DOWN, so refit with more starts (_scripts/profile-noise-check.R)\n",
+            "and re-read.\n", sep = "")
         return(invisible(NULL))
     }
     if (max(pool$ll) - min(pool$ll) < 2) {

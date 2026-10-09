@@ -1,0 +1,48 @@
+units: 14 | n_c rungs present: 96, 128, 192, 256, 384, 512, 768 
+b_shape recorded at: 128, 256, 512, 768 
+
+=== pooled profile likelihood in the dispersion magnitude ===
+Cells: ll is the SUM over the 14 grp_init units of model A's maximised
+profile log-likelihood at that n_c, with b_shape free at every rung and
+the observation sd profiled out; units are independent so the sum is the
+joint log-likelihood over all 1130 observations. cv = 1/sqrt(n_c) is the
+transit coefficient of variation the rung implies. sd_h is the stage
+distribution's sd at k = 4.8 cycles in hours, at the mean fitted
+cycle_length. d_from_max is relative to the best rung; 0 marks it.
+
+  n_c      ll units       cv   sd_h d_from_max
+1  96 -856.13    14 0.102062    NaN   -84.3054
+2 128 -816.70    14 0.088388 8.2109   -44.8723
+3 192 -783.71    14 0.072169    NaN   -11.8831
+4 256 -776.25    14 0.062500 5.6053    -4.4299
+5 384 -773.35    14 0.051031    NaN    -1.5271
+6 512 -771.82    14 0.044194 3.9744     0.0000
+7 768 -774.64    14 0.036084 3.3253    -2.8148
+
+best rung: n_c = 512 (cv 0.0442) | interior: TRUE
+within 2 log-likelihood units: n_c in {384, 512}
+profile span over the whole grid: 84.3 log-likelihood units
+
+=== the b_shape / dispersion trade-off ===
+Cells: median over units of the fitted b_shape at each rung. Lower
+b_shape is a WIDER initial spread. If b_shape falls as n_c rises,
+the fit is buying back with initial spread what the finer mesh took
+away in accumulated spread -- that trade-off is the confound.
+
+  n_c   bs_med units
+1 128 4999.984    14
+2 256   54.667    14
+3 512   15.281    14
+4 768   10.927    14
+
+Spearman correlation of log(b_shape) with log(n_c), per unit:
+  median -1.00 | negative in 14 of 14 units
+
+=== pre-registered verdict ===
+gain at the top rung (768 over 512): -2.81 log-likelihood units
+TURNS OVER. The pooled profile has an interior maximum and the
+2-log-likelihood interval excludes both ends of the grid, so the
+dispersion rate is bounded away from zero and from large values: a
+MEASURED quantity. An IPM would deliver a parameter with a real
+interval, and a free stage-rate parameter reaches it too as long as
+the optimum sits ABOVE the Erlang floor at the chosen mesh.

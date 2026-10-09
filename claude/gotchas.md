@@ -467,3 +467,38 @@ The improvements are themselves a measurement and are now reported rather than
 treated as a fault: with eight starts the chain rungs beat the two-start run
 by up to 0.757 ll units on one unit, which is a third of the 2.39 roughness
 the chain profile showed.
+
+## A loess residual measures curvature, not optimiser noise
+
+The noise gate added to `_scripts/nc-profile-fast-read.R` on 2026-10-08 used
+the maximum deviation from a loess fit in log(knot). It was wrong, and
+demonstrably so without reference to any result: the eight-start chain profile
+is **strictly monotone** — zero sign reversals in its first differences — and
+the loess metric still scored it **2.51**, because a span-0.75 quadratic
+cannot follow a curve that falls 150 log-likelihood units over nine rungs.
+
+**Use a property the quantity actually has.** A profile likelihood is
+**unimodal**, so the diagnostic is how far the sequence departs from
+unimodality: how much it ever falls before its maximum, or rises after it. A
+clean profile scores zero whatever its curvature. On the same data that scored
+2.51 and 7.46 under loess, the unimodality violations are **0.00 and 0.69**,
+both inside the 2-unit currency, and the profiles are readable.
+
+The loess number is still printed as a curvature summary, but it gates
+nothing. Note this gate was added mid-session and was never pre-registered;
+the reading rule it guards — turns over / saturates / still climbing / flat —
+is unchanged.
+
+## More starts can only raise a maximum, so use that to arbitrate
+
+When two runs of the same model disagree and differ only in optimiser effort,
+there is nothing to adjudicate: the higher log-likelihood is correct. This
+settled a real conflict. The two-start `mat_exp_series` profile said the `n_c`
+profile TURNS OVER at 512; the eight-start convolution profile said it
+SATURATES. The forward maps agree to 1e−11, every rung-wise difference was
+≥ 0, and the two-start path was **4.10 units short at `n_c` = 768** — which
+alone turned its 512 → 768 step from +0.61 into −2.81 and invented the
+turnover.
+
+**Check the sign of every difference before concluding**, because all-positive
+is what this explanation predicts and a single negative would refute it.

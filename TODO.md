@@ -11,97 +11,62 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **Eight-start re-run of the dispersion profile — SLURM 30641**,
-      submitted 2026-10-08, **~70-150 min** (30576 ran 17-38 min with two
-      starts and each start is an independent `optim()` call, so ~4x;
-      walltime 12 h, the measured worst case times three). Writes with
-      `NCPF_TAG=-s8` so the two-start results survive — their difference is
-      the measurement of how far the optimiser was stopping short, and the
-      reader reports it. Also fixes `NE_CHECK`, which was not drawn from
-      `NE_IPM` so two of three mesh comparisons paired against nothing.
-      **The `b_shape` cap stays at 5000**, deliberately, so this run changes
-      one thing. Why 30576 could not be read: its
-      forward map checked out at 1e-11, but **both profiles are rougher than
-      the 2-log-likelihood rule that reads them** (2.39 chain, 7.17 gamma
-      IPM), so the reader returns NO VERDICT. Measured cause: two optimiser
-      starts are not enough at fine rungs -- refitting `n_eff` = 4096 with
-      eight starts gained **+11.29 on DSM265|1800 alone**, which is the whole
-      of the 11.10 pooled drop that had looked like a turnover.
-- [ ] **Decide whether to raise the `b_shape` cap**, which 30641 does NOT
-      change. It binds at 5000 in 13-14 of 14 units at every rung with
-      `n_eff` <= 157, so the coarse arm of both profiles reports a lower
-      bound rather than a maximum. **This is a modelling choice, not a bug
-      fix**: production pins `b_shape` at 400 with `max_shape` 1000, so a
-      screen reaching 5000 is already outside the production range and
-      raising it further moves the screen further from the model it informs.
-      It does not move the optimum, which sits ~100 ll units above that arm
-      in the bound-free region, so this is about the left arm only.
-- [ ] **Reseed of the production `n_c` ladder — SLURM 30525**, entry 39
-      (`np_bs400_nc192`), submitted 2026-10-08, **~8.5 h** (29635 entry 39 ran
-      8:20:35). Writes with `WOCKFIT_SUFFIX=-seed2` so it lands beside the
-      failed fit instead of overwriting it. Decides whether the `n_c` effect
-      on `cycle_length` survives a pinned `b_shape`; the deterministic tests
-      predict it persists and grows. **Until it lands, no reported
-      cycle-length number should change.**
+- [ ] Nothing running.
 
 ### Next
 
-- [ ] **Decide the `n_c` default** once 30525 lands. 96 is wrong — by 71.8
-      elpd under the Bayesian comparison and by +72.4 log-likelihood units in
-      14 of 14 units under a priors-free maximum-likelihood profile. 192 and
-      384 are tied on elpd with `b_shape` free; the ML profile puts 384 ahead
-      of 192 by +10.4 summed, in 10 of 14 units.
-- [ ] **Give the desynchronisation rate its own parameter**, if 30524 says a
-      rewrite is not justified. Cheapest form that keeps `mat_exp_series` and
-      the `matrix_exp` cross-check: **non-uniform stage rates**
-      (hypoexponential rather than Erlang), which changes the generator's
-      diagonal, not the framework. One parameter frees the transit variance —
-      but only **upward**, since Erlang is the minimum-variance case. The
-      full case for and against, written before 30524 read out, is in
-      `claude/ipm-decision.md`.
-- [ ] **If a chain sticks again in 30525** at a similar lp gap, the mode is
-      real. Report it as multimodality, show both modes, and move to entry 41
-      (`adapt_delta` 0.95, `max_treedepth` 12,
-      `_scripts/wockner-fit-nc-bs400-retry.sh`) rather than reseeding a third
-      time.
+- [ ] **Reseed entry 40 (`np_bs400_nc384`), ~24.5 h.** The only thing left
+      blocking a reportable cycle length. Entry 39 converged on a reseed
+      (SLURM 30525, max R-hat 1.043, 41.20 h) so **one rung of the production
+      ladder exists and the other has never converged**. Use
+      `_scripts/wockner-fit-nc-bs400-reseed.sh` with `--array=40` and a fresh
+      `WOCKFIT_SEED`; `WOCKFIT_SUFFIX` is mandatory or it overwrites the
+      failed fit. Note the tuned retry is now **less** justified than it
+      looked: 30525 saturated `max_treedepth` in only 2% of transitions,
+      against the 46–61% recorded from 29635.
+- [ ] **Decide the `n_c` default.** The ML profile says `cycle_length` is
+      stable at **40.93–41.15 h once `n_c` >= 384** and the gains beyond 512
+      are under 1.3 ll units over 1130 observations, so the choice is between
+      384 and 512 on cost. 96 and 192 are out.
+- [ ] **Decide whether to port the Poisson convolution into the package** —
+      see the forward-map workstream below. Independent of everything here.
 
 ### Blocked
 
-- [ ] **IPM / transport-with-dispersion rewrite** — **blocked on SLURM 30524**,
-      which is the last cheap evidence available. The decay-law test could not
-      distinguish √ from linear, so an IPM cannot be justified by appeal to
-      the decay law, and a 1-D Gaussian-kernel IPM would reproduce √ by
-      construction. What 30524 can still establish is whether the data want
-      dispersion **below the Erlang floor**, which is the one thing a chain
-      cannot deliver at any affordable `n_c`. Cost if it goes ahead:
-      discarding the validated Erlang-window series and its `matrix_exp`
-      cross-check, and making every existing fit incomparable.
+- [ ] Nothing.
 
 ### Done
-- [x] **IPM prototype built and validated (2026-10-08).** The exact chain is
-      a convolution in absolute developmental age: reproduces `mat_exp_series`
-      to 1e-12 and runs 38x faster at `n_c` = 384, with no rewrite. An IPM is
-      a different model, not a reparameterisation -- a continuous kernel
-      differs from the chain's lattice Poisson by 0.06 log10 units at the
-      deepest trough. `claude/ipm-decision.md` has the write-up.
 
-- [x] **Decay-law test (29684), 2026-10-08: cannot tell, and says why.** All 14
-      tasks COMPLETED, 9–21 h each. Total `d_ll` +1.53, 8–6 on sign, +1.449 of
-      it from one unit. B nests A, so the six negatives are optimiser failure,
-      not evidence; the worst, −0.521, is the noise floor and only 1 of 14
-      units clears it. Thread 15 and `claude/findings.md` have the numbers.
-- [x] **`n_c` = 96 is wrong without any prior.** Model A alone is a
-      priors-free likelihood profile: 192 beats 96 in 14 of 14 units, +72.4
-      summed, against the Bayesian 71.8 elpd on the same 1130 observations.
-- [x] Real-data `n_c` ladder with `b_shape` free (29633): `cycle_length` moves
-      −3.20 h, `b_shape` falls monotonically, 96 loses 71.8 elpd.
-- [x] Ruled out a numerical cause: `max_rel_diff` is 8e−13 at `n_c` = 96 and
-      *grows* with `n_c`.
-- [x] Simulation 2×2 (29637): misspecifying `n_c` costs ~1–1.45 h in either
-      direction; correcting both real rungs favours true `n_c` = 192.
-- [x] Explained the mechanism: the observable period is not the
-      `cycle_length` parameter, because a one-sided sequestration window meets
-      a broadening skewed age distribution.
+- [x] **2026-10-09 — the age-structure question is answered.** The data
+      constrain only the **total** stage spread at the end of the window, not
+      how it splits between initial synchrony and accumulated
+      desynchronisation. Accumulated spread varies 2.0x (chain) and 4.4x
+      (gamma IPM) across rungs while the total varies 12.7% and 23.8%, and
+      `b_shape` falls monotonically with the rung in **14 of 14 units**
+      (Spearman −1.00). That explains the decay law's unlearnability, the
+      profile's saturation, and `b_shape`'s non-identification at once.
+- [x] **2026-10-09 — do not build the IPM.** Both profiles SATURATE: upper
+      bound on dispersion, no lower bound, so `sigma_d` would come back at a
+      boundary rather than as a rate. Non-uniform stage rates do not help
+      either — they only ADD dispersion above the Erlang floor, and the data
+      want less. The cost argument had already gone when the exact chain
+      turned out to be a convolution.
+- [x] **2026-10-08/09 — the production ladder converged on a reseed.** SLURM
+      30525, `n_c` = 192, `b_shape` 400: max R-hat 1.0432, `lp__` spread 8.3
+      across chains against 29635's ~96. **41.203 h**, mean over 13 trials,
+      at 5.8% divergences.
+- [x] **2026-10-09 — the two-start/eight-start conflict is resolved.**
+      `mat_exp_series` said TURNS OVER at 512, the eight-start convolution
+      said SATURATES; the forward maps agree to 1e-11, every rung-wise
+      difference was >= 0, and the two-start path was 4.10 units short at
+      `n_c` = 768. The higher log-likelihood wins.
+- [x] Decay-law test (29684): cannot distinguish √ from linear — and now
+      explained, since the total spread is nearly fixed across rungs.
+- [x] `n_c` = 96 is wrong without any prior: +72.4 ll units in 14 of 14 units.
+- [x] Simulation 2x2 (29637): misspecifying `n_c` costs ~1–1.45 h either way.
+- [x] The observable period is not the `cycle_length` parameter.
+- [x] IPM prototype built and validated: the exact chain is a convolution,
+      1e-12 against `mat_exp_series` and 38x faster per trajectory.
 
 ## Cycle-length bias (thread 2)
 

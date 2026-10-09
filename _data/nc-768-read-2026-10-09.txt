@@ -1,0 +1,54 @@
+units read: 14 of 14, all with 4 model-A rows
+
+=== model A as a likelihood profile over n_c, extended to 768 ===
+Cells: maximised profile log-likelihood of model A, differenced across
+n_c WITHIN a unit, in log-likelihood units. Positive favours the higher
+n_c. Every rung has the same parameter count, so no complexity penalty
+applies. No priors anywhere. Aggregated over the 14 grp_init units that
+hold all 1130 observations; unpaired across units is meaningless here,
+so the summary is a sum and a sign count.
+
+                unit   n     nc96    nc192     nc384     nc768  g96_192
+1     ACT451840|1800  45  -32.507  -31.219  -31.2508  -31.2619  1.28848
+2        DSM265|1800  57  -32.044  -28.083  -26.5751  -26.9538  3.96122
+3       DSMOZ_2|2800  41  -39.006  -37.849  -37.8140  -37.8102  1.15635
+4   EFITA_OZGAM|2800 119  -75.129  -66.020  -65.9113  -65.8110  9.10918
+5    Ferroquine|1800  61  -34.512  -25.844  -24.8775  -24.4062  8.66769
+6        KAE609|1800  55  -36.584  -30.362  -28.8574  -27.1448  6.22285
+7    Mefloquine|1800 132 -105.709 -100.547 -100.5567 -100.5995  5.16259
+8  MMV048_PartB|2800 116 -102.735 -102.439 -102.8059 -105.8260  0.29542
+9    MMV048_PIB|1800  34  -18.254   -8.009   -3.8307   -3.7748 10.24525
+10 OZ439/DSM265|1800  76  -58.526  -50.352  -48.5253  -49.3627  8.17434
+11        OZ439|1800 116  -90.742  -90.410  -90.6056  -90.5852  0.33222
+12  Piperaquine|1800 160 -142.930 -132.092 -132.0796 -131.1365 10.83750
+13  SJ733IBSMCS|2300  67  -52.787  -49.629  -48.8634  -49.1942  3.15823
+14  SJ733IBSMCS|2800  51  -34.664  -30.853  -30.7981  -30.7724  3.81092
+    g192_384   g384_768
+1  -0.032237 -0.0110389
+2   1.508147 -0.3787179
+3   0.035276  0.0037863
+4   0.108701  0.1002660
+5   0.966529  0.4713234
+6   1.504104  1.7126297
+7  -0.010199 -0.0428126
+8  -0.366707 -3.0201415
+9   4.178315  0.0559332
+10  1.826858 -0.8373635
+11 -0.195891  0.0204370
+12  0.012777  0.9431060
+13  0.765644 -0.3308676
+14  0.054740  0.0257323
+
+  96 -> 192 :   +72.4 summed | 14/14 units positive
+ 192 -> 384 :   +10.4 summed | 10/14 units positive
+ 384 -> 768 :    -1.3 summed |  8/14 units positive
+
+ratio of successive gains: 0.143 then -0.124
+geometric prediction for 384 -> 768 was +1.5
+
+=== pre-registered verdict ===
+PLATEAU. The gains are decaying as a geometric extrapolation predicts.
+The data's preferred dispersion is reachable inside the Erlang family,
+so the mesh/rate coupling is not actively distorting the fit. No
+structural rewrite is justified: pick n_c by elpd, and free the stage
+rates only if a dispersion ABOVE the Erlang floor is wanted.

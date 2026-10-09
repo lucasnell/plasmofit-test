@@ -1,17 +1,14 @@
 # plasmofit — malaria within-host dynamics — index
 
-**Status as of 2026-10-08:** The modelling is in a late diagnostic phase, not
-a writing phase. Three large questions are settled — the `log10_total0` prior
-was misspecified, `b_shape` must be fixed rather than estimated, and the
-hierarchy earns nothing either way — but **no cycle-length number is
-reportable yet**. Two live issues block it: the production `n_c` ladder failed
-to converge, and the age-structure model conflates a numerical mesh with a
-biological rate. The decay-law test (SLURM 29684) has read out and **could
-not distinguish the two decay laws**, so the structural fix is now a
-judgement call. Four jobs are running on it, and a validated prototype has
-already moved it: the exact chain turns out to be a convolution, 38x faster
-at `n_c` = 384 with no rewrite, so cost is no longer a reason to replace the
-age structure and only the decoupling argument remains.
+**Status as of 2026-10-09:** The age-structure question is **answered**, and
+the answer is that the data cannot separate initial synchrony from accumulated
+desynchronisation — they constrain only the total spread at the end of the
+window. That closes the IPM question (do not build it), explains why the decay
+law was not learnable, and leaves `cycle_length` **stable at 40.93–41.15 h once
+`n_c` >= 384**. The first converged production fit with `b_shape` pinned gives
+**41.20 h** (13 trials, `n_c` = 192, SLURM 30525), but at 5.8% divergences and
+with **no second rung**, so the production ladder is still open and no headline
+number is final.
 
 ## The question
 
@@ -49,9 +46,10 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 | Workstream | State | Next |
 |---|---|---|
 | Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Nothing. Leans on `wide_bshape`, 6 clean pairs |
-| `n_c` as a biological assumption | **Established** that 96 is wrong: 71.8 elpd under Bayes, and +72.4 log-likelihood units in 14 of 14 units with no priors | Reseed of the ladder running, SLURM 30525 |
-| Decay law (√ vs linear) | **Indecisive**, 29684 complete: at the predicted sigma a linear component buys at most +0.4 log-likelihood units | Closed; a rerun cannot create power |
-| Age-structure rewrite (IPM) | **Gated on 30524, 30527 and 30576**: is the preferred dispersion below the Erlang floor, and is it identified or at a boundary? Prototype validated to 1e-12 | Case and prototype findings in `claude/ipm-decision.md` |
+| Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences; the 384 rung has never converged | Reseed entry 40, ~24.5 h |
+| `n_c` as a biological assumption | **Resolved**: 96 and 192 are wrong, and `cycle_length` is stable at 40.93–41.15 h once `n_c` >= 384. The `b_shape`/rung trade-off is the mechanism (Spearman −1.00 in 14/14 units) | Second production rung at `b_shape` 400 |
+| Decay law (√ vs linear) | **Indecisive, and now explained**: the total spread is nearly fixed across rungs, so its growth law is barely constrained | Closed |
+| Age-structure rewrite (IPM) | **Closed — do not build it.** Both profiles saturate, so an IPM returns `sigma_d` at a boundary, not a rate; and the convolution already gives the speedup with no rewrite | Nothing |
 | Forward-map speedup | **Available now, independent of the IPM decision**: the convolution is the same model to 1e-12 and 148x faster on a unit fit | Decide whether to port it into the package (`TODO.md`) |
 | Hierarchy / model comparison | **Closed** — no robust evidence either way | Nothing unless a design argument changes |
 | Per-individual initial density | **Scoped**, not estimable as a free effect | Blocked on subject weights |
@@ -97,3 +95,6 @@ Append-only. Supersede a line with a new one rather than editing it.
 | 2026-10-08 | The exact chain is a convolution, not only a matrix exponential | In absolute developmental age, transport is pure-birth, growth and sequestration are weights; reproduces `mat_exp_series` to 1e-12 and runs 38x faster at `n_c` = 384, so cost is no longer a reason to rewrite |
 | 2026-10-08 | An IPM is a different model, not a reparameterisation | The stage at time t is exactly Poisson, a lattice distribution; any continuous kernel differs in the tails, worth 0.06 log10 units at the deepest trough and growing with `n_c` |
 | 2026-10-08 | Keep 30527 running although 30576 supersedes it | 30527 is the production `mat_exp_series` path and the convolution's cross-check; if the two ever disagree, believe `mat_exp_series` |
+| 2026-10-09 | Do not build the IPM | Both profiles saturate, so the data put an upper bound on dispersion and no lower bound; `sigma_d` would come back at a boundary rather than as a measured rate |
+| 2026-10-09 | The data constrain only the TOTAL stage spread | Accumulated spread varies 2.0–4.4x across rungs while the total varies 12.7–23.8%; `b_shape` falls monotonically with the rung in 14 of 14 units |
+| 2026-10-09 | Arbitrate optimiser disagreements by the higher log-likelihood | Two-start `mat_exp_series` said TURNS OVER, eight-start convolution said SATURATES; forward maps agree to 1e-11 and the two-start path was 4.10 units short at `n_c` = 768 |

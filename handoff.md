@@ -1,355 +1,167 @@
-# Handoff — 2026-10-08
+# Handoff — 2026-10-09
 
 ## State of play right now — read this first
 
-**Four jobs running**, all submitted 2026-10-08 after 29684 read out.
+**Nothing is running.** All four jobs finished and have been read: 30525 (the
+production reseed), 30641 + 30823 (the eight-start dispersion profile), 30524
+(`n_c` = 768) and 30527 (`n_c` 128/256/512).
+
+**The age-structure question is answered.** One thing remains before any
+cycle length is reportable, and it is a single job — see "The one thing to run
+next".
 
 ```bash
 cd /home2/lan68/plasmofit/plasmofit-test
-squeue -u lan68
+squeue -u lan68          # empty
 ```
 
-**SLURM 30524 — the `n_c` = 768 rung, 14 tasks, ~2–7 h.** This is the last
-cheap evidence bearing on the IPM decision. Model A only.
+## The answer: the data constrain the TOTAL spread, not its split
 
-```bash
-ls _data/decay-law-a768-unit*.rds | wc -l          # expect 14
-/programs/R-4.6.1/bin/Rscript --vanilla _scripts/nc-768-read.R
-```
+This is the result that closes the thread, and everything else follows from
+it. Fitted stage-distribution spread in **cycles** at the last observation
+(k = 4.8), pooled over the 14 `grp_init` units: `sd_init` from the fitted
+`b_shape`, `sd_acc` = √(4.8/rung) from the rung, `sd_tot` their quadrature sum.
 
-**SLURM 30527 — the dispersion-magnitude profile, 14 tasks, ~1-3 h.** Model A
-at `n_c` = 128, 256, 512, filling the gaps so the profile shows curvature.
-Transit CV is `1/√n_c` and `b_shape` is free at every rung, so this is a
-profile likelihood in the dispersion with the initial-spread nuisance
-concentrated out. Answers whether an IPM would deliver a *rate* or a boundary
-value — see `claude/ipm-decision.md`.
-
-```bash
-ls _data/decay-law-prof-unit*.rds | wc -l            # expect 14
-/programs/R-4.6.1/bin/Rscript --vanilla _scripts/nc-dispersion-profile-read.R \
-  | tee _data/nc-dispersion-profile-$(date +%F).txt
-```
-
-That reader needs **every** rung present for **every** unit and refuses
-otherwise, so run it after both 30524 and 30527 have finished, not between.
-
-**SLURM 30525 — reseed of the production `n_c` ladder, entry 39, ~8.5 h.**
-Writes with `WOCKFIT_SUFFIX=-seed2`, so it lands beside the failed fit rather
-than overwriting it. **Until this lands, no reported cycle-length number
-should change.** That is the single most important standing constraint.
-
-No script any of them reads may be edited while its job runs.
-
-**All four jobs are inside the half-node budget**, checked 2026-10-08 against
-the rule now in `CLAUDE.md`. 30524 is 14 x 1 CPU x 16G, 30527 is 14 x 1 CPU x
-8G, 30576 is 14 x 1 CPU x 2G, and 30525 is 4 CPUs x 24G, so together **46 of
-128 CPUs and 397,312 of 515,670 MB** -- 36% of the CPU budget and 77% of the
-memory budget. None needs an `--array=1-N%M` throttle. They queued behind
-someone else holding 250 of the node's 256 CPUs, which is a queueing fact,
-not a budget violation.
-
-### Which to read first
-
-They overlap, so read them in this order and stop early if one settles it.
-
-1. **30576** -- widest coverage and it checks itself against 29684. Nine
-   chain rungs and sixteen continuous `n_eff` answer both the floor question
-   and the identifiability question at once.
-2. **30527 and 30524** -- the same question on the production
-   `mat_exp_series` path, at three and one rungs. Their value now is as a
-   **cross-check** of 30576, not as the primary evidence. If they disagree
-   with 30576, believe `mat_exp_series` and investigate the convolution.
-3. **30525** -- a different question entirely, and the only one that unblocks
-   a reportable cycle length.
-
-### What 30524 decides, and the rule for reading it
-
-**The full case for and against is already written**, in
-`claude/ipm-decision.md`, drafted while 30524 was still running so the
-reading rule could not be reverse-engineered from the answer. It covers the
-floor argument below, the two concrete designs, the numerical-diffusion
-hazard that makes a spectral scheme the right default for an IPM, and two
-things that hold whichever way 30524 reads.
-
-**The IPM question reduces to one inequality.** In the Erlang chain, transit
-time has mean `cycle_length` and coefficient of variation **`1/√n_c`**. For a
-fixed stage count the Erlang is the **minimum-variance** case — minimising
-Σ1/λᵢ² subject to Σ1/λᵢ = mean puts all rates equal — so `1/√n_c` is a
-**floor the family cannot go under**. Everything turns on whether the data's
-preferred dispersion sits at that floor or below it.
-
-- **At the floor** → the mesh/rate coupling is not distorting the fit. Pick
-  `n_c` by elpd, and free the stage rates only if dispersion *above* the floor
-  is wanted. Non-uniform rates give a hypoexponential, which changes the
-  generator's diagonal and keeps `mat_exp_series` and the `matrix_exp`
-  cross-check.
-- **Below the floor** → the data want transit closer to deterministic than the
-  chain reaches at any affordable `n_c`. The family is fighting them, and an
-  IPM's free dispersion width is justified on evidence rather than taste.
-
-**Pre-registered rule, fixed before submission** and repeated in
-`_scripts/decay-law-768.sh` and in the reader. Gains so far are **+72.4**
-(96→192) and **+10.4** (192→384), ratio 0.14, so geometric decay predicts
-**+1.5** for 384→768.
-
-| summed gain 384→768 | units positive | verdict |
+| profile | accumulated spread varies by | **total** spread varies by |
 |---|---|---|
-| < +3 | < 9/14 | plateau — no rewrite justified |
-| ≥ +8 | ≥ 10/14 | still climbing — IPM justified |
-| anything else | | ambiguous — decide on biology |
+| exact chain, 9 rungs | **2.0×** | **12.7%** of its mean |
+| gamma IPM, 16 rungs | **4.4×** | 23.8% of its mean |
 
-**Why this is needed at all.** The two existing pieces of evidence disagree.
-Bayesian elpd put 192 and 384 tied (−3.2, se 5.0), implying a plateau; the ML
-profile from 29684 put 384 ahead by +10.4 summed in 10/14 units, implying the
-preference is still drifting. Out-of-sample is the better criterion, but it is
-one comparison with se 5.0. The ML profile is a fairer instrument here than
-in-sample comparisons usually are, because `n_c` is a fixed structural choice
-and **every rung has the same parameter count**.
+**The fit holds the total nearly fixed and trades initial against
+accumulated.** `b_shape` falls monotonically as the rung rises in **14 of 14
+units** — Spearman correlation of log(`b_shape`) with log(rung) is **−1.00**.
 
-### What 30525 decides
+That one fact explains four separate open questions at once:
 
-Whether the `n_c` effect on `cycle_length` survives a pinned `b_shape`. 29635
-failed the gate: max R-hat 6.13 with **one** chain stuck at lp__ −929.0
-against −832.3, −833.2, −836.7, while the majority agreed (`cycle_length[1]`
-42.18, 42.28, 42.10, outlier 43.09). A single stuck chain is what a different
-seed fixes, and reseeding changes one thing rather than three.
+- **why the decay law was not learnable** (29684) — if the end-of-window
+  spread is nearly fixed, its *growth law* is barely constrained;
+- **why the `n_c` profile saturates** — any rung fits, because `b_shape`
+  compensates;
+- **why an IPM's `sigma_d` would sit at a boundary** — the data constrain the
+  sum, not the accumulation term;
+- **why `b_shape` is unidentified** — observations begin 1.6 cycles in, so it
+  and the accumulation rate enter only through their sum.
 
-The deterministic tests **predict the effect persists and grows**: 0.98 h at
-`b_shape` 400 against 0.72 h at 15, in all twelve cells of the least-squares
-table. **If it converges and the effect is gone, the whole mechanistic account
-is wrong** and should be revisited rather than patched.
+At the best rungs the split is ~0.11 cycles initial against 0.05–0.08
+accumulated: **the desynchronisation is mostly inherited from t = 0, not
+acquired during the observation window.**
 
-**If a chain sticks again** at a similar lp gap, the mode is real: report it as
-multimodality, show both modes, and move to entry 41 (`adapt_delta` 0.95,
-`max_treedepth` 12, `_scripts/wockner-fit-nc-bs400-retry.sh`, still
-unsubmitted) rather than reseeding a third time. That retry costs 2.5–5×
-because the sampler already saturated treedepth in 46–61% of transitions.
+## What follows: do not build the IPM
 
-**SLURM 30576 — FINISHED AND READ, and the answer is NO VERDICT.** All 14
-tasks COMPLETED, 17-38 min each, 392 fits. Every unit's regression check
-against 29684 passed at **1e-11 or better**, so the convolution forward map is
-sound. But both profiles are **rougher than the 2-log-likelihood currency the
-reading rule is written in** -- 2.39 for the chain, 7.17 for the gamma IPM --
-so the reader refuses a verdict and **nothing about the dispersion is
-concluded**. Output `_data/nc-profile-fast-2026-10-08.txt`, full account in
-`claude/findings.md`, "SLURM 30576: the profiles are not readable, and why".
+Both profiles **SATURATE** under the rule pre-registered in
+`nc-dispersion-profile-read.R`: the data put an upper bound on dispersion and
+**no lower bound**, so they do not exclude zero. An IPM would return `sigma_d`
+pressed against zero with an interval touching it — a boundary estimate, not
+a rate.
 
-**The near-miss worth carrying.** The pooled gamma profile dropped 11.10 units
-at its finest rung, which reads as a turnover -- the branch that would make
-dispersion a measured quantity and be the strongest case for an IPM. It was
-**one unit's optimiser failure**: `_scripts/profile-noise-check.R` refit that
-rung with eight starts instead of two and `DSM265|1800` alone gained **+11.29**.
-The mesh-convergence check had moved it by only 0.50, which looked like
-confirmation -- but both meshes ran the same optimiser from the same starts.
-**A resolution check cannot detect optimiser error.** In `gotchas.md`.
+| profile | best | 2-unit interval | top-rung gain | unimodality violation | verdict |
+|---|---|---|---|---|---|
+| exact chain, 64–1024 | 1024 | {512, 1024} | +1.30 | 0.00 | SATURATES |
+| gamma IPM, mesh fixed 192 | 2264 | {1683, 4096} | +0.69 | 0.69 | SATURATES |
 
-**A re-run needs two changes**, both affordable now and neither affordable
-before the convolution:
+Non-uniform stage rates do not rescue it either: they can only **add**
+dispersion above the Erlang floor, and the data want less, not more. And the
+cost argument had already gone, when the exact chain turned out to be a
+convolution that is 38× faster with no rewrite and no change of model.
 
-1. **Eight starts rather than two** -- measured as necessary, not assumed.
-2. **The `b_shape` cap raised or removed** -- it binds at 5000 in 13-14 of 14
-   units at every rung with `n_eff` <= 157, so the coarse arm of both profiles
-   reports a lower bound rather than a maximum. **This is a choice with
-   content**: production pins `b_shape` at 400 with `max_shape` 1000, so a
-   screen reaching 5000 is already outside the production range and raising it
-   further moves the screen further from the model it informs. Decide before
-   re-running.
+`claude/ipm-decision.md` holds the full case; this is its conclusion.
 
-**30527 and 30524 are still running and still worth having.** They compute
-some of the same rungs on the production `mat_exp_series` path. Note they use
-the SAME two-start harness, so they will carry the same optimiser weakness --
-read them for agreement on the forward map, not as a check on the optimiser.
-## The IPM prototype is built and validated, and it moved the decision
+## The cycle length, and why it is not final
 
-`_scripts/ipm-prototype.R`, output `_data/ipm-prototype-2026-10-08.txt`
-(tracked), full write-up in `claude/ipm-decision.md`. Run it with:
+**SLURM 30525 converged.** Entry 39 (`np_bs400_nc192`), reseeded: **max R-hat
+1.0432**, inside the gate, with `lp__` means −834.7, −828.3, −836.5, −830.1 —
+a spread of **8.3** against 29635's ~96. The stuck chain is gone; reseeding
+was the right diagnosis and the tuned retry was not needed.
+
+**Mean `cycle_length` = 41.203 h** over the 13 trials, range 40.762–41.982, sd
+across trials 0.412.
+
+Two caveats that travel with it:
+
+- **5.8% divergences** (233 of 4000), above the 4.0% that was previously the
+  worst in the project. This is a mean over an imperfectly explored posterior.
+- **It is one rung.** Entry 40 (`n_c` = 384) failed in 29635 and has never
+  been reseeded, so the question the ladder exists to answer — does the `n_c`
+  effect survive a pinned `b_shape`? — is still open.
+
+Independently, the ML profile says `cycle_length` is **stable at 40.93–41.15 h
+once `n_c` ≥ 384** (spread 0.22 h across the 2-log-likelihood interval),
+against a 3.20 h span over the original ladder. The large span came from `n_c`
+= 96 and 192, now known to be wrong.
+
+## The one thing to run next
+
+**Reseed entry 40 (`np_bs400_nc384`), ~24.5 h.**
 
 ```bash
-/programs/R-4.6.1/bin/Rscript --vanilla _scripts/ipm-prototype.R \
-  | tee _data/ipm-prototype-$(date +%F).txt
+sed -e 's/--array=39/--array=40/' -e 's/WOCKFIT_SEED=20261008/WOCKFIT_SEED=20261009/' \
+    _scripts/wockner-fit-nc-bs400-reseed.sh > _scripts/wockner-fit-nc-bs400-reseed40.sh
+# check the header text before submitting -- it still describes entry 39
 ```
 
-**The exact chain is a convolution.** Work in *absolute* developmental age
-instead of age modulo the cycle: transport is then a pure-birth process, with
-a parasite at the starting stage plus Poisson(`lambda * t`), no wrap and no
-boundary condition. Growth becomes the weight `R^divisions` and sequestration
-becomes a weight too, because circulating status resets at division. It
-reproduces `mat_exp_series` to **1e-12** and runs **38x faster at `n_c` =
-384**.
+`WOCKFIT_SUFFIX` is **mandatory** or it overwrites the failed fit; output
+names are built from the config name alone and the seed never appears in them.
 
-That is the same model, so **the speedup needs no rewrite**. It removes cost
-as a reason to build an IPM and leaves only the decoupling argument, which is
-the honest way to argue it. It is also an independent reimplementation from
-the ODE, so it is a second cross-check alongside `matrix_exp`.
+Note the tuned retry (`wockner-fit-nc-bs400-retry.sh`, entries 41–42) is now
+**less** justified than it looked: 30525 saturated `max_treedepth` in only 2%
+of transitions with a maximum of 10, against the 46–61% recorded from 29635.
+Reseeding alone is the right move again.
 
-**Two corrections to `claude/ipm-decision.md`, found by validating.**
+## Mistakes made this session, so they are not repeated
 
-1. An IPM is **not** a reparameterisation of the chain. The stage at time `t`
-   is exactly **Poisson, a lattice distribution**, and any continuous kernel
-   differs in the tails: 0.0135, 0.0331, 0.0623 log10 units at `n_c`
-   96/192/384, growing with `n_c`, against a residual sd of about 0.48. Skew
-   is not the cause — a gamma kernel preserves the right skew exactly and
-   lands within 0.003 of a gaussian. The cause is the **troughs**, where the
-   observable is four orders of magnitude down and is set by the tail of the
-   age distribution. At `n_c` = 384 the whole gap sits at one time, 72 h.
-   Troughs are also where low-end censoring is open, so any IPM fit must be
-   compared with the chain **at the troughs**, not on an average.
-2. The **numerical-diffusion hazard does not arise**. There is no time
-   stepping, so nothing accumulates; the kernel is applied analytically once
-   per observation time. The spectral-scheme recommendation is superseded.
+Four, all mine, all in the instruments rather than the science. They are in
+`claude/gotchas.md` in full.
 
-**The decoupling does work.** Against the chain at `n_c` = 384, the chain at
-96 is 1.589 log10 units away while the gamma IPM at mesh 96 with `n_eff` = 384
-is 0.064 — a factor of 25.
+1. **A two-sided regression check failed six tasks for improving.** It was
+   written for a two-start run, where values should match exactly; with eight
+   starts a higher log-likelihood is an improvement, not drift. Ask which
+   direction a difference can legitimately go, and re-ask when the thing being
+   compared changes.
+2. **That check ran before `saveRDS`**, so stopping threw away ~2.5 h of
+   completed fitting per task. **Write results first, then judge them.**
+3. **A loess residual was used to measure optimiser noise.** It measures
+   *curvature*. The eight-start chain profile is strictly monotone — zero sign
+   reversals — and still scored 2.51. Replaced with a **unimodality**
+   violation, which scores 0.00 on that same profile.
+4. **A mesh-convergence check was mistaken for independent confirmation.** It
+   refit the same rung at twice the mesh and moved it 0.50, which looked like
+   the drop was real; both meshes ran the same optimiser from the same starts.
+   A resolution check cannot detect optimiser error.
 
-**Two subtleties a fresh implementation would plausibly get wrong in silence.**
-The chain applies the sequestration hazard with a **one-stage lag**, so the
-circulating fraction is `G[k-1]` and not `y[k]`; using `y[k]` costs 12% at the
-first observation. And first-cycle parasites have not been reset, so their
-weight depends on where they started. Both were caught by validating against
-`mat_exp_series` rather than by reading the source.
-
-## What 29684 decided: the decay-law test cannot tell
-
-All 14 tasks COMPLETED, every `.err` empty, 9:07 to 21:04 elapsed. The 6–9 h
-estimate was 2.3× low. Full numbers in `claude/findings.md`, "The decay law:
-the test cannot tell, and it says why"; saved output
-`_data/decay-law-read-2026-10-08.txt`.
-
-- Total `d_ll` (model B minus model A) is **+1.53** over 14 units, 8–6 on
-  sign. **One unit supplies +1.449**; the other 13 give +0.08.
-- **The six negatives are not evidence for A.** B contains A at sigma = 0, and
-  A's maximum is never at `n_c` = 96, so `ll_B >= ll_A` must hold. They are
-  Nelder-Mead stopping short. Their worst, **−0.521**, is the noise floor, and
-  **1 of 14 units clears it**.
-- **The power bound is the result.** A maximised gain is at least the gain at
-  any fixed sigma, so each unit's `d_ll` bounds from above what a linear
-  component at the pre-registered sigma = 0.033 could have bought: **at most
-  +0.396, median +0.0000** over 1130 observations.
-
-So a linear component of exactly the predicted size is nearly free. The data
-are **indifferent** between the laws — √ was not confirmed, only unbeaten.
-An IPM therefore cannot be justified by appeal to the decay law, and a 1-D
-Gaussian-kernel IPM would reproduce √ by construction. That is why the
-decision moved to the variance-floor question above.
-
-**One caveat.** The power bound needs B's optimiser to have found its maximum,
-which in 6 of 14 units it did not. `fit_unit()` starts B from two fixed points
-and never warm-starts it from A's solution; a third start at A's optimum with
-a small sigma would make the violation impossible. The present result is
-**biased toward A in magnitude**, by up to the floor.
-
-## The by-product, which is worth more than the test
-
-Model A alone is a **likelihood profile over `n_c` with no priors anywhere**.
-Cells are differences in maximised profile log-likelihood within a unit,
-summed over the 14 `grp_init` units holding all 1130 observations.
-
-| comparison | summed | units favouring the higher `n_c` |
-|---|---|---|
-| 192 over 96 | **+72.4** | **14 of 14** |
-| 384 over 96 | +82.8 | 14 of 14 |
-| 384 over 192 | +10.4 | 10 of 14 |
-
-The Bayesian comparison put 96 **71.8 elpd** (se 13.2) behind 192. Same
-ordering, same magnitude, same plateau, from a different machine.
-
-Two things it is **not**: not independent confirmation of the number, since an
-in-sample maximised likelihood and an out-of-sample elpd difference are
-different quantities and matching to 0.6 units is coincidence; and not a
-uniform effect, since `MMV048_PIB|1800` and `Piperaquine|1800` give +10.2 and
-+10.8 of the +72.4 while `MMV048_PartB|2800` and `OZ439|1800` give +0.30 and
-+0.33. What it rules out is a **prior artefact**.
-
-## Key decisions this session
-
-- **Do not treat the √ decay law as established**, only unbeaten.
-- **A nested model scoring worse is optimiser failure, not evidence.** This
-  corrected the pre-registered reading rule, which counted six optimiser
-  failures as wins for model A. The reader now asserts the inequality.
-- **`n_c` = 96 is wrong without any prior.**
-- **Settle the IPM question on the Erlang variance floor**, not on the decay
-  law. That is what 30524 measures.
-- **Reseed entry 39, not entry 41.** Entries 41-42 already carry the control
-  changes, so "reseed-only run of entry 41" was a contradiction in earlier
-  notes.
+The near-miss worth remembering: the two-start profile appeared to **turn
+over**, which is the branch that would have justified building the IPM. It was
+one unit's optimiser failure worth **+11.29** log-likelihood units.
 
 ## Context for the next session
 
-**What did not work, so it is not retried.**
+**Arbitrating optimiser disagreements.** The two-start `mat_exp_series` path
+says the profile TURNS OVER at `n_c` = 512; the eight-start convolution says
+SATURATES. There is nothing to adjudicate: the forward maps agree to 1e−11,
+every rung-wise difference is ≥ 0, and the two-start path is **4.10 units
+short at `n_c` = 768**, which alone flips its 512 → 768 step from +0.61 to
+−2.81. More starts can only raise a maximum, so the higher value wins.
 
-- *Sequestration-grid discretisation* as the cause of the `n_c` shift is
-  **wrong**: the duty cycle *rises* with `n_c` (0.39765 → 0.40242), implying
-  `cycle_length` should rise by +0.284 h against an observed −2.17 h. Wrong
-  sign, eight times too small.
-- *The pre-registered reading rule for `_scripts/nc-mechanism.R`* **did not
-  work**. The shift *shrinks* in every cell, because a longer window pins the
-  period harder as well as accumulating more spread.
-  `_scripts/nc-period-check.R` is the clean instrument for the period channel.
-- *Cost extrapolation has now failed twice.* A per-leapfrog probe
-  under-predicted a production fit by 2×, and extrapolating model B's cost
-  from model A's under-predicted 29684 by 2.3×. Same cause: a cost model that
-  holds the evaluation count fixed measures only one of two terms. The 768
-  sizing avoids it by measuring the same model at both rungs — 1.925 s at 384
-  against 14.894 s at 768, ratio 7.74.
+**A flag, not a contradiction.** The free `b_shape` in the ML screen settles
+near **9–15** at the best rungs, against the production pin of **400**, whose
+initial spread is six times smaller. The screen has no priors and no
+hierarchy, so the two are not directly comparable — but the gap is large and
+has not been explained.
 
-**A fact worth carrying.** Observations begin at 72 h — **1.6 cycles in** —
-and run to 4.8 cycles. Nothing is observed in the first cycle and a half. That
-is why `b_shape`, which describes t = 0, is unidentified: it is pure backward
-extrapolation. A dispersion rate would govern change *within* the window and
-should be better identified. It is also why the decay-law test had no power:
-√k and k barely differ over about three cycles.
+**What did not work, so it is not retried.** Sequestration-grid discretisation
+as the cause of the `n_c` shift (wrong sign, eight times too small); the
+pre-registered reading rule for `nc-mechanism.R` (the shift shrinks with
+window length, not grows); and three cost extrapolations, every one low — the
+worst by 9× across rungs of the *same* model, because the optimiser's
+iteration count grows with the rung.
 
-**Corrections standing from earlier sessions.** The forward map accounts for
-**half to two thirds** of the real `n_c` shift, not the quarter first
-estimated; both are in `claude/findings.md` and the later supersedes. And
-`mmcm.pdf` is **Greischar & Childs (2023)**, *Trends in Parasitology* 39(8),
-doi 10.1016/j.pt.2023.05.006 — an earlier note transposed the authors from the
-adjacent 2019 entry.
+**Everything in `_data/` is gitignored except the reader outputs**, which are
+negated in `_data/.gitignore` so a number quoted in the notes can be
+re-derived from the repo alone. The fits themselves — 5.2 GB — exist only on
+the cluster filesystem.
 
-**The two PDFs at the repo root are untracked**, deliberately: they are
-published articles and this repo is public. A fresh clone will not have them.
-
-**Almost everything in `_data/` is gitignored**, so the fits — 726 files,
-5.2 GB — exist only on the cluster filesystem. The exception, added
-2026-10-08: `decay-law-read-*.txt` and `nc-768-read-*.txt` are negated in
-`_data/.gitignore` and tracked, because numbers from them are quoted in the
-notes and have to be re-derivable from the repo alone.
 **Where things live.** Root `CLAUDE.md` (stable context and settled
 decisions), `PROJECT_INDEX.md` (status, workstreams, decision log), `TODO.md`
-(actionable layer), this file. The detail is in `claude/`: `findings.md`
-(results, every table's cells defined), `gotchas.md` (**read before running
-anything**), `scripts.md`, `threads.md` (long-form behind `TODO.md`), and
-`references.md`.
-
-## The eight-start re-run: SLURM 30641
-
-Submitted 2026-10-08, 14 tasks, **~70–150 min**, walltime 12 h.
-`_scripts/nc-profile-fast-s8.sh`.
-
-```bash
-ls _data/nc-profile-fast-unit*-s8.rds | wc -l          # expect 14
-/programs/R-4.6.1/bin/Rscript --vanilla _scripts/nc-profile-fast-read.R \
-  | tee _data/nc-profile-fast-$(date +%F).txt
-```
-
-**It changes one thing**: eight optimiser starts instead of two, which was
-measured as necessary and not assumed. It also fixes `NE_CHECK`, which was not
-drawn from `NE_IPM`, so two of three mesh comparisons had paired against
-nothing. **The `b_shape` cap stays at 5000** — raising it is a separate
-modelling choice, not a bug fix, and bundling it in would have confounded the
-two.
-
-**Nothing is overwritten.** `NCPF_TAG=-s8` writes beside the two-start
-results, which stay as the baseline, and `nc-profile-fast.R` now refuses to
-write over an existing output unless `NCPF_FORCE` is set. The reader prefers
-the eight-start set when both are present and reports **what the extra six
-starts bought, per rung** — that difference is a direct measurement of how far
-the two-start optimiser was stopping short, and is worth reading even if the
-verdict still comes back NO VERDICT.
-
-**If it still trips the roughness gate**, do not reach for more starts a third
-time. The next suspects, in order: the `b_shape` cap on the coarse arm, then
-Nelder-Mead itself (try a gradient-free method with restarts, or warm-start
-each rung from its neighbour, which exploits the fact that a profile should be
-smooth).
+(actionable layer), this file. Detail in `claude/`: `findings.md` (results,
+every table's cells defined), `gotchas.md` (**read before running anything**),
+`scripts.md`, `threads.md`, `references.md`, and `ipm-decision.md` (the
+age-structure design decision, now closed).

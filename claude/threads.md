@@ -214,7 +214,17 @@ Roughly in priority order.
    Max R-hat 6.13 and 8.34, one chain stuck 96 and 70 lp units below the
    others. Fitted values and `loo_compare` from it are unusable; `log_lik`
    has R-hat near 6. **Do not report the 3-chain subset.**
-   **THE RESEED IS RUNNING: SLURM 30525**, submitted 2026-10-08, ~8.5 h
+   **THE RESEED CONVERGED: SLURM 30525**, 2026-10-08, 24.2 h. Max R-hat
+   **1.0432**, inside the gate, with `lp__` means −834.7, −828.3, −836.5 and
+   −830.1 -- a spread of 8.3 against 29635's ~96, so the stuck chain is gone.
+   **Mean `cycle_length` 41.203 h** over the 13 trials, range 40.762-41.982,
+   sd across trials 0.412, at **5.8% divergences** (233 of 4000), above the
+   4.0% that was previously the project's worst.
+   **It is ONE rung.** Entry 40 (`n_c` = 384) failed in 29635 and has never
+   been reseeded, so the question the ladder exists to answer is still open.
+   The tuned retry is now LESS justified than it looked: 30525 saturated
+   `max_treedepth` in only 2% of transitions with a maximum of 10, against
+   the 46-61% recorded from 29635. Reseed entry 40 the same way.
    (29635 entry 39 ran 8:20:35). `_scripts/wockner-fit-nc-bs400-reseed.sh`,
    **entry 39** and not 41: entries 41-42 already carry `adapt_delta` 0.95 and
    `max_treedepth` 12, so "a reseed-only run of entry 41" was a contradiction
@@ -576,6 +586,44 @@ Roughly in priority order.
     Cost is roughly **cubic in `n_c`** -- 0.0148 s per trajectory at 96,
     0.153 at 192, 1.18 at 384, 9.21 at 768 -- which is why this is an array
     and why `n_c` = 768 is not in the grid.
+    **ANSWERED 2026-10-09, and the answer closes the thread.** Full numbers in
+    `findings.md`: "Why nothing can pin the dispersion: the total spread is
+    what the data see", plus the three sections around it. Output
+    `_data/nc-profile-fast-2026-10-09.txt`.
+    **The data constrain the TOTAL stage spread at the end of the window, not
+    how it splits between initial synchrony and accumulated
+    desynchronisation.** Across rungs where the accumulated spread varies 2.0x
+    (chain) and 4.4x (gamma IPM), the total varies by only 12.7% and 23.8%,
+    and `b_shape` falls monotonically with the rung in **14 of 14 units**
+    (Spearman −1.00). At the best rungs the split is ~0.11 cycles initial
+    against 0.05-0.08 accumulated, so the desynchronisation is mostly
+    inherited from t = 0 rather than acquired during the window.
+    **That single fact explains four open questions at once**: why the decay
+    law was not learnable (29684), why the `n_c` profile saturates, why an
+    IPM's `sigma_d` would sit at a boundary, and why `b_shape` is
+    unidentified -- it and the accumulation rate enter only through their sum,
+    and observations begin 1.6 cycles in.
+    **VERDICT: DO NOT BUILD THE IPM.** Both profiles SATURATE under the
+    pre-registered rule -- upper bound on dispersion, no lower bound, zero not
+    excluded -- so `sigma_d` would come back as a boundary estimate rather
+    than a rate. Chain: best `n_c` = 1024, top-rung gain +1.30, unimodality
+    violation 0.00. Gamma IPM at fixed mesh: best `n_eff` = 2264, top-rung
+    gain +0.69, violation 0.69. Mesh adequacy confirmed, max shift 0.89 ll
+    units over three rungs refit at M = 384.
+    Non-uniform stage rates do not rescue it either: they can only ADD
+    dispersion above the Erlang floor and the data want less. The cost
+    argument had already gone when the exact chain turned out to be a
+    convolution, 38x faster with no rewrite and no change of model.
+    **A near-miss worth remembering.** The TWO-start profile appeared to turn
+    over, which is the branch that would have justified the rewrite. It was one
+    unit's optimiser failure worth **+11.29** ll units. The eight-start re-run
+    removed it. Where two runs of one model differ only in optimiser effort,
+    the higher log-likelihood is correct: the two-start `mat_exp_series` path
+    is 4.10 units short at `n_c` = 768, which alone turned its 512 -> 768 step
+    from +0.61 into −2.81 and manufactured the turnover.
+    **`cycle_length` is stable at 40.93-41.15 h once `n_c` >= 384**, a spread
+    of 0.22 h across the 2-log-likelihood interval, against 3.20 h over the
+    original ladder. The span came from `n_c` = 96 and 192.
     **THE DENSE PROFILE IS RUNNING: SLURM 30576**, submitted 2026-10-08, 14
     tasks, ~30-45 min. `_scripts/nc-profile-fast.sh`, read with
     `_scripts/nc-profile-fast-read.R`. It supersedes 30527 on coverage because

@@ -274,3 +274,6 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   because the difference between the two is the measurement of how far the
   optimiser was stopping short. `nc-profile-fast.R` also **refuses to
   overwrite** an existing output unless `NCPF_FORCE` is set.
+- `_scripts/nc-profile-fast-s8-retry.sh` — the six tasks of SLURM 30641 that
+  failed the (then two-sided) regression check after completing every fit.
+  Kept as the record of that failure mode.

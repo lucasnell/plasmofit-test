@@ -157,6 +157,30 @@ claude/references.md, not as authorship. -->
   units by **+72.4** summed log-likelihood units, so **`n_c` = 96 being wrong
   is not a prior artefact**.
 
+- **2026-10-09 — The data constrain the TOTAL stage spread, not how it splits
+  between initial synchrony and accumulated desynchronisation.** Across rungs
+  where the accumulated spread varies 2.0x (chain) and 4.4x (gamma IPM), the
+  total spread at the last observation varies by only 12.7% and 23.8%;
+  `b_shape` falls monotonically as the rung rises in **14 of 14 units**
+  (Spearman −1.00). This explains the whole age-structure thread: why the
+  decay law was not learnable, why the `n_c` profile saturates, and why
+  `b_shape` is unidentified. At the best rungs the split is ~0.11 cycles
+  initial against 0.05–0.08 accumulated, so **the desynchronisation is mostly
+  inherited from t = 0, not acquired during the window.**
+- **2026-10-09 — Do not build the IPM.** Both profiles SATURATE: the data put
+  an upper bound on dispersion and no lower bound, so an IPM would return
+  `sigma_d` against zero — a boundary estimate, not a rate. The cost argument
+  went earlier, when the exact chain turned out to be a convolution that is
+  38x faster with no rewrite. Non-uniform stage rates do not help either,
+  since they can only ADD dispersion above the Erlang floor and the data want
+  less, not more.
+- **2026-10-09 — `cycle_length` is stable once `n_c` >= 384**, spanning 40.93
+  to 41.15 h across the 2-log-likelihood interval of the ML profile. The 3.20 h
+  span of the original ladder came from `n_c` = 96 and 192, now known wrong.
+  The first converged production fit (`n_c` = 192, `b_shape` 400, SLURM 30525)
+  gives **41.20 h**, mean over 13 trials, with 5.8% divergences. **A second
+  rung at `b_shape` 400 is still missing**, so the ladder is not yet closed.
+
 ## Working notes
 
 - Current status: `PROJECT_INDEX.md`

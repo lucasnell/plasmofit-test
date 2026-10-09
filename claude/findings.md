@@ -3201,6 +3201,144 @@ confirmation of anything. Recorded in `claude/gotchas.md`.
 reader crashed on `NA`. Only the comparison at `n_eff` = 4096 was valid — and
 that is the one the correction above shows was misleading anyway.
 
+### The production ladder converged on a reseed: 41.20 h at `n_c` = 192
+
+SLURM 30525, entry 39 (`np_bs400_nc192`), `WOCKFIT_SEED=20261008`,
+`WOCKFIT_SUFFIX=-seed2`, 2026-10-08, 24.2 h. **Max R-hat 1.0432, inside the
+1.05 gate — PASS.** `lp__` means per chain are −834.7, −828.3, −836.5, −830.1,
+a spread of **8.3** against 29635's ~96, so the stuck chain is gone and
+reseeding was the right diagnosis. Minimum `n_eff` 118 over 1323 monitored
+quantities.
+
+Cells: posterior mean of `cycle_length` in hours for each of the 13 trials
+(`grp_cl`), `n_c` = 192, `b_shape` pinned at 400, `log10_total0` prior sd 1.
+
+| statistic over the 13 trials | value |
+|---|---|
+| **mean** | **41.203 h** |
+| range | 40.762 to 41.982 |
+| sd across trials | 0.412 |
+| worst per-trial R-hat | 1.033 |
+
+**Caveats that travel with this number.** 233 of 4000 post-warmup draws were
+divergent (**5.8%**), above the 4.0% that was previously the worst in the
+project, so this is a mean over an imperfectly explored posterior. Treedepth
+saturated in only 2% of transitions with a maximum of 10 — which contradicts
+the 46–61% recorded from 29635 and means the tuned retry
+(`wockner-fit-nc-bs400-retry.sh`) is now even less justified than it was.
+
+**What it does not answer.** The question this run was for — does the `n_c`
+effect survive a pinned `b_shape`? — needs **both** rungs, and entry 40
+(`n_c` = 384) failed in 29635 and has not been reseeded. One converged rung is
+not a ladder.
+
+### The eight-start profile: both profiles SATURATE
+
+SLURM 30641 plus 30823 (six tasks re-run after a check of mine failed them for
+improving). `_scripts/nc-profile-fast.R`, read with
+`_scripts/nc-profile-fast-read.R`, output
+`_data/nc-profile-fast-2026-10-09.txt`. 392 fits, 1524.5 CPU-minutes.
+
+**What the extra six starts bought.** Cells are the sum over the 14 units of
+(eight-start `ll` − two-start `ll`) at that rung, which can only be ≥ 0.
+
+| rung | pooled gain | worst single unit |
+|---|---|---|
+| gamma IPM, `n_eff` 4096 | 11.94 | 11.29 |
+| chain, `n_c` 768 | 4.84 | 3.69 |
+| gamma IPM, `n_eff` 930 | 4.65 | 3.49 |
+| gamma IPM, `n_eff` 692 | 2.55 | 1.16 |
+| chain, `n_c` 1024 | 1.79 | 1.32 |
+
+**46.2 log-likelihood units in total, 5 of 26 rungs gaining more than 2.**
+Concentrated, not uniform.
+
+**The verdicts.** Both use the rule pre-registered in
+`nc-dispersion-profile-read.R` before any of this data existed.
+
+| profile | best | 2-unit interval | top-rung gain | unimodality violation | verdict |
+|---|---|---|---|---|---|
+| exact chain, 9 rungs 64–1024 | 1024 | {512, 1024} | +1.30 | **0.00** | SATURATES |
+| gamma IPM, 16 rungs, mesh fixed at 192 | 2264 | {1683, 4096} | +0.69 | 0.69 | SATURATES |
+
+**SATURATES means the data put an upper bound on dispersion and no lower
+bound — they do not exclude zero.** An IPM would return `sigma_d` pressed
+against zero with an interval touching it: a boundary estimate, not a rate.
+That **argues against building one**, which is the opposite of what the
+structural argument alone suggests.
+
+The mesh is adequate: refitting three rungs at mesh 384 shifts the pooled `ll`
+by at most **0.89** units, inside the 2-unit currency.
+
+**`cycle_length` across the 2-unit interval**, which is the honest uncertainty
+from this assumption alone: **40.93 to 41.15 h (spread 0.22)** for the chain
+and 41.07 to 41.64 (spread 0.57) for the gamma IPM. Compare the **3.20 h**
+span across the whole original ladder: once `n_c` ≥ 384 the estimate is
+stable, and the large span came from rungs now known to be wrong.
+
+### Why nothing can pin the dispersion: the total spread is what the data see
+
+This is the result that ties the thread together. Cells are the fitted
+stage-distribution spread in **cycles** at the last observation (k = 4.8),
+pooled over the 14 units: `sd_init` from the fitted `b_shape`, `sd_acc` =
+√(4.8/rung) from the rung, and `sd_tot` their quadrature sum, since the two
+are independent. Rungs where `b_shape` hit the 5000 cap are excluded.
+
+| profile | `sd_acc` varies by | `sd_tot` varies by |
+|---|---|---|
+| exact chain | **2.0×** | **12.7%** of its mean (0.1280–0.1450) |
+| gamma IPM | **4.4×** | 23.8% of its mean (0.1199–0.1508) |
+
+**The fit holds the total spread almost fixed and trades initial against
+accumulated.** `b_shape` falls monotonically as the rung rises in **14 of 14
+units** — Spearman correlation of log(`b_shape`) with log(`n_c`) is
+**−1.00**, median over units.
+
+That single fact explains the whole thread:
+
+- **why the decay law was not learnable** (29684): if the spread at the end of
+  the window is nearly fixed regardless of the rung, its *growth law* is
+  barely constrained;
+- **why the `n_c` profile saturates**: any rung fits, because `b_shape`
+  compensates;
+- **why an IPM's `sigma_d` would sit at a boundary**: the data constrain the
+  sum, not the accumulation term;
+- **and why `b_shape` is unidentified**: observations begin 1.6 cycles in, so
+  `b_shape` and the accumulation rate enter only through their sum.
+
+At the best rungs the split is roughly 0.11 cycles initial against 0.05–0.08
+accumulated — **the observed desynchronisation is mostly inherited from t = 0,
+not acquired during the observation window.** Note the free `b_shape` here
+settles near **9–15**, against the production pin of **400**, whose initial sd
+is six times smaller; the ML screen has no priors and no hierarchy, so this is
+a flag rather than a contradiction, but it is a flag.
+
+### The two-start `mat_exp_series` path disagreed, and is explained
+
+`_scripts/nc-dispersion-profile-read.R` on the `mat_exp_series` runs (29684,
+30524, 30527; seven rungs, two starts) returns **TURNS OVER** at `n_c` = 512,
+contradicting the eight-start SATURATES. The disagreement is entirely
+optimiser quality. Cells are pooled `ll` over the 14 units.
+
+| `n_c` | `mat_exp_series`, 2 starts | convolution, 8 starts | difference |
+|---|---|---|---|
+| 96 | −856.130 | −856.111 | +0.018 |
+| 192 | −783.707 | −783.478 | +0.230 |
+| 384 | −773.351 | −772.368 | +0.983 |
+| 512 | −771.824 | −771.145 | +0.679 |
+| 768 | −774.639 | −770.535 | **+4.104** |
+
+Every difference is ≥ 0, as it must be when the forward maps agree to 1e−11
+and only the start count differs. The two-start path is **4.10 units short at
+`n_c` = 768**, which turns its 512 → 768 step from **+0.61 into −2.81** and
+manufactures the turnover. **Believe the eight-start result**, not because it
+is newer but because more starts can only raise a maximum.
+
+Separately, `_scripts/nc-768-read.R` on the same two-start data returns
+PLATEAU (384 → 768 = −1.3 summed, 8/14 units positive), which agrees with
+SATURATES. The two readers differ only because one includes `n_c` = 512 and
+the other does not.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only
