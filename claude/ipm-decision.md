@@ -233,10 +233,19 @@ own `matrix_exp` cross-check, and runs **38x faster at `n_c` = 384** (1.179 s
 against 0.031 s). It is a reimplementation from the ODE's structure, not a
 refactor, so the agreement is an independent check of both.
 
-**This changes the cost calculus.** The speedup needs no rewrite and no new
-model: it is the same model, agreeing to 1e-12. If cost is the motive, port
-the convolution. The IPM is then only for decoupling, which is the honest way
-to argue it.
+**This changes the cost calculus** -- or so it seemed on 2026-10-08. The
+claim was that the speedup needs no rewrite and no new model, so if cost is
+the motive one should port the convolution and leave the IPM to argue only
+for decoupling.
+
+> **SUPERSEDED 2026-10-09.** The 38x is against `mat_exp_series`, which the
+> fitted model never calls -- it calls `ew_poly_eval`. Measured through
+> `grad_log_prob` on the real data the convolution is **5x slower** at
+> `n_c` = 96 and 2.8x at 768, and less accurate at high `n_c`. It was added
+> to the package and removed again (`bba580f`). The speedup is real only for
+> the verification path and the R-side ML screens, which is where it is used.
+> The conclusion below is unaffected: the IPM was already rejected on
+> identifiability, not on cost.
 
 Two subtleties the validation caught, both of which a fresh implementation
 would plausibly get wrong in silence:

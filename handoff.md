@@ -123,9 +123,55 @@ tuned retry (`wockner-fit-nc-bs400-retry.sh`) remains unsubmitted and is now
 of 46–61% saturation from 29635, but 30525 saturated in only 2% of
 transitions with a maximum of 10.
 
+## The forward map: added, measured, removed (2026-10-09)
+
+Nothing in the package changed in the end — it is byte-identical to `8dde0c1`
+— but the episode produced two results worth keeping and four corrections.
+
+**What happened.** The exact chain can be written as a convolution in absolute
+developmental age, which is **394x faster than `mat_exp_series`**. That was
+used to argue an `n_c` = 768 production fit would become affordable, so it was
+built into the package as `conv_series()` with a `use_conv` switch, validated
+over 448 parameter sets, and gradient-checked. Then it was measured **through
+`grad_log_prob` on the real data** and turned out to be **5x slower** at
+`n_c` = 96 and 2.8x at 768. The likelihood never calls `mat_exp_series`; it
+calls `ew_poly_eval`. It is also less accurate at high `n_c` — 5.1e−10 at 768
+against a `mat_exp_series` that is stable to 3e−16 across step sizes. Removed
+by revert (`bba580f`).
+
+**Do not re-open this** without new evidence. Two things that look like reasons
+to are already answered: Stan **does** have an FFT (2.39.0, and it
+differentiates correctly), and an `n_c` = 768 production fit is **~3 days**,
+not the ~540 h an earlier note claimed.
+
+**What survives, and is the useful part.**
+
+- Two independently written forward maps agree to **6.4e−14 on `log_prob` and
+  1.7e−13 on its gradient**, on the real data inside the fitted model. That is
+  a stronger statement about the Erlang-window series than existed before.
+- **`mat_exp_series` is stable to 3e−16 across step sizes**, which had not been
+  established. It matters because `check_erlang_window()`'s `max_rel_diff` uses
+  it as the reference, and that reference is now known to be sound — so the
+  recorded growth of `max_rel_diff` with `n_c` reflects the series, not the
+  arbiter.
+
+**Still working.** `_scripts/convolution-forward-map.R` is the R-side
+implementation and is untouched; it drives `nc-profile-fast.R`,
+`ipm-prototype.R` and the dispersion profile, and depends only on
+`make_y_vals()`, `beta_starts()`, `generate_starts()` and `mat_exp_series`.
+The five `conv-series-*` / `forward-map-*` / `high-nc-*` scripts need a package
+built from `05c9c1f`; each says so in its header and its output is tracked.
+
+**Four claims corrected**, all from asserting a number before measuring the
+thing it described: the 394x speedup (wrong baseline), ~540 h for `n_c` = 768
+(wrong scaling law), "the Erlang-window series is roughly linear in `n_c`" (it
+is `n_c^1.26`), and "`mat_exp_series` is probably the one drifting" (it is
+stable; the convolution drifts). A fifth needed narrowing rather than
+retracting: `conv_series` is exact to 1e−12 only at `n_c` <= 384.
+
 ## Mistakes made this session, so they are not repeated
 
-Four, all mine, all in the instruments rather than the science. They are in
+Nine, all mine, all in the instruments rather than the science. They are in
 `claude/gotchas.md` in full.
 
 1. **A two-sided regression check failed six tasks for improving.** It was
@@ -143,6 +189,19 @@ Four, all mine, all in the instruments rather than the science. They are in
    refit the same rung at twice the mesh and moved it 0.50, which looked like
    the drop was real; both meshes ran the same optimiser from the same starts.
    A resolution check cannot detect optimiser error.
+5. **A speedup was measured against a function the model never calls.** 394x
+   against `mat_exp_series`; the likelihood uses `ew_poly_eval`. Benchmark
+   through the interface production uses, and grep the hot path first.
+6. **A cost was extrapolated from the wrong scaling law.** `n_c` = 768 was
+   called ~540 h from the matrix exponential's cubic cost; it is ~3 days.
+7. **`pgrep -f` matched its own command line**, twice. A watcher reported a
+   failed build as running for two hours; two `pkill` attempts killed the
+   calling shell. Poll the artefact, not the process list.
+8. **`Rscript --vanilla` hid a broken `~/.Renviron`** through four failed
+   installs, because `--vanilla` implies `--no-environ`. Diagnose with the
+   same flags the failing command uses. (Lucas has since emptied the file.)
+9. **An FFT convolution was called exact outside its validated range.** It is
+   1e-12 at `n_c` <= 384 and 1e-9 by 1536.
 
 The near-miss worth remembering: the two-start profile appeared to **turn
 over**, which is the branch that would have justified building the IPM. It was

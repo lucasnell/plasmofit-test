@@ -10,6 +10,10 @@ law was not learnable, and leaves `cycle_length` **stable at 40.93–41.15 h onc
 with **no second rung yet** -- SLURM 30829 is running it -- so the ladder is
 still open and no headline number is final.
 
+The forward-map question is also closed: the convolution was added to the
+package and removed again, slower and less accurate than the series it would
+have replaced. Nothing in the package changed today.
+
 ## The question
 
 How long is the asexual blood-stage replication cycle of *P. falciparum* in
@@ -49,8 +53,8 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 | Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences | **Entry 40 reseed running, SLURM 30829, ~24.5 h** |
 | `n_c` as a biological assumption | **Resolved**: 96 and 192 are wrong, and `cycle_length` is stable at 40.93–41.15 h once `n_c` >= 384. The `b_shape`/rung trade-off is the mechanism (Spearman −1.00 in 14/14 units) | Second production rung at `b_shape` 400 |
 | Decay law (√ vs linear) | **Indecisive, and now explained**: the total spread is nearly fixed across rungs, so its growth law is barely constrained | Closed |
-| Age-structure rewrite (IPM) | **Closed — do not build it.** Both profiles saturate, so an IPM returns `sigma_d` at a boundary, not a rate; and the convolution already gives the speedup with no rewrite | Nothing |
-| Forward-map speedup | **Available now, independent of the IPM decision**: the convolution is the same model to 1e-12 and 148x faster on a unit fit | Decide whether to port it into the package (`TODO.md`) |
+| Age-structure rewrite (IPM) | **Closed — do not build it.** Both profiles saturate, so an IPM returns `sigma_d` at a boundary rather than a rate | Nothing |
+| Forward map | **Closed.** The convolution was added to the package and removed again (`bba580f`): slower and less accurate than the Erlang-window series at every usable `n_c` | Nothing; do not re-open without new evidence |
 | Hierarchy / model comparison | **Closed** — no robust evidence either way | Nothing unless a design argument changes |
 | Per-individual initial density | **Scoped**, not estimable as a free effect | Blocked on subject weights |
 | Package | Pushed, `8dde0c1`; generated bindings now match the Stan sources | — |
@@ -98,3 +102,5 @@ Append-only. Supersede a line with a new one rather than editing it.
 | 2026-10-09 | Do not build the IPM | Both profiles saturate, so the data put an upper bound on dispersion and no lower bound; `sigma_d` would come back at a boundary rather than as a measured rate |
 | 2026-10-09 | The data constrain only the TOTAL stage spread | Accumulated spread varies 2.0–4.4x across rungs while the total varies 12.7–23.8%; `b_shape` falls monotonically with the rung in 14 of 14 units |
 | 2026-10-09 | Arbitrate optimiser disagreements by the higher log-likelihood | Two-start `mat_exp_series` said TURNS OVER, eight-start convolution said SATURATES; forward maps agree to 1e-11 and the two-start path was 4.10 units short at `n_c` = 768 |
+| 2026-10-09 | Keep the Erlang-window series; remove the convolution | Measured through `grad_log_prob` on the real data it is 5x slower at `n_c` = 96 and 2.8x at 768, and less accurate at high `n_c`; the 394x figure was against `mat_exp_series`, which the likelihood never calls |
+| 2026-10-09 | Benchmark through the interface production uses | Two cost claims this session were wrong from measuring the wrong function: the 394x speedup, and ~540 h for an `n_c` = 768 fit that is really ~3 days |

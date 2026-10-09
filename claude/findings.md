@@ -3080,6 +3080,13 @@ unit fit the gain is larger still — **12 s against 1777 s at `n_c` = 384**,
 148x, because the matrix build dominates at high `n_c` — and it reproduces
 SLURM 29684's maximised log-likelihoods at `n_c` 96/192/384 to **1e−6**.
 
+**Scope, added 2026-10-09.** Every speedup in this section is against
+`mat_exp_series`, and it is real **for the ML screens**, which is where the
+convolution is still used (`_scripts/convolution-forward-map.R`). It does NOT
+carry over to the fitted model, which calls `ew_poly_eval` instead; there the
+convolution is 5x slower. See the later section, "`conv_series` in the fitted
+model: correct, and slower".
+
 **Two subtleties, both found by validating rather than by reading the source,
 and either of which a fresh implementation would plausibly get wrong in
 silence.** The chain applies the sequestration hazard with a **one-stage lag**

@@ -154,17 +154,23 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] Horizon ladder: flat once the non-converged rung is reseeded.
 - [x] Design B: argued against as structurally near-rigged; not run.
 
-## Forward-map speedup, opened 2026-10-08 (thread 15)
+## Forward map, opened and closed 2026-10-08/09 (thread 15)
 
-### Next
+### Done
 
-- [ ] **Decide whether to port the Poisson convolution into the package.** It
-      is the *same* model as `mat_exp_series`, agreeing to 1e-12, and runs 38x
-      faster at `n_c` = 384 and 14x at 192 (`_scripts/ipm-prototype.R`). That
-      would make the `n_c` ladder cheap enough to extend, and a production
-      `n_c` ladder cheap to extend on the ML screens. **Independent of
-      the IPM decision** — it changes no model and invalidates no fit. Needs:
-      a Stan implementation of the convolution (FFT is not available in Stan,
-      so a direct lattice convolution, which is O(n_c * window) rather than
-      O(n_c^3)), gradient checks, and the same `max_rel_diff` cross-check
-      against `mat_exp_series` that the current path has.
+- [x] **The Poisson convolution was ported into the package and removed
+      again.** Added as `conv_series()` (`815f3a0`), removed by revert
+      (`bba580f`); the package is byte-identical to `8dde0c1`. **Do not
+      re-open this without new evidence.** It was proposed on a 394x speedup
+      over `mat_exp_series`, which the likelihood never calls — it calls
+      `ew_poly_eval`. Through `grad_log_prob` on the real data the convolution
+      is 5x SLOWER at `n_c` = 96 and 2.8x at 768, crossover near `n_c` ~
+      14,000, and LESS accurate at high `n_c` (5.1e-10 at 768 against a
+      `mat_exp_series` stable to 3e-16 across step sizes). Two earlier notes
+      here were wrong and are corrected: Stan **does** have an FFT (2.39.0),
+      and an `n_c` = 768 production fit is ~3 days, not ~540 h.
+- [x] **What it did establish, and which survives the removal.** Two
+      independently written forward maps agree to 6.4e-14 on `log_prob` and
+      1.7e-13 on its gradient on the real data, and `mat_exp_series` is stable
+      to 3e-16 across step sizes. Neither was known before. Scripts in
+      `_scripts/` need a package built from `05c9c1f`; outputs are tracked.

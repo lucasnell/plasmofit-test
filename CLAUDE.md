@@ -170,8 +170,9 @@ claude/references.md, not as authorship. -->
 - **2026-10-09 — Do not build the IPM.** Both profiles SATURATE: the data put
   an upper bound on dispersion and no lower bound, so an IPM would return
   `sigma_d` against zero — a boundary estimate, not a rate. The cost argument
-  went earlier, when the exact chain turned out to be a convolution that is
-  38x faster with no rewrite. Non-uniform stage rates do not help either,
+  never applied: the convolution that was supposed to supply it is 5x SLOWER
+  than the production series, and was removed from the package again on
+  2026-10-09. Non-uniform stage rates do not help either,
   since they can only ADD dispersion above the Erlang floor and the data want
   less, not more.
 - **2026-10-09 — `cycle_length` is stable once `n_c` >= 384**, spanning 40.93
