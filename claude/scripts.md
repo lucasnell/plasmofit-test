@@ -292,3 +292,9 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   above exercises only the exposed functions, which carry no autodiff at all.
   `mat_exp_series` is the reference because its gradients come from Stan's own
   `matrix_exp`; central finite differences catch an error the two could share.
+- `_scripts/use-conv-switch-check.R` — compares the two forward maps INSIDE
+  the fitted model: `log_prob` and `grad_log_prob` on all 1130 observations at
+  identical parameter values, plus the gradient cost of each. It is the gate
+  before any production fit sets `use_conv = 1L`, and it is where the
+  convolution was found to be slower than the Erlang-window series in this
+  usage, which the function-level benchmark had hidden.

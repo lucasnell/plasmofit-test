@@ -14,5 +14,6 @@
 !nc-dispersion-profile-*.txt
 !ipm-prototype-*.txt
 !conv-series-*.txt
+!use-conv-switch-check-*.txt
 !nc-profile-fast-*.txt
 !profile-noise-check-*.txt

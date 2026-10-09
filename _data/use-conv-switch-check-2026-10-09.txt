@@ -1,0 +1,56 @@
+plasmofit from: /home2/lan68/plasmofit/.Rlib-dev 
+data: 1130 observations, 177 series, 13 trials, 14 grp_init, 27 grp_sd
+
+=== n_c = 96 | fft_M would be 1024 ===
+Cells: log posterior density at identical unconstrained parameter
+values, Erlang-window series against conv_series, on all 1130
+observations. The two are the same model, so this is an equality
+check. rel is |difference| / |lp|.
+
+      ew_series   conv_series        abs_diff             rel
+1 -110727.40533 -110727.40533 1.426087692e-09 1.287926587e-14
+2  -79433.24017  -79433.24017 2.764863893e-10 3.480739156e-15
+3 -114091.43330 -114091.43330 7.566995919e-10 6.632396228e-15
+4  -96215.78258  -96215.78258 8.003553376e-10 8.318337346e-15
+5 -238469.74761 -238469.74761 2.619344741e-10 1.098397079e-15
+
+gradient, max over the unconstrained parameters:
+      max_abs         rel
+1 5.97811e-09 1.03042e-13
+2 1.49594e-08 8.07181e-14
+3 1.23982e-08 1.69546e-13
+4 5.60249e-09 7.18881e-14
+5 5.27507e-09 4.38817e-14
+
+worst lp rel 1.288e-14 | worst gradient rel 1.695e-13
+gradient cost: ew_series 0.0030 s | conv_series 0.0150 s | speedup 0.2x
+
+=== n_c = 192 | fft_M would be 2048 ===
+Cells: log posterior density at identical unconstrained parameter
+values, Erlang-window series against conv_series, on all 1130
+observations. The two are the same model, so this is an equality
+check. rel is |difference| / |lp|.
+
+      ew_series   conv_series        abs_diff             rel
+1 -100190.11701 -100190.11701 6.431946531e-09 6.419741511e-14
+2  -70977.06230  -70977.06230 4.540197551e-09 6.396711000e-14
+3 -105198.58974 -105198.58974 5.195033737e-09 4.938311197e-14
+4  -87062.57163  -87062.57163 1.818989404e-09 2.089289771e-14
+5 -216804.75330 -216804.75330 8.236384019e-09 3.798986827e-14
+
+gradient, max over the unconstrained parameters:
+      max_abs         rel
+1 3.89264e-09 7.07695e-14
+2 5.36966e-09 3.10204e-14
+3 7.01402e-09 1.07326e-13
+4 4.80213e-09 6.40529e-14
+5 6.00994e-09 5.58301e-14
+
+worst lp rel 6.420e-14 | worst gradient rel 1.073e-13
+gradient cost: ew_series 0.0050 s | conv_series 0.0255 s | speedup 0.2x
+
+=== verdict ===
+worst log_prob relative difference : 6.420e-14
+worst gradient relative difference : 1.695e-13
+PASS: the switch does not change the model. A paired refit is still the
+stronger test, but it is now worth the hours.

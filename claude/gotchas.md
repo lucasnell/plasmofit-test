@@ -556,3 +556,25 @@ R_ENVIRON_USER=<file pointing R_LIBS at the scratch lib> R CMD INSTALL --preclea
 ```
 
 `_scripts/conv-series-validate.R` takes `PLASMOFIT_LIB` for exactly this.
+
+## Benchmark against what the code actually calls
+
+`conv_series()` was measured at **394x faster than `mat_exp_series`** and that
+number was used to argue it would make `n_c` = 768 production fits affordable.
+The likelihood does not call `mat_exp_series`. It calls `ew_poly_eval`, the
+Erlang-window polynomial series; `mat_exp_series` appears only in generated
+quantities as a verification path. Measured in the fitted model, `conv_series`
+is **5x SLOWER** at `n_c` = 96 and 2.8x slower at 768.
+
+The same mistake produced a second wrong number: an `n_c` = 768 production fit
+was said to cost ~540 h, extrapolated from the matrix exponential's cubic
+scaling. Real fits scale about 2.9x per doubling of `n_c` (29635: 8.3 h at
+192, 24.6 h at 384), so 768 is on the order of 3 days.
+
+Both were avoidable by reading the model's own likelihood before quoting a
+speedup. **Before claiming an optimisation helps, grep the hot path for the
+function being replaced**, and benchmark through the interface the production
+code uses -- here `grad_log_prob` on the real data, not the exposed function in
+isolation. A function-level benchmark also amortises per-call setup over a
+whole trajectory, which the fitted model never does: it calls the forward map
+once per trajectory combo with a handful of times each.

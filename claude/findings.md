@@ -3339,6 +3339,75 @@ PLATEAU (384 → 768 = −1.3 summed, 8/14 units positive), which agrees with
 SATURATES. The two readers differ only because one includes `n_c` = 512 and
 the other does not.
 
+### `conv_series` in the fitted model: correct, and slower
+
+`_scripts/use-conv-switch-check.R`, output
+`_data/use-conv-switch-check-2026-10-09.txt`. The package gained a data switch
+`use_conv` that selects the forward map inside the likelihood: 0 is the
+Erlang-window polynomial series the project has always used, 1 is
+`conv_series()`.
+
+**Equivalence holds.** Cells are the log posterior density over all 1130
+observations at identical unconstrained parameter values, and the maximum
+relative difference in its gradient, at five random points.
+
+| `n_c` | worst `log_prob` rel. diff | worst gradient rel. diff |
+|---|---|---|
+| 96 | 1.29e−14 | 1.70e−13 |
+| 192 | 6.42e−14 | 1.07e−13 |
+
+Two independently written forward maps agreeing to 1e−13 **inside the fitted
+model, with gradients**, is a stronger check on both than either had alone.
+
+**But it is slower, and the speedup claimed for it was measured against the
+wrong baseline.** The likelihood calls `ew_poly_eval`; `mat_exp_series` appears
+only in generated quantities as a verification path. Cells are median seconds
+for one `grad_log_prob` over all 1130 observations, 20 replicates.
+
+| `n_c` | `fft_M` | Erlang-window | `conv_series` | ratio |
+|---|---|---|---|---|
+| 96 | 1024 | 0.0030 | 0.0160 | 0.19 |
+| 192 | 2048 | 0.0050 | 0.0260 | 0.19 |
+| 384 | 4096 | 0.0090 | 0.0420 | 0.21 |
+| 768 | 8192 | 0.0260 | 0.0735 | 0.35 |
+
+The ratio improves with `n_c` — the Erlang-window series is roughly linear in
+`n_c` (8.7× over an 8-fold rise) while the convolution is sublinear (4.6×) —
+but the crossover is somewhere past `n_c` ≈ 17,000 and so of no practical
+interest. **`conv_series` does not speed up a production fit at any `n_c` this
+project will use.**
+
+Why it loses here despite being 394× faster than `mat_exp_series`: the model
+calls it once per trajectory combo with a handful of times each, and each call
+rebuilds its tilt, twiddle and weight vectors — several O(M) loops — which
+never amortise. The function-level benchmark spread that setup over seven
+times in a single call.
+
+### Correction: an `n_c` = 768 production fit was never ~540 h
+
+An earlier note put it there by extrapolating `mat_exp_series`'s cubic cost.
+That is the wrong function. Real production fits, from `sacct`:
+
+| job | `n_c` | elapsed |
+|---|---|---|
+| 29633_37 | 192 | 5:47:02 |
+| 29633_38 | 384 | 15:58:47 |
+| 29635_39 | 192 | 8:20:35 |
+| 29635_40 | 384 | 24:34:15 |
+
+About **2.9× per doubling** of `n_c`, so `n_c` = 768 is on the order of **3
+days**, not 540 h. And the per-gradient table above shows the forward map is
+roughly linear, so most of that 2.9× is the sampler's leapfrog count rising,
+not the trajectory cost. Seed-to-seed variance is large as well — 30525 reran
+29635_39's exact configuration and took 24.2 h against 8.3 h.
+
+**What this changes.** `n_c` = 768 was never blocked by the forward map, so the
+speedup argument for porting the convolution into the fitted model does not
+exist. The port is worth keeping as a **second, independent forward map** that
+the switch can check against, and `conv_series` remains 394× faster than
+`mat_exp_series` for the verification path and the ML screens — which is where
+that comparison was always valid.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

@@ -542,7 +542,14 @@ Roughly in priority order.
     and 14.894 s at 768**, ratio 7.74, consistent with the cubic scaling
     already recorded. Model A at 384 took 1777 s per unit in 29684, so ~4 h per
     unit and 2-7 h across units. **Do not extrapolate to a production Stan
-    fit**: at 768 that would be ~540 h, which is why this is the ML screen and
+    fit**: the production likelihood uses ew_poly_eval, NOT mat_exp_series, and
+    that series is roughly LINEAR in n_c -- 0.003, 0.005, 0.009 and 0.026 s per
+    gradient at n_c 96/192/384/768 over all 1130 observations. The real fits
+    scale about 2.9x per doubling (29635: 8.3 h at 192, 24.6 h at 384), and the
+    extra comes from the sampler's leapfrog count, not the forward map. So a
+    768 production fit is on the order of 3 days, not the ~540 h an earlier
+    note claimed by extrapolating the matrix exponential's cubic cost. This is
+    the ML screen because mat_exp_series is cubic, which is a different thing.
     not a ladder rung.
     **So this thread is not unblocked by evidence.** The branch that would have
     killed a Gaussian-kernel IPM did not fire; neither did the branch that

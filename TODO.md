@@ -40,8 +40,8 @@ match where a thread exists. This file is the actionable layer. -->
       the **live binary** rather than the scratch one.
 - [ ] **Decide whether to use `conv_series()` in the fitted models.** Adding it
       to the package is not the same as switching `archer_fit.stan` over. The
-      switch would make `n_c` = 768 production fits feasible (~540 h becomes
-      routine) but changes the forward map every existing fit was made with,
+      switch is a CORRECTNESS tool, not a speed one -- see below. It
+      changes the forward map every existing fit was made with,
       so it needs a paired refit at one `n_c` to show the posteriors match.
 - [ ] Nothing.
 
@@ -166,7 +166,7 @@ match where a thread exists. This file is the actionable layer. -->
       is the *same* model as `mat_exp_series`, agreeing to 1e-12, and runs 38x
       faster at `n_c` = 384 and 14x at 192 (`_scripts/ipm-prototype.R`). That
       would make the `n_c` ladder cheap enough to extend, and a production
-      `n_c` = 768 fit feasible where it is currently ~540 h. **Independent of
+      `n_c` ladder cheap to extend on the ML screens. **Independent of
       the IPM decision** — it changes no model and invalidates no fit. Needs:
       a Stan implementation of the convolution (FFT is not available in Stan,
       so a direct lattice convolution, which is O(n_c * window) rather than
