@@ -298,3 +298,13 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   before any production fit sets `use_conv = 1L`, and it is where the
   convolution was found to be slower than the Erlang-window series in this
   usage, which the function-level benchmark had hidden.
+- `_scripts/forward-map-scaling.R` — times `grad_log_prob` under both forward
+  maps from `n_c` = 96 to 6144. The Erlang-window series scales as `n_c^1.26`
+  and the convolution as `n_c^0.89`, so the ratio closes from 0.19 to 0.87,
+  but the crossover is near `n_c` ~ 14,000 and the convolution never wins in
+  any usable range. Rungs above 768 are computational probes, not biology.
+- `_scripts/high-nc-accuracy.R` — finds which forward map loses digits as
+  `n_c` rises. It settles it by testing `mat_exp_series` against **itself**
+  across step sizes (dt 12 against dt 24, both dividing the observation
+  times): the exact answer is dt-free, so any movement is its own error. It
+  moves by 3e-16, flat in `n_c`, so `conv_series` is what drifts.

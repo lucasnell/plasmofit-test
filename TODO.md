@@ -38,11 +38,13 @@ match where a thread exists. This file is the actionable layer. -->
       this now works without `R_ENVIRON_USER`. Then re-run
       `_scripts/conv-series-validate.R` with `PLASMOFIT_LIB=` empty, to verify
       the **live binary** rather than the scratch one.
-- [ ] **Decide whether to use `conv_series()` in the fitted models.** Adding it
-      to the package is not the same as switching `archer_fit.stan` over. The
-      switch is a CORRECTNESS tool, not a speed one -- see below. It
-      changes the forward map every existing fit was made with,
-      so it needs a paired refit at one `n_c` to show the posteriors match.
+- [x] **Decided: do NOT use `conv_series()` for fitting.** It is 5x slower
+      than the Erlang-window series at `n_c` = 96 and 2.8x at 768 (the
+      crossover is near `n_c` ~ 14,000), and it is also LESS accurate at high
+      `n_c` — 5e-10 at 768 against `mat_exp_series`, which is itself stable to
+      3e-16 across step sizes. Keep `use_conv = 0L`. The switch stays as a
+      cross-check at `n_c` <= 384, where the two agree to 1e-13 on `log_prob`
+      and its gradient.
 - [ ] Nothing.
 
 ### Done

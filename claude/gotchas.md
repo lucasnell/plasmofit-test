@@ -578,3 +578,32 @@ code uses -- here `grad_log_prob` on the real data, not the exposed function in
 isolation. A function-level benchmark also amortises per-call setup over a
 whole trajectory, which the fitted model never does: it calls the forward map
 once per trajectory combo with a handful of times each.
+
+## An FFT convolution has an ABSOLUTE error floor; troughs are where it shows
+
+`conv_series()` agrees with `mat_exp_series` to 1.3e-11 at `n_c` <= 384 and
+drifts to 1.2e-9 by 1536. `mat_exp_series` is not the culprit: halving its step
+count (dt 12 against dt 24, both of which divide the observation times) moves
+it by **3e-16, flat in `n_c`**, so it is stable and the convolution is what
+degrades.
+
+The cause is structural rather than a bug. An FFT convolution's error is about
+eps x max|u| in **absolute** terms, spread over every lattice point. The
+observable at a trough is a small sum of small positive terms, so the same
+absolute floor is a much larger *relative* error there -- and as `n_c` rises
+the age distribution narrows, the troughs deepen, and it gets worse.
+`mat_exp_series` propagates the state vector directly with no global transform,
+so its small entries keep relative accuracy.
+
+**This is the third time in one session that troughs broke the numerics**: the
+Gaussian-kernel IPM comparison differed from the chain by 0.06 log10 units at
+one trough and nowhere else; the closed-form Poisson transform cost 15% at the
+same trough until the sum was truncated; and now this. In a model where
+sequestration hides ~60% of the population, the observable spans four orders of
+magnitude within a cycle, and **any method with absolute-error accuracy will
+fail at the bottom of that range**. Check a new forward map AT THE TROUGHS
+specifically, not on an average or a maximum over times.
+
+A related habit: **do not describe a function as exact outside the range it was
+validated in.** `conv_series` was tested at `n_c` in {96, 192, 384} and called
+an exact alternative; the claim does not survive to 768.

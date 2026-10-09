@@ -3408,6 +3408,64 @@ the switch can check against, and `conv_series` remains 394× faster than
 `mat_exp_series` for the verification path and the ML screens — which is where
 that comparison was always valid.
 
+### `conv_series` loses accuracy as `n_c` rises, and `mat_exp_series` does not
+
+`_scripts/high-nc-accuracy.R`, output `_data/high-nc-accuracy-2026-10-09.txt`.
+
+The scaling run showed the two forward maps inside the fitted model agreeing to
+5e−15 on `log_prob` at `n_c` = 96 but only 8.3e−10 at 6144. Something loses
+digits. Cells below are the maximum over the 7 observation times of
+|`conv_series` − `mat_exp_series`| / |`mat_exp_series`| at `cycle_length` 45,
+`b_shape` 400, `R` 8, `mu` 0.
+
+| `n_c` | `fft_M` | difference |
+|---|---|---|
+| 192 | 2048 | 6.1e−13 |
+| 384 | 4096 | 3.9e−12 |
+| 768 | 8192 | 5.1e−10 |
+| 1536 | 16384 | 1.2e−9 |
+
+**The first guess was that `mat_exp_series` was the unreliable one**, since at
+`n_c` = 1536 it exponentiates a 3072 x 3072 matrix and then multiplies by it 18
+times, and because the project's own `max_rel_diff` (Erlang-window against
+`mat_exp_series`) is recorded as growing with `n_c` — 8e−13, 1.4e−12, 2.8e−12
+at 96/192/384 — which is the same magnitude as the column above. Two
+independent maps each differing from a third by the same growing amount does
+point at the third.
+
+**It is wrong.** The exact trajectory cannot depend on the step size, so any
+`dt` dependence in `mat_exp_series` is its own error. The observation times
+divide by both 12 and 24, which halves the step count and changes the
+exponentiated matrix as well.
+
+| `n_c` | `mat_exp_series`, dt 12 vs dt 24 |
+|---|---|
+| 192 | 2.9e−16 |
+| 384 | 4.0e−16 |
+| 768 | 3.3e−16 |
+
+**Machine precision, and flat in `n_c`.** `mat_exp_series` is stable, so
+`conv_series` is what drifts, and the project's existing reading of
+`max_rel_diff` — that the growth reflects the series, not the reference —
+stands.
+
+**Why the convolution degrades.** Its error is an FFT round-off floor of about
+eps x max|u| in ABSOLUTE terms, while the answer at a trough is a small sum of
+small positive terms. As `n_c` rises the age distribution narrows and the
+troughs deepen — trough/peak is already 7e−6 at `n_c` = 384 — so the same
+absolute floor becomes a larger relative error exactly where the observable is
+smallest. `mat_exp_series` propagates the state vector directly with no global
+transform, so its small entries keep their relative accuracy. This is the third
+time in this session that the troughs have been where the numerics break.
+
+**Correction to the claim made when `conv_series` was committed.** It was
+validated over 448 parameter sets with `n_c` in {96, 192, 384} and passed at
+1.27e−11 worst, and was described as an exact alternative meeting the
+project's 1e−12 bar. **That holds only for `n_c` <= 384.** At 768 it is 5e−10
+and at 1536 1.2e−9. Nothing measured is anywhere near affecting a fit — 1e−9
+relative on a log-density of ~1e5 is 1e−4 in absolute units — but the function
+should not be described as exact outside the range it was tested in.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

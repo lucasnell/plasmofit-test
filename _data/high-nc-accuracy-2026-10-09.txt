@@ -1,0 +1,47 @@
+plasmofit from: /home2/lan68/plasmofit/.Rlib-dev 
+
+Cells: max over the 7 observation times of |conv - mat_exp| / |mat_exp|,
+at cycle_length 45, b_shape 400, R 8, mu 0. mat_exp_series shares no code
+with conv_series, so this isolates the convolution. secs are for one
+trajectory each; mat_exp is cubic in n_c, which is why the grid stops.
+
+ n_c fft_M max_rel_diff mat_exp_s conv_s
+ 192  2048    6.087e-13     0.153  0.002
+ n_c fft_M max_rel_diff mat_exp_s conv_s
+ 384  4096    3.865e-12      1.18  0.004
+ n_c fft_M max_rel_diff mat_exp_s conv_s
+ 768  8192    5.059e-10      9.15  0.008
+  n_c fft_M max_rel_diff mat_exp_s conv_s
+ 1536 16384    1.183e-09     73.39  0.016
+
+conv_series and mat_exp_series agree to 3.9e-12 at n_c <= 384 and drift
+to 1.2e-09 by n_c = 1536. That alone does NOT say which is wrong, so the
+next section tests mat_exp_series against itself.
+
+For scale: a log_prob relative difference of 1e-9 on a density of ~1e5 is
+1e-4 in absolute log-density units, far below anything that affects a fit.
+The question here is which component is losing digits, not whether the
+fits are wrong.
+
+=== is mat_exp_series self-consistent across step sizes? ===
+Cells: max over the 7 times of |dt=12 - dt=24| / |dt=12| for mat_exp_series,
+and for conv_series the difference from each. The exact answer is dt-free,
+so any dt dependence is mat_exp_series its own accumulated error.
+
+  n_c =  192 : mat_exp dt12 vs dt24 = 2.93e-16 | conv vs dt12 = 6.09e-13 | conv vs dt24 = 6.09e-13
+  n_c =  384 : mat_exp dt12 vs dt24 = 4.01e-16 | conv vs dt12 = 3.86e-12 | conv vs dt24 = 3.86e-12
+  n_c =  768 : mat_exp dt12 vs dt24 = 3.32e-16 | conv vs dt12 = 5.06e-10 | conv vs dt24 = 5.06e-10
+
+VERDICT: mat_exp_series is stable -- halving its step count, which also
+changes the matrix it exponentiates, moves it by ~1e-16 and does NOT
+grow with n_c. So conv_series is what drifts, and the project reading of
+max_rel_diff (findings.md: 8e-13, 1.4e-12, 2.8e-12 at n_c 96/192/384) as
+the SERIES degrading rather than the reference stands.
+
+Why: an FFT convolution has an error floor of ~eps * max|u| in ABSOLUTE
+terms, while the observable at a trough is a small sum of small positive
+terms. As n_c rises the age distribution narrows and the troughs deepen,
+so that fixed absolute floor becomes a larger relative error exactly
+where the observable is smallest. mat_exp_series propagates the state
+vector directly, with no global transform, so small entries keep their
+relative accuracy.

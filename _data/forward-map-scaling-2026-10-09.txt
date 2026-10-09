@@ -1,0 +1,37 @@
+plasmofit from: /home2/lan68/plasmofit/.Rlib-dev 
+
+Cells: median seconds for one grad_log_prob over all 1130 observations.
+ew_poly is the Erlang-window series the fitted model uses; conv is
+conv_series via use_conv = 1. ratio > 1 means the convolution is faster.
+lp_rel is the relative difference in log_prob, which must stay ~1e-13 or
+the timing comparison is between two different models.
+
+ n_c fft_M ew_poly_s conv_s  ratio   lp_rel
+  96  1024     0.003 0.0155 0.1935 5.33e-15
+ n_c fft_M ew_poly_s conv_s  ratio    lp_rel
+ 192  2048     0.005  0.026 0.1923 7.804e-15
+ n_c fft_M ew_poly_s conv_s  ratio    lp_rel
+ 384  4096     0.009  0.042 0.2143 8.171e-14
+ n_c fft_M ew_poly_s conv_s  ratio    lp_rel
+ 768  8192     0.025  0.072 0.3472 6.026e-14
+  n_c fft_M ew_poly_s conv_s  ratio   lp_rel
+ 1536 16384     0.047  0.144 0.3264 1.03e-11
+  n_c fft_M ew_poly_s conv_s  ratio    lp_rel
+ 3072 32768     0.194  0.318 0.6101 6.291e-10
+  n_c fft_M ew_poly_s conv_s  ratio    lp_rel
+ 6144 65536     0.536  0.616 0.8701 8.349e-10
+
+=== scaling exponents ===
+Cells: slope of log(seconds) on log(n_c), i.e. cost ~ n_c^slope, fitted
+over the rungs measured. A crossover needs the convolution's slope to be
+clearly smaller.
+
+  ew_poly   : n_c^1.26
+  conv      : n_c^0.89
+  ratio     : n_c^0.37
+
+extrapolated crossover (ratio = 1) at n_c = 14339
+That is far beyond any usable n_c: the convolution never wins here.
+
+Caveat: an extrapolated crossover is an extrapolation. The measured rungs
+are what this says anything about.
