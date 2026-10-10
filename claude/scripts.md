@@ -287,6 +287,12 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   43-48, a `b_shape` ladder at `n_c` = 384 (15, 50, 100, 250, 600 pinned as
   data, and free) at default sampler settings. 7-day walltime,
   `WOCKFIT_SEED=20261010`; names are new, so no suffix.
+- `_scripts/wockner-fit-nc384t.R` — a COPY of `wockner-fit.R`, identical
+  through entry 48, adding entries 49-53 (the `n_c` = 384 pinned rungs at
+  `adapt_delta` 0.95, `max_treedepth` 12). Made because 30830 was reading the
+  original. Merge back and delete once nothing runs from either.
+- `_scripts/wockner-fit-nc384t-ladder.sh` — SLURM 30837, entries 49-53 from
+  that copy, 7-day walltime, `WOCKFIT_SEED=20261010`. Insurance for 43-47.
 - `_scripts/nc-bs400-ladder-read.R` — reads both reseeded rungs of the
   production ladder (`np_bs400_nc192-seed2`, `np_bs400_nc384-seed2`): `lp__`,
   divergences and treedepth by chain, the R-hat gate, then `cycle_length` per

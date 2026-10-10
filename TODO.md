@@ -20,7 +20,12 @@ match where a thread exists. This file is the actionable layer. -->
       `wockner-fit.R` while it runs.** Read `lp__` per chain, then the gate,
       then paired PSIS-LOO across converged rungs; report `cycle_length` as its
       spread across converged rungs.
-- [ ] **Push `plasmofit-test`** — three local commits; the approved push was
+- [ ] **SLURM 30837**, submitted 2026-10-10,
+      `_scripts/wockner-fit-nc384t-ladder.sh`: entries 49–53, the 43–47 rungs
+      at entry 42's tuned settings, as insurance. **Cancel if 43–47
+      converge.** Runs a copy, `_scripts/wockner-fit-nc384t.R`; merge 49–53
+      into `wockner-fit.R` and delete the copy once neither job is running.
+- [ ] **Push `plasmofit-test`** — local commits; the approved push was
       blocked by a permission check.
 
 ### Next

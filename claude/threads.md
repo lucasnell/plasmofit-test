@@ -236,7 +236,9 @@ Roughly in priority order.
    was Lucas's call: both the tuned retry (entry 42) and a `b_shape` ladder
    at `n_c` = 384 (entries 43-48: 15, 50, 100, 250, 600 pinned, and free),
    SLURM 30830, `_scripts/wockner-fit-nc384-ladder.sh`. Rungs and prediction
-   recorded in `wockner-fit.R` before submission. Reader
+   recorded in `wockner-fit.R` before submission. SLURM 30837 runs the
+   pinned rungs again at tuned settings (49-53) as insurance, from a copy
+   `wockner-fit-nc384t.R`; cancel if 43-47 converge. Reader
    `_scripts/nc-bs400-ladder-read.R`.
    (29635 entry 39 ran 8:20:35). `_scripts/wockner-fit-nc-bs400-reseed.sh`,
    **entry 39** and not 41: entries 41-42 already carry `adapt_delta` 0.95 and

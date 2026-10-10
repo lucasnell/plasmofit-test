@@ -10,10 +10,19 @@
 - **43–48** — a `b_shape` ladder at `n_c` = 384, default sampler settings:
   pinned at 15, 50, 100, 250, 600, plus free. Expect ~20 h each.
 
+**SLURM 30837 is running beside it**, submitted 2026-10-10 06:56, five tasks
+(`_scripts/wockner-fit-nc384t-ladder.sh`): entries **49–53**, the same pinned
+rungs as 43–47 at entry 42's tuned settings, as insurance. **Lucas will cancel
+30837 if 43–47 converge** (`scancel 30837`). The free rung (48) has no tuned
+twin. 30837 runs `_scripts/wockner-fit-nc384t.R`, a copy of `wockner-fit.R`
+identical through entry 48, because 30830 was reading the original; merge
+49–53 back and delete the copy once neither job is running.
+
 Rung choice and the prediction are written above the configs in
 `_scripts/wockner-fit.R`, before any fit ran. **Do not edit
-`_scripts/wockner-fit.R` until `squeue -u lan68` is empty** — all seven tasks
-read it.
+`_scripts/wockner-fit.R` or `_scripts/wockner-fit-nc384t.R` until
+`squeue -u lan68` is empty.** Together the two jobs use 48 CPUs and
+294,912 MB, inside the half-node budget.
 
 **How to read it.** Per fit, `lp__` by chain, then max R-hat < 1.05; a failed
 rung is not used. Compare converged rungs by paired observation-level
@@ -55,7 +64,7 @@ Two things this changed in the notes:
 can share a bias, so this does not count and must not be quoted as a result.
 
 **State of the repos.** Package unchanged at `8dde0c1`. `plasmofit-test` has
-three local commits from 2026-10-10 that are **not pushed**: Lucas approved
+local commits from 2026-10-10 that are **not pushed**: Lucas approved
 pushing the first, but the push was blocked by a permission check, so it needs
 doing by hand (`git push origin main`). The only untracked files are `mmc1.pdf` and `mmcm.pdf`,
 deliberately so.
