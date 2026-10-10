@@ -464,7 +464,56 @@ CONFIGS <- list(
                                                            max_shape = 1000,
                                                            n_c = 384L),
                             control = list(adapt_delta = 0.95,
-                                           max_treedepth = 12))
+                                           max_treedepth = 12)),
+    ## ---- b_shape ladder at n_c = 384, 43-48 -----------------------------
+    ## Entry 40 failed twice (29635; reseed 30829, 2026-10-10: lp__ by chain
+    ## -895.5/-973.1/-1065.3/-954.2, max R-hat 7.74, treedepth saturated in
+    ## 34% of transitions). The 400 pin was chosen on a ladder run at
+    ## n_c = 96, and since 2026-10-09 it is known that fitted b_shape FALLS as
+    ## n_c rises (14 of 14 units), so the pin may not carry to 384.
+    ##
+    ## Rungs, chosen before any of these fits exist:
+    ##   - 50, 100, 250, 600: the rungs of the n_c = 96 ladder that passed the
+    ##     gate (84 and 150 dropped; 150 failed it there). 400 is entry 40/42.
+    ##   - 15: the prior-free ML screen puts free b_shape at 9-15 at the best
+    ##     rungs (n_c >= 384), so the ladder has to reach that region.
+    ##   - free: np_wide_total0 with n_c = 384, the fix-vs-estimate reference
+    ##     the n_c = 96 ladder was read against.
+    ## Pinned as DATA, as in 39-42, not by the tight prior the n_c = 96 ladder
+    ## used; np_bs400_data showed the two are nearly the same model.
+    ## Default sampler settings, as in entry 40, so that a rung converging
+    ## where 400 did not is attributable to the pin and not to tuning.
+    ##
+    ## PREDICTION, recorded before the fits run.
+    ##   - Lower rungs CONVERGE under the settings that failed at 400, and the
+    ##     elpd plateau sits BELOW 400 -> the pin is what made 384 hard, and
+    ##     the 400 pin is conditional on n_c = 96.
+    ##   - Rungs fail regardless of b_shape -> the difficulty is n_c-driven,
+    ##     not pin-driven.
+    ## Either way cycle_length is reported as its sensitivity across the
+    ## converged rungs, not as the value at the best one.
+    np_bs15_nc384  = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 15,
+                                                           max_shape = 1000,
+                                                           n_c = 384L)),
+    np_bs50_nc384  = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 50,
+                                                           max_shape = 1000,
+                                                           n_c = 384L)),
+    np_bs100_nc384 = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 100,
+                                                           max_shape = 1000,
+                                                           n_c = 384L)),
+    np_bs250_nc384 = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 250,
+                                                           max_shape = 1000,
+                                                           n_c = 384L)),
+    np_bs600_nc384 = list(model = "no_pool",   data = list(sd_log10_total0 = 1,
+                                                           b_shape = 600,
+                                                           max_shape = 1000,
+                                                           n_c = 384L)),
+    np_wide_total0_nc384 = list(model = "no_pool",
+                                data = list(sd_log10_total0 = 1, n_c = 384L))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
