@@ -45,7 +45,6 @@ match where a thread exists. This file is the actionable layer. -->
       3e-16 across step sizes. Keep `use_conv = 0L`. The switch stays as a
       cross-check at `n_c` <= 384, where the two agree to 1e-13 on `log_prob`
       and its gradient.
-- [ ] Nothing.
 
 ### Done
 

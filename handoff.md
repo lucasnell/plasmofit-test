@@ -22,6 +22,14 @@ by a running job when its additions were made: 30837 runs
 49–53) and 30842 runs `_scripts/wockner-fit-nc384t48.R` (that, plus 54). Merge
 49–54 into `wockner-fit.R` and delete both copies once nothing is running.
 
+**When to look.** Entry 40 at default settings took 20.4 h, so 43–48 should
+land around **2026-10-11 03:00** if they cost the same, which is not
+guaranteed: every cost estimate in this project has come in low, and lower
+`b_shape` changes the geometry. The tuned runs (42, 49–54) could take 2.5–5x
+as long, i.e. **2026-10-12 to 2026-10-14**. Check `squeue -u lan68` and
+`sacct -j 30830,30837,30842 -X`; a task that has finished has four
+`_data/wock-*-<cfg>.rds` files.
+
 Rung choice and the prediction are written above the configs in
 `_scripts/wockner-fit.R`, before any fit ran. **Do not edit
 `_scripts/wockner-fit.R`, `wockner-fit-nc384t.R`, or `wockner-fit-nc384t48.R`

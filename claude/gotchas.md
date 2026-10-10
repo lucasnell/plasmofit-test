@@ -644,3 +644,16 @@ calling environment says. That is the right design, and it means the hazard
 runs one way only: building into a scratch library can never disturb a running
 job, while `R CMD INSTALL` into the live library can. Install to a scratch
 library while anything is sampling; the pin guarantees the job is unaffected.
+
+## A sampler diagnostic from one config says nothing about another
+
+After entry 39 (`n_c` = 192) converged with `max_treedepth` saturated in only
+2% of transitions, the notes called the tuned retry for entry 40 (`n_c` = 384)
+"less justified". Entry 40's own reseed then saturated in **34%**. The 2% was
+a fact about the 192 posterior's geometry, and raising `n_c` changes that
+geometry. This is the same error as the cost extrapolations above: carrying a
+measurement across a change in the thing measured.
+
+**Justify a sampler setting with a diagnostic from the config it will run
+on**, or say that the evidence comes from a neighbour and may not carry.
+

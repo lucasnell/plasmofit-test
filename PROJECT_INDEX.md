@@ -1,6 +1,6 @@
 # plasmofit — malaria within-host dynamics — index
 
-**Status as of 2026-10-09:** The age-structure question is **answered**, and
+**Status as of 2026-10-10:** The age-structure question is **answered**, and
 the answer is that the data cannot separate initial synchrony from accumulated
 desynchronisation — they constrain only the total spread at the end of the
 window. That closes the IPM question (do not build it), explains why the decay
@@ -12,7 +12,9 @@ with **no second rung**: entry 40 (`n_c` = 384) failed again on its reseed
 levels). The ladder is still open and no headline number is final. **SLURM
 30830 is running**: the tuned retry of that rung (entry 42) and a `b_shape`
 ladder at `n_c` = 384 (entries 43–48), since the 400 pin was chosen at
-`n_c` = 96 and may not carry.
+`n_c` = 96 and may not carry. SLURM 30837 and 30842 rerun the same rungs at
+the tuned settings (entries 49–54) as insurance, to be cancelled if 43–48
+converge.
 
 The forward-map question is also closed: the convolution was added to the
 package and removed again, slower and less accurate than the series it would
