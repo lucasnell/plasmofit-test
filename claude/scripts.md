@@ -293,6 +293,10 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   original. Merge back and delete once nothing runs from either.
 - `_scripts/wockner-fit-nc384t-ladder.sh` — SLURM 30837, entries 49-53 from
   that copy, 7-day walltime, `WOCKFIT_SEED=20261010`. Insurance for 43-47.
+- `_scripts/wockner-fit-nc384t48.R` — a second copy, of `wockner-fit-nc384t.R`,
+  adding entry 54 (the free rung at tuned settings). Same merge-and-delete
+  note.
+- `_scripts/wockner-fit-nc384t48.sh` — SLURM 30842, entry 54 from that copy.
 - `_scripts/nc-bs400-ladder-read.R` — reads both reseeded rungs of the
   production ladder (`np_bs400_nc192-seed2`, `np_bs400_nc384-seed2`): `lp__`,
   divergences and treedepth by chain, the R-hat gate, then `cycle_length` per

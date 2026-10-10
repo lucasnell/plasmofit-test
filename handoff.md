@@ -12,17 +12,21 @@
 
 **SLURM 30837 is running beside it**, submitted 2026-10-10 06:56, five tasks
 (`_scripts/wockner-fit-nc384t-ladder.sh`): entries **49–53**, the same pinned
-rungs as 43–47 at entry 42's tuned settings, as insurance. **Lucas will cancel
-30837 if 43–47 converge** (`scancel 30837`). The free rung (48) has no tuned
-twin. 30837 runs `_scripts/wockner-fit-nc384t.R`, a copy of `wockner-fit.R`
-identical through entry 48, because 30830 was reading the original; merge
-49–53 back and delete the copy once neither job is running.
+rungs as 43–47 at entry 42's tuned settings, as insurance. **SLURM 30842** is entry **54**, the
+free rung (48) at tuned settings (`_scripts/wockner-fit-nc384t48.sh`). **Lucas
+will cancel 30837 and 30842 if 43–48 converge** (`scancel 30837 30842`).
+
+The two insurance jobs run from copies, because each fit script was being read
+by a running job when its additions were made: 30837 runs
+`_scripts/wockner-fit-nc384t.R` (identical to `wockner-fit.R` through 48, plus
+49–53) and 30842 runs `_scripts/wockner-fit-nc384t48.R` (that, plus 54). Merge
+49–54 into `wockner-fit.R` and delete both copies once nothing is running.
 
 Rung choice and the prediction are written above the configs in
 `_scripts/wockner-fit.R`, before any fit ran. **Do not edit
-`_scripts/wockner-fit.R` or `_scripts/wockner-fit-nc384t.R` until
-`squeue -u lan68` is empty.** Together the two jobs use 48 CPUs and
-294,912 MB, inside the half-node budget.
+`_scripts/wockner-fit.R`, `wockner-fit-nc384t.R`, or `wockner-fit-nc384t48.R`
+until `squeue -u lan68` is empty.** Together the three jobs use 52 CPUs and
+319,488 MB, inside the half-node budget.
 
 **How to read it.** Per fit, `lp__` by chain, then max R-hat < 1.05; a failed
 rung is not used. Compare converged rungs by paired observation-level
@@ -63,11 +67,10 @@ Two things this changed in the notes:
 `cycle_length` at 38.72–39.28 h, against 41.15–41.25 h at 192. Unmixed chains
 can share a bias, so this does not count and must not be quoted as a result.
 
-**State of the repos.** Package unchanged at `8dde0c1`. `plasmofit-test` has
-local commits from 2026-10-10 that are **not pushed**: Lucas approved
-pushing the first, but the push was blocked by a permission check, so it needs
-doing by hand (`git push origin main`). The only untracked files are `mmc1.pdf` and `mmcm.pdf`,
-deliberately so.
+**State of the repos.** Package unchanged at `8dde0c1`. `plasmofit-test` was
+pushed through `b75646f` on 2026-10-10; check `git log origin/main..HEAD` for
+anything since. A push needs Lucas's say-so each time; the auto-mode check
+blocks it unless he has asked in the same turn.
 
 **Everything in `_data/` is gitignored except the reader outputs**, which are
 negated in `_data/.gitignore` so any number quoted in the notes can be
