@@ -68,8 +68,7 @@ Two things this changed in the notes:
 can share a bias, so this does not count and must not be quoted as a result.
 
 **State of the repos.** Package unchanged at `8dde0c1`. `plasmofit-test` was
-pushed through `b75646f` on 2026-10-10; check `git log origin/main..HEAD` for
-anything since. A push needs Lucas's say-so each time; the auto-mode check
+last pushed 2026-10-10; `git log origin/main..HEAD` lists anything unpushed. A push needs Lucas's say-so each time; the auto-mode check
 blocks it unless he has asked in the same turn.
 
 **Everything in `_data/` is gitignored except the reader outputs**, which are
