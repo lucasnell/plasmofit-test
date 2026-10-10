@@ -9,18 +9,24 @@ match where a thread exists. This file is the actionable layer. -->
 
 ## Age structure and `n_c` (threads 5, 15)
 
-### In progress
+### Needs a decision (Lucas)
 
-- [ ] **Entry 40 reseed — SLURM 30829**, submitted 2026-10-09, **~24.5 h**
-      (29635_40 ran 24:34:15; walltime 3 days). `np_bs400_nc384`,
-      `WOCKFIT_SEED=20261009`, `WOCKFIT_SUFFIX=-seed2`. **The only thing
-      blocking a reportable cycle length.** Check `lp__` per chain before the
-      R-hat gate, then compare against entry 39's 41.203 h: the deterministic
-      tests predict the `n_c` effect PERSISTS AND GROWS with `b_shape` pinned
-      (0.98 h at 400 against 0.72 h at 15, all twelve cells). If it converges
-      and the effect is gone, the mechanistic account is wrong and should be
-      revisited, not patched. If a chain sticks again at a similar lp gap the
-      mode is real -- report multimodality and do not reseed a third time.
+- [ ] **Entry 40 has failed twice; choose the next step.** SLURM 30829
+      (reseed, 2026-10-10): max R-hat 7.744, `lp__` by chain −895.5, −973.1,
+      −1065.3, −954.2, treedepth saturated in 34.0% of transitions. All four
+      chains apart, so this is a general mixing failure, not the stuck-chain
+      case the "do not reseed a third time" rule was written for. Options,
+      none run:
+      (a) the tuned retry, entry 42 of `wockner-fit-nc-bs400-retry.sh`
+      (`max_treedepth` 12, `adapt_delta` 0.95), now justified on treedepth
+      but at 2.5-5x a 20.4 h baseline it brackets its 3-day walltime;
+      (b) question the pin: 400 was chosen at `n_c` = 96 and `b_shape` falls
+      as `n_c` rises, so a `b_shape` ladder at 384 may be the real question,
+      at several ~1-day fits each;
+      (c) report without this rung: 41.20 h Bayesian at `n_c` 192 (a rung the
+      ML profile says is wrong) beside the ML 40.93–41.15 h at `n_c` >= 384
+      (no priors, no hierarchy, `b_shape` free).
+      Detail in `claude/findings.md`, "Entry 40 failed again".
 
 ### Next
 
@@ -43,6 +49,9 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Done
 
+- [x] **2026-10-10 — entry 40 reseed (SLURM 30829) read: FAIL**, max R-hat
+      7.744. Reader `_scripts/nc-bs400-ladder-read.R`, output
+      `_data/nc-bs400-ladder-read-2026-10-10.txt`.
 - [x] **2026-10-09 — the age-structure question is answered.** The data
       constrain only the **total** stage spread at the end of the window, not
       how it splits between initial synchrony and accumulated

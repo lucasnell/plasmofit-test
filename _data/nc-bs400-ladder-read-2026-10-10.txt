@@ -1,0 +1,61 @@
+=== sampler health, read lp__ per chain before the gate ===
+
+--- np_bs400_nc192-seed2 ---
+chains 4 x 1000 post-warmup draws
+lp__ mean by chain:  -834.7, -828.3, -836.5, -830.1   (spread 8.3)
+divergent by chain:  43, 47, 72, 71   (total 233 of 4000, 5.8%)
+treedepth at max (10): 2.0% of transitions
+max R-hat 1.0432 over 1323 quantities (15 NA, excluded) -> PASS
+five worst R-hat:  sigma_logit_cl 1.043; b_off_vec[1,2] 1.039; lp__ 1.037; b_offset[1] 1.037; cycle_length[1] 1.033 
+min n_eff 118
+
+--- np_bs400_nc384-seed2 ---
+chains 4 x 1000 post-warmup draws
+lp__ mean by chain:  -895.5, -973.1, -1065.3, -954.2   (spread 169.8)
+divergent by chain:  61, 36, 38, 61   (total 196 of 4000, 4.9%)
+treedepth at max (10): 34.0% of transitions
+max R-hat 7.7443 over 1323 quantities (15 NA, excluded) -> FAIL
+five worst R-hat:  cycle_length[13] 7.744; lp__ 7.727; log_lik[773] 6.208; log_lik[788] 6.184; log_lik[750] 5.759 
+min n_eff 2
+
+=== cycle_length by trial ===
+Cells: posterior mean (and posterior sd) of cycle_length in hours for each
+of the 13 trials (grp_cl), b_shape pinned at 400. diff = nc384 - nc192 for
+the SAME trial (paired by level name; levels verified identical); negative
+means the finer rung gives a shorter cycle, the predicted direction.
+
+        trial          nc192          nc384   diff rhat192 rhat384
+   Mefloquine 41.982 (1.003) 37.474 (1.115) -4.508   1.033   1.282
+        OZ439 41.657 (0.789) 37.793 (1.942) -3.863   1.021   2.900
+       DSM265 40.849 (0.518) 37.957 (0.716) -2.891   1.009   1.074
+  Piperaquine 40.765 (0.525) 37.879 (1.568) -2.886   1.005   2.082
+   Ferroquine 40.762 (0.529) 38.521 (0.995) -2.242   1.006   1.059
+    ACT451840 41.489 (0.886) 40.924 (1.556) -0.564   1.010   1.019
+   MMV048_PIB 41.606 (0.851) 40.618 (0.916) -0.988   1.020   1.021
+ OZ439/DSM265 41.082 (0.667) 37.936 (1.824) -3.146   1.006   1.520
+  EFITA_OZGAM 40.954 (0.474) 38.246 (1.524) -2.707   1.001   2.543
+       KAE609 41.189 (0.642) 39.314 (1.281) -1.875   1.005   1.461
+      DSMOZ_2 41.585 (0.960) 41.917 (1.775) +0.332   1.015   1.077
+  SJ733IBSMCS 40.919 (0.430) 38.659 (0.959) -2.260   1.000   1.050
+ MMV048_PartB 40.799 (0.737) 39.903 (4.651) -0.896   1.005   7.744
+
+=== summary over the 13 trials ===
+Cells: hours. 'mean over trials' is the posterior mean of the per-draw
+mean over 13 trials, with its posterior sd. The two fits are separate runs
+on the SAME data, so the difference is a model-assumption effect, not a
+sampling comparison, and no sd is attached to it.
+
+mean over trials, n_c 192: 41.203 (posterior sd 0.319), range 40.762 to 41.982
+mean over trials, n_c 384: 39.011 (posterior sd 0.404), range 37.474 to 41.917
+paired shift 192 -> 384: mean -2.192 h, median -2.260, range -4.508 to +0.332
+trials shifting down: 12 of 13
+forward-map prediction at b_shape 400 (findings.md): -0.72 to -1.21 h, -0.94 at the 96 h window
+
+=== mean over trials of cycle_length, by chain ===
+Cells: per-chain posterior mean of the mean over 13 trials, hours.
+nc192: 41.215, 41.147, 41.247, 41.202
+nc384: 39.275, 38.832, 39.217, 38.719
+
+=== context: 29635 originals, NOT posteriors ===
+np_bs400_nc192 lp__ by chain: -929.0, -832.3, -833.2, -836.7
+np_bs400_nc384 lp__ by chain: -996.0, -925.6, -955.3, -957.8

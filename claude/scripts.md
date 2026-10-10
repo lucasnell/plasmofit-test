@@ -280,7 +280,14 @@ Papers bearing on thread 2, kept here so a search is not repeated.
 - `_scripts/wockner-fit-nc-bs400-reseed40.sh` — reseed-only retry of **entry
   40** (`np_bs400_nc384`), the second rung of the production ladder. Same
   pattern as the entry-39 reseed that worked: one change (the seed), and
-  `WOCKFIT_SUFFIX` set so it lands beside the non-converged fit.
+  `WOCKFIT_SUFFIX` set so it lands beside the non-converged fit. Ran as SLURM
+  30829 and failed the gate (2026-10-10).
+- `_scripts/nc-bs400-ladder-read.R` — reads both reseeded rungs of the
+  production ladder (`np_bs400_nc192-seed2`, `np_bs400_nc384-seed2`): `lp__`,
+  divergences and treedepth by chain, the R-hat gate, then `cycle_length` per
+  trial paired by level name after asserting the two fits' group levels,
+  data, `n_c`, and `b_shape` pin. Output
+  `_data/nc-bs400-ladder-read-<date>.txt`, tracked.
 
 **The five `conv-series-*` / `forward-map-*` / `high-nc-*` scripts below need a
 `plasmofit` built from commit `05c9c1f`.** `conv_series()` was removed from the

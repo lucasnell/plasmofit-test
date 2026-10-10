@@ -225,6 +225,15 @@ Roughly in priority order.
    The tuned retry is now LESS justified than it looked: 30525 saturated
    `max_treedepth` in only 2% of transitions with a maximum of 10, against
    the 46-61% recorded from 29635. Reseed entry 40 the same way.
+   **ENTRY 40'S RESEED FAILED: SLURM 30829**, 2026-10-10, 20.4 h. Max R-hat
+   **7.744**, `lp__` by chain −895.5, −973.1, −1065.3, −954.2 (spread 169.8):
+   all four chains apart, a general mixing failure rather than one stuck
+   chain, so neither "report multimodality" nor a third reseed fits.
+   Treedepth saturated in **34.0%** of transitions, which withdraws the
+   "less justified" line above: it inferred from `n_c` 192 to 384. The pin at
+   400 was chosen at `n_c` = 96, and `b_shape` falls as `n_c` rises, so the
+   pin may be the harder problem at 384 -- a hypothesis, untested. Next step
+   is Lucas's call (TODO.md). Reader `_scripts/nc-bs400-ladder-read.R`.
    (29635 entry 39 ran 8:20:35). `_scripts/wockner-fit-nc-bs400-reseed.sh`,
    **entry 39** and not 41: entries 41-42 already carry `adapt_delta` 0.95 and
    `max_treedepth` 12, so "a reseed-only run of entry 41" was a contradiction

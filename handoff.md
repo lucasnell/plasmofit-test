@@ -1,69 +1,45 @@
-# Handoff — 2026-10-09
+# Handoff — 2026-10-10
 
 ## State of play right now — read this first
 
-**One job running: SLURM 30829**, the entry 40 reseed, submitted 2026-10-09,
-**~24.5 h**. It is the last rung of the production ladder and the only thing
-blocking a reportable cycle length. Everything else is finished and read:
-30525 (the production reseed), 30641 + 30823 (the eight-start dispersion
-profile), 30524 (`n_c` = 768) and 30527 (`n_c` 128/256/512).
+**No jobs running.** SLURM 30829, the entry 40 reseed (`np_bs400_nc384`,
+`n_c` = 384, `b_shape` pinned at 400), finished 2026-10-10 05:27 after
+20:21:41 and **FAILED the gate**: max R-hat 7.744. Read with
+`_scripts/nc-bs400-ladder-read.R`, output
+`_data/nc-bs400-ladder-read-2026-10-10.txt`; full write-up in
+`claude/findings.md`, "Entry 40 failed again on a reseed".
 
-**The age-structure question is answered**, and the IPM is closed. See
-"The job that is running" for how to read 30829 when it lands.
+Cells: per-chain mean `lp__`, 4 chains × 1000 post-warmup draws.
 
-```bash
-cd /home2/lan68/plasmofit/plasmofit-test
-squeue -u lan68          # one job: 30829
-```
+| fit | `lp__` by chain | spread | max R-hat | treedepth at 10 |
+|---|---|---|---|---|
+| 30525, `n_c` 192 | −834.7, −828.3, −836.5, −830.1 | 8.3 | 1.043 PASS | 2.0% |
+| 30829, `n_c` 384 | −895.5, −973.1, −1065.3, −954.2 | 169.8 | 7.744 FAIL | 34.0% |
 
-## If this session is gone, start here
+**This is not the failure the notes planned for.** The plan said: if one
+chain sticks again, report multimodality and do not reseed a third time. Here
+all four chains are apart, which is a general mixing failure. So neither
+branch of the plan applies, and **the next step is Lucas's decision**, not a
+default. The three options and their costs are in `TODO.md` under "Needs a
+decision".
 
-Everything below is in the notes; nothing important lives only in the
-conversation. The four root files are `CLAUDE.md` (stable context, settled
-decisions), `PROJECT_INDEX.md` (status, workstreams, decision log), `TODO.md`
-(actionable), and this file. Detail is in `claude/`.
+Two things this changed in the notes:
 
-**Step 1 — check the job.**
+- **Withdrawn:** "the tuned retry is less justified because 30525 saturated
+  treedepth in only 2%." That inferred from `n_c` 192 to 384; at 384 it is
+  34.0%.
+- **Flag raised:** the 400 pin was chosen on a ladder at `n_c` = 96, and
+  `b_shape` falls as `n_c` rises (14 of 14 units), so the pin may be what makes
+  384 hard. Untested.
 
-```bash
-cd /home2/lan68/plasmofit/plasmofit-test
-squeue -u lan68                                   # empty means 30829 finished
-sacct -j 30829 --format=JobID%16,State,Elapsed -X
-ls -la _data/*np_bs400_nc384-seed2*               # expect 4 files
-```
+**Display only:** every chain at 384 puts the mean over trials of
+`cycle_length` at 38.72–39.28 h, against 41.15–41.25 h at 192. Unmixed chains
+can share a bias, so this does not count and must not be quoted as a result.
 
-**Step 2 — read it in this order**, which is in "The job that is running"
-above: `lp__` per chain first, then max R-hat < 1.05, then `cycle_length`
-against entry 39's 41.203 h.
-
-```r
-.libPaths("/home/lan68/R/x86_64-pc-linux-gnu-library/4.6")
-library(rstan)
-f <- readRDS("_data/wock-fit-np_bs400_nc384-seed2.rds")
-s <- summary(f)$summary
-max(s[, "Rhat"], na.rm = TRUE)                    # the gate
-colMeans(extract(f, "lp__", permuted = FALSE)[,,1])   # one stuck chain?
-round(s[grep("^cycle_length\\[", rownames(s)), c("mean","sd","Rhat")], 3)
-```
-
-**Step 3 — what the answer means.** Entry 39 (`n_c` = 192) gave 41.203 h. The
-deterministic tests predict the `n_c` effect **persists and grows** with
-`b_shape` pinned — 0.98 h at 400 against 0.72 h at 15, in all twelve cells of
-the least-squares table. If 30829 converges and the effect is gone, the
-mechanistic account is wrong and should be revisited, not patched. For
-context, the priors-free ML profile puts `cycle_length` at **40.93–41.15 h**
-once `n_c` >= 384.
-
-**If a chain sticks again** at a similar lp gap, the mode is real: report
-multimodality, show both modes, and **do not reseed a third time**. Move to
-entry 41 (`_scripts/wockner-fit-nc-bs400-retry.sh`), noting it is now less
-justified than when written — 30525 saturated `max_treedepth` in only 2% of
-transitions against the 46–61% recorded from 29635.
-
-**Nothing else is pending.** No other job is queued, the package is
-byte-identical to `8dde0c1` and needs no reinstall, the scratch library is
-deleted, and both repos are pushed with nothing unpushed. The only untracked
-files are `mmc1.pdf` and `mmcm.pdf`, deliberately so.
+**State of the repos.** Package unchanged at `8dde0c1`. This session's reader,
+its output, and the notes edits are committed locally in `plasmofit-test` and
+**not pushed**. The only untracked files are `mmc1.pdf` and `mmcm.pdf`,
+deliberately so.
 
 **Everything in `_data/` is gitignored except the reader outputs**, which are
 negated in `_data/.gitignore` so any number quoted in the notes can be
@@ -135,16 +111,19 @@ Two caveats that travel with it:
 
 - **5.8% divergences** (233 of 4000), above the 4.0% that was previously the
   worst in the project. This is a mean over an imperfectly explored posterior.
-- **It is one rung.** Entry 40 (`n_c` = 384) failed in 29635 and has never
-  been reseeded, so the question the ladder exists to answer — does the `n_c`
-  effect survive a pinned `b_shape`? — is still open.
+- **It is one rung.** Entry 40 (`n_c` = 384) failed in 29635 and again on its
+  reseed (30829, 2026-10-10), so the question the ladder exists to answer —
+  does the `n_c` effect survive a pinned `b_shape`? — is still open.
 
 Independently, the ML profile says `cycle_length` is **stable at 40.93–41.15 h
 once `n_c` ≥ 384** (spread 0.22 h across the 2-log-likelihood interval),
 against a 3.20 h span over the original ladder. The large span came from `n_c`
 = 96 and 192, now known to be wrong.
 
-## The job that is running: SLURM 30829, entry 40
+## SLURM 30829, entry 40 — the plan as written before it ran
+
+*Finished 2026-10-10 and FAILED; see the top of this file. Kept as the
+pre-registered reading plan.*
 
 `_scripts/wockner-fit-nc-bs400-reseed40.sh`. `np_bs400_nc384`,
 `WOCKFIT_SEED=20261009`, `WOCKFIT_SUFFIX=-seed2`, walltime 3 days against a
@@ -223,7 +202,7 @@ is `n_c^1.26`), and "`mat_exp_series` is probably the one drifting" (it is
 stable; the convolution drifts). A fifth needed narrowing rather than
 retracting: `conv_series` is exact to 1e−12 only at `n_c` <= 384.
 
-## Mistakes made this session, so they are not repeated
+## Mistakes made in the 2026-10-09 session, so they are not repeated
 
 Nine, all mine, all in the instruments rather than the science. They are in
 `claude/gotchas.md` in full.

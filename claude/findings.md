@@ -3233,11 +3233,14 @@ project, so this is a mean over an imperfectly explored posterior. Treedepth
 saturated in only 2% of transitions with a maximum of 10 — which contradicts
 the 46–61% recorded from 29635 and means the tuned retry
 (`wockner-fit-nc-bs400-retry.sh`) is now even less justified than it was.
+**Superseded 2026-10-10:** that inferred from `n_c` = 192 to 384; entry 40's
+reseed (30829) saturated in 34.0% of transitions. See "Entry 40 failed again".
 
 **What it does not answer.** The question this run was for — does the `n_c`
 effect survive a pinned `b_shape`? — needs **both** rungs, and entry 40
 (`n_c` = 384) failed in 29635 and has not been reseeded. One converged rung is
-not a ladder.
+not a ladder. *(2026-10-10: the reseed, 30829, also failed; see "Entry 40
+failed again".)*
 
 ### The eight-start profile: both profiles SATURATE
 
@@ -3526,6 +3529,60 @@ built from `05c9c1f`; their outputs in `_data/` are tracked. The R-side
 convolution in `_scripts/convolution-forward-map.R` is untouched and still
 drives the ML screens — it depends only on `make_y_vals()`, `beta_starts()`
 and `generate_starts()`, which all remain.
+
+### Entry 40 failed again on a reseed, and not by one stuck chain
+
+SLURM 30829, entry 40 (`np_bs400_nc384`), `WOCKFIT_SEED=20261009`,
+`WOCKFIT_SUFFIX=-seed2`, 2026-10-09/10, 20:21:41. Read with
+`_scripts/nc-bs400-ladder-read.R`, output
+`_data/nc-bs400-ladder-read-2026-10-10.txt`, which reads entry 39's reseed
+(30525) alongside it. **Max R-hat 7.744 — FAIL. It is not a posterior and no
+number from it is reported.**
+
+Cells: sampler health of each reseeded fit, over 4 chains × 1000 post-warmup
+draws. `lp__` is the per-chain mean; R-hat is the max over 1323 monitored
+quantities, excluding the 15 that are NA because `b_shape` is data.
+
+| fit | `lp__` by chain | spread | max R-hat | divergent | treedepth at 10 | min `n_eff` |
+|---|---|---|---|---|---|---|
+| 30525, `n_c` 192 | −834.7, −828.3, −836.5, −830.1 | 8.3 | 1.043 PASS | 5.8% | 2.0% | 118 |
+| 30829, `n_c` 384 | −895.5, −973.1, −1065.3, −954.2 | **169.8** | **7.744 FAIL** | 4.9% | **34.0%** | 2 |
+
+**The failure mode changed.** 29635_40 had three chains within 32 `lp__`
+units and one 70 below the best of them; here **all four chains sit at different levels**,
+spread 169.8. That is a general failure to mix, not one stuck chain, so the
+rule "if a chain sticks again, report multimodality" does not apply as
+written, and a third reseed is not the fix either: reseeding addresses a stuck
+chain, and none of the four is the reference mode. Worst R-hats are
+`cycle_length[13]` (MMV048_PartB, 7.74) and `log_lik` entries near 6, so the
+saved LOO (elpd −1014.5) is also unusable.
+
+**A correction this forces.** The notes said the tuned retry (entries 41-42,
+`max_treedepth` 12, `adapt_delta` 0.95) was "less justified" because 30525
+saturated treedepth in only 2% of transitions. That inferred from the
+`n_c` = 192 config to the `n_c` = 384 one. At 384 saturation is **34.0%**, so
+the 2% figure says nothing about this config, and the treedepth argument for
+the retry stands. Its cost argument also stands: at 34% saturation, raising
+the cap to 12 could cost 2.5-5x per transition against a 20.4 h baseline,
+which brackets the 3-day walltime.
+
+**A design question it sharpens, not a result.** The `b_shape` = 400 pin was
+chosen on a ladder run at `n_c` = 96 (`np_bs400_data`). Since 2026-10-09 it is
+known that `b_shape` and `n_c` trade off — fitted `b_shape` falls as the rung
+rises in 14 of 14 units — and the free ML screen puts `b_shape` near 9-15 at
+the best rungs. At `n_c` = 384 the accumulated spread is smallest, so a pin
+holding the initial spread tight is furthest from what the data want there.
+That is consistent with the fit getting harder as `n_c` rises (192 converged
+on a reseed, 384 failed twice), but it is a hypothesis: nothing here tests it.
+
+**Display only, not evidence.** Every chain's mean over trials of
+`cycle_length` at 384 is 38.72-39.28 h, against 41.15-41.25 h for every chain
+at 192, and 12 of 13 trials move down. Chains that have not mixed can share a
+bias from common initialisation and adaptation, so agreement among them does
+not count, and the size of the drop (−2.19 h mean over trials) is not
+comparable with the forward-map prediction (−0.72 to −1.21 h) until a
+converged fit exists. The question the ladder exists to answer is **still
+open**.
 
 ### Bound asymmetry is ruled out
 
