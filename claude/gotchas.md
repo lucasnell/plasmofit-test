@@ -385,7 +385,7 @@ contradiction: entries 39-40 are `np_bs400_nc192`/`_nc384` plain, and **41-42
 are the same configs with `adapt_delta` 0.95 and `max_treedepth` 12 already
 baked in**. Reseeding without other changes means rerunning **39**, not 41.
 Earlier notes said 41 and were wrong. **Check a config's index against its
-contents before submitting** — `wockner-fit.R` is 42 entries and the index is
+contents before submitting** — `wockner-fit.R` is 48 entries (since 2026-10-10) and the index is
 the only thing the array range knows about:
 
 ```r

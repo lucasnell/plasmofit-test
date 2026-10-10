@@ -3584,6 +3584,10 @@ comparable with the forward-map prediction (−0.72 to −1.21 h) until a
 converged fit exists. The question the ladder exists to answer is **still
 open**.
 
+**Follow-up running: SLURM 30830** (2026-10-10), the tuned retry (entry 42) and
+a `b_shape` ladder at `n_c` = 384 (entries 43-48); rungs and prediction are
+recorded in `_scripts/wockner-fit.R` above the configs.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

@@ -282,6 +282,11 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   pattern as the entry-39 reseed that worked: one change (the seed), and
   `WOCKFIT_SUFFIX` set so it lands beside the non-converged fit. Ran as SLURM
   30829 and failed the gate (2026-10-10).
+- `_scripts/wockner-fit-nc384-ladder.sh` — SLURM 30830: entry 42 (tuned retry
+  of `np_bs400_nc384`, `adapt_delta` 0.95, `max_treedepth` 12) plus entries
+  43-48, a `b_shape` ladder at `n_c` = 384 (15, 50, 100, 250, 600 pinned as
+  data, and free) at default sampler settings. 7-day walltime,
+  `WOCKFIT_SEED=20261010`; names are new, so no suffix.
 - `_scripts/nc-bs400-ladder-read.R` — reads both reseeded rungs of the
   production ladder (`np_bs400_nc192-seed2`, `np_bs400_nc384-seed2`): `lp__`,
   divergences and treedepth by chain, the R-hat gate, then `cycle_length` per

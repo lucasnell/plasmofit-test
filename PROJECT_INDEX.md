@@ -9,8 +9,10 @@ law was not learnable, and leaves `cycle_length` **stable at 40.93–41.15 h onc
 **41.20 h** (13 trials, `n_c` = 192, SLURM 30525), but at 5.8% divergences and
 with **no second rung**: entry 40 (`n_c` = 384) failed again on its reseed
 (SLURM 30829, 2026-10-10, max R-hat 7.74, all four chains at different `lp__`
-levels). The ladder is still open, no headline number is final, and the next
-step is a choice for Lucas — see `TODO.md`.
+levels). The ladder is still open and no headline number is final. **SLURM
+30830 is running**: the tuned retry of that rung (entry 42) and a `b_shape`
+ladder at `n_c` = 384 (entries 43–48), since the 400 pin was chosen at
+`n_c` = 96 and may not carry.
 
 The forward-map question is also closed: the convolution was added to the
 package and removed again, slower and less accurate than the series it would
@@ -52,7 +54,7 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 | Workstream | State | Next |
 |---|---|---|
 | Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Nothing. Leans on `wide_bshape`, 6 clean pairs |
-| Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences | Entry 40 failed twice (29635; reseed 30829, 2026-10-10, general mixing failure, 34% treedepth saturation). **Next step undecided** — tuned retry, revisit the pin at `n_c` 384, or report without this rung |
+| Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences | Entry 40 failed twice (29635; reseed 30829, 2026-10-10, general mixing failure, 34% treedepth saturation). **SLURM 30830 running**: tuned retry (42) plus `b_shape` ladder at 384 (43–48) |
 | `n_c` as a biological assumption | **Resolved**: 96 and 192 are wrong, and `cycle_length` is stable at 40.93–41.15 h once `n_c` >= 384. The `b_shape`/rung trade-off is the mechanism (Spearman −1.00 in 14/14 units) | Second production rung at `b_shape` 400 failed twice; the 400 pin was chosen at `n_c` = 96 and may not carry to 384 |
 | Decay law (√ vs linear) | **Indecisive, and now explained**: the total spread is nearly fixed across rungs, so its growth law is barely constrained | Closed |
 | Age-structure rewrite (IPM) | **Closed — do not build it.** Both profiles saturate, so an IPM returns `sigma_d` at a boundary rather than a rate | Nothing |
@@ -106,3 +108,4 @@ Append-only. Supersede a line with a new one rather than editing it.
 | 2026-10-09 | Arbitrate optimiser disagreements by the higher log-likelihood | Two-start `mat_exp_series` said TURNS OVER, eight-start convolution said SATURATES; forward maps agree to 1e-11 and the two-start path was 4.10 units short at `n_c` = 768 |
 | 2026-10-09 | Keep the Erlang-window series; remove the convolution | Measured through `grad_log_prob` on the real data it is 5x slower at `n_c` = 96 and 2.8x at 768, and less accurate at high `n_c`; the 394x figure was against `mat_exp_series`, which the likelihood never calls |
 | 2026-10-09 | Benchmark through the interface production uses | Two cost claims this session were wrong from measuring the wrong function: the 394x speedup, and ~540 h for an `n_c` = 768 fit that is really ~3 days |
+| 2026-10-10 | Run the tuned retry of entry 40 AND a `b_shape` ladder at `n_c` = 384 (SLURM 30830) | Entry 40's reseed failed by general mixing failure, not one stuck chain, with 34% treedepth saturation; the 400 pin was chosen at `n_c` = 96 and `b_shape` falls as `n_c` rises, so the pin itself is in question at 384 |

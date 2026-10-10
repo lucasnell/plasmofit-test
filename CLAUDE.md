@@ -182,7 +182,8 @@ claude/references.md, not as authorship. -->
   gives **41.20 h**, mean over 13 trials, with 5.8% divergences. **The second
   rung (`n_c` = 384) has failed twice** — 29635 and the reseed 30829, the
   second with all four chains apart (`lp__` spread 169.8, max R-hat 7.74) —
-  so the ladder is not closed and no cycle length is final.
+  so the ladder is not closed and no cycle length is final. SLURM 30830
+  (2026-10-10) runs a tuned retry of it and a `b_shape` ladder at 384.
 
 ## Working notes
 

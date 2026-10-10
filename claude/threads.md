@@ -233,7 +233,11 @@ Roughly in priority order.
    "less justified" line above: it inferred from `n_c` 192 to 384. The pin at
    400 was chosen at `n_c` = 96, and `b_shape` falls as `n_c` rises, so the
    pin may be the harder problem at 384 -- a hypothesis, untested. Next step
-   is Lucas's call (TODO.md). Reader `_scripts/nc-bs400-ladder-read.R`.
+   was Lucas's call: both the tuned retry (entry 42) and a `b_shape` ladder
+   at `n_c` = 384 (entries 43-48: 15, 50, 100, 250, 600 pinned, and free),
+   SLURM 30830, `_scripts/wockner-fit-nc384-ladder.sh`. Rungs and prediction
+   recorded in `wockner-fit.R` before submission. Reader
+   `_scripts/nc-bs400-ladder-read.R`.
    (29635 entry 39 ran 8:20:35). `_scripts/wockner-fit-nc-bs400-reseed.sh`,
    **entry 39** and not 41: entries 41-42 already carry `adapt_delta` 0.95 and
    `max_treedepth` 12, so "a reseed-only run of entry 41" was a contradiction

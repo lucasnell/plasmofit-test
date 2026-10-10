@@ -2,7 +2,26 @@
 
 ## State of play right now — read this first
 
-**No jobs running.** SLURM 30829, the entry 40 reseed (`np_bs400_nc384`,
+**SLURM 30830 is running**, submitted 2026-10-10 06:48, seven tasks
+(`_scripts/wockner-fit-nc384-ladder.sh`, `WOCKFIT_SEED=20261010`):
+
+- **42** — the tuned retry of the 400 rung at `n_c` = 384 (`adapt_delta`
+  0.95, `max_treedepth` 12). Expect 51–102 h; walltime 7 days.
+- **43–48** — a `b_shape` ladder at `n_c` = 384, default sampler settings:
+  pinned at 15, 50, 100, 250, 600, plus free. Expect ~20 h each.
+
+Rung choice and the prediction are written above the configs in
+`_scripts/wockner-fit.R`, before any fit ran. **Do not edit
+`_scripts/wockner-fit.R` until `squeue -u lan68` is empty** — all seven tasks
+read it.
+
+**How to read it.** Per fit, `lp__` by chain, then max R-hat < 1.05; a failed
+rung is not used. Compare converged rungs by paired observation-level
+PSIS-LOO (`wock-fit-LOO-<cfg>.rds`, take `$observation`). Report
+`cycle_length` as its spread across converged rungs, not the value at the
+best one. `_scripts/nc-bs400-ladder-read.R` is the pattern to extend.
+
+**Why these were run.** SLURM 30829, the entry 40 reseed (`np_bs400_nc384`,
 `n_c` = 384, `b_shape` pinned at 400), finished 2026-10-10 05:27 after
 20:21:41 and **FAILED the gate**: max R-hat 7.744. Read with
 `_scripts/nc-bs400-ladder-read.R`, output
@@ -19,9 +38,8 @@ Cells: per-chain mean `lp__`, 4 chains × 1000 post-warmup draws.
 **This is not the failure the notes planned for.** The plan said: if one
 chain sticks again, report multimodality and do not reseed a third time. Here
 all four chains are apart, which is a general mixing failure. So neither
-branch of the plan applies, and **the next step is Lucas's decision**, not a
-default. The three options and their costs are in `TODO.md` under "Needs a
-decision".
+branch of the plan applies. Lucas chose (2026-10-10) to run both the tuned
+retry and a `b_shape` ladder at 384 — SLURM 30830 above.
 
 Two things this changed in the notes:
 
@@ -36,9 +54,10 @@ Two things this changed in the notes:
 `cycle_length` at 38.72–39.28 h, against 41.15–41.25 h at 192. Unmixed chains
 can share a bias, so this does not count and must not be quoted as a result.
 
-**State of the repos.** Package unchanged at `8dde0c1`. This session's reader,
-its output, and the notes edits are committed locally in `plasmofit-test` and
-**not pushed**. The only untracked files are `mmc1.pdf` and `mmcm.pdf`,
+**State of the repos.** Package unchanged at `8dde0c1`. `plasmofit-test` has
+three local commits from 2026-10-10 that are **not pushed**: Lucas approved
+pushing the first, but the push was blocked by a permission check, so it needs
+doing by hand (`git push origin main`). The only untracked files are `mmc1.pdf` and `mmcm.pdf`,
 deliberately so.
 
 **Everything in `_data/` is gitignored except the reader outputs**, which are
