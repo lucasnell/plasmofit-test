@@ -2,11 +2,18 @@
 
 ## State of play right now — read this first
 
-**One job running: entry 42** (SLURM 30830_42, `b_shape` 400 at `n_c` = 384,
-tuned settings), projected at ~180 h against its 168 h walltime, so it may
-die without output. 30837 (49-53) was **cancelled** 2026-10-13: projected to
-overrun, and 49 duplicated converged entry 43. **Do not edit
-`_scripts/wockner-fit.R` until 42 is gone.**
+**One job running: SLURM 30856**, submitted 2026-10-13, the validation of
+the pinned driver: entry 43 (`np_bs15_nc384`) refit with each chain as its
+own process pinned to one L3 cache group (`_scripts/wockner-fit-pinned.sh`,
+`WOCKFIT_SEED=20261010` as the original, `WOCKFIT_SUFFIX=-pinned`). When it
+lands, run `_scripts/pinned-validate.R` (criteria written in its header
+before the run finished): the gate, per-trial `cycle_length` |z| < 3 against
+the original, elpd within 2 se; speed reported. **Do not edit
+`_scripts/wockner-fit.R` while it runs.**
+
+Cancelled 2026-10-13: entry 42 (after 3 d 4 h, projected to overrun its
+walltime) and 30837 (49-53, same reason; 49 duplicated converged 43).
+Entries 49-54 are back in `wockner-fit.R`; the two copies are deleted.
 
 **The `n_c` = 384 ladder, read 2026-10-13** (`_scripts/nc384-ladder-read.R`,
 `_data/nc384-ladder-read-2026-10-13.txt`; `findings.md`, "The `b_shape`
@@ -36,9 +43,12 @@ practical. Two results, both in `findings.md`:
    production layout. Thread count is set only by pinning (`taskset`);
    `STAN_NUM_THREADS` and `RcppParallel` settings are ignored.
 
-**Next, Lucas's call (`TODO.md`):** a driver that runs each chain as its own
-pinned process and merges them, validated by refitting entry 43 and
-comparing time and posterior.
+**Built 2026-10-13:** `wockner-fit.R` now takes `WOCKFIT_MODE` = `chain`
+(one chain, `chain_id` k, saved as `wock-chain-<cfg>-<k>.rds`) or `merge`
+(`rstan::sflist2stanfit`, then the usual outputs); unset is unchanged.
+`_scripts/wockner-fit-pinned.sh` reads the L3 groups from `/sys`, pins each
+chain to one whole group with 4 threads, then merges. 40 CPUs per task, so
+at most 3 at once (`--array=...%3`).
 
 **Why the ladder was run.** SLURM 30829, the entry 40 reseed (`np_bs400_nc384`,
 `n_c` = 384, `b_shape` pinned at 400), finished 2026-10-10 05:27 after

@@ -16,10 +16,10 @@ ladder at `n_c` = 384 (entries 43–48), since the 400 pin was chosen at
 `b_shape` pinned at 15 and `b_shape` free converge; every pin from 50 up fails
 like 400 did. Free `b_shape` is 12.2, pin 15 ties it on elpd, and
 `cycle_length` is 41.34 h and 41.82 h respectively (means over 13 trials).
-Of the tuned high pins only 42 still runs (49–53 cancelled as projected to
-overrun). **Runtime:** a benchmark found production fits run ~5x slower per
-gradient than they need to, because chains share L3 caches and hyperthreads;
-one chain per L3 group is the fix to build next.
+The tuned high pins (42, 49–53) were cancelled as projected to overrun.
+**Runtime:** a benchmark found production fits run ~5x slower per gradient
+than they need to, because chains share L3 caches and hyperthreads. A pinned
+one-chain-per-L3-group driver is built; SLURM 30856 validates it on entry 43.
 
 The forward-map question is also closed: the convolution was added to the
 package and removed again, slower and less accurate than the series it would
@@ -61,7 +61,7 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 | Workstream | State | Next |
 |---|---|---|
 | Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Nothing. Leans on `wide_bshape`, 6 clean pairs |
-| Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences | Entry 40 failed twice (29635; reseed 30829, 2026-10-10, general mixing failure, 34% treedepth saturation). `n_c` = 384 ladder partly read: only pin 15 and free converge (41.34, 41.82 h). 42 still running, walltime at risk; 49–53 cancelled. Next: pinned one-process-per-chain driver (~5x per gradient) |
+| Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences | Entry 40 failed twice (29635; reseed 30829, 2026-10-10, general mixing failure, 34% treedepth saturation). `n_c` = 384 ladder partly read: only pin 15 and free converge (41.34, 41.82 h). 42 and 49–53 cancelled. Pinned one-chain-per-L3-group driver built; **SLURM 30856 validating it** on entry 43 |
 | `n_c` as a biological assumption | **Resolved**: 96 and 192 are wrong, and `cycle_length` is stable at 40.93–41.15 h once `n_c` >= 384. The `b_shape`/rung trade-off is the mechanism (Spearman −1.00 in 14/14 units) | Second production rung at `b_shape` 400 failed twice; the 400 pin was chosen at `n_c` = 96 and may not carry to 384 |
 | Decay law (√ vs linear) | **Indecisive, and now explained**: the total spread is nearly fixed across rungs, so its growth law is barely constrained | Closed |
 | Age-structure rewrite (IPM) | **Closed — do not build it.** Both profiles saturate, so an IPM returns `sigma_d` at a boundary rather than a rate | Nothing |
@@ -119,4 +119,6 @@ Append-only. Supersede a line with a new one rather than editing it.
 | 2026-10-13 | Do not read an elpd plateau at `n_c` = 384 from the default-settings ladder | Only pin 15 and free converged; every pin from 50 up failed the gate, so there is no ladder of converged rungs to plateau |
 | 2026-10-13 | Cancel 30837 (49–53) | Projected 250–370 h against a 168 h walltime, and 49 duplicated converged entry 43 |
 | 2026-10-13 | Treat fit runtime as a layout problem before a model problem | Same model ran 89–345 ms per gradient by node load; benchmark: sharing an L3 group halves speed, best layout ~16 ms against 83 ms in production |
+| 2026-10-13 | Cancel entry 42 | Projected ~180 h against a 168 h walltime; a timed-out task writes nothing |
+| 2026-10-13 | Run chains as separate pinned processes, one per L3 cache group | Thread count follows the CPUs a process may use, and only pinning sets it; benchmark puts this layout at ~16 ms per gradient against 83 ms |
 

@@ -26,3 +26,4 @@
 !thread-bench-read-*.txt
 !thread-bench-jobs-*.txt
 !thread-bench-probe-jobs-*.txt
+!pinned-validate-*.txt

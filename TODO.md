@@ -9,27 +9,14 @@ match where a thread exists. This file is the actionable layer. -->
 
 ## Age structure and `n_c` (threads 5, 15)
 
-### Needs a decision (Lucas)
-
-- [ ] **How to run fits in the fast layout.** The benchmark (30843-30853)
-      says one chain per L3 cache group, one thread per physical core, is
-      ~5x faster per gradient than production. rstan forks chains itself, so
-      pinning needs one process per chain: four single-chain fits pinned with
-      `taskset`, merged with `rstan::sflist2stanfit`, then the existing
-      summary and LOO. Validate by refitting entry 43 that way and comparing
-      both time and posterior with the original. Build it as a new driver;
-      `wockner-fit.R` is being read by entry 42.
-
 ### In progress
 
-- [ ] **Entry 42 still running** (30830; 49-53 were cancelled 2026-10-13).
-      Rerun `_scripts/nc384-ladder-read.R` if it lands; it may hit its
-      walltime first. The open question: does any pin above 15 converge at
-      tuned settings? Without one, neither the elpd plateau at 384 nor the
-      fix-versus-estimate gain at 384 can be read. **Do not edit
-      `wockner-fit.R` while 42 runs.** After: merge entries 49-54 into it
-      (54 has output; 49-53 were cancelled, kept as the record), delete the
-      two copies, and correct its "threading ~1.0x" comment.
+- [ ] **SLURM 30856 — validate the pinned driver** on entry 43
+      (`-pinned` suffix, seed 20261010 as the original). When it lands:
+      `Rscript --vanilla _scripts/pinned-validate.R >
+      _data/pinned-validate-<date>.txt`. If it passes, the pinned driver
+      becomes the default way to run fits. **Do not edit `wockner-fit.R`
+      while it runs.**
 
 ### Next
 
@@ -51,6 +38,11 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Done
 
+- [x] **2026-10-13 — pinned driver built**: `WOCKFIT_MODE` chain/merge in
+      `wockner-fit.R`, `_scripts/wockner-fit-pinned.sh`. Entries 49-54 folded
+      back into `wockner-fit.R`, copies deleted, threading comment corrected.
+- [x] **2026-10-13 — cancelled entry 42** after 3 d 4 h (projected ~180 h
+      against a 168 h walltime).
 - [x] **2026-10-13 — thread-layout benchmark** (30843-30853): sharing an L3
       group halves speed; best layout ~16 ms per gradient against 83 ms for
       production. `_data/thread-bench-read-2026-10-13.txt`.

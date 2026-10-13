@@ -249,7 +249,10 @@ Roughly in priority order.
    (Lucas: two-week fits are not practical): node contention, not the model,
    sets cost -- 89-345 ms per gradient for the same model; benchmark
    30843-30853 puts the fix at one chain per L3 cache group (~16 vs 83 ms).
-   Next is a pinned one-process-per-chain driver. Reader
+   Next is a pinned one-process-per-chain driver. BUILT the same day
+   (`wockner-fit-pinned.sh`, `WOCKFIT_MODE` chain/merge); entry 42 cancelled;
+   the `nc384t` copies folded back into `wockner-fit.R` and deleted; SLURM
+   30856 validates the driver on entry 43. Reader
    `_scripts/nc-bs400-ladder-read.R`.
    (29635 entry 39 ran 8:20:35). `_scripts/wockner-fit-nc-bs400-reseed.sh`,
    **entry 39** and not 41: entries 41-42 already carry `adapt_delta` 0.95 and

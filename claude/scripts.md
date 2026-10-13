@@ -287,15 +287,8 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   43-48, a `b_shape` ladder at `n_c` = 384 (15, 50, 100, 250, 600 pinned as
   data, and free) at default sampler settings. 7-day walltime,
   `WOCKFIT_SEED=20261010`; names are new, so no suffix.
-- `_scripts/wockner-fit-nc384t.R` — a COPY of `wockner-fit.R`, identical
-  through entry 48, adding entries 49-53 (the `n_c` = 384 pinned rungs at
-  `adapt_delta` 0.95, `max_treedepth` 12). Made because 30830 was reading the
-  original. Merge back and delete once nothing runs from either.
 - `_scripts/wockner-fit-nc384t-ladder.sh` — SLURM 30837, entries 49-53 from
   that copy, 7-day walltime, `WOCKFIT_SEED=20261010`. Insurance for 43-47.
-- `_scripts/wockner-fit-nc384t48.R` — a second copy, of `wockner-fit-nc384t.R`,
-  adding entry 54 (the free rung at tuned settings). Same merge-and-delete
-  note.
 - `_scripts/wockner-fit-nc384t48.sh` — SLURM 30842, entry 54 from that copy.
 - `_scripts/nc384-ladder-read.R` — reads the `n_c` = 384 `b_shape` ladder
   (entries 40-seed2 and 42-54), whatever has landed: `lp__` by chain, the
@@ -308,6 +301,15 @@ Papers bearing on thread 2, kept here so a search is not repeated.
 - `_scripts/nc384-cost-decompose.R` — splits each saved fit's cost into
   leapfrog steps and time per gradient. Output
   `_data/nc384-cost-decompose-<date>.txt`, tracked.
+- `_scripts/wockner-fit-pinned.sh` — runs one `wockner-fit.R` config with
+  each chain as its own process (`WOCKFIT_MODE=chain`, `WOCKFIT_CHAIN=k`,
+  `WOCKFIT_THREADS=4`), pinned by `taskset` to one whole L3 cache group read
+  from `/sys`, then `WOCKFIT_MODE=merge`. 40 CPUs, 32G; at most 3 at once.
+  Chain files `wock-chain-<cfg>-<k>.rds` stay, so a failed merge reruns
+  alone. `WOCKFIT_PIN_DRYRUN=1` prints the chain-to-core map and exits.
+- `_scripts/pinned-validate.R` — compares a pinned refit of entry 43 with
+  the original: cost, gate, per-trial `cycle_length` z, elpd. Output
+  `_data/pinned-validate-<date>.txt`, tracked.
 - `_scripts/thread-bench.R` / `_scripts/thread-bench.sh` — times
   `grad_log_prob` at `n_c` = 384 under a chosen CPU layout. The `.sh` launches
   several chain processes in one task and pins each with `taskset`
