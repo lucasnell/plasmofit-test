@@ -513,7 +513,54 @@ CONFIGS <- list(
                                                            max_shape = 1000,
                                                            n_c = 384L)),
     np_wide_total0_nc384 = list(model = "no_pool",
-                                data = list(sd_log10_total0 = 1, n_c = 384L))
+                                data = list(sd_log10_total0 = 1, n_c = 384L)),
+    ## ---- the same ladder at the tuned sampler settings, 49-53 -------------
+    ## Entries 43-47 at entry 42's adapt_delta 0.95 / max_treedepth 12, run
+    ## alongside them as insurance in case the default-settings ladder fails
+    ## the gate. Run as SLURM 30837 from a copy of this file, since 30830 was
+    ## reading it; cancelled unfinished 2026-10-13 (projected to overrun the
+    ## 7-day walltime). No output exists for 49-53. Sampler settings
+    ## change exploration, not the posterior, so a converged rung here is
+    ## comparable with a converged rung at default settings and with 42.
+    ## The free rung (48) has no tuned twin.
+    np_bs15_nc384_t  = list(model = "no_pool", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 15,
+                                                           max_shape = 1000,
+                                                           n_c = 384L),
+                            control = list(adapt_delta = 0.95,
+                                           max_treedepth = 12)),
+    np_bs50_nc384_t  = list(model = "no_pool", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 50,
+                                                           max_shape = 1000,
+                                                           n_c = 384L),
+                            control = list(adapt_delta = 0.95,
+                                           max_treedepth = 12)),
+    np_bs100_nc384_t = list(model = "no_pool", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 100,
+                                                           max_shape = 1000,
+                                                           n_c = 384L),
+                            control = list(adapt_delta = 0.95,
+                                           max_treedepth = 12)),
+    np_bs250_nc384_t = list(model = "no_pool", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 250,
+                                                           max_shape = 1000,
+                                                           n_c = 384L),
+                            control = list(adapt_delta = 0.95,
+                                           max_treedepth = 12)),
+    np_bs600_nc384_t = list(model = "no_pool", data = list(sd_log10_total0 = 1,
+                                                           b_shape = 600,
+                                                           max_shape = 1000,
+                                                           n_c = 384L),
+                            control = list(adapt_delta = 0.95,
+                                           max_treedepth = 12)),
+    ## ---- 54: the free rung (48) at tuned settings --------------------------
+    ## Added 2026-10-10 at Lucas's request, so the fix-vs-estimate reference
+    ## has the same insurance as the pinned rungs. SLURM 30842, COMPLETED,
+    ## converged (max R-hat 1.024).
+    np_wide_total0_nc384_t = list(model = "no_pool",
+                                  data = list(sd_log10_total0 = 1, n_c = 384L),
+                                  control = list(adapt_delta = 0.95,
+                                                 max_treedepth = 12))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -570,11 +617,32 @@ if (nzchar(fit_suffix)) {
 }
 cfg <- CONFIGS[[curr_idx]]
 
-# Within-chain threading measured at roughly 1.0x on these data: there are only
-# ~14 distinct trajectory combinations to split over, so the scheduler has
-# little to work with. Chains are the better use of cores here. Raise this only
-# for a dataset with many more combinations, and measure before believing it.
-threads_per_chain <- 1L
+# THREADS. A chain process runs as many threads as CPUs it is allowed, whatever
+# threads_per_chain says: neither rstan's setting, STAN_NUM_THREADS, nor
+# RcppParallel::setThreadOptions() changed the count (probe 30843-30845). So in
+# the default mode four chains share this task's CPUs, oversubscribed. An
+# earlier comment here said within-chain threading "measured at roughly 1.0x";
+# at n_c = 384 that is wrong -- four threads on four dedicated cores take
+# 15.9 ms per gradient against 38.0 ms for one (benchmark 30846-30853,
+# claude/findings.md, "Thread-layout benchmark").
+#
+# WOCKFIT_MODE selects how the chains run:
+#   unset    all N_CHAINS chains in this process, as every fit before
+#            2026-10-13 was run.
+#   chain    ONE chain, number WOCKFIT_CHAIN, saved as
+#            wock-chain-<cfg>-<k>.rds. The caller pins the process to its
+#            cores (_scripts/wockner-fit-pinned.sh does one L3 group of 4
+#            physical cores per chain), and WOCKFIT_THREADS records how many.
+#   merge    reads the N_CHAINS chain files, combines them with
+#            rstan::sflist2stanfit(), and carries on exactly as the default
+#            mode does after sampling: same outputs, same names.
+# Chains share SEED and differ in chain_id, as in a multi-chain call.
+WOCKFIT_MODE <- Sys.getenv("WOCKFIT_MODE", "")
+if (!WOCKFIT_MODE %in% c("", "chain", "merge"))
+    stop("WOCKFIT_MODE must be unset, 'chain', or 'merge'")
+threads_per_chain <- as.integer(Sys.getenv("WOCKFIT_THREADS", "1"))
+if (is.na(threads_per_chain) || threads_per_chain < 1L)
+    stop("WOCKFIT_THREADS must be a positive integer")
 options(mc.cores = min(N_CHAINS, max(1L, n_threads %/% threads_per_chain)))
 
 
@@ -671,9 +739,42 @@ cat(sprintf("  cycle_length in (%g, %g), prior centred at %.2f h, sd_bs_cl %g\n"
 # Fit
 # ------------------------------------------------------------------------ #
 
-f <- archer_fit(d, model = cfg$model, chains = N_CHAINS, iter = ITER,
-                warmup = WARMUP, seed = SEED,
-                threads_per_chain = threads_per_chain, control = cfg$control)
+chain_path <- function(k) sprintf("wock-chain-%s-%d.rds", cfg_name, k)
+
+if (WOCKFIT_MODE == "chain") {
+    k <- suppressWarnings(as.integer(Sys.getenv("WOCKFIT_CHAIN")))
+    if (is.na(k) || k < 1L || k > N_CHAINS)
+        stop("WOCKFIT_CHAIN must be an integer in 1..", N_CHAINS)
+    cat(sprintf("chain mode: chain %d of %d, %d thread(s), cpus %s\n", k, N_CHAINS,
+                threads_per_chain,
+                sub(".*:\\s*", "", grep("Cpus_allowed_list",
+                                        readLines("/proc/self/status"), value = TRUE))))
+    fk <- archer_fit(d, model = cfg$model, chains = 1L, iter = ITER,
+                     warmup = WARMUP, seed = SEED, chain_id = k,
+                     threads_per_chain = threads_per_chain, control = cfg$control)
+    write_rds(list(fit = fk, data = d, chain = k, seed = SEED), chain_path(k))
+    cat("\nFinished chain", k, "of", cfg_name, "\n")
+    print(rstan::get_elapsed_time(fk))
+    quit(save = "no")
+}
+
+if (WOCKFIT_MODE == "merge") {
+    paths <- vapply(seq_len(N_CHAINS), chain_path, character(1))
+    if (!all(file.exists(paths)))
+        stop("merge: missing chain files: ", paste(paths[!file.exists(paths)], collapse = ", "))
+    parts <- lapply(paths, readRDS)
+    ## Every chain must have been built from the same data and seed as this
+    ## process would build, or the merged fit mixes specifications.
+    for (pt in parts) stopifnot(identical(pt$data, d), pt$seed == SEED)
+    stopifnot(identical(vapply(parts, `[[`, integer(1), "chain"), seq_len(N_CHAINS)))
+    f <- rstan::sflist2stanfit(lapply(parts, `[[`, "fit"))
+    rm(parts)
+    cat("merge mode: combined", N_CHAINS, "chain files\n")
+} else {
+    f <- archer_fit(d, model = cfg$model, chains = N_CHAINS, iter = ITER,
+                    warmup = WARMUP, seed = SEED,
+                    threads_per_chain = threads_per_chain, control = cfg$control)
+}
 
 write_rds(f, sprintf("wock-fit-%s.rds", cfg_name))
 write_rds(d, sprintf("wock-data-%s.rds", cfg_name))
@@ -787,9 +888,24 @@ draw_as_list <- function(fit, pars, i = 1L) {
 }
 
 ## seconds per gradient evaluation
-grad_time <- function(fit, model, n = 200L) {
-    u <- rstan::unconstrain_pars(fit, draw_as_list(fit, par_block_for(model, fit), 1L))
-    system.time(for (k in seq_len(n)) rstan::grad_log_prob(fit, u))[["elapsed"]] / n
+## `handle` must have a live DSO. A fit sampled in this process does; a fit
+## merged from chain files read off disk does not ("the model object is not
+## created or not valid"), so merge mode builds a one-iteration Fixed_param
+## handle on the same data and evaluates the merged fit's draw through it.
+## In merge mode this times the gradient on whatever CPUs the merge step has,
+## not on the pinned layout the chains ran on.
+grad_time <- function(fit, model, n = 200L, handle = fit) {
+    init <- draw_as_list(fit, par_block_for(model, fit), 1L)
+    u <- rstan::unconstrain_pars(handle, init)
+    system.time(for (k in seq_len(n)) rstan::grad_log_prob(handle, u))[["elapsed"]] / n
+}
+live_handle <- function(fit, model, data = d) {
+    if (WOCKFIT_MODE != "merge") return(fit)
+    nm <- if (model == "no_pool") "archer_fit" else paste0("archer_fit_", model)
+    suppressWarnings(suppressMessages(rstan::sampling(
+        plasmofit:::stanmodels[[nm]], data = data, chains = 1, iter = 1,
+        algorithm = "Fixed_param", refresh = 0,
+        init = list(draw_as_list(fit, par_block_for(model, fit), 1L)))))
 }
 
 ## condition number of the posterior correlation matrix, unconstrained scale
@@ -871,7 +987,7 @@ summarize_fit <- function(fit, data, label, model,
         stepsize     = sapply(rstan::get_sampler_params(fit, inc_warmup = FALSE),
                               function(x) mean(x[, "stepsize__"])),
         elapsed      = rstan::get_elapsed_time(fit),
-        sec_per_grad = grad_time(fit, model),
+        sec_per_grad = grad_time(fit, model, handle = live_handle(fit, model, data)),
         cond         = fit_cond(fit, max_shape = data$max_shape, model = model),
         diagnostics  = diags
     )

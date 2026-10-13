@@ -5,9 +5,10 @@
 # insurance job (SLURM 30837, entries 49-53) left out. Added 2026-10-10 at
 # Lucas's request; cancel it with 30837 if 43-48 converge.
 #
-# RUNS A SECOND COPY, _scripts/wockner-fit-nc384t48.R: wockner-fit.R and
-# wockner-fit-nc384t.R were both being read by running jobs. Identical to
-# wockner-fit-nc384t.R through entry 53.
+# RAN FROM A COPY of wockner-fit.R when submitted (SLURM 30837 / 30842), as
+# the original was being read by 30830. The copies were folded back into
+# wockner-fit.R on 2026-10-13 and deleted; this now points at wockner-fit.R,
+# whose entries 49-54 are identical to the copies'.
 #
 # COST. 7-day walltime, as for 42 and 49-53.
 #
@@ -32,4 +33,4 @@
 
 export WOCKFIT_SEED=20261010
 
-Rscript --vanilla ../_scripts/wockner-fit-nc384t48.R
+Rscript --vanilla ../_scripts/wockner-fit.R

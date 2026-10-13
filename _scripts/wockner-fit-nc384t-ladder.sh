@@ -6,10 +6,10 @@
 # alongside 30830 so a failure of 43-47 at default settings does not cost
 # another round of waiting. Lucas will cancel this job if 43-47 converge.
 #
-# RUNS A COPY, _scripts/wockner-fit-nc384t.R, not wockner-fit.R: 30830 was
-# reading the original when these were added, and editing a script under a
-# running job corrupts it (claude/gotchas.md). The copy is identical through
-# entry 48.
+# RAN FROM A COPY of wockner-fit.R when submitted (SLURM 30837 / 30842), as
+# the original was being read by 30830. The copies were folded back into
+# wockner-fit.R on 2026-10-13 and deleted; this now points at wockner-fit.R,
+# whose entries 49-54 are identical to the copies'.
 #
 # Sampler settings change exploration, not the posterior, so a converged rung
 # here is comparable with converged rungs from 30830. Read it the same way:
@@ -41,4 +41,4 @@
 
 export WOCKFIT_SEED=20261010
 
-Rscript --vanilla ../_scripts/wockner-fit-nc384t.R
+Rscript --vanilla ../_scripts/wockner-fit.R
