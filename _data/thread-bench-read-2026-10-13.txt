@@ -1,0 +1,130 @@
+Cells: one row per chain process. ms_per_grad is wall time per
+grad_log_prob call over 300 calls at a saved posterior draw of entry 43
+(np_bs15_nc384, n_c 384), milliseconds, lower is faster. threads = threads
+that did work; cpu_per_wall = CPU-seconds per wall-second for the process.
+shares_l3_with = number of other busy chains, plus entry 42, whose cores
+touch one of this chain's L3 groups. Unpinned layouts share everything.
+
+ layout task_cpus   pin chain phys_cores threads l3_groups shares_l3_with
+      A         4  none     3          2       4         0              4
+      A         4  none     1          2       4         0              4
+      A         4  none     2          2       4         0              4
+      A         4  none     4          2       4         0              4
+      F         8  phys     3          1       1         1              1
+      F         8  phys     4          1       1         1              1
+      F         8  phys     2          1       1         0              2
+      F         8  phys     1          1       1         0              2
+      B        16 split     4          2       4         2              0
+      B        16 split     3          2       4         1              1
+      B        16 split     2          2       4         1              1
+      B        16 split     1          2       4         0              1
+      D        16  none     2          8      16     0+1+2              4
+      D        16  none     1          8      16     0+1+2              4
+      D        16  none     3          8      16     0+1+2              4
+      D        16  none     4          8      16     0+1+2              4
+     Cp        32  phys     4          4       4       3+4              1
+     Cp        32  phys     3          4       4       2+3              2
+     Cp        32  phys     2          4       4       1+2              2
+     Cp        32  phys     1          4       4       0+1              2
+      C        32 split     4          4       8       3+4              1
+      C        32 split     3          4       8       2+3              2
+      C        32 split     2          4       8       1+2              2
+      C        32 split     1          4       8       0+1              2
+      G        64 split     3          8      16     4+5+6              2
+      G        64 split     4          8      16     6+7+8              1
+      G        64 split     2          8      16     2+3+4              2
+      G        64 split     1          8      16     0+1+2              2
+      E        64 split    16          2       4         8              0
+      E        64 split    10          2       4         5              1
+      E        64 split     8          2       4         4              1
+      E        64 split    14          2       4         7              1
+      E        64 split     9          2       4         4              1
+      E        64 split    11          2       4         5              1
+      E        64 split    13          2       4         6              1
+      E        64 split    15          2       4         7              1
+      E        64 split    12          2       4         6              1
+      E        64 split     4          2       4         2              1
+      E        64 split     5          2       4         2              1
+      E        64 split     6          2       4         3              1
+      E        64 split     7          2       4         3              1
+      E        64 split     2          2       4         1              1
+      E        64 split     3          2       4         1              1
+      E        64 split     1          2       4         0              1
+ ms_per_grad cpu_per_wall
+        83.2         0.98
+        83.3         0.99
+        82.9         0.99
+        82.2         0.99
+        31.5         1.00
+        31.5         1.00
+        44.6         0.99
+        44.6         0.99
+        16.9         3.86
+        32.9         3.81
+        32.9         3.80
+        33.0         3.80
+        45.9         3.02
+        47.1         2.97
+        46.8         2.94
+        46.7         2.98
+        13.1         3.79
+        15.1         3.81
+        16.7         3.70
+        18.8         3.59
+        19.2         6.15
+        21.7         6.34
+        22.2         6.33
+        24.5         5.82
+        19.0         7.51
+        19.0         7.33
+        19.4         7.47
+        20.6         7.02
+        24.1         3.72
+        47.2         3.76
+        47.5         3.75
+        47.3         3.76
+        47.8         3.75
+        47.8         3.74
+        47.9         3.76
+        47.8         3.76
+        47.9         3.76
+        48.3         3.74
+        48.5         3.75
+        48.4         3.74
+        48.5         3.74
+        48.7         3.74
+        48.7         3.74
+        48.6         3.75
+
+=== by layout ===
+Cells: per layout, mean and range of ms_per_grad over its chains; grads_per_s_per_core
+= total gradients per second across the layout's chains divided by the physical
+cores the task held (throughput per core; higher is better).
+
+ layout task_cpus   pin chains threads_per_chain ms_mean  ms_range
+      A         4  none      4                 4    82.9 82.2-83.3
+      F         8  phys      4                 1    38.0 31.5-44.6
+      B        16 split      4                 4    28.9 16.9-33.0
+      D        16  none      4                16    46.6 45.9-47.1
+      C        32 split      4                 8    21.9 19.2-24.5
+     Cp        32  phys      4                 4    15.9 13.1-18.8
+      E        64 split     16                 4    46.6 24.1-48.7
+      G        64 split      4                16    19.5 19.0-20.6
+ grads_per_s_per_core
+                 24.1
+                 27.1
+                 18.8
+                 10.7
+                 11.5
+                 16.0
+                 11.1
+                  6.4
+
+=== isolating L3 sharing: same layout, chains alone vs not alone in their L3 group ===
+B: alone 16.9 ms | shared 32.9, 32.9, 33 ms
+F: alone  ms | shared 31.5, 31.5, 44.6, 44.6 ms
+
+=== probe: thread-count settings (30843-30845) ===
+tag=probe-default knob=default draw=250 n=30 ms_per_grad=20.8 threads=5 active=4 cpu_per_wall=3.79 lp=-840.6987869646 host_cpus=4
+tag=probe-stan1 knob=stan1 draw=250 n=30 ms_per_grad=18.5 threads=5 active=4 cpu_per_wall=3.87 lp=-840.6987869646 host_cpus=4
+tag=probe-rcpp1 knob=rcpp1 draw=250 n=30 ms_per_grad=23.1 threads=5 active=4 cpu_per_wall=3.84 lp=-840.6987869646 host_cpus=4

@@ -672,6 +672,15 @@ gradient between them. Check with `ps -L -p <pid>` and
 `/proc/<pid>/task/*/stat` (utime is field 14) before trusting any statement
 about how many threads a fit uses.
 
+**Neither `STAN_NUM_THREADS` nor `RcppParallel::setThreadOptions()` limits
+the thread count** (probe 30843-30845); the pool sizes itself to the CPUs the
+process may use. Pin with `taskset -c` to control it.
+
+**Physical cores 4k..4k+3 share one 16 MB L3 cache, and a chain that shares
+its L3 group with another busy chain runs at half speed** (benchmark
+30846-30853). Hyperthread siblings also slow it. One chain per L3 group, one
+thread per physical core, is the fast layout.
+
 Fit cost also depends 3-4x on how many of OUR OWN tasks share the node
 (`claude/findings.md`, "Where the time goes at `n_c` = 384"), so a cost
 measured on a quiet node does not carry to a full array, and vice versa.

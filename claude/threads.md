@@ -245,7 +245,11 @@ Roughly in priority order.
    apart, worst R-hat `cycle_length[13]`. Free `b_shape` 12.2 (ML screen
    9-15); pin 15 vs free −0.49 elpd (se 4.06); `cycle_length` 41.34 vs
    41.82 h. 43-47 did NOT converge, so 30837 stays; 42 and 50-53 may hit the
-   7-day walltime. Reader
+   7-day walltime. 2026-10-13: 49-53 cancelled; only 42 runs. RUNTIME
+   (Lucas: two-week fits are not practical): node contention, not the model,
+   sets cost -- 89-345 ms per gradient for the same model; benchmark
+   30843-30853 puts the fix at one chain per L3 cache group (~16 vs 83 ms).
+   Next is a pinned one-process-per-chain driver. Reader
    `_scripts/nc-bs400-ladder-read.R`.
    (29635 entry 39 ran 8:20:35). `_scripts/wockner-fit-nc-bs400-reseed.sh`,
    **entry 39** and not 41: entries 41-42 already carry `adapt_delta` 0.95 and

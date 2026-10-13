@@ -2,45 +2,43 @@
 
 ## State of play right now — read this first
 
-**Partly landed (read 2026-10-13).** Of the `n_c` = 384 `b_shape` ladder, the
-default-settings rungs (SLURM 30830, entries 43-48) and the tuned free rung
-(30842, entry 54) are done. **Still running:** entry 42 (400, tuned) and 30837
-entries 49-53 (pinned rungs, tuned). Read with `_scripts/nc384-ladder-read.R`,
-output `_data/nc384-ladder-read-2026-10-13.txt`; write-up in
-`claude/findings.md`, "The `b_shape` ladder at `n_c` = 384". Rerun the reader
-as the rest land; it reads whatever is present.
+**One job running: entry 42** (SLURM 30830_42, `b_shape` 400 at `n_c` = 384,
+tuned settings), projected at ~180 h against its 168 h walltime, so it may
+die without output. 30837 (49-53) was **cancelled** 2026-10-13: projected to
+overrun, and 49 duplicated converged entry 43. **Do not edit
+`_scripts/wockner-fit.R` until 42 is gone.**
+
+**The `n_c` = 384 ladder, read 2026-10-13** (`_scripts/nc384-ladder-read.R`,
+`_data/nc384-ladder-read-2026-10-13.txt`; `findings.md`, "The `b_shape`
+ladder at `n_c` = 384"):
 
 - **Only two fits converge:** `b_shape` pinned at **15** (max R-hat 1.033)
   and **free** at tuned settings (1.024). Every pin from 50 up fails the way
   400 did, all four chains apart, worst R-hat `cycle_length[13]`
-  (MMV048_PartB). The default-settings free rung missed narrowly (1.067).
+  (MMV048_PartB).
 - **Free `b_shape` = 12.2**, mean over 14 units, matching the ML screen's
   9-15. Pin 15 against free: **−0.49 elpd (se 4.06)**, a tie.
 - **`cycle_length`, mean over 13 trials: 41.34 h (pin 15) and 41.82 h
-  (free)**, a 0.48 h spread concentrated in four trials, partly tracking how
-  far each unit's free `b_shape` sits below 15.
-- **The prediction's second branch cannot be read** — no high pin has
-  converged, so there is no plateau to locate. Whether 49-53 change that is
-  the open question.
+  (free).**
+- **The plateau cannot be read**: no high pin has converged.
 
-**WALLTIME RISK.** The tuned runs have a 7-day limit (168 h). At ~74 h:
+**Runtime, the current thread (2026-10-13).** Lucas: a two-week fit is not
+practical. Two results, both in `findings.md`:
 
-| task | rung | slowest chain | linear projection |
-|---|---|---|---|
-| 42 | 400 | 41% | ~180 h — borderline |
-| 49 | 15 | 51% | ~145 h |
-| 50-52 | 50, 100, 250 | 30% | ~250 h — over |
-| 53 | 600 | 20% | ~370 h — over |
+1. **Where the time goes** (`_scripts/nc384-cost-decompose.R`): the same
+   model ran at 89 to 345 ms per gradient depending on how many of our own
+   tasks shared the node.
+2. **Thread-layout benchmark** (30843-30853, `_scripts/thread-bench*.{R,sh}`,
+   `_data/thread-bench-read-2026-10-13.txt`): a chain sharing its L3 cache
+   group (4 physical cores, 16 MB) with another busy chain runs at half
+   speed, and hyperthread siblings slow it further. One chain per L3 group,
+   one thread per core: **~16 ms per gradient against 83 ms** for the
+   production layout. Thread count is set only by pinning (`taskset`);
+   `STAN_NUM_THREADS` and `RcppParallel` settings are ignored.
 
-Cells: share of 1700 iterations done by the slowest chain at the time read,
-and elapsed time divided by that share. Crude — warmup is uneven — but
-`wockner-fit.R` writes nothing until sampling ends, so **a task that hits the
-limit loses everything**. Lucas to decide; see `TODO.md`.
-
-**Do not edit `_scripts/wockner-fit.R` or `wockner-fit-nc384t.R` until
-`squeue -u lan68` is empty** — 42 and 49-53 read them.
-`wockner-fit-nc384t48.R` is free now (54 is done). Merge 49-54 into
-`wockner-fit.R` and delete both copies once nothing is running.
+**Next, Lucas's call (`TODO.md`):** a driver that runs each chain as its own
+pinned process and merges them, validated by refitting entry 43 and
+comparing time and posterior.
 
 **Why the ladder was run.** SLURM 30829, the entry 40 reseed (`np_bs400_nc384`,
 `n_c` = 384, `b_shape` pinned at 400), finished 2026-10-10 05:27 after

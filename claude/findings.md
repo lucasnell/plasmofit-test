@@ -3715,6 +3715,65 @@ tuned settings tripled them for the free rung (1.95 M to 6.52 M).
 core sharing cannot explain it: each task's cores were its own. Candidates,
 none tested: shared L3 cache (16 MB per 4-core complex, so two tasks share
 one), memory bandwidth, and clock speed falling as more cores are busy.
+*(Answered by the benchmark below: mainly the shared L3 cache.)*
+
+### Thread-layout benchmark: one chain per L3 cache group is ~5x faster
+
+SLURM 30843-30853, 2026-10-13. `_scripts/thread-bench.R` times 300
+`grad_log_prob` calls at saved posterior draws of entry 43 (`np_bs15_nc384`)
+in one process per chain; `_scripts/thread-bench.sh` launches four (or 16)
+at once and pins each with `taskset`. Read with
+`_scripts/thread-bench-read.R`, output
+`_data/thread-bench-read-2026-10-13.txt`. Layouts ran one at a time; entry
+42 ran throughout on cores 0-1. Every layout gives identical `log_prob` at a
+given draw, so the arithmetic does not change.
+
+On this node physical cores 4k..4k+3 share one 16 MB L3 cache ("L3 group").
+
+Cells: per layout, mean (range) over its chains of wall milliseconds per
+gradient, lower is faster; throughput is total gradients per second divided
+by the physical cores the task held, higher is better.
+
+| layout | CPUs | chains, threads each | ms per gradient | throughput per core |
+|---|---|---|---|---|
+| A — production as it runs now | 4 | 4 × 4, unpinned | 82.9 (82.2-83.3) | 24.1 |
+| F — 1 core per chain | 8 | 4 × 1 | 38.0 (31.5-44.6) | 27.1 |
+| B — 2 cores + siblings per chain | 16 | 4 × 4 | 28.9 (16.9-33.0) | 18.8 |
+| D — as B, unpinned | 16 | 4 × 16 | 46.6 (45.9-47.1) | 10.7 |
+| **Cp — 4 cores per chain, no siblings** | 32 | 4 × 4 | **15.9 (13.1-18.8)** | 16.0 |
+| C — 4 cores + siblings per chain | 32 | 4 × 8 | 21.9 (19.2-24.5) | 11.5 |
+| G — 8 cores + siblings per chain | 64 | 4 × 16 | 19.5 (19.0-20.6) | 6.4 |
+| E — 16 chains as in B | 64 | 16 × 4 | 46.6 (24.1-48.7) | 11.1 |
+
+What it shows:
+
+1. **Sharing an L3 group with another busy chain doubles the time.** In B
+   the one chain alone in its group took 16.9 ms and the three that shared
+   took 32.9-33.0. In E the one chain alone took 24.1 and the fifteen that
+   shared took 47.2-48.7. This is the main cause of the 3-4x slowdown when
+   our tasks run together.
+2. **Hyperthread siblings hurt.** Four cores per chain: 15.9 ms with one
+   thread per core (Cp), 21.9 ms with two (C).
+3. **Threads within a chain scale well up to 4, then stop.** One thread per
+   chain, 31.5-44.6 ms (F); four, 13.1-18.8 (Cp); sixteen, 19.0-20.6 (G).
+   The work splits over ~14 trajectory groups, so this ceiling is expected.
+4. **The whole node's load adds ~40%.** A chain alone in its L3 group took
+   16.9 ms with 4 chains running (B) and 24.1 ms with 16 running (E).
+5. **The setting that works is pinning.** The thread pool sizes itself to
+   the CPUs a process may use; `STAN_NUM_THREADS=1` and
+   `RcppParallel::setThreadOptions(1)` did not change the count (probe
+   30843-30845, all four threads active).
+
+**What it implies for a fit**, as arithmetic, not yet a measurement: entry
+43 took 1.47 M gradients over 4 chains, so at 13-17 ms per gradient it is
+about **1.3-1.7 h** of gradient time against the 38.5 h it took. The tuned
+free rung (6.52 M) would be ~7 h against 62.8 h. This assumes a sampler pays
+about what `grad_log_prob` from R does per gradient, which a real refit has
+to confirm.
+
+**The comment in `wockner-fit.R`** that within-chain threading measured
+"roughly 1.0x" is wrong at `n_c` = 384 (and was measured with threading
+already on). It cannot be corrected while entry 42 reads the file.
 
 ### Bound asymmetry is ruled out
 

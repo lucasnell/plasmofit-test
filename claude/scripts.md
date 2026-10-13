@@ -308,6 +308,14 @@ Papers bearing on thread 2, kept here so a search is not repeated.
 - `_scripts/nc384-cost-decompose.R` — splits each saved fit's cost into
   leapfrog steps and time per gradient. Output
   `_data/nc384-cost-decompose-<date>.txt`, tracked.
+- `_scripts/thread-bench.R` / `_scripts/thread-bench.sh` — times
+  `grad_log_prob` at `n_c` = 384 under a chosen CPU layout. The `.sh` launches
+  several chain processes in one task and pins each with `taskset`
+  (`BENCH_PIN` none / split / phys). Raw output `_data/thread-bench-<job>.out`
+  (gitignored); job lists `_data/thread-bench-*jobs-<date>.txt`, tracked.
+- `_scripts/thread-bench-read.R` — tables the benchmark with each chain's L3
+  group and its neighbours there. Output `_data/thread-bench-read-<date>.txt`,
+  tracked.
 - `_scripts/nc-bs400-ladder-read.R` — reads both reseeded rungs of the
   production ladder (`np_bs400_nc192-seed2`, `np_bs400_nc384-seed2`): `lp__`,
   divergences and treedepth by chain, the R-hat gate, then `cycle_length` per
