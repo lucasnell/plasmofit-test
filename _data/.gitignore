@@ -27,3 +27,4 @@
 !thread-bench-jobs-*.txt
 !thread-bench-probe-jobs-*.txt
 !pinned-validate-*.txt
+!pinned-unit7-modes-*.txt

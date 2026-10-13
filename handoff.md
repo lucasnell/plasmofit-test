@@ -2,14 +2,16 @@
 
 ## State of play right now — read this first
 
-**One job running: SLURM 30856**, submitted 2026-10-13, the validation of
-the pinned driver: entry 43 (`np_bs15_nc384`) refit with each chain as its
-own process pinned to one L3 cache group (`_scripts/wockner-fit-pinned.sh`,
-`WOCKFIT_SEED=20261010` as the original, `WOCKFIT_SUFFIX=-pinned`). When it
-lands, run `_scripts/pinned-validate.R` (criteria written in its header
-before the run finished): the gate, per-trial `cycle_length` |z| < 3 against
-the original, elpd within 2 se; speed reported. **Do not edit
-`_scripts/wockner-fit.R` while it runs.**
+**No jobs running.** The pinned-driver validation (SLURM 30856, entry 43
+refit, seed as the original) finished 2026-10-13 in **3.20 h against the
+original's 38.52 h** (12x), and agrees with it in 12 of 13 trials — but it
+**fails the gate** (max R-hat 1.141): one chain found a region ~3 h lower
+for MMV048_PIB (39.9 against 43.0 h) at equal `lp__`, which the original's
+chains never visited. The driver is not the cause; the original pin-15
+result is less secure than it looked. Outputs
+`_data/pinned-validate-2026-10-13.txt` and
+`_data/pinned-unit7-modes-2026-10-13.txt`; write-up in `findings.md`, "The
+pinned driver". Next step is Lucas's call (`TODO.md`).
 
 Cancelled 2026-10-13: entry 42 (after 3 d 4 h, projected to overrun its
 walltime) and 30837 (49-53, same reason; 49 duplicated converged 43).

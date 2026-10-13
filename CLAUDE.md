@@ -186,8 +186,9 @@ claude/references.md, not as authorship. -->
   rung (`n_c` = 384) has failed twice** — 29635 and the reseed 30829, the
   second with all four chains apart (`lp__` spread 169.8, max R-hat 7.74) —
   so the ladder is not closed and no cycle length is final. The `b_shape`
-  ladder at 384 (2026-10-13, partial) converges only at pin 15 (41.34 h)
-  and free (41.82 h); the tuned high pins are still running.
+  ladder at 384 (2026-10-13, partial) converged only at pin 15 (41.34 h)
+  and free (41.82 h), and a second run of pin 15 failed the gate through a
+  second region for MMV048_PIB, so neither number is final.
 
 ## Working notes
 

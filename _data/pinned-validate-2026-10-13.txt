@@ -1,0 +1,44 @@
+=== cost ===
+Cells: per fit, over 4 chains. hours = longest chain (warmup + sampling);
+leapfrog_M = total gradient evaluations in millions; ms_per_grad = total
+chain time / total gradients, milliseconds.
+
+      fit hours leapfrog_M ms_per_grad
+ original 38.52      1.474       344.8
+   pinned  3.20      1.367        28.0
+
+speed-up in wall time: 12.0x; in time per gradient: 12.3x
+
+=== health ===
+original max R-hat 1.0328 | lp__ by chain -844.6, -846.5, -848.4, -848.8 | divergent 63
+pinned   max R-hat 1.1410 | lp__ by chain -844.3, -844.7, -847.7, -848.0 | divergent 75
+
+=== cycle_length by trial ===
+Cells: posterior mean (MCSE of the mean) in hours, per trial (grp_cl);
+z = (pinned - original) / sqrt(mcse_o^2 + mcse_p^2).
+
+        trial       original         pinned     z
+   Mefloquine 42.914 (0.022) 42.805 (0.036) -2.59
+        OZ439 42.183 (0.077) 42.149 (0.139) -0.21
+       DSM265 40.001 (0.033) 40.069 (0.030)  1.52
+  Piperaquine 40.166 (0.055) 40.185 (0.065)  0.21
+   Ferroquine 40.125 (0.043) 40.189 (0.042)  1.06
+    ACT451840 42.496 (0.039) 42.448 (0.054) -0.73
+   MMV048_PIB 43.024 (0.039) 42.852 (0.232) -0.73
+ OZ439/DSM265 41.160 (0.090) 41.260 (0.107)  0.71
+  EFITA_OZGAM 40.725 (0.025) 40.734 (0.021)  0.29
+       KAE609 41.274 (0.031) 41.199 (0.037) -1.55
+      DSMOZ_2 42.895 (0.047) 42.837 (0.052) -0.82
+  SJ733IBSMCS 40.279 (0.033) 40.240 (0.035) -0.81
+ MMV048_PartB 40.124 (0.025) 40.151 (0.029)  0.69
+
+max |z| 2.59; mean over trials: original 41.336, pinned 41.317 h
+
+=== elpd ===
+Cells: summed over 1130 observations. elpd original -855.15, pinned -856.31;
+pinned - original -1.16 (paired se 0.75)
+
+=== verdict ===
+1. gate: FAIL
+2. cycle_length max |z| < 3: PASS
+3. |elpd diff| < 2 se: PASS

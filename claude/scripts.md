@@ -310,6 +310,9 @@ Papers bearing on thread 2, kept here so a search is not repeated.
 - `_scripts/pinned-validate.R` — compares a pinned refit of entry 43 with
   the original: cost, gate, per-trial `cycle_length` z, elpd. Output
   `_data/pinned-validate-<date>.txt`, tracked.
+- `_scripts/pinned-unit7-modes.R` — per-chain draws of MMV048_PIB's
+  `cycle_length` in the original and pinned pin-15 fits, by quarter. Output
+  `_data/pinned-unit7-modes-<date>.txt`, tracked.
 - `_scripts/thread-bench.R` / `_scripts/thread-bench.sh` — times
   `grad_log_prob` at `n_c` = 384 under a chosen CPU layout. The `.sh` launches
   several chain processes in one task and pins each with `taskset`

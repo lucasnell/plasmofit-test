@@ -9,14 +9,15 @@ match where a thread exists. This file is the actionable layer. -->
 
 ## Age structure and `n_c` (threads 5, 15)
 
-### In progress
+### Needs a decision (Lucas)
 
-- [ ] **SLURM 30856 — validate the pinned driver** on entry 43
-      (`-pinned` suffix, seed 20261010 as the original). When it lands:
-      `Rscript --vanilla _scripts/pinned-validate.R >
-      _data/pinned-validate-<date>.txt`. If it passes, the pinned driver
-      becomes the default way to run fits. **Do not edit `wockner-fit.R`
-      while it runs.**
+- [ ] **After the pinned validation (30856).** The driver is 12x faster and
+      agrees with the original in every trial except one, but the refit
+      FAILS the gate: chain 1 found a region ~3 h lower for MMV048_PIB
+      (39.9 against 43.0 h) at equal `lp__`, which the original never
+      visited. So (a) is the driver adopted, and (b) how is MMV048_PIB's
+      second region investigated — more seeds of pin 15 and free at ~3 h
+      each are now cheap. See `findings.md`, "The pinned driver".
 
 ### Next
 
@@ -38,6 +39,10 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Done
 
+- [x] **2026-10-13 — pinned validation (30856) read**: 12.0x faster
+      (3.20 h against 38.52 h); per-trial `cycle_length` |z| < 3 and elpd
+      within 2 se, but the gate fails through MMV048_PIB.
+      `_data/pinned-validate-2026-10-13.txt`.
 - [x] **2026-10-13 — pinned driver built**: `WOCKFIT_MODE` chain/merge in
       `wockner-fit.R`, `_scripts/wockner-fit-pinned.sh`. Entries 49-54 folded
       back into `wockner-fit.R`, copies deleted, threading comment corrected.

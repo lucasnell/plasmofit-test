@@ -3775,6 +3775,59 @@ to confirm.
 "roughly 1.0x" is wrong at `n_c` = 384 (and was measured with threading
 already on). It cannot be corrected while entry 42 reads the file.
 
+### The pinned driver: 12x faster, and a second run of pin 15 finds a second region for one trial
+
+SLURM 30856 (2026-10-13): entry 43 (`np_bs15_nc384`) refit with
+`_scripts/wockner-fit-pinned.sh` — each chain its own process on one whole
+L3 group, 4 threads — with the original's seed (20261010). Compared with
+the original (30830_43) by `_scripts/pinned-validate.R`, output
+`_data/pinned-validate-2026-10-13.txt`, whose pass criteria were written
+before the run finished.
+
+Cells: per fit, over 4 chains. Hours = longest chain; gradients in millions;
+ms per gradient = total chain time / total gradients.
+
+| fit | hours | gradients (M) | ms per gradient | max R-hat |
+|---|---|---|---|---|
+| original, default layout | 38.52 | 1.474 | 344.8 | 1.033 PASS |
+| pinned | **3.20** | 1.367 | **28.0** | **1.141 FAIL** |
+
+**Speed: 12.0x in wall time, 12.3x per gradient.** More than the ~5x the
+benchmark gave against an idle-node production layout, because the original
+ran beside 12 other tasks of ours.
+
+**Agreement, excluding the failure below:** per-trial posterior means of
+`cycle_length` agree within |z| < 3 in all 13 trials (max 2.59, Mefloquine;
+z = difference / root-sum-square of the two MCSEs). Mean over the 13 trials:
+41.336 h original, 41.317 h pinned. Observation-level elpd, pinned minus
+original: −1.16 (paired se 0.75). Criteria 2 and 3 pass; **criterion 1, the
+gate, fails.**
+
+**Why it fails.** Ten of 1323 quantities exceed R-hat 1.05, all for unit 7
+(MMV048_PIB). `_scripts/pinned-unit7-modes.R` (output
+`_data/pinned-unit7-modes-2026-10-13.txt`): chain 1 agrees with the others
+for three quarters of its draws (quarter means 43.08, 43.00, 43.02 h), then
+moves to a region about 3 h lower (last-quarter mean **39.88 h**; 5%
+quantile of the chain 38.50 against 41.7-41.9 for every other chain of
+either fit). `lp__` there is no worse — mean −844.5 for draws below 42.6 h
+against −847.0 above — so it is a region of comparable posterior density
+that the original's four chains never visited.
+
+**What this means.**
+
+- **The driver is not the cause.** The layout does not change the target:
+  `log_prob` at a given draw is identical to 10 decimal places across every
+  layout in the benchmark. This is a second run of the same posterior
+  finding something the first did not.
+- **The original pin-15 result is less secure than it looked.** It passed
+  the gate, but a second seed shows its chains were not exploring all of
+  MMV048_PIB's posterior. Its 43.0 h for that trial, and so the 41.34 h
+  mean over trials, are conditional on that region being negligible, which
+  this run does not support.
+- This is the phase-multimodality the notes have suspected since 29635 —
+  `b_offset[7]` is 0.257 in chain 1 against ~0.20 elsewhere — now seen at a
+  low pin, in one trial.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only
