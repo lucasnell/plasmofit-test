@@ -22,3 +22,4 @@
 !nc-bs400-ladder-read-*.txt
 !nc384-ladder-read-*.txt
 !nc384-bshape-vs-cl-*.txt
+!nc384-cost-decompose-*.txt

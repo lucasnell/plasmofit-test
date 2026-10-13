@@ -662,3 +662,17 @@ measurement across a change in the thing measured.
 **Justify a sampler setting with a diagnostic from the config it will run
 on**, or say that the evidence comes from a neighbour and may not carry.
 
+## `--cpus-per-task=4` is two physical cores, and `threads_per_chain = 1` is four threads
+
+`cbsugreischar` hyperthreads: 256 logical CPUs on 128 physical cores, and
+SLURM hands out logical CPUs in sibling pairs, so `--cpus-per-task=4` is
+`0-1,128-129`, two cores. Separately, each chain process from `archer_fit()`
+with `threads_per_chain = 1` runs **four** TBB threads that split the
+gradient between them. Check with `ps -L -p <pid>` and
+`/proc/<pid>/task/*/stat` (utime is field 14) before trusting any statement
+about how many threads a fit uses.
+
+Fit cost also depends 3-4x on how many of OUR OWN tasks share the node
+(`claude/findings.md`, "Where the time goes at `n_c` = 384"), so a cost
+measured on a quiet node does not carry to a full array, and vice versa.
+

@@ -3667,6 +3667,55 @@ sensitivity analysis of any one choice.
 reseed; they took 38.5 h (15) to 71.8 h (250). The tuned runs are on track to
 exceed their 7-day walltime — see `handoff.md`.
 
+### Where the time goes at `n_c` = 384: the node, more than the model
+
+`_scripts/nc384-cost-decompose.R`, output
+`_data/nc384-cost-decompose-2026-10-13.txt`. Cost per chain is (time per
+gradient) × (leapfrog steps), and both factors were read from the saved fits.
+
+Cells: per fit, summed over 4 chains. `ms/grad` is total chain time divided
+by total leapfrog steps (warmup and sampling), in milliseconds; leapfrog is in
+millions of steps; hours is the longest chain. "Ours beside it" is how many
+other tasks of ours shared the node, from `sacct`.
+
+| fit | ours beside it | leapfrog (M) | ms/grad | hours |
+|---|---|---|---|---|
+| 30525, `n_c` 192, pin 400 | ~30 single-CPU tasks, then none | 2.10 | 45.0 | 6.7 |
+| 30829, `n_c` 384, pin 400 | **none** | 3.05 | **88.6** | 20.4 |
+| 43, pin 15 | 12 | 1.47 | 344.8 | 38.5 |
+| 44-47, pins 50-600 | 12, falling | 2.52-3.91 | 263-290 | 55.0-71.8 |
+| 48, free | 12, falling | 1.95 | 337.6 | 46.3 |
+| 54, free, tuned | 12, then 5 | 6.52 | 130.3 | 62.8 |
+
+**The same model at the same `n_c` ran at 89 to 345 ms per gradient**, a
+3.9x range that tracks how many of our own tasks were running beside it, not
+anything in the model. Pin 15 needed the fewest gradients of any fit and was
+still slow, because all of its life was spent at peak load. Leapfrog counts
+vary 4.4x across fits (1.47 M to 6.52 M) and are the geometry term; the
+tuned settings tripled them for the free rung (1.95 M to 6.52 M).
+
+**How the node gives out CPUs** (checked 2026-10-13 on a running chain):
+
+- `cbsugreischar` is 2 × 64-core AMD EPYC 7702 with 2 hardware threads per
+  core, so **256 logical CPUs are 128 physical cores**. A task with
+  `--cpus-per-task=4` got `0-1,128-129`: **2 physical cores**, each with its
+  hyperthread sibling. Its 4 chains share 2 cores.
+- **`threads_per_chain = 1` does not mean one thread.** Every chain process
+  ran 4 threads, each with ~57-66 thousand CPU-seconds of user time over
+  75 h, so `reduce_sum` was splitting each gradient across 4 TBB threads.
+  Together they got about one logical CPU's worth: 16 threads on 4 logical
+  CPUs per task, ~12% of time in the kernel, and ~250 million forced context
+  switches per thread.
+- So the comment in `wockner-fit.R` that within-chain threading "measured at
+  roughly 1.0x" was measured with threading already on and already
+  oversubscribed, almost certainly at `n_c` = 96. It does not establish that
+  threading cannot help at 384.
+
+**Why co-running tasks slow each other 3-4x is not established.** Physical
+core sharing cannot explain it: each task's cores were its own. Candidates,
+none tested: shared L3 cache (16 MB per 4-core complex, so two tasks share
+one), memory bandwidth, and clock speed falling as more cores are busy.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

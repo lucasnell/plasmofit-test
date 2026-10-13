@@ -305,6 +305,9 @@ Papers bearing on thread 2, kept here so a search is not repeated.
 - `_scripts/nc384-bshape-vs-cl.R` — per-unit free `b_shape` against the
   free-minus-pin-15 `cycle_length` shift at `n_c` = 384. Output
   `_data/nc384-bshape-vs-cl-<date>.txt`, tracked.
+- `_scripts/nc384-cost-decompose.R` — splits each saved fit's cost into
+  leapfrog steps and time per gradient. Output
+  `_data/nc384-cost-decompose-<date>.txt`, tracked.
 - `_scripts/nc-bs400-ladder-read.R` — reads both reseeded rungs of the
   production ladder (`np_bs400_nc192-seed2`, `np_bs400_nc384-seed2`): `lp__`,
   divergences and treedepth by chain, the R-hat gate, then `cycle_length` per
