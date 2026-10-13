@@ -42,6 +42,22 @@
 
 set -u
 N_CHAINS=4
+
+## PIN_PLAN="cfg:seed cfg:seed ..." runs several (config, seed) pairs as one
+## array, --array=1-<n>%3: task i takes the i-th pair, fits config `cfg` of
+## wockner-fit.R with WOCKFIT_SEED=seed and WOCKFIT_SUFFIX=-pinned-s<seed>.
+## Without it, the array index is the config and seed/suffix come from the
+## environment, as before.
+TAG=${SLURM_ARRAY_TASK_ID}
+if [ -n "${PIN_PLAN:-}" ]; then
+    PAIR=$(tr ' ' '\n' <<< "$PIN_PLAN" | grep -v '^$' | sed -n "${SLURM_ARRAY_TASK_ID}p")
+    [ -n "$PAIR" ] || { echo "ERROR: PIN_PLAN has no entry ${SLURM_ARRAY_TASK_ID}" >&2; exit 1; }
+    export SLURM_ARRAY_TASK_ID=${PAIR%%:*}
+    export WOCKFIT_SEED=${PAIR##*:}
+    export WOCKFIT_SUFFIX=-pinned-s${WOCKFIT_SEED}
+    TAG=plan${TAG}-cfg${SLURM_ARRAY_TASK_ID}-s${WOCKFIT_SEED}
+    echo "plan entry: config ${SLURM_ARRAY_TASK_ID}, seed ${WOCKFIT_SEED}, suffix ${WOCKFIT_SUFFIX}"
+fi
 CPUSET=$(grep Cpus_allowed_list /proc/self/status | awk '{print $2}')
 expand() { tr ',' '\n' <<< "$1" | awk -F- '{if (NF==1) print $1; else for (i=$1;i<=$2;i++) print i}'; }
 ALLOWED=" $(expand "$CPUSET" | tr '\n' ' ') "
@@ -66,7 +82,7 @@ for c in $(expand "$CPUSET" | sort -n); do
     [ "$whole" -eq 1 ] && L3GROUPS+=("$(IFS=,; echo "${phys[*]}")")
 done
 
-echo "task ${SLURM_ARRAY_TASK_ID} cpuset ${CPUSET}; whole L3 groups: ${L3GROUPS[*]}"
+echo "task ${TAG} cpuset ${CPUSET}; whole L3 groups: ${L3GROUPS[*]}"
 if [ "${#L3GROUPS[@]}" -lt "$N_CHAINS" ]; then
     echo "ERROR: only ${#L3GROUPS[@]} whole L3 groups in the allocation, need ${N_CHAINS}" >&2
     exit 1
@@ -84,7 +100,7 @@ for k in $(seq 1 "$N_CHAINS"); do
     echo "chain $k -> cores $cores ($nthr threads)"
     WOCKFIT_MODE=chain WOCKFIT_CHAIN=$k WOCKFIT_THREADS=$nthr \
         taskset -c "$cores" Rscript --vanilla ../_scripts/wockner-fit.R \
-        > "wock-pin-${SLURM_ARRAY_TASK_ID}-chain${k}.log" 2>&1 &
+        > "wock-pin-${TAG}-chain${k}.log" 2>&1 &
     PIDS+=($!)
 done
 
@@ -92,7 +108,7 @@ FAIL=0
 for k in $(seq 1 "$N_CHAINS"); do
     wait "${PIDS[$((k - 1))]}" || { echo "chain $k exited non-zero" >&2; FAIL=1; }
 done
-[ "$FAIL" -eq 0 ] || { echo "ERROR: a chain failed; see wock-pin-${SLURM_ARRAY_TASK_ID}-chain*.log" >&2; exit 1; }
+[ "$FAIL" -eq 0 ] || { echo "ERROR: a chain failed; see wock-pin-${TAG}-chain*.log" >&2; exit 1; }
 
 echo "all chains done; merging"
 WOCKFIT_MODE=merge Rscript --vanilla ../_scripts/wockner-fit.R
