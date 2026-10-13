@@ -9,24 +9,24 @@ match where a thread exists. This file is the actionable layer. -->
 
 ## Age structure and `n_c` (threads 5, 15)
 
+### Needs a decision (Lucas)
+
+- [ ] **Walltime on the tuned runs.** Entry 42 (30830) and 49-53 (30837) have
+      a 7-day limit; on a linear projection 42 is borderline (~180 h) and
+      50-53 overrun (~250-370 h), and a task that hits the limit writes
+      nothing. Options: let them run; cancel 50-53 now; or ask the cluster
+      admin to raise the limit (users usually cannot raise it themselves).
+      49 (pin 15, tuned) duplicates converged entry 43 and could be cancelled
+      to free four CPUs. Detail in `handoff.md`.
+
 ### In progress
 
-- [ ] **SLURM 30830**, submitted 2026-10-10, `_scripts/wockner-fit-nc384-ladder.sh`.
-      Entry 42 is the tuned retry of the 400 rung at `n_c` = 384 (51–102 h
-      expected, 7-day walltime); entries 43–48 are a `b_shape` ladder at
-      `n_c` = 384 (15, 50, 100, 250, 600 pinned, and free; default sampler
-      settings; ~20 h each). Chosen by Lucas after entry 40 failed twice.
-      Prediction in `wockner-fit.R` above the configs. **Do not edit
-      `wockner-fit.R` while it runs.** Read `lp__` per chain, then the gate,
-      then paired PSIS-LOO across converged rungs; report `cycle_length` as its
-      spread across converged rungs.
-- [ ] **SLURM 30837 and 30842**, submitted 2026-10-10: the insurance runs at
-      entry 42's tuned settings. 30837 is entries 49–53 (the pinned rungs,
-      `_scripts/wockner-fit-nc384t-ladder.sh`); 30842 is entry 54 (the free
-      rung, `_scripts/wockner-fit-nc384t48.sh`). **Cancel both if 43–48
-      converge.** They run copies (`wockner-fit-nc384t.R`,
-      `wockner-fit-nc384t48.R`); merge 49–54 into `wockner-fit.R` and delete
-      the copies once nothing is running.
+- [ ] **Entry 42 and 49-53 still running** (30830, 30837). Rerun
+      `_scripts/nc384-ladder-read.R` as each lands. The open question: does
+      any pin above 15 converge at tuned settings? Without one, neither the
+      elpd plateau at 384 nor the fix-versus-estimate gain at 384 can be read.
+      **Do not edit `wockner-fit.R` or `wockner-fit-nc384t.R` while they
+      run.** Merge 49-54 into `wockner-fit.R` and delete both copies after.
 
 ### Next
 
@@ -48,6 +48,10 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Done
 
+- [x] **2026-10-13 — `n_c` = 384 ladder, first read** (43-48, 54): only pin
+      15 and free (tuned) converge; free `b_shape` 12.2; pin 15 ties free
+      (−0.49, se 4.06); `cycle_length` 41.34 and 41.82 h. Output
+      `_data/nc384-ladder-read-2026-10-13.txt`.
 - [x] **2026-10-10 — entry 40 reseed (SLURM 30829) read: FAIL**, max R-hat
       7.744. Reader `_scripts/nc-bs400-ladder-read.R`, output
       `_data/nc-bs400-ladder-read-2026-10-10.txt`.

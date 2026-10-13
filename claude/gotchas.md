@@ -349,7 +349,7 @@ the *number* of evaluations, which the factor does not capture. This is the
 same failure mode as the per-leapfrog probe recorded above: a cost model that
 holds the iteration count fixed measures only one of the two terms.
 
-**Three misses, all in the same direction**, which is why this is a rule and
+**Four misses, all in the same direction**, which is why this is a rule and
 not an anecdote.
 
 | what was extrapolated | predicted | actual | factor |
@@ -357,6 +357,11 @@ not an anecdote.
 | production fit, from a per-leapfrog probe | — | — | 2x |
 | model B at `n_c` = 384, from model A's cost | 6-9 h | 9-21 h | 2.3x |
 | `n_c` = 1024, from the cost at 128-384 | ~25 s | 237 s | ~9x |
+| `b_shape` ladder at `n_c` = 384, from entry 40's 20.4 h | ~20 h | 38.5-71.8 h | 1.9-3.5x |
+
+The fourth has the same anatomy: cost tracked how often the sampler hit its
+tree-depth cap, which varied with the pin from 0.1% to 84.9%, and the one
+run used to size the array sat mid-range at 34%.
 
 The third is the clearest: it is the **same model, same machine, same code**,
 extrapolated only across `n_c`, and it still missed by an order of magnitude.

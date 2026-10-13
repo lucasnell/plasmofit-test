@@ -1,48 +1,48 @@
-# Handoff — 2026-10-10
+# Handoff — 2026-10-13
 
 ## State of play right now — read this first
 
-**SLURM 30830 is running**, submitted 2026-10-10 06:48, seven tasks
-(`_scripts/wockner-fit-nc384-ladder.sh`, `WOCKFIT_SEED=20261010`):
+**Partly landed (read 2026-10-13).** Of the `n_c` = 384 `b_shape` ladder, the
+default-settings rungs (SLURM 30830, entries 43-48) and the tuned free rung
+(30842, entry 54) are done. **Still running:** entry 42 (400, tuned) and 30837
+entries 49-53 (pinned rungs, tuned). Read with `_scripts/nc384-ladder-read.R`,
+output `_data/nc384-ladder-read-2026-10-13.txt`; write-up in
+`claude/findings.md`, "The `b_shape` ladder at `n_c` = 384". Rerun the reader
+as the rest land; it reads whatever is present.
 
-- **42** — the tuned retry of the 400 rung at `n_c` = 384 (`adapt_delta`
-  0.95, `max_treedepth` 12). Expect 51–102 h; walltime 7 days.
-- **43–48** — a `b_shape` ladder at `n_c` = 384, default sampler settings:
-  pinned at 15, 50, 100, 250, 600, plus free. Expect ~20 h each.
+- **Only two fits converge:** `b_shape` pinned at **15** (max R-hat 1.033)
+  and **free** at tuned settings (1.024). Every pin from 50 up fails the way
+  400 did, all four chains apart, worst R-hat `cycle_length[13]`
+  (MMV048_PartB). The default-settings free rung missed narrowly (1.067).
+- **Free `b_shape` = 12.2**, mean over 14 units, matching the ML screen's
+  9-15. Pin 15 against free: **−0.49 elpd (se 4.06)**, a tie.
+- **`cycle_length`, mean over 13 trials: 41.34 h (pin 15) and 41.82 h
+  (free)**, a 0.48 h spread concentrated in four trials, partly tracking how
+  far each unit's free `b_shape` sits below 15.
+- **The prediction's second branch cannot be read** — no high pin has
+  converged, so there is no plateau to locate. Whether 49-53 change that is
+  the open question.
 
-**SLURM 30837 is running beside it**, submitted 2026-10-10 06:56, five tasks
-(`_scripts/wockner-fit-nc384t-ladder.sh`): entries **49–53**, the same pinned
-rungs as 43–47 at entry 42's tuned settings, as insurance. **SLURM 30842** is entry **54**, the
-free rung (48) at tuned settings (`_scripts/wockner-fit-nc384t48.sh`). **Lucas
-will cancel 30837 and 30842 if 43–48 converge** (`scancel 30837 30842`).
+**WALLTIME RISK.** The tuned runs have a 7-day limit (168 h). At ~74 h:
 
-The two insurance jobs run from copies, because each fit script was being read
-by a running job when its additions were made: 30837 runs
-`_scripts/wockner-fit-nc384t.R` (identical to `wockner-fit.R` through 48, plus
-49–53) and 30842 runs `_scripts/wockner-fit-nc384t48.R` (that, plus 54). Merge
-49–54 into `wockner-fit.R` and delete both copies once nothing is running.
+| task | rung | slowest chain | linear projection |
+|---|---|---|---|
+| 42 | 400 | 41% | ~180 h — borderline |
+| 49 | 15 | 51% | ~145 h |
+| 50-52 | 50, 100, 250 | 30% | ~250 h — over |
+| 53 | 600 | 20% | ~370 h — over |
 
-**When to look.** Entry 40 at default settings took 20.4 h, so 43–48 should
-land around **2026-10-11 03:00** if they cost the same, which is not
-guaranteed: every cost estimate in this project has come in low, and lower
-`b_shape` changes the geometry. The tuned runs (42, 49–54) could take 2.5–5x
-as long, i.e. **2026-10-12 to 2026-10-14**. Check `squeue -u lan68` and
-`sacct -j 30830,30837,30842 -X`; a task that has finished has four
-`_data/wock-*-<cfg>.rds` files.
+Cells: share of 1700 iterations done by the slowest chain at the time read,
+and elapsed time divided by that share. Crude — warmup is uneven — but
+`wockner-fit.R` writes nothing until sampling ends, so **a task that hits the
+limit loses everything**. Lucas to decide; see `TODO.md`.
 
-Rung choice and the prediction are written above the configs in
-`_scripts/wockner-fit.R`, before any fit ran. **Do not edit
-`_scripts/wockner-fit.R`, `wockner-fit-nc384t.R`, or `wockner-fit-nc384t48.R`
-until `squeue -u lan68` is empty.** Together the three jobs use 52 CPUs and
-319,488 MB, inside the half-node budget.
+**Do not edit `_scripts/wockner-fit.R` or `wockner-fit-nc384t.R` until
+`squeue -u lan68` is empty** — 42 and 49-53 read them.
+`wockner-fit-nc384t48.R` is free now (54 is done). Merge 49-54 into
+`wockner-fit.R` and delete both copies once nothing is running.
 
-**How to read it.** Per fit, `lp__` by chain, then max R-hat < 1.05; a failed
-rung is not used. Compare converged rungs by paired observation-level
-PSIS-LOO (`wock-fit-LOO-<cfg>.rds`, take `$observation`). Report
-`cycle_length` as its spread across converged rungs, not the value at the
-best one. `_scripts/nc-bs400-ladder-read.R` is the pattern to extend.
-
-**Why these were run.** SLURM 30829, the entry 40 reseed (`np_bs400_nc384`,
+**Why the ladder was run.** SLURM 30829, the entry 40 reseed (`np_bs400_nc384`,
 `n_c` = 384, `b_shape` pinned at 400), finished 2026-10-10 05:27 after
 20:21:41 and **FAILED the gate**: max R-hat 7.744. Read with
 `_scripts/nc-bs400-ladder-read.R`, output
@@ -60,7 +60,8 @@ Cells: per-chain mean `lp__`, 4 chains × 1000 post-warmup draws.
 chain sticks again, report multimodality and do not reseed a third time. Here
 all four chains are apart, which is a general mixing failure. So neither
 branch of the plan applies. Lucas chose (2026-10-10) to run both the tuned
-retry and a `b_shape` ladder at 384 — SLURM 30830 above.
+retry and a `b_shape` ladder at 384 (SLURM 30830), plus tuned insurance
+copies of the ladder (30837, 30842).
 
 Two things this changed in the notes:
 

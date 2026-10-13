@@ -125,7 +125,10 @@ claude/references.md, not as authorship. -->
   does not rest on the biology.
 - **2026-10-02 — It is pinned at 400.** The ladder plateaus there and
   `cycle_length` is flat from 250 upward. **Any cycle-length number is
-  conditional on this pin and must be reported with the ladder.**
+  conditional on this pin and must be reported with the ladder.** *That
+  ladder was run at `n_c` = 96. At `n_c` = 384 (2026-10-13) pins from 50 up
+  have not converged at default settings, free `b_shape` sits at 12.2, and a
+  pin of 15 ties free on elpd; see `claude/findings.md`.*
 - **2026-10-04 — The hierarchy question has no robust evidence either way.**
   Design A is mask-dependent (−3.27 at the last third, −0.04 at the last
   quarter) and the horizon ladder is flat once a non-converged fit is
@@ -182,8 +185,9 @@ claude/references.md, not as authorship. -->
   gives **41.20 h**, mean over 13 trials, with 5.8% divergences. **The second
   rung (`n_c` = 384) has failed twice** — 29635 and the reseed 30829, the
   second with all four chains apart (`lp__` spread 169.8, max R-hat 7.74) —
-  so the ladder is not closed and no cycle length is final. SLURM 30830
-  (2026-10-10) runs a tuned retry of it and a `b_shape` ladder at 384.
+  so the ladder is not closed and no cycle length is final. The `b_shape`
+  ladder at 384 (2026-10-13, partial) converges only at pin 15 (41.34 h)
+  and free (41.82 h); the tuned high pins are still running.
 
 ## Working notes
 

@@ -239,7 +239,13 @@ Roughly in priority order.
    recorded in `wockner-fit.R` before submission. SLURM 30837 runs the
    pinned rungs again at tuned settings (49-53) as insurance, from a copy
    `wockner-fit-nc384t.R`; SLURM 30842 adds the free rung at tuned settings
-   (54) from a second copy. Cancel both if 43-48 converge. Reader
+   (54) from a second copy. Cancel both if 43-48 converge.
+   **FIRST READ 2026-10-13** (43-48, 54; `nc384-ladder-read.R`): only pin 15
+   and free (tuned) converge; 50, 100, 250, 600 fail like 400, all chains
+   apart, worst R-hat `cycle_length[13]`. Free `b_shape` 12.2 (ML screen
+   9-15); pin 15 vs free −0.49 elpd (se 4.06); `cycle_length` 41.34 vs
+   41.82 h. 43-47 did NOT converge, so 30837 stays; 42 and 50-53 may hit the
+   7-day walltime. Reader
    `_scripts/nc-bs400-ladder-read.R`.
    (29635 entry 39 ran 8:20:35). `_scripts/wockner-fit-nc-bs400-reseed.sh`,
    **entry 39** and not 41: entries 41-42 already carry `adapt_delta` 0.95 and

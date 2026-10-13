@@ -297,6 +297,14 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   adding entry 54 (the free rung at tuned settings). Same merge-and-delete
   note.
 - `_scripts/wockner-fit-nc384t48.sh` — SLURM 30842, entry 54 from that copy.
+- `_scripts/nc384-ladder-read.R` — reads the `n_c` = 384 `b_shape` ladder
+  (entries 40-seed2 and 42-54), whatever has landed: `lp__` by chain, the
+  gate, sampler health, free `b_shape`, then `cycle_length` and paired
+  PSIS-LOO over converged fits only. Asserts identical levels, data, `n_c`,
+  and pin. Output `_data/nc384-ladder-read-<date>.txt`, tracked.
+- `_scripts/nc384-bshape-vs-cl.R` — per-unit free `b_shape` against the
+  free-minus-pin-15 `cycle_length` shift at `n_c` = 384. Output
+  `_data/nc384-bshape-vs-cl-<date>.txt`, tracked.
 - `_scripts/nc-bs400-ladder-read.R` — reads both reseeded rungs of the
   production ladder (`np_bs400_nc192-seed2`, `np_bs400_nc384-seed2`): `lp__`,
   divergences and treedepth by chain, the R-hat gate, then `cycle_length` per

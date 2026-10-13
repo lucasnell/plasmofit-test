@@ -3588,6 +3588,85 @@ open**.
 a `b_shape` ladder at `n_c` = 384 (entries 43-48); rungs and prediction are
 recorded in `_scripts/wockner-fit.R` above the configs.
 
+### The `b_shape` ladder at `n_c` = 384: only the low pin and the free rung converge
+
+SLURM 30830 entries 43-48 (default sampler settings) and 30842 entry 54 (the
+free rung at `adapt_delta` 0.95, `max_treedepth` 12), all COMPLETED
+2026-10-11/13. Read with `_scripts/nc384-ladder-read.R`, output
+`_data/nc384-ladder-read-2026-10-13.txt`. **Partial**: entry 42 (400, tuned)
+and 49-53 (pinned rungs, tuned) were still running when this was read.
+
+Cells: per-chain posterior mean of `lp__` (4 chains × 1000 post-warmup draws)
+and its spread; max R-hat over monitored quantities, excluding the NA R-hats
+of a pinned `b_shape`; treedepth-at-cap as % of 4000 post-warmup transitions.
+
+| rung | settings | `lp__` by chain | spread | max R-hat | treedepth at cap |
+|---|---|---|---|---|---|
+| **15** | default | −844.6, −846.5, −848.4, −848.8 | 4.3 | **1.033 PASS** | 0.1% |
+| 50 | default | −847.5, −874.7, −919.6, −859.3 | 72.1 | 5.98 FAIL | 19.4% |
+| 100 | default | −880.6, −892.7, −948.4, −913.9 | 67.9 | 7.89 FAIL | 49.2% |
+| 250 | default | −889.1, −908.7, −908.8, −956.9 | 67.8 | 7.90 FAIL | 84.9% |
+| 400 (30829) | default | −895.5, −973.1, −1065.3, −954.2 | 169.8 | 7.74 FAIL | 34.0% |
+| 600 | default | −894.1, −939.4, −952.2, −923.6 | 58.1 | 8.19 FAIL | 62.2% |
+| free | default | −877.8, −882.9, −877.5, −883.8 | 6.4 | 1.067 FAIL | 0.1% |
+| **free** | tuned | −880.1, −880.0, −884.7, −881.5 | 4.7 | **1.024 PASS** | 0.1% |
+
+**Against the prediction recorded in `wockner-fit.R`.** Its first branch —
+lower rungs converge under the settings that failed at 400 — holds only at
+the bottom: 15 converges, 50 does not. Every pin from 50 up fails the same
+way, with all four chains apart and `cycle_length[13]` (MMV048_PartB) the
+worst R-hat in each, and treedepth saturation climbs with the pin from 0.1%
+to 84.9% through 250. Its second branch — the elpd plateau sits below 400 —
+**cannot be read**: no pin above 15 has converged, so there is no ladder to
+plateau. Whether the tuned rungs (49-53) change that is open.
+
+**Estimated, `b_shape` goes where the prior-free screen put it.** Posterior
+mean over the 14 `grp_init` units **12.22** (median 11.39, range 5.86-20.10)
+in the converged free rung, against 9-15 from the ML screen at `n_c` >= 384.
+The non-converged default free rung agrees (12.18), so this is not an
+artefact of the tuning.
+
+**Pinning at 15 gains nothing over estimating.** Paired observation-level
+PSIS-LOO over the same 1130 observations, pinned 15 minus free (tuned):
+**−0.49 (se 4.06)**, positive meaning the pin predicts better. At `n_c` = 96
+fixing beat estimating by +28 to +36 elpd, but that gain came from pins well
+**above** the free estimate (50-600 against a free 14.4); at 384 the pin that
+converges sits on the free estimate, so a tie is what both readings expect,
+and the comparison that would test the 2026-10-01 decision at 384 — a high
+pin against free — has no converged high pin yet.
+
+Cells: hours. Posterior mean (and posterior sd) of the per-draw mean of
+`cycle_length` over the 13 trials (`grp_cl`), with the range of the 13
+per-trial posterior means. Same data in both fits, so the difference is a
+model-assumption effect, not a sampling comparison.
+
+| rung | mean over trials (sd) | per-trial range |
+|---|---|---|
+| 15, default | 41.336 (0.403) | 40.00-43.02 |
+| free, tuned | 41.815 (0.576) | 39.39-45.60 |
+
+**Spread across the two converged rungs: 0.48 h.** Most of it sits in four
+trials: OZ439 (+3.42 h), MMV048_PartB (+3.31), ACT451840 (+1.78), and DSMOZ_2
+(+1.60), free minus pinned. `_scripts/nc384-bshape-vs-cl.R` (output
+`_data/nc384-bshape-vs-cl-2026-10-13.txt`) checks whether that tracks how far
+each unit's free `b_shape` sits from 15. **Partly.** The two largest shifts
+are the two lowest free values (MMV048_PartB 5.86, OZ439 7.87), and the four
+largest are all at 10.5 or below; but DSM265, Mefloquine, and one SJ733IBSMCS
+unit sit at 10.1-10.6 and shift under 0.7 h. Spearman correlation of
+|log(`b_free`/15)| with |shift| over the 14 units is **0.60**. So the spread
+is driven by the units whose data want less synchrony than the pin, but not
+by that alone.
+
+**For context only**, not a ladder: 41.20 h at `n_c` 192 with `b_shape` 400
+(30525), and 40.93-41.15 h from the ML profile at `n_c` >= 384. All four
+numbers are means over trials and lie within 0.9 h of each other, but they
+differ in `n_c`, pin, priors, and hierarchy, so the agreement is not a
+sensitivity analysis of any one choice.
+
+**Cost came in low again.** These were sized at ~20 h from entry 40's
+reseed; they took 38.5 h (15) to 71.8 h (250). The tuned runs are on track to
+exceed their 7-day walltime — see `handoff.md`.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

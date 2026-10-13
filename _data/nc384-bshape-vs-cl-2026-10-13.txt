@@ -1,0 +1,18 @@
+              unit b_free  d_cl
+        OZ439.1800   7.87  3.42
+ MMV048_PartB.2800   5.86  3.30
+    ACT451840.1800  10.12  1.78
+      DSMOZ_2.2800  10.46  1.59
+  Piperaquine.1800  15.14 -0.78
+  SJ733IBSMCS.2800  12.23 -0.63
+  SJ733IBSMCS.2300  10.45 -0.63
+   Ferroquine.1800  13.92 -0.61
+ OZ439/DSM265.1800  15.09 -0.48
+       DSM265.1800  10.12 -0.38
+   Mefloquine.1800  10.56 -0.28
+  EFITA_OZGAM.2800  14.12 -0.26
+       KAE609.1800  15.07 -0.26
+   MMV048_PIB.1800  20.10 -0.18
+
+Spearman, |log(b_free/15)| vs |d_cl|, 14 units: 0.598 
+Spearman, log(b_free) vs d_cl, 14 units: -0.479 
