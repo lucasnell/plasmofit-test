@@ -307,9 +307,16 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   from `/sys`, then `WOCKFIT_MODE=merge`. 40 CPUs, 32G; at most 3 at once.
   Chain files `wock-chain-<cfg>-<k>.rds` stay, so a failed merge reruns
   alone. `WOCKFIT_PIN_DRYRUN=1` prints the chain-to-core map and exits.
+  `PIN_PLAN="cfg:seed ..."` with `--array=1-<n>%3` runs (config, seed)
+  pairs, suffix `-pinned-s<seed>`; chain logs `wock-pin-plan<i>-cfg<c>-s<seed>-chain<k>.log`.
 - `_scripts/pinned-validate.R` — compares a pinned refit of entry 43 with
   the original: cost, gate, per-trial `cycle_length` z, elpd. Output
   `_data/pinned-validate-<date>.txt`, tracked.
+- `_scripts/seed-probe-read.R` — reads the seed probe (SLURM 30858) with the
+  two earlier pin-15 runs: gate per run, MMV048_PIB low-region visits per
+  chain, outlier chains in any trial, per-trial `cycle_length` across
+  passing runs. Definitions fixed in its header before the runs. Output
+  `_data/seed-probe-read-<date>.txt`, tracked.
 - `_scripts/pinned-unit7-modes.R` — per-chain draws of MMV048_PIB's
   `cycle_length` in the original and pinned pin-15 fits, by quarter. Output
   `_data/pinned-unit7-modes-<date>.txt`, tracked.

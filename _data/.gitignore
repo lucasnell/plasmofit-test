@@ -28,3 +28,4 @@
 !thread-bench-probe-jobs-*.txt
 !pinned-validate-*.txt
 !pinned-unit7-modes-*.txt
+!seed-probe-read-*.txt

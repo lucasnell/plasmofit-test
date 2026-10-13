@@ -64,7 +64,7 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 | Workstream | State | Next |
 |---|---|---|
 | Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Nothing. Leans on `wide_bshape`, 6 clean pairs |
-| Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences | Entry 40 failed twice (29635; reseed 30829, 2026-10-10, general mixing failure, 34% treedepth saturation). `n_c` = 384 ladder partly read: only pin 15 and free converge (41.34, 41.82 h). 42 and 49–53 cancelled. Pinned driver 12x faster (30856), but its refit of pin 15 fails the gate via a second region for MMV048_PIB. **Decision pending** |
+| Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences | Entry 40 failed twice (29635; reseed 30829, 2026-10-10, general mixing failure, 34% treedepth saturation). `n_c` = 384 ladder partly read: only pin 15 and free converge (41.34, 41.82 h). 42 and 49–53 cancelled. Pinned driver 12x faster (30856) and adopted; its refit of pin 15 failed the gate via a second region for MMV048_PIB. **SLURM 30858 probing it**: 3 seeds each of pin 15 and free |
 | `n_c` as a biological assumption | **Resolved**: 96 and 192 are wrong, and `cycle_length` is stable at 40.93–41.15 h once `n_c` >= 384. The `b_shape`/rung trade-off is the mechanism (Spearman −1.00 in 14/14 units) | Second production rung at `b_shape` 400 failed twice; the 400 pin was chosen at `n_c` = 96 and may not carry to 384 |
 | Decay law (√ vs linear) | **Indecisive, and now explained**: the total spread is nearly fixed across rungs, so its growth law is barely constrained | Closed |
 | Age-structure rewrite (IPM) | **Closed — do not build it.** Both profiles saturate, so an IPM returns `sigma_d` at a boundary rather than a rate | Nothing |
@@ -124,4 +124,6 @@ Append-only. Supersede a line with a new one rather than editing it.
 | 2026-10-13 | Treat fit runtime as a layout problem before a model problem | Same model ran 89–345 ms per gradient by node load; benchmark: sharing an L3 group halves speed, best layout ~16 ms against 83 ms in production |
 | 2026-10-13 | Cancel entry 42 | Projected ~180 h against a 168 h walltime; a timed-out task writes nothing |
 | 2026-10-13 | Run chains as separate pinned processes, one per L3 cache group | Thread count follows the CPUs a process may use, and only pinning sets it; benchmark puts this layout at ~16 ms per gradient against 83 ms |
+| 2026-10-13 | Adopt the pinned driver for all fits | Refit entry 43 in 3.2 h against 38.5 h with `log_prob` unchanged by layout; posterior agreed in every trial apart from a region the original never visited |
+| 2026-10-13 | Probe MMV048_PIB's second region with three more seeds each of pin 15 and free | One of eight pin-15 chains found a region ~3 h lower at equal `lp__`; at ~3-13 h per fit, seeds are now cheap enough to measure how often |
 

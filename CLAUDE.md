@@ -64,6 +64,7 @@ claude/references.md, not as authorship. -->
   | 4 | 16G | 32 | 31 | **31** |
   | 4 | 24G | 32 | 20 | **20** |
   | 4 | 48G | 32 | 10 | **10** |
+  | 40 | 32G | 3 | 15 | **3** |
 
   No script in `_scripts/` currently needs a throttle — the largest array is
   `wockner-schedule-sim-batch.sh` at 16 tasks × 4 CPUs × 16G = 64 CPUs and
@@ -75,6 +76,15 @@ claude/references.md, not as authorship. -->
   these if anything looks off. **Disk is not a node resource here** — `/home2`
   is shared Lustre (755 T, 201 T free) and `--array` throttling does not
   govern it; `_data/` is 5.2 GB and is the thing to watch.
+- **Run fits with `_scripts/wockner-fit-pinned.sh`** (adopted 2026-10-13).
+  It runs each chain as its own process pinned to one whole L3 cache group
+  (4 physical cores, 4 threads) and merges them; same configs, outputs, and
+  names as `wockner-fit.R` run directly. It refit entry 43 in 3.2 h against
+  38.5 h. Each fit takes 40 CPUs, so **at most 3 at once** (`--array=...%3`).
+  `PIN_PLAN="cfg:seed ..."` runs several (config, seed) pairs as one array.
+  The node is 128 physical cores with two hardware threads each; a chain
+  that shares an L3 group with another busy chain runs at half speed, and
+  the thread count follows the CPUs a process may use, not any setting.
 - **Never edit a script while a job is reading it.** This has already produced
   one silently invalid result (group factor levels reordered mid-run). Check
   `squeue` first.

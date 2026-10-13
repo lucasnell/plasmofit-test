@@ -9,15 +9,15 @@ match where a thread exists. This file is the actionable layer. -->
 
 ## Age structure and `n_c` (threads 5, 15)
 
-### Needs a decision (Lucas)
+### In progress
 
-- [ ] **After the pinned validation (30856).** The driver is 12x faster and
-      agrees with the original in every trial except one, but the refit
-      FAILS the gate: chain 1 found a region ~3 h lower for MMV048_PIB
-      (39.9 against 43.0 h) at equal `lp__`, which the original never
-      visited. So (a) is the driver adopted, and (b) how is MMV048_PIB's
-      second region investigated — more seeds of pin 15 and free at ~3 h
-      each are now cheap. See `findings.md`, "The pinned driver".
+- [ ] **SLURM 30858 — seed probe**, 6 runs, `--array=1-6%3`: entry 43 (pin
+      15) and entry 54 (free, tuned) × seeds 20261013-15, pinned driver. When
+      it lands: `Rscript --vanilla _scripts/seed-probe-read.R >
+      _data/seed-probe-read-<date>.txt`. Question: how often do chains reach
+      MMV048_PIB's low region (~39.9 h), and does any other trial show the
+      same? **Do not edit `wockner-fit.R` or `wockner-fit-pinned.sh` while it
+      runs.**
 
 ### Next
 
@@ -39,6 +39,8 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Done
 
+- [x] **2026-10-13 — pinned driver adopted** as the standard way to run fits
+      (`CLAUDE.md`, "How this project works").
 - [x] **2026-10-13 — pinned validation (30856) read**: 12.0x faster
       (3.20 h against 38.52 h); per-trial `cycle_length` |z| < 3 and elpd
       within 2 se, but the gate fails through MMV048_PIB.
