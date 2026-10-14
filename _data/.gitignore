@@ -29,3 +29,5 @@
 !pinned-validate-*.txt
 !pinned-unit7-modes-*.txt
 !seed-probe-read-*.txt
+!pin15-pooled-*.txt
+!cl-profile-read-*.txt
