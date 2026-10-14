@@ -197,9 +197,10 @@ claude/references.md, not as authorship. -->
   second with all four chains apart (`lp__` spread 169.8, max R-hat 7.74) —
   so the ladder is not closed and no cycle length is final. The `b_shape`
   ladder at 384 (2026-10-13, partial) converged only at pin 15 (41.34 h)
-  and free (41.82 h); four further runs of pin 15 failed the gate, three
-  of them through trial-level second regions (2026-10-14), so neither number
-  is final.
+  and free (41.82 h); four further runs of pin 15 failed the gate
+  (2026-10-14): two through second regions ~3 h away in the MMV048 trials,
+  one marginally (1.050), one through a chain at lower density. Neither
+  number is final.
 
 ## Working notes
 
