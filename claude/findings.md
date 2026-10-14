@@ -3877,6 +3877,32 @@ the mean over 13 trials by 3/13 = 0.23 h.
 validation run alone on the node — the whole-node load effect the benchmark
 measured (~40%), plus differing gradient counts.
 
+**Pooled, the five pin-15 runs agree on the headline.**
+`_scripts/pin15-pooled.R`, output `_data/pin15-pooled-2026-10-14.txt`,
+binds the 20 chains (independent chains on the same target). Over 20
+chains max R-hat is **1.039** (worst `cycle_length[13]`, MMV048_PartB) and
+min bulk ESS 311. **That pass is not convergence**: more chains dilute the
+few that visit a second region, and no chain moves between regions, so the
+regions' relative weight is still unread. What it does show:
+
+Cells: hours. Posterior mean over 13 trials of `cycle_length`, per run
+(4 chains each) and pooled (20 chains).
+
+| original | pinned | s20261013 | s20261014 | s20261015 | pooled |
+|---|---|---|---|---|---|
+| 41.336 | 41.317 | 41.412 | 41.318 | 41.291 | **41.335** (sd 0.434) |
+
+**The mean over trials varies by 0.12 h across five runs**, against the
+0.23 h a single 3 h trial-level ambiguity could move it. Per trial, the
+five run means span under 0.4 h everywhere except MMV048_PartB (0.85 h).
+So at pin 15 the trial-level multimodality is real but barely touches the
+headline.
+
+**Profile likelihood running** (SLURM 30869, `_scripts/cl-profile.R`):
+`cycle_length` profiled prior-free for MMV048_PIB, MMV048_PartB, and
+KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
+before the run. Read with `_scripts/cl-profile-read.R`.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

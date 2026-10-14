@@ -312,6 +312,18 @@ Papers bearing on thread 2, kept here so a search is not repeated.
 - `_scripts/pinned-validate.R` — compares a pinned refit of entry 43 with
   the original: cost, gate, per-trial `cycle_length` z, elpd. Output
   `_data/pinned-validate-<date>.txt`, tracked.
+- `_scripts/pin15-pooled.R` — binds the five pin-15 runs' 20 chains and
+  recomputes R-hat, ESS, and per-trial `cycle_length`. Output
+  `_data/pin15-pooled-<date>.txt`, tracked.
+- `_scripts/cl-profile.R` / `_scripts/cl-profile.sh` — prior-free profile
+  likelihood of `cycle_length` for one unit at `n_c` = 384 (exact-chain
+  convolution forward map, nc-profile-fast.R's likelihood), `b_shape` 15 or
+  free, grid 36-49 h by 0.5, 8 cold starts plus warm sweeps. Task = unit ×
+  mode, 6 tasks, 1 CPU each. Output `_data/cl-profile-<unit>-<mode>.rds`;
+  refuses to overwrite.
+- `_scripts/cl-profile-read.R` — peaks, dips, and verdict (TWO PEAKS if a
+  dip of >= 2 ll units separates two maxima). Output
+  `_data/cl-profile-read-<date>.txt`, tracked.
 - `_scripts/seed-probe-read.R` — reads the seed probe (SLURM 30858) with the
   two earlier pin-15 runs: gate per run, MMV048_PIB low-region visits per
   chain, outlier chains in any trial, per-trial `cycle_length` across

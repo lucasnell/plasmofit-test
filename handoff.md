@@ -2,6 +2,20 @@
 
 ## State of play right now — read this first
 
+**Two jobs running (2026-10-14).**
+
+- **SLURM 30858 tasks 4-6**, the three free-`b_shape` seeds; tasks 1-3
+  (pin 15) are read. When they land, rerun `_scripts/seed-probe-read.R`
+  into `_data/seed-probe-read-<date>.txt`.
+- **SLURM 30869**, the `cycle_length` profile likelihood (6 tasks × 1 CPU,
+  probably under an hour). Read with `_scripts/cl-profile-read.R` into
+  `_data/cl-profile-read-<date>.txt`; the two-peak rule is fixed in
+  `cl-profile.R`.
+
+**Pooled pin 15** (`_data/pin15-pooled-2026-10-14.txt`): the five runs'
+mean over 13 trials spans 41.29-41.41 h (pooled 41.335). The trial-level
+second regions barely move the headline.
+
 **SLURM 30858 partly landed (read 2026-10-14).** The three pin-15 seeds
 finished; the three free-`b_shape` seeds (tasks 4-6) are still running.
 First read: `_data/seed-probe-read-2026-10-14-partial.txt`, write-up in
