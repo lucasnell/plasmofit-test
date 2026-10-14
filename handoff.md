@@ -8,6 +8,11 @@
   (pin 15) are read. When they land, rerun `_scripts/seed-probe-read.R`
   into `_data/seed-probe-read-<date>.txt`.
 
+**Next, once 30858 has finished (Lucas, 2026-10-14):** step back and run
+a simulation study of `cycle_length` bias across `n_c`, true `b_shape`, and
+how `b_shape` is fitted. The design is still to settle with Lucas; the open
+questions are listed under "Cycle-length bias" in `TODO.md`.
+
 **SLURM 30869 read 2026-10-14** (`_data/cl-profile-read-2026-10-14.txt`;
 `findings.md`, "The `cycle_length` profile"). MMV048_PIB at pin 15 has two
 likelihood peaks, 38.5 and 43.0 h, within 0.65 ll units of each other and
