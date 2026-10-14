@@ -3828,6 +3828,55 @@ that the original's four chains never visited.
   `b_offset[7]` is 0.257 in chain 1 against ~0.20 elsewhere — now seen at a
   low pin, in one trial.
 
+### Seed probe, first read: pin 15 passes the gate in 1 of 5 runs
+
+SLURM 30858 tasks 1-3 (2026-10-13/14): entry 43 (pin 15) with seeds
+20261013-15, pinned driver, three at once. Read with
+`_scripts/seed-probe-read.R` (definitions fixed before the runs), output
+`_data/seed-probe-read-2026-10-14-partial.txt`; the three free-`b_shape`
+runs (tasks 4-6) had not finished. The "worst R-hats" section of that output
+was added after the first read and is descriptive only.
+
+Cells: one row per pin-15 run (4 chains × 1000 draws each). Max R-hat over
+monitored quantities; count of quantities above 1.05; where the failure sits;
+per-chain posterior means of that trial's `cycle_length` (hours).
+
+| run | max R-hat | > 1.05 | failing trial | chain means of that trial |
+|---|---|---|---|---|
+| original, seed 20261010 | 1.033 PASS | 0 | — | — |
+| pinned, seed 20261010 | 1.141 FAIL | 10 | MMV048_PIB | 42.24, 43.00, 43.10, 43.06 |
+| seed 20261013 | 1.266 FAIL | 59 | MMV048_PartB | 40.51, 42.05, 41.03, 40.06 |
+| seed 20261014 | 1.050 FAIL | 1 | Mefloquine (`b_off_vec`) | marginal |
+| seed 20261015 | 1.099 FAIL | 51 | EFITA_OZGAM (`log_lik`) | 40.76, 40.20, 40.65, 40.61 |
+
+**Pin 15 at `n_c` = 384 does not reliably converge with 4 chains of 1000
+draws: 1 run of 5 passes.** The failures sit in different trials, so this
+is not one bad trial but a posterior that four chains explore unevenly.
+
+**The two MMV048 trials each have two regions about 3 h apart.**
+
+- MMV048_PIB: main region ~43.0 h, a second near ~39.9 h at equal `lp__`.
+  Chains that visit it (>= 5% of draws below 41.0 h): 3 of 20 pin-15
+  chains, in 2 of 5 runs, and 1 of 4 chains of the converged free run.
+- MMV048_PartB: ~40.1 h in every pin-15 chain except seed 20261013's chain
+  2 (42.05); ~43.3-43.6 h in every chain of the free run. So the two
+  rungs sit in different regions for this trial.
+- EFITA_OZGAM's failure is different in kind: one chain 0.45 h low at
+  `lp__` about 10 units below the rest, a chain in a worse region rather
+  than a second region of equal density.
+
+**The gate does not catch everything.** The converged free run passed (max
+R-hat 1.024) with one chain spending 14.7% of its draws in MMV048_PIB's low
+region. A pass at 4 chains is therefore weaker evidence of a single mode
+here than the gate assumes.
+
+**Size of the stake, arithmetic only:** a 3 h ambiguity in one trial moves
+the mean over 13 trials by 3/13 = 0.23 h.
+
+**Cost:** 5.2-8.1 h per run with three at once, against 3.2 h for the
+validation run alone on the node — the whole-node load effect the benchmark
+measured (~40%), plus differing gradient counts.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

@@ -2,15 +2,17 @@
 
 ## State of play right now — read this first
 
-**SLURM 30858 is running** (submitted 2026-10-13): the seed probe, three new
-seeds (20261013-15) each of entry 43 (pin 15) and entry 54 (free, tuned),
-with the pinned driver, three at a time. Pin 15 should take ~3 h; free
-~13 h; all six ~16 h. Read with `_scripts/seed-probe-read.R`, whose
-definitions (LOW = MMV048_PIB `cycle_length` < 41.0 h; a chain visits if
->= 5% of its draws are LOW; an outlier chain is > 1 h from the others'
-median in any trial) were fixed before the runs. **Do not edit
-`wockner-fit.R` or `wockner-fit-pinned.sh` while it runs.** The pinned
-driver is now the standard way to run fits (Lucas, 2026-10-13).
+**SLURM 30858 partly landed (read 2026-10-14).** The three pin-15 seeds
+finished; the three free-`b_shape` seeds (tasks 4-6) are still running.
+First read: `_data/seed-probe-read-2026-10-14-partial.txt`, write-up in
+`findings.md`, "Seed probe, first read". **Pin 15 passes the gate in 1 of
+5 runs**; failures sit in different trials (MMV048_PIB, MMV048_PartB,
+Mefloquine, EFITA_OZGAM). Both MMV048 trials have two regions ~3 h apart,
+and the converged free run passed the gate with a chain in MMV048_PIB's low
+region. When 4-6 land, rerun `_scripts/seed-probe-read.R` into
+`_data/seed-probe-read-<date>.txt`. **Do not edit `wockner-fit.R` or
+`wockner-fit-pinned.sh` while it runs.** No watcher shells: Lucas gets an
+email (memory, `no-job-watchers`).
 
 The pinned-driver validation (SLURM 30856, entry 43
 refit, seed as the original) finished 2026-10-13 in **3.20 h against the

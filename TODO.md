@@ -11,7 +11,11 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **SLURM 30858 — seed probe**, 6 runs, `--array=1-6%3`: entry 43 (pin
+- [ ] **SLURM 30858 — seed probe**, tasks 1-3 (pin 15) read 2026-10-14:
+      **1 of 5 pin-15 runs passes the gate**, failures in four different
+      trials, two-region behaviour in both MMV048 trials
+      (`_data/seed-probe-read-2026-10-14-partial.txt`). Tasks 4-6 (free)
+      still running. Originally: 6 runs, `--array=1-6%3`: entry 43 (pin
       15) and entry 54 (free, tuned) × seeds 20261013-15, pinned driver. When
       it lands: `Rscript --vanilla _scripts/seed-probe-read.R >
       _data/seed-probe-read-<date>.txt`. Question: how often do chains reach

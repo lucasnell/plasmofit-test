@@ -85,3 +85,20 @@ if (length(ok)) {
     M <- sapply(ok, function(nm) clm[[nm]]); rownames(M) <- trials
     M <- rbind(M, mean = colMeans(M)); print(round(M, 2))
 } else cat("no run passes\n")
+
+## Added 2026-10-14 after the first partial read, descriptive only (no
+## definition above changed): which quantities fail the gate in each run, by
+## the parameter's index, and per-chain means of the two MMV048 trials.
+cat("\n=== worst R-hats per run (added after the first read) ===\n")
+cat("Cells: the 6 quantities with the highest R-hat in each run, and how many\n",
+    "of the run's quantities exceed 1.05.\n\n", sep = "")
+for (nm in RUNS$name) {
+    f <- readRDS(sprintf("_data/wock-fit-%s.rds", nm))
+    r <- sort(summary(f)$summary[, "Rhat"], decreasing = TRUE)
+    cat(sprintf("%s (%d > 1.05): %s\n", nm, sum(r > 1.05, na.rm = TRUE),
+                paste(sprintf("%s %.3f", names(r)[1:6], r[1:6]), collapse = "; ")))
+    cl <- extract(f, "cycle_length", permuted = FALSE)
+    cat(sprintf("   chain means, MMV048_PIB: %s | MMV048_PartB: %s\n",
+                paste(sprintf("%.2f", colMeans(cl[, , 7])), collapse = " "),
+                paste(sprintf("%.2f", colMeans(cl[, , 13])), collapse = " ")))
+}
