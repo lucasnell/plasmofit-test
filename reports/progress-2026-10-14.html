@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>plasmofit progress</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f6f7f9; --ink:#1b1f24; --ink2:#4a525c; --muted:#7a838e;
+  --rule:#dfe3e8; --accent:#2a64a8; --accent-soft:#e8f0fa; --warn:#9a5b00; --warn-soft:#fdf3e2;
+  --ok:#2d6a3e; --ok-soft:#e7f3ea;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:980px;margin:0 auto;padding:28px 16px 48px}
+h1{font-size:22px;margin:0 0 2px}
+h2{font-size:16px;margin:30px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+h3{font-size:14px;margin:0 0 4px}
+p{margin:6px 0}
+.sub{color:var(--ink2);margin:0}
+.meta{color:var(--muted);font-size:12px;margin-top:4px}
+code{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--panel);padding:1px 4px;border-radius:3px}
+.bl{background:var(--accent-soft);border-left:4px solid var(--accent);padding:10px 14px;margin:16px 0;border-radius:0 4px 4px 0}
+.bl ol{margin:4px 0;padding-left:20px}
+.bl li{margin:4px 0}
+.cap{font-size:12px;color:var(--ink2);margin:4px 0 6px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:4px 0 8px}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600;color:var(--ink2);background:var(--panel)}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wrap{overflow-x:auto}
+.chart{width:100%;height:auto;display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px}
+.card{border:1px solid var(--rule);border-radius:6px;padding:10px 12px;background:#fff}
+.card .d{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.card p{font-size:13px}
+.src{font-size:11.5px;color:var(--muted);margin-top:6px}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;margin-right:4px}
+.t-ok{background:var(--ok-soft);color:var(--ok)}
+.t-run{background:var(--warn-soft);color:var(--warn)}
+.t-open{background:var(--panel);color:var(--ink2)}
+ul.tight{margin:4px 0;padding-left:18px}
+ul.tight li{margin:2px 0}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 12px;font-size:13px;margin:4px 0}
+dt{font-weight:600}
+dd{margin:0;color:var(--ink2)}
+@media (max-width:560px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
+</style>
+</head>
+<body>
+<main>
+
+<h1>plasmofit — progress, 30 September to 14 October 2026</h1>
+<p class="sub">Within-host dynamics of <i>Plasmodium falciparum</i> from volunteer infection studies. Question: what is the asexual blood-stage cycle length, and how much of the estimate comes from modelling assumptions rather than the data?</p>
+<p class="meta">Status as of 2026-10-14. Data: <code>_data/wockner-cleaned.csv</code>, 1130 observations, 177 series, 13 trials. Sources for every number are in the last section.</p>
+
+<div class="bl">
+<strong>Bottom line</strong>
+<ol>
+<li><strong>The cycle-length estimate moved from 43.7–45.5 h to about 41 h, and the move is explained.</strong> It came from <code>n_c</code>, the number of developmental stages per cycle. <code>n_c</code> had been set for numerical accuracy; it turns out to set how fast parasites desynchronise, and the value in use (96) is wrong by the data, with or without priors.</li>
+<li><strong>At the settings now considered defensible, every estimate lies between 40.9 and 41.8 h</strong> (mean over 13 trials). No number is final: fits at <code>n_c</code> = 384 do not converge reliably, and two trials show two regions of the posterior about 3 h apart.</li>
+<li><strong>The age-structure question is closed.</strong> The data constrain only the total spread of parasite ages at the end of the observation window, not how it splits between spread present at inoculation and spread acquired later. Most of it is present at inoculation. A continuous-age model (IPM) would not be identified, so it will not be built.</li>
+<li><strong>Fits run 12× faster</strong> (38.5 h to 3.2 h for the same fit) after pinning each chain to its own cache group, which is what makes the open convergence questions cheap to answer.</li>
+</ol>
+</div>
+
+<h2>1. Where the cycle-length estimate stands</h2>
+<p class="cap"><strong>Cells:</strong> posterior mean of <code>cycle_length</code> averaged over the 13 trials, hours, one real-data fit per row (no pairing; all rows use the same data). The bottom row is not a posterior: it is the range of maximum-likelihood <code>cycle_length</code> across the <code>n_c</code> values within 2 log-likelihood units of the best, no priors. Rows differ in several assumptions at once, so this is a history of the estimate, not a sensitivity analysis of any single choice. Hollow marker: converged in 1 of 5 runs (whisker spans the five runs). Hover a mark for its source.</p>
+<div class="wrap">
+<svg class="chart" viewBox="0 0 700 262" role="img" aria-label="Cycle-length estimates by model setting, hours">
+  <g font-size="11" fill="#7a838e">
+    <line x1="255.4" y1="14" x2="255.4" y2="222" stroke="#eef0f3"/><text x="255.4" y="238" text-anchor="middle">40</text>
+    <line x1="326.2" y1="14" x2="326.2" y2="222" stroke="#eef0f3"/><text x="326.2" y="238" text-anchor="middle">41</text>
+    <line x1="396.9" y1="14" x2="396.9" y2="222" stroke="#eef0f3"/><text x="396.9" y="238" text-anchor="middle">42</text>
+    <line x1="467.7" y1="14" x2="467.7" y2="222" stroke="#eef0f3"/><text x="467.7" y="238" text-anchor="middle">43</text>
+    <line x1="538.5" y1="14" x2="538.5" y2="222" stroke="#eef0f3"/><text x="538.5" y="238" text-anchor="middle">44</text>
+    <line x1="609.2" y1="14" x2="609.2" y2="222" stroke="#eef0f3"/><text x="609.2" y="238" text-anchor="middle">45</text>
+    <line x1="680" y1="14" x2="680" y2="222" stroke="#eef0f3"/><text x="680" y="238" text-anchor="middle">46</text>
+    <text x="467.7" y="256" text-anchor="middle" fill="#4a525c">cycle_length, mean over 13 trials (h)</text>
+  </g>
+  <line x1="220" y1="222" x2="684" y2="222" stroke="#c4cad1"/>
+  <g font-size="12" fill="#1b1f24" text-anchor="end">
+    <text x="210" y="34"><tspan font-weight="600">n_c 96</tspan>, b_shape estimated</text>
+    <text x="210" y="68"><tspan font-weight="600">n_c 96</tspan>, b_shape fixed at 400</text>
+    <text x="210" y="102"><tspan font-weight="600">n_c 192</tspan>, b_shape fixed at 400</text>
+    <text x="210" y="136"><tspan font-weight="600">n_c 384</tspan>, b_shape estimated</text>
+    <text x="210" y="170"><tspan font-weight="600">n_c 384</tspan>, b_shape fixed at 15</text>
+    <text x="210" y="204"><tspan font-weight="600">n_c ≥ 384</tspan>, ML profile, no priors</text>
+  </g>
+  <g font-size="11" fill="#4a525c">
+    <g><title>np_wide_total0 · 45.5 h · max R-hat 1.02 · bshape-ladder.log</title>
+      <circle cx="644.6" cy="30" r="5" fill="#2a64a8" stroke="#fff" stroke-width="2"/><text x="634" y="34" text-anchor="end">45.5</text></g>
+    <g><title>np_bs400 · 43.7 h · max R-hat 1.029 · bshape-ladder.log</title>
+      <circle cx="517.2" cy="64" r="5" fill="#2a64a8" stroke="#fff" stroke-width="2"/><text x="506" y="68" text-anchor="end">43.7</text></g>
+    <g><title>SLURM 30525 · 41.20 h · max R-hat 1.043 · 5.8% divergent</title>
+      <circle cx="340.3" cy="98" r="5" fill="#2a64a8" stroke="#fff" stroke-width="2"/><text x="352" y="102">41.20</text></g>
+    <g><title>Entry 54, tuned · 41.82 h · max R-hat 1.024 · nc384-ladder-read-2026-10-13.txt</title>
+      <circle cx="384.2" cy="132" r="5" fill="#2a64a8" stroke="#fff" stroke-width="2"/><text x="396" y="136">41.82</text></g>
+    <g><title>Entry 43 · 5 runs 41.29–41.41 h, pooled 41.34 · 1 of 5 runs passes the gate · pin15-pooled-2026-10-14.txt</title>
+      <line x1="346.7" y1="166" x2="355.2" y2="166" stroke="#2a64a8" stroke-width="2"/>
+      <circle cx="349.9" cy="166" r="5" fill="#fff" stroke="#2a64a8" stroke-width="2"/><text x="364" y="170">41.34 (1 of 5 runs converged)</text></g>
+    <g><title>Eight-start ML profile · 40.93–41.15 h · nc-profile-fast-2026-10-09.txt</title>
+      <rect x="321.2" y="196" width="15.6" height="8" rx="4" fill="#2a64a8"/><text x="346" y="204">40.93–41.15</text></g>
+  </g>
+</svg>
+</div>
+<table>
+<tr><th>setting</th><th>fit</th><th class="n">h</th><th>health</th><th>date</th></tr>
+<tr><td><code>n_c</code> 96, <code>b_shape</code> estimated</td><td><code>np_wide_total0</code></td><td class="n">45.5</td><td>max R-hat 1.02</td><td>before window</td></tr>
+<tr><td><code>n_c</code> 96, <code>b_shape</code> fixed 400</td><td><code>np_bs400</code></td><td class="n">43.7</td><td>max R-hat 1.029</td><td>2026-10-02</td></tr>
+<tr><td><code>n_c</code> 192, <code>b_shape</code> fixed 400</td><td>SLURM 30525</td><td class="n">41.20</td><td>max R-hat 1.043; 5.8% divergent</td><td>2026-10-08</td></tr>
+<tr><td><code>n_c</code> 384, <code>b_shape</code> estimated</td><td>entry 54, tuned sampler</td><td class="n">41.82</td><td>max R-hat 1.024; one chain partly in a second region for MMV048_PIB</td><td>2026-10-13</td></tr>
+<tr><td><code>n_c</code> 384, <code>b_shape</code> fixed 15</td><td>entry 43, five seeds</td><td class="n">41.29–41.41</td><td>1 of 5 runs passes max R-hat &lt; 1.05</td><td>2026-10-14</td></tr>
+<tr><td><code>n_c</code> ≥ 384, no priors</td><td>ML profile, 8 starts</td><td class="n">40.93–41.15</td><td>profile, not a posterior</td><td>2026-10-09</td></tr>
+</table>
+<p>Two further points of reference, both from the schedule simulation at <code>n_c</code> 96: the estimator overstates the simulated truth by +1.97 h (mean over 3 replicates), and correcting the real fits for the bias measured under either hypothesis about the true <code>n_c</code> lands every estimate between 40.5 and 42.3 h. The bias and the <code>n_c</code> sensitivity push in the same direction.</p>
+
+<h2>2. Major advances</h2>
+<div class="grid">
+
+<div class="card"><div class="d">1 – 2 Oct</div>
+<h3>Fixing synchrony beats estimating it</h3>
+<p><code>b_shape</code> (the shape of the initial stage distribution, i.e. synchrony at inoculation) predicts better fixed than estimated: +28 to +36 elpd at every value tried, 10–12 standard errors, at <code>n_c</code> 96. Gains plateau at 400, a ~4 h spread of starting ages.</p>
+<p class="src"><code>wockner-bshape-ladder.R</code> → <code>bshape-ladder.log</code></p></div>
+
+<div class="card"><div class="d">2 – 6 Oct</div>
+<h3>The simulated bias is attributed</h3>
+<p>Of the +1.97 h by which the estimator overstates a simulated truth, estimating <code>b_shape</code> carries ~0.92 h, the likelihood itself +0.41 h, and the cycle-length prior's centre ~0.44 h. Six other explanations were tested and refuted: phase volume, phase–period compensation, bound geometry, posterior median vs mean, <code>sd_iRBC</code>, and the joint mode (MAP).</p>
+<p class="src"><code>wockner-schedule-sim-analyze.R</code> → <code>schedsim-analyze-2026-10-05.txt</code></p></div>
+
+<div class="card"><div class="d">6 – 8 Oct</div>
+<h3><code>n_c</code> is a biological assumption, and 96 is wrong</h3>
+<p><code>n_c</code> fixes the desynchronisation rate. Without any priors, 192 beats 96 in 14 of 14 trial×inoculum units, +72.4 log-likelihood units summed. Moving 96 → 192 shifts <code>cycle_length</code> by −2.17 h, more than the whole simulated bias. In simulation, misspecifying <code>n_c</code> twofold shifts it by 1.0–1.5 h, in both directions.</p>
+<p class="src"><code>decay-law-read.R</code> → <code>decay-law-read-2026-10-08.txt</code>; <code>nc-ladder-read.R</code> → <code>nc-ladder-2026-10-06.txt</code>; <code>nc-2x2-read.R</code> → <code>nc-2x2-2026-10-07.txt</code></p></div>
+
+<div class="card"><div class="d">7 Oct</div>
+<h3>Why <code>n_c</code> moves the cycle length</h3>
+<p>Parasites sequester at 18.58 h, so only ~40% of each cycle is visible in blood. As the age distribution broadens, the visible part's centre drifts, so the period seen in the data is not the <code>cycle_length</code> parameter. At <code>n_c</code> 96 the visible period runs ~0.75 h short, and a fit inflates <code>cycle_length</code> to compensate. Deterministic, no estimation involved.</p>
+<p class="src"><code>nc-period-check.R</code> → <code>nc-period-check-2026-10-07.txt</code></p></div>
+
+<div class="card"><div class="d">8 – 9 Oct</div>
+<h3>Age structure: the data see only the total spread</h3>
+<p>Across <code>n_c</code> values, the spread acquired during the window varies 2.0× while the total at the last observation varies 12.7%; <code>b_shape</code> compensates in 14 of 14 units (Spearman −1.00). Roughly 0.11 cycles of spread are present at inoculation against 0.05–0.08 acquired. This one result explains why the decay law (√ vs linear) could not be distinguished, why the <code>n_c</code> profile has no lower bound on dispersion, and why <code>b_shape</code> is unidentified. Consequence: do not build the IPM; it would return its dispersion rate at zero.</p>
+<p class="src"><code>nc-profile-fast-read.R</code> → <code>nc-profile-fast-2026-10-09.txt</code>; <code>claude/ipm-decision.md</code></p></div>
+
+<div class="card"><div class="d">9 Oct</div>
+<h3>Forward map checked, and left as it was</h3>
+<p>A convolution form of the stage chain was added to the package, measured through the real likelihood, and removed: 2.8–5× slower and less accurate at high <code>n_c</code>. What it left behind: two independently written forward maps agree to 6.4e-14 on <code>log_prob</code>, so the production series is now independently verified.</p>
+<p class="src">package commits <code>815f3a0</code> → <code>bba580f</code>; <code>use-conv-switch-check-2026-10-09.txt</code></p></div>
+
+<div class="card"><div class="d">4 – 5 Oct</div>
+<h3>Hierarchy: no robust evidence either way</h3>
+<p>The held-out test favouring the hierarchy (pooling trials) reversed when the mask changed (−3.27 at the last third, −0.04 at the last quarter), and the horizon ladder is flat. The earlier claim that the hierarchy earns its keep is withdrawn. Closed unless a design argument changes.</p>
+<p class="src"><code>wockner-designA-score.R</code> → <code>designA-score.log</code>, <code>designQ-score.log</code></p></div>
+
+<div class="card"><div class="d">13 Oct</div>
+<h3>Fits 12× faster</h3>
+<p>The same model ran at 89–345 ms per gradient depending on what else of ours shared the node. Chains sharing a 16 MB L3 cache run at half speed. Running each chain as its own process pinned to one cache group cut a fit from 38.5 h to 3.2 h with identical <code>log_prob</code>. Now the standard driver.</p>
+<p class="src"><code>thread-bench-read.R</code> → <code>thread-bench-read-2026-10-13.txt</code>; <code>pinned-validate.R</code> → <code>pinned-validate-2026-10-13.txt</code></p></div>
+
+</div>
+
+<h2>3. What is ongoing</h2>
+<table>
+<tr><th style="width:26%">question</th><th>state</th></tr>
+<tr><td><span class="tag t-run">running</span><br>Is the <code>n_c</code> 384 posterior multimodal?</td>
+<td>With <code>b_shape</code> fixed at 15, 1 of 5 runs passes the gate, failing in four different trials. MMV048_PIB and MMV048_PartB each have two regions ~3 h apart, and no chain moves between them. The stake is small for the headline: one trial off by 3 h moves the mean over 13 trials by 0.23 h, and the five runs' means span 0.12 h. <strong>SLURM 30869</strong> profiles the likelihood over <code>cycle_length</code> for the two MMV048 trials (KAE609 as control) to say whether these are two peaks and which is higher. <strong>SLURM 30858 tasks 4–6</strong> run three more seeds with <code>b_shape</code> estimated.</td></tr>
+<tr><td><span class="tag t-open">open</span><br>Does the <code>b_shape</code> = 400 decision survive at <code>n_c</code> 384?</td>
+<td>It was made at <code>n_c</code> 96. At 384 every fixed value from 50 up fails to converge (all four chains apart), the free estimate is 12.2 (mean over 14 units), and fixing at 15 ties estimating (elpd −0.49, se 4.06). The +28 to +36 elpd case for fixing came from values well above the free estimate; at 384 no such value has converged, so the case is untested there.</td></tr>
+<tr><td><span class="tag t-open">decision</span><br>Default <code>n_c</code></td>
+<td>96 and 192 are out. Between 384 and 512 the likelihood gain is under 1.3 units over 1130 observations, so the choice is on cost.</td></tr>
+<tr><td><span class="tag t-open">decision</span><br>Which cycle length to report</td>
+<td>Blocked on the two rows above. Any number is conditional on <code>n_c</code> and on the <code>b_shape</code> choice and must be reported with both sensitivities. The cycle-length prior centre (48 h) also needs revisiting, since the data now pull to ~41 h.</td></tr>
+<tr><td><span class="tag t-open">smaller</span><br>Model and validation</td>
+<td><ul class="tight">
+<li>Low-end censoring: the minimum parasitaemia is exactly 1.0 and 8.1% of observations are below 10 iRBC/mL, which looks like a quantitation floor the likelihood ignores.</li>
+<li>Per-individual initial density: blocked on subject weights from the source trials.</li>
+<li>More simulation replicates to tighten the paired bias numbers; SBC parked.</li>
+</ul></td></tr>
+</table>
+
+<h2>4. Terms and sources</h2>
+<dl>
+<dt><code>cycle_length</code></dt><dd>Duration of the asexual blood-stage cycle, hours; one value per trial.</dd>
+<dt><code>n_c</code></dt><dd>Number of developmental compartments per cycle. Stage spread after k cycles is <code>cycle_length</code>·√(k/<code>n_c</code>), so it sets the desynchronisation rate.</dd>
+<dt><code>b_shape</code></dt><dd>Shape of the starting stage distribution; higher means more synchronous at inoculation.</dd>
+<dt>gate</dt><dd>Convergence rule: max R-hat &lt; 1.05 over monitored quantities. A run that fails is not reported.</dd>
+<dt>elpd</dt><dd>Expected log predictive density, PSIS-LOO over the 1130 observations; positive differences favour the first model.</dd>
+<dt>IPM</dt><dd>Integral projection model: continuous parasite age instead of discrete compartments.</dd>
+</dl>
+<p class="cap" style="margin-top:10px">All paths relative to <code>plasmofit-test/</code>. Scripts in <code>_scripts/</code>, outputs in <code>_data/</code>. Full write-ups with defined table cells in <code>claude/findings.md</code>; live list in <code>TODO.md</code>.</p>
+<table>
+<tr><th>claim</th><th>script</th><th>saved output</th></tr>
+<tr><td>Fixing <code>b_shape</code>, plateau at 400, <code>n_c</code>-96 estimates</td><td><code>wockner-bshape-ladder.R</code></td><td><code>bshape-ladder.log</code></td></tr>
+<tr><td>Bias attribution</td><td><code>wockner-schedule-sim-analyze.R</code></td><td><code>schedsim-analyze-2026-10-05.txt</code></td></tr>
+<tr><td><code>n_c</code> ladder, −2.17 h</td><td><code>nc-ladder-read.R</code></td><td><code>nc-ladder-2026-10-06.txt</code></td></tr>
+<tr><td>Prior-free <code>n_c</code>, +72.4 in 14/14</td><td><code>decay-law-read.R</code></td><td><code>decay-law-read-2026-10-08.txt</code></td></tr>
+<tr><td>Misspecification 2×2, bias-corrected range</td><td><code>nc-2x2-read.R</code>, <code>nc-bias-correct.R</code></td><td><code>nc-2x2-2026-10-07.txt</code>, <code>nc-bias-correct-2026-10-07.txt</code></td></tr>
+<tr><td>Visible period vs parameter</td><td><code>nc-period-check.R</code></td><td><code>nc-period-check-2026-10-07.txt</code></td></tr>
+<tr><td>Total spread, profile 40.93–41.15 h</td><td><code>nc-profile-fast-read.R</code></td><td><code>nc-profile-fast-2026-10-09.txt</code></td></tr>
+<tr><td>41.20 h at <code>n_c</code> 192</td><td><code>nc-bs400-ladder-read.R</code></td><td><code>nc-bs400-ladder-read-2026-10-10.txt</code></td></tr>
+<tr><td><code>n_c</code> 384 ladder, 41.82 h, free 12.2</td><td><code>nc384-ladder-read.R</code></td><td><code>nc384-ladder-read-2026-10-13.txt</code></td></tr>
+<tr><td>Seed probe, pooled 41.34 h</td><td><code>seed-probe-read.R</code>, <code>pin15-pooled.R</code></td><td><code>seed-probe-read-2026-10-14-partial.txt</code>, <code>pin15-pooled-2026-10-14.txt</code></td></tr>
+<tr><td>Runtime</td><td><code>thread-bench-read.R</code>, <code>pinned-validate.R</code></td><td><code>thread-bench-read-2026-10-13.txt</code>, <code>pinned-validate-2026-10-13.txt</code></td></tr>
+</table>
+
+</main>
+</body>
+</html>
