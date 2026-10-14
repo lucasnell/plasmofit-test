@@ -108,6 +108,14 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Next
 
+- [ ] **Measure the estimator bias at the production settings** (added
+      2026-10-14). The schedule simulation has measured it only at `n_c` 96
+      and 192, with `b_shape` estimated: +1.97 and +1.55 h on the diagonal
+      of the 2x2 (`_data/nc-bias-correct-2026-10-07.txt`). Every ~41 h
+      estimate at `n_c` 384 is therefore uncorrected. Simulate and fit at
+      `n_c` 384 with `b_shape` fixed as in production. Design question to
+      settle first: the simulated truth (45.012 h) comes from an `n_c` 96
+      fit, so decide whether to regenerate it from an `n_c` 384 fit.
 - [ ] **Decide what cycle-length number to report, and with what
       qualifications.** It is conditional on the `b_shape` pin *and* now on
       `n_c`. Bias-corrected estimates sit in the low 40s under either

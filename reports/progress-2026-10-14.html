@@ -58,7 +58,7 @@ dd{margin:0;color:var(--ink2)}
 <strong>Bottom line</strong>
 <ol>
 <li><strong>The cycle-length estimate moved from 43.7–45.5 h to about 41 h, and the move is explained.</strong> It came from <code>n_c</code>, the number of developmental stages per cycle. <code>n_c</code> had been set for numerical accuracy; it turns out to set how fast parasites desynchronise, and the value in use (96) is wrong by the data, with or without priors.</li>
-<li><strong>At the settings now considered defensible, every estimate lies between 40.9 and 41.8 h</strong> (mean over 13 trials). No number is final: fits at <code>n_c</code> = 384 do not converge reliably, and two trials show two regions of the posterior about 3 h apart.</li>
+<li><strong>At the settings now considered defensible, every estimate lies between 40.9 and 41.8 h</strong> (mean over 13 trials). No number is final: fits at <code>n_c</code> = 384 do not converge reliably, and two trials show two regions of the posterior about 3 h apart. <strong>These estimates are also not bias-corrected.</strong> In simulation the estimator overstates the true cycle length by 1.5–2.0 h even when <code>n_c</code> is correct, and that bias has been measured only at <code>n_c</code> 96 and 192, not at 384 (Section 1b).</li>
 <li><strong>The age-structure question is closed.</strong> The data constrain only the total spread of parasite ages at the end of the observation window, not how it splits between spread present at inoculation and spread acquired later. Most of it is present at inoculation. A continuous-age model (IPM) would not be identified, so it will not be built.</li>
 <li><strong>Fits run 12× faster</strong> (38.5 h to 3.2 h for the same fit) after pinning each chain to its own cache group, which is what makes the open convergence questions cheap to answer.</li>
 </ol>
@@ -113,7 +113,20 @@ dd{margin:0;color:var(--ink2)}
 <tr><td><code>n_c</code> 384, <code>b_shape</code> fixed 15</td><td>entry 43, five seeds</td><td class="n">41.29–41.41</td><td>1 of 5 runs passes max R-hat &lt; 1.05</td><td>2026-10-14</td></tr>
 <tr><td><code>n_c</code> ≥ 384, no priors</td><td>ML profile, 8 starts</td><td class="n">40.93–41.15</td><td>profile, not a posterior</td><td>2026-10-09</td></tr>
 </table>
-<p>Two further points of reference, both from the schedule simulation at <code>n_c</code> 96: the estimator overstates the simulated truth by +1.97 h (mean over 3 replicates), and correcting the real fits for the bias measured under either hypothesis about the true <code>n_c</code> lands every estimate between 40.5 and 42.3 h. The bias and the <code>n_c</code> sensitivity push in the same direction.</p>
+<h3 style="margin-top:18px">1b. What simulation says about <code>n_c</code> and bias</h3>
+<p>The schedule simulation generates data from a fitted model with a known cycle length (45.012 h), then refits it on the real sampling schedule. Generating and fitting at different <code>n_c</code> separates the estimator's own bias from the bias that a wrong <code>n_c</code> creates.</p>
+<p class="cap"><strong>Cells:</strong> posterior <code>cycle_length</code> averaged over trials, minus the 45.012 h simulated truth, hours, averaged over converged replicates (n per cell in brackets). Positive means the estimate runs long. Each cell is a mean of separate fits, not a paired difference. The diagonal is correctly specified. <code>b_shape</code> is estimated in all four cells.</p>
+<div class="wrap"><table style="max-width:520px">
+<tr><th></th><th class="n">fit <code>n_c</code> 96</th><th class="n">fit <code>n_c</code> 192</th></tr>
+<tr><td>generate <code>n_c</code> 96</td><td class="n"><strong>+1.97</strong> (3)</td><td class="n">+0.93 (3)</td></tr>
+<tr><td>generate <code>n_c</code> 192</td><td class="n">+3.00 (2)</td><td class="n"><strong>+1.55</strong> (3)</td></tr>
+</table></div>
+<ul class="tight">
+<li><strong>The estimator runs long even when <code>n_c</code> is right:</strong> +1.97 h at 96 and +1.55 h at 192. In simulation, about 0.92 h of the 1.97 h comes from estimating <code>b_shape</code> (Section 2). The production fits fix <code>b_shape</code>, which may make their bias smaller, but no simulation has measured it with <code>b_shape</code> fixed.</li>
+<li><strong>A wrong <code>n_c</code> moves the estimate in both directions.</strong> Fitting at half the true <code>n_c</code> adds 1.45 h, and fitting at twice the true value removes 1.04 h. So part of the real-data drop from 96 to 192 (−2.17 h) could come from fitting above the true <code>n_c</code>. That can't explain all of it: −1.04 h falls short of −2.17 h, and the real data prefer 192 on elpd.</li>
+<li><strong>Corrected for the measured bias, the real fits land at 40.5–42.3 h</strong>, below every raw estimate. Assuming the true <code>n_c</code> is 192, the corrections bring the 96 and 192 fits closer together (41.24 and 40.53 h, 0.72 h apart) than assuming 96 does (42.27 and 41.15 h, 1.13 h apart). That favours 192 only weakly: the difference is within replicate scatter.</li>
+<li><strong>The gap: no simulation has been run at <code>n_c</code> 384</strong>, so the ~41 h estimates in the chart are uncorrected. The bias falls from 96 to 192 but is not zero at 192, and its size at 384 is unknown. The simulated truth was also taken from an <code>n_c</code> 96 fit.</li>
+</ul>
 
 <h2>2. Major advances</h2>
 <div class="grid">
@@ -130,7 +143,7 @@ dd{margin:0;color:var(--ink2)}
 
 <div class="card"><div class="d">6 – 8 Oct</div>
 <h3><code>n_c</code> is a biological assumption, and 96 is wrong</h3>
-<p><code>n_c</code> fixes the desynchronisation rate. Without any priors, 192 beats 96 in 14 of 14 trial×inoculum units, +72.4 log-likelihood units summed. Moving 96 → 192 shifts <code>cycle_length</code> by −2.17 h, more than the whole simulated bias. In simulation, misspecifying <code>n_c</code> twofold shifts it by 1.0–1.5 h, in both directions.</p>
+<p><code>n_c</code> fixes the desynchronisation rate. Without any priors, 192 beats 96 in 14 of 14 trial×inoculum units, +72.4 log-likelihood units summed. Moving 96 → 192 shifts <code>cycle_length</code> by −2.17 h, more than the whole simulated bias. In simulation, misspecifying <code>n_c</code> twofold shifts it by 1.0–1.5 h, in both directions (Section 1b).</p>
 <p class="src"><code>decay-law-read.R</code> → <code>decay-law-read-2026-10-08.txt</code>; <code>nc-ladder-read.R</code> → <code>nc-ladder-2026-10-06.txt</code>; <code>nc-2x2-read.R</code> → <code>nc-2x2-2026-10-07.txt</code></p></div>
 
 <div class="card"><div class="d">7 Oct</div>
@@ -167,6 +180,8 @@ dd{margin:0;color:var(--ink2)}
 <td>With <code>b_shape</code> fixed at 15, 1 of 5 runs passes the gate, failing in four different trials. MMV048_PIB and MMV048_PartB each have two regions ~3 h apart, and no chain moves between them. The stake is small for the headline: one trial off by 3 h moves the mean over 13 trials by 0.23 h, and the five runs' means span 0.12 h. <strong>SLURM 30869</strong> profiles the likelihood over <code>cycle_length</code> for the two MMV048 trials (KAE609 as control) to say whether these are two peaks and which is higher. <strong>SLURM 30858 tasks 4–6</strong> run three more seeds with <code>b_shape</code> estimated.</td></tr>
 <tr><td><span class="tag t-open">open</span><br>Does the <code>b_shape</code> = 400 decision survive at <code>n_c</code> 384?</td>
 <td>It was made at <code>n_c</code> 96. At 384 every fixed value from 50 up fails to converge (all four chains apart), the free estimate is 12.2 (mean over 14 units), and fixing at 15 ties estimating (elpd −0.49, se 4.06). The +28 to +36 elpd case for fixing came from values well above the free estimate; at 384 no such value has converged, so the case is untested there.</td></tr>
+<tr><td><span class="tag t-open">open</span><br>Estimator bias at <code>n_c</code> 384</td>
+<td>Not measured. The simulation measured it only at 96 and 192, with <code>b_shape</code> estimated, so the ~41 h estimates carry no bias correction. This isn't on the to-do list yet.</td></tr>
 <tr><td><span class="tag t-open">decision</span><br>Default <code>n_c</code></td>
 <td>96 and 192 are out. Between 384 and 512 the likelihood gain is under 1.3 units over 1130 observations, so the choice is on cost.</td></tr>
 <tr><td><span class="tag t-open">decision</span><br>Which cycle length to report</td>

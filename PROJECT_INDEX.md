@@ -63,7 +63,7 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
 
 | Workstream | State | Next |
 |---|---|---|
-| Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Nothing. Leans on `wide_bshape`, 6 clean pairs |
+| Cycle-length bias attribution | **Attributed** to `b_shape` (−0.92 h of +1.97 h); `fix_bshape` stands at n_pair = 1 | Bias never measured at `n_c` 384 or with `b_shape` fixed, so the ~41 h estimates are uncorrected (`TODO.md`, added 2026-10-14) |
 | Production `n_c` ladder | **One rung converged** (30525, `n_c` = 192, 41.20 h, max R-hat 1.043) at 5.8% divergences | Entry 40 failed twice (29635; reseed 30829, 2026-10-10, general mixing failure, 34% treedepth saturation). `n_c` = 384 ladder partly read: only pin 15 and free converge (41.34, 41.82 h). 42 and 49–53 cancelled. Pinned driver 12x faster (30856) and adopted; its refit of pin 15 failed the gate via a second region for MMV048_PIB. **SLURM 30858**: pin 15 passes the gate in 1 of 5 runs (failures in four different trials; two regions ~3 h apart in both MMV048 trials); pooled over 5 runs the mean over trials spans only 41.29–41.41 h; free seeds and a `cycle_length` profile (30869) running |
 | `n_c` as a biological assumption | **Resolved**: 96 and 192 are wrong, and `cycle_length` is stable at 40.93–41.15 h once `n_c` >= 384. The `b_shape`/rung trade-off is the mechanism (Spearman −1.00 in 14/14 units) | Second production rung at `b_shape` 400 failed twice; the 400 pin was chosen at `n_c` = 96 and may not carry to 384 |
 | Decay law (√ vs linear) | **Indecisive, and now explained**: the total spread is nearly fixed across rungs, so its growth law is barely constrained | Closed |
