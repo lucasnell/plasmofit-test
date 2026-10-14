@@ -11,10 +11,6 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **SLURM 30869 — `cycle_length` profile likelihood** for MMV048_PIB,
-      MMV048_PartB, and KAE609 (control), `b_shape` 15 and free. Read with
-      `_scripts/cl-profile-read.R`. Question: are the MCMC regions ~3 h apart
-      two peaks of the likelihood, and which is higher?
 - [ ] **SLURM 30858 — seed probe**, tasks 1-3 (pin 15) read 2026-10-14:
       **1 of 5 pin-15 runs passes the gate**, failures in four different
       trials, two-region behaviour in both MMV048 trials
@@ -47,6 +43,14 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Done
 
+- [x] **2026-10-14 — `cycle_length` profile (SLURM 30869) read.**
+      MMV048_PIB at pin 15: TWO PEAKS, 38.5 and 43.0 h, heights within 0.65
+      ll units (lower marginally higher), 5.4-unit dip. Free `b_shape`
+      merges them into one peak at 40.0 h with `b_shape` at its 5000 cap.
+      MMV048_PartB: free profile flat within 0.5 units over 38.5-43.5 h.
+      Control KAE609 free: TWO PEAKS by the rule, via the 36.0 h grid edge.
+      `_data/cl-profile-read-2026-10-14.txt`; `findings.md`, "The
+      `cycle_length` profile".
 - [x] **2026-10-14 — pooled the five pin-15 runs**: mean over trials
       41.29-41.41 h across runs, pooled 41.335; R-hat 1.039 over 20 chains,
       which is dilution, not convergence. `_data/pin15-pooled-2026-10-14.txt`.

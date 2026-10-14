@@ -3903,6 +3903,74 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### The `cycle_length` profile: MMV048_PIB has two likelihood peaks of near-equal height
+
+SLURM 30869, 6 tasks, all COMPLETED 2026-10-14 (24-66 min each, `.err`
+empty). `_scripts/cl-profile.R`, read with `_scripts/cl-profile-read.R`,
+output `_data/cl-profile-read-2026-10-14.txt`. Warm-start sweeps raised no
+grid point by more than 0.044 over the 8 cold starts, so the optimiser is
+not the limit here.
+
+Prior-free, `n_c` = 384, one residual variance per unit, so heights compare
+regions **within** a unit and are not posterior masses. Grid 36-49 h by
+0.5 h; the model's bounds are 35-50 h, so 36 is not the boundary of
+support. Rule, fixed before the run: TWO PEAKS if two local maxima are
+separated by a dip of >= 2 log-likelihood units below the lower of them.
+
+Cells: `cycle_length` (h) at each local maximum of the grid profile, with
+its log-likelihood relative to that unit-and-mode maximum in brackets (0 is
+best, more negative is worse); dip is how far the lowest point between two
+adjacent peaks falls below the lower peak, in log-likelihood units. Peaks at
+a grid edge (36.0 or 49.0) are marked "edge": the reader counts them as
+local maxima, but the profile may keep rising beyond the grid.
+
+| unit | `b_shape` | peaks, h (relative ll) | deepest dip | verdict |
+|---|---|---|---|---|
+| MMV048_PIB | 15 | **38.5 (0)**, **43.0 (−0.65)**, 49.0 edge (−7.25) | **5.39** (38.5-43.0) | **TWO PEAKS** |
+| MMV048_PIB | free | 40.0 (0), 49.0 edge (−9.21) | 0.19 | ONE |
+| MMV048_PartB | 15 | 36.0 edge (−3.02), **40.5 (0)**, 47.5 (−6.00) | 3.55 (40.5-47.5) | TWO PEAKS |
+| MMV048_PartB | free | 39.5 (−0.15), 41.5 (0), 46.5 (−1.09) | 0.07 | ONE |
+| KAE609 (control) | 15 | 36.0 edge (−1.77), 39.5 (0) | 1.72 | ONE |
+| KAE609 (control) | free | 36.0 edge (−1.23), 40.0 (0) | 2.43 | TWO PEAKS |
+
+**MMV048_PIB at pin 15: yes, the two MCMC regions are two peaks of the
+likelihood.** The peaks sit at 38.5 and 43.0 h, separated by a dip 5.4
+units deep, which is why no chain crosses between them. Their heights
+differ by 0.65 log-likelihood units, **the lower peak marginally higher**.
+So the data do not choose between them. MCMC puts the regions at ~39.9 and
+~43.0 h; the profile's lower peak sits ~1.4 h further down, which a model
+with priors, a hierarchy, and per-cohort error can plausibly shift. The
+pooled pin-15 runs put this trial at 43.01 h, mostly in the upper region,
+although the likelihood alone does not favour it. Whether the priors or
+the hierarchy do (the `cycle_length` prior is centred at 48 h) is untested.
+
+**With `b_shape` free, MMV048_PIB has one peak at 40.0 h, at a boundary.**
+`b_shape` sits at its 5000 cap for every grid point at or below 40.5 h:
+perfect synchrony. That peak is 2.81 units above pin 15's best, so freeing
+`b_shape` merges the two peaks by pushing this unit's synchrony to the cap.
+
+**MMV048_PartB: the profile does not reproduce the MCMC regions.** At pin
+15 the best is 40.5 h, matching the ~40.1 h of nearly every pin-15 chain;
+the second peak is at 47.5 h, 6.0 units lower, not near the 42.05 h one
+chain visited. With `b_shape` free the profile is flat: within 0.5 units
+from 38.5 to 43.5 h. So this trial's cycle length is barely constrained by
+its own data once `b_shape` is free, and the gap between the pin-15
+(~40.1 h) and free (~43.3-43.6 h) MCMC answers comes from what the full
+model adds to a flat likelihood (priors, hierarchy), not from a peak.
+
+**The control does not come back clean.** KAE609 was chosen as the trial
+whose 20 pin-15 chains agreed best. At pin 15 it is ONE. With `b_shape`
+free it is **TWO PEAKS by the pre-registered rule**: a second maximum at
+the 36.0 h grid edge (`b_shape` at its 5000 cap, offset 0.87), 1.23 units
+below the best, behind a 2.43-unit dip. The verdict stands as the rule
+gives it. What it shows: a second, short-period region at the bottom of
+the grid, with `b_shape` at its cap, appears in three of the six profiles
+(KAE609 both modes, MMV048_PartB pin 15). Whether it continues to 35 h is
+outside the grid, and no MCMC chain has been reported there.
+
+**Size of the stake.** MMV048_PIB's two peaks are 4.5 h apart; moving one
+trial by 4.5 h moves the mean over 13 trials by 0.35 h at most.
+
 ### Bound asymmetry is ruled out
 
 Migrated 2026-10-07 from the old `claude/CLAUDE.md`, where it was the only

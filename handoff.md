@@ -2,15 +2,23 @@
 
 ## State of play right now — read this first
 
-**Two jobs running (2026-10-14).**
+**One job running (2026-10-14).**
 
 - **SLURM 30858 tasks 4-6**, the three free-`b_shape` seeds; tasks 1-3
   (pin 15) are read. When they land, rerun `_scripts/seed-probe-read.R`
   into `_data/seed-probe-read-<date>.txt`.
-- **SLURM 30869**, the `cycle_length` profile likelihood (6 tasks × 1 CPU,
-  probably under an hour). Read with `_scripts/cl-profile-read.R` into
-  `_data/cl-profile-read-<date>.txt`; the two-peak rule is fixed in
-  `cl-profile.R`.
+
+**SLURM 30869 read 2026-10-14** (`_data/cl-profile-read-2026-10-14.txt`;
+`findings.md`, "The `cycle_length` profile"). MMV048_PIB at pin 15 has two
+likelihood peaks, 38.5 and 43.0 h, within 0.65 ll units of each other and
+the lower one marginally higher; MCMC sits mostly in the upper one. With
+`b_shape` free it is one peak at 40.0 h with `b_shape` at its 5000 cap.
+MMV048_PartB's free profile is flat over 38.5-43.5 h. The KAE609 control
+reads TWO PEAKS (free) by the rule, through the 36.0 h grid edge.
+
+**Progress report** `reports/progress-2026-10-14.html`, published privately
+at https://claude.ai/artifact/KU7hd3wiDXkRSVcfAdMuiE (version 2). Written
+before 30869 landed.
 
 **Pooled pin 15** (`_data/pin15-pooled-2026-10-14.txt`): the five runs'
 mean over 13 trials spans 41.29-41.41 h (pooled 41.335). The trial-level
