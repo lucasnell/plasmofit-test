@@ -25,6 +25,19 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Next
 
+- [ ] **Extend the `cycle_length` profile down to 35 h** for the three
+      profiles with a maximum at the 36.0 h grid edge (KAE609 fixed 15 and
+      estimated, MMV048_PartB fixed 15). Question: is the short-period
+      region with `b_shape` at its cap a real peak, or does it rise to the
+      35 h bound? Cheap: under an hour per task on 1 CPU.
+      `cl-profile.R` refuses to overwrite, so the extension needs new output
+      names. Source: `_data/cl-profile-read-2026-10-14.txt`.
+- [ ] **Do the priors or the hierarchy put MMV048_PIB in its upper
+      region?** The likelihood has two peaks of near-equal height (38.5 and
+      43.0 h, 0.65 ll units apart, the lower one marginally higher), but the
+      pooled pin-15 MCMC puts the trial at 43.01 h. Test, for example, by
+      refitting with a different `cl_prior_center` and checking which region
+      the chains choose. Ties into the `cl_prior_center` item below.
 - [ ] **Decide the `n_c` default.** The ML profile says `cycle_length` is
       stable at **40.93–41.15 h once `n_c` >= 384** and the gains beyond 512
       are under 1.3 ll units over 1130 observations, so the choice is between
@@ -112,14 +125,32 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Next
 
-- [ ] **Measure the estimator bias at the production settings** (added
-      2026-10-14). The schedule simulation has measured it only at `n_c` 96
-      and 192, with `b_shape` estimated: +1.97 and +1.55 h on the diagonal
-      of the 2x2 (`_data/nc-bias-correct-2026-10-07.txt`). Every ~41 h
-      estimate at `n_c` 384 is therefore uncorrected. Simulate and fit at
-      `n_c` 384 with `b_shape` fixed as in production. Design question to
-      settle first: the simulated truth (45.012 h) comes from an `n_c` 96
-      fit, so decide whether to regenerate it from an `n_c` 384 fit.
+- [ ] **Simulation study of `cycle_length` bias — Lucas's next step once
+      SLURM 30858 has finished** (set 2026-10-14). Step back from the
+      real-data fits and measure, on simulated data with a known truth, how
+      the `cycle_length` bias depends on (a) `n_c`, (b) the true `b_shape`,
+      and (c) how `b_shape` is fitted. This replaces the narrower "measure
+      the bias at the production settings" item. Why: the schedule
+      simulation has measured the bias only at `n_c` 96 and 192 with
+      `b_shape` estimated (+1.97 and +1.55 h on the diagonal of the 2x2,
+      `_data/nc-bias-correct-2026-10-07.txt`), so every ~41 h estimate at
+      `n_c` 384 is uncorrected, and with `b_shape` fixed the bias has never
+      been measured at all. Design to settle with Lucas before writing
+      anything, not assume:
+      - which `n_c` to generate at and which to fit at (diagonal only, or
+        crossed as in the 2x2);
+      - which true `b_shape` values (the free estimates at `n_c` 384 sit
+        near 12, the old pin is 400);
+      - which ways of fitting `b_shape`: estimated (and under which prior),
+        fixed at the truth, fixed at a wrong value (15, 400);
+      - where the true parameters come from: the current truth (45.012 h)
+        comes from an `n_c` 96 fit, so whether to regenerate it from an
+        `n_c` 384 fit;
+      - replicates per cell, the reading rule, and the cost. Each `n_c` 384
+        fit is ~3-8 h on the pinned driver at 40 CPUs, at most 3 at once,
+        so the cell count sets the calendar time.
+      Do not edit `wockner-fit.R`, `wockner-fit-pinned.sh`, or
+      `wockner-schedule-sim.R` before 30858 has finished.
 - [ ] **Decide what cycle-length number to report, and with what
       qualifications.** It is conditional on the `b_shape` pin *and* now on
       `n_c`. Bias-corrected estimates sit in the low 40s under either
