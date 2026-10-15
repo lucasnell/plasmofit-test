@@ -3,6 +3,8 @@
 *.err
 *.out
 *.log
+# The simulation study's fits, logs, and frozen run copy of simstudy.R
+simstudy/
 
 # Exceptions: the saved reader output behind a claim in the notes. Everything
 # else here is a fit or a log and stays on the cluster -- 726 files, 5.2 GB --
