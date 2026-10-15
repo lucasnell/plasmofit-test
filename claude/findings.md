@@ -3903,6 +3903,64 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Seed probe, complete: free `b_shape` passes the gate in 2 of 4 runs, and the passing runs agree
+
+SLURM 30858 tasks 4-6 (free `b_shape`, tuned settings, seeds
+20261013-15), COMPLETED 2026-10-14/15 in 24.3-30.8 h each, three at once.
+`.err` holds only the usual Pareto-k warnings, identical to the pin-15
+tasks'. Same reader and definitions as the first read
+(`_scripts/seed-probe-read.R`), output
+`_data/seed-probe-read-2026-10-15.txt`, which supersedes the partial file.
+
+Cells: one row per free-`b_shape` run (4 chains × 1000 draws). Max R-hat
+over monitored quantities and how many exceed 1.05; per-chain mean `lp__`.
+
+| run | max R-hat | > 1.05 | worst quantity | `lp__` by chain |
+|---|---|---|---|---|
+| original (entry 54) | 1.024 PASS | 0 | `log10_total0[7]` | −880.1, −880.0, −884.7, −881.5 |
+| seed 20261013 | 1.067 FAIL | 1 | `sigma_logit_cl` | −882.8, **−874.7**, −880.6, −880.8 |
+| seed 20261014 | 1.019 PASS | 0 | `log10_total0[13]` | −881.4, −880.4, −881.0, −880.3 |
+| seed 20261015 | 1.061 FAIL | 2 | `lp__`, `sigma_logit_R` | −883.2, −881.9, −881.6, **−877.8** |
+
+**Free `b_shape` converges more often than pin 15** (2 of 4 runs against 1
+of 5), and both failures are narrow: 1 and 2 quantities above 1.05, against
+10-59 in three of the four failing pin-15 runs.
+
+**Both failures have one chain at HIGHER density, not lower.** Seed
+20261013's chain 2 sits 5.9-8.1 `lp__` units above the other three, seed
+20261015's chain 4 sits 3.8-5.4 above. This is the opposite of a stuck
+chain: one chain found a region the others did not, and it is the better
+one by `lp__`. Seed 20261013's chain 2 is also the one OZ439 outlier
+(44.62 h against a median of 45.70 h for the other chains). What that region
+is, and whether the passing runs are missing it, has not been examined.
+
+**The two passing runs agree.** Cells: posterior mean of `cycle_length` in
+hours, mean over 13 trials, per run that passes the gate (unpaired, same
+data):
+
+| run | mean over 13 trials | largest per-trial difference between the two |
+|---|---|---|
+| original (entry 54) | 41.82 | 0.17 h (OZ439/DSM265, MMV048_PartB) |
+| seed 20261014 | 41.79 | |
+
+**MMV048_PIB's low region is visited more under free `b_shape`, but
+shallowly.** Visits (>= 5% of a chain's draws below 41 h): 5 of 16 free
+chains in 3 of 4 runs, pooled LOW share 4.8%; pin 15, 3 of 20 chains in 2
+of 5 runs, 2.3%. These are visit frequencies, not posterior masses. No free
+chain's mean for the trial falls below 42.45 h, so none settles in the low
+region. The profile's verdict for free `b_shape` (one peak, at 40.0 h with
+`b_shape` at its cap) is consistent with that.
+
+**MMV048_PartB shows no two-region behaviour under free `b_shape`**: all 16
+chains' means lie in 42.99-43.69 h, against ~40.1 h in nearly every pin-15
+chain. With the profile flat over 38.5-43.5 h for free `b_shape`, the
+trial's ~43.3 h comes from what the full model adds to the likelihood.
+
+**Fixed 15 against free, the headline:** 41.29-41.41 h across the five
+pin-15 runs (one passes the gate) and 41.79-41.82 h across the two passing
+free runs. The ~0.45 h gap sits mainly in OZ439, MMV048_PartB, ACT451840,
+and DSMOZ_2, as in the first read.
+
 ### The `cycle_length` profile: MMV048_PIB has two likelihood peaks of near-equal height
 
 SLURM 30869, 6 tasks, all COMPLETED 2026-10-14 (24-66 min each, `.err`

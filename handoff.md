@@ -2,13 +2,13 @@
 
 ## State of play right now — read this first
 
-**One job running (2026-10-14).**
+**Nothing running (2026-10-15).** SLURM 30858 is complete and read
+(`_data/seed-probe-read-2026-10-15.txt`; `findings.md`, "Seed probe,
+complete"): free `b_shape` passes the gate in 2 of 4 runs against pin 15's
+1 of 5, and the two passing free runs give 41.82 and 41.79 h (mean over 13
+trials). Both free failures have one chain at higher `lp__`, not examined.
 
-- **SLURM 30858 tasks 4-6**, the three free-`b_shape` seeds; tasks 1-3
-  (pin 15) are read. When they land, rerun `_scripts/seed-probe-read.R`
-  into `_data/seed-probe-read-<date>.txt`.
-
-**Next, once 30858 has finished (Lucas, 2026-10-14):** step back and run
+**Next (Lucas, 2026-10-14):** step back and run
 a simulation study of `cycle_length` bias across `n_c`, true `b_shape`, and
 how `b_shape` is fitted. The design is still to settle with Lucas; the open
 questions are listed under "Cycle-length bias" in `TODO.md`.

@@ -1,0 +1,153 @@
+runs present: 9 
+
+=== MMV048_PIB by chain ===
+Cells: per chain. lp = mean lp__; mean_cl7 = posterior mean of MMV048_PIB's
+cycle_length (h); low_pct = % of 1000 post-warmup draws below 41 h;
+visits = low_pct >= 5%. max_rhat and gate are per run.
+
+ config                                     run max_rhat gate chain     lp
+  pin15                           np_bs15_nc384    1.033 PASS     1 -844.6
+  pin15                           np_bs15_nc384    1.033 PASS     2 -846.5
+  pin15                           np_bs15_nc384    1.033 PASS     3 -848.4
+  pin15                           np_bs15_nc384    1.033 PASS     4 -848.8
+  pin15                    np_bs15_nc384-pinned    1.141 FAIL     1 -844.3
+  pin15                    np_bs15_nc384-pinned    1.141 FAIL     2 -844.7
+  pin15                    np_bs15_nc384-pinned    1.141 FAIL     3 -847.7
+  pin15                    np_bs15_nc384-pinned    1.141 FAIL     4 -848.0
+  pin15          np_bs15_nc384-pinned-s20261013    1.266 FAIL     1 -843.8
+  pin15          np_bs15_nc384-pinned-s20261013    1.266 FAIL     2 -848.0
+  pin15          np_bs15_nc384-pinned-s20261013    1.266 FAIL     3 -849.8
+  pin15          np_bs15_nc384-pinned-s20261013    1.266 FAIL     4 -848.8
+  pin15          np_bs15_nc384-pinned-s20261014    1.050 FAIL     1 -848.2
+  pin15          np_bs15_nc384-pinned-s20261014    1.050 FAIL     2 -846.8
+  pin15          np_bs15_nc384-pinned-s20261014    1.050 FAIL     3 -843.9
+  pin15          np_bs15_nc384-pinned-s20261014    1.050 FAIL     4 -848.5
+  pin15          np_bs15_nc384-pinned-s20261015    1.099 FAIL     1 -845.1
+  pin15          np_bs15_nc384-pinned-s20261015    1.099 FAIL     2 -856.7
+  pin15          np_bs15_nc384-pinned-s20261015    1.099 FAIL     3 -843.0
+  pin15          np_bs15_nc384-pinned-s20261015    1.099 FAIL     4 -847.5
+   free                  np_wide_total0_nc384_t    1.024 PASS     1 -880.1
+   free                  np_wide_total0_nc384_t    1.024 PASS     2 -880.0
+   free                  np_wide_total0_nc384_t    1.024 PASS     3 -884.7
+   free                  np_wide_total0_nc384_t    1.024 PASS     4 -881.5
+   free np_wide_total0_nc384_t-pinned-s20261013    1.067 FAIL     1 -882.8
+   free np_wide_total0_nc384_t-pinned-s20261013    1.067 FAIL     2 -874.7
+   free np_wide_total0_nc384_t-pinned-s20261013    1.067 FAIL     3 -880.6
+   free np_wide_total0_nc384_t-pinned-s20261013    1.067 FAIL     4 -880.8
+   free np_wide_total0_nc384_t-pinned-s20261014    1.019 PASS     1 -881.4
+   free np_wide_total0_nc384_t-pinned-s20261014    1.019 PASS     2 -880.4
+   free np_wide_total0_nc384_t-pinned-s20261014    1.019 PASS     3 -881.0
+   free np_wide_total0_nc384_t-pinned-s20261014    1.019 PASS     4 -880.3
+   free np_wide_total0_nc384_t-pinned-s20261015    1.061 FAIL     1 -883.2
+   free np_wide_total0_nc384_t-pinned-s20261015    1.061 FAIL     2 -881.9
+   free np_wide_total0_nc384_t-pinned-s20261015    1.061 FAIL     3 -881.6
+   free np_wide_total0_nc384_t-pinned-s20261015    1.061 FAIL     4 -877.8
+ mean_cl7 low_pct visits
+    43.07     0.2  FALSE
+    42.97     0.3  FALSE
+    43.07     0.4  FALSE
+    42.97     3.1  FALSE
+    42.24    19.4   TRUE
+    43.00     0.1  FALSE
+    43.10     0.2  FALSE
+    43.06     0.0  FALSE
+    43.06     0.0  FALSE
+    42.99     3.9  FALSE
+    43.17     0.4  FALSE
+    43.08     0.3  FALSE
+    43.12     0.0  FALSE
+    43.10     0.0  FALSE
+    43.08     0.0  FALSE
+    43.16     0.1  FALSE
+    43.07     0.6  FALSE
+    43.12     0.0  FALSE
+    42.66    10.8   TRUE
+    42.99     5.4   TRUE
+    43.00     3.8  FALSE
+    42.95     3.6  FALSE
+    42.45    14.7   TRUE
+    42.98     1.4  FALSE
+    42.90     4.1  FALSE
+    42.71     4.2  FALSE
+    43.08     1.5  FALSE
+    43.02     2.3  FALSE
+    42.96     3.4  FALSE
+    42.87     5.4   TRUE
+    42.79     7.3   TRUE
+    43.08     1.4  FALSE
+    42.94     5.6   TRUE
+    43.07     1.6  FALSE
+    42.98     1.9  FALSE
+    42.49    13.9   TRUE
+
+=== visit frequency by config ===
+Cells: chains that visit / chains; pooled % of LOW draws over all chains.
+A frequency of visits, not a posterior mass.
+
+pin15  3 of 20 chains visit, in 2 of 5 runs; pooled LOW 2.3%
+free   5 of 16 chains visit, in 3 of 4 runs; pooled LOW 4.8%
+
+=== chains more than 1 h from the others, any trial ===
+                                     run        trial chain chain_mean
+          np_bs15_nc384-pinned-s20261013 MMV048_PartB     2      42.05
+ np_wide_total0_nc384_t-pinned-s20261013        OZ439     2      44.62
+ others_median
+         40.51
+         45.70
+
+=== cycle_length by trial, runs that pass the gate ===
+Cells: posterior mean in hours per trial; last row the mean over 13 trials.
+
+             np_bs15_nc384 np_wide_total0_nc384_t
+Mefloquine           42.91                  42.64
+OZ439                42.18                  45.60
+DSM265               40.00                  39.62
+Piperaquine          40.17                  39.39
+Ferroquine           40.12                  39.52
+ACT451840            42.50                  44.28
+MMV048_PIB           43.02                  42.84
+OZ439/DSM265         41.16                  40.68
+EFITA_OZGAM          40.72                  40.46
+KAE609               41.27                  41.01
+DSMOZ_2              42.89                  44.49
+SJ733IBSMCS          40.28                  39.65
+MMV048_PartB         40.12                  43.43
+mean                 41.34                  41.82
+             np_wide_total0_nc384_t-pinned-s20261014
+Mefloquine                                     42.69
+OZ439                                          45.62
+DSM265                                         39.63
+Piperaquine                                    39.42
+Ferroquine                                     39.44
+ACT451840                                      44.20
+MMV048_PIB                                     42.92
+OZ439/DSM265                                   40.51
+EFITA_OZGAM                                    40.46
+KAE609                                         41.04
+DSMOZ_2                                        44.50
+SJ733IBSMCS                                    39.60
+MMV048_PartB                                   43.26
+mean                                           41.79
+
+=== worst R-hats per run (added after the first read) ===
+Cells: the 6 quantities with the highest R-hat in each run, and how many
+of the run's quantities exceed 1.05.
+
+np_bs15_nc384 (0 > 1.05): lp__ 1.033; sigma_logit_R 1.026; cycle_length[5] 1.010; eta_cl[5] 1.010; logit_cl[5] 1.010; b_off_vec[5,1] 1.009
+   chain means, MMV048_PIB: 43.07 42.97 43.07 42.97 | MMV048_PartB: 40.16 40.15 40.06 40.13
+np_bs15_nc384-pinned (10 > 1.05): eta_cl[7] 1.141; logit_cl[7] 1.141; b_off_vec[7,2] 1.140; cycle_length[7] 1.133; log10_total0[7] 1.124; b_offset[7] 1.119
+   chain means, MMV048_PIB: 42.24 43.00 43.10 43.06 | MMV048_PartB: 40.20 40.21 40.11 40.08
+np_bs15_nc384-pinned-s20261013 (59 > 1.05): b_off_vec[14,2] 1.266; cycle_length[13] 1.244; eta_cl[13] 1.240; logit_cl[13] 1.240; b_offset[14] 1.239; log_lik[1067] 1.173
+   chain means, MMV048_PIB: 43.06 42.99 43.17 43.08 | MMV048_PartB: 40.51 42.05 41.03 40.06
+np_bs15_nc384-pinned-s20261014 (1 > 1.05): b_off_vec[1,2] 1.050; b_offset[1] 1.046; eta_cl[1] 1.025; logit_cl[1] 1.025; b_off_vec[8,2] 1.025; cycle_length[1] 1.024
+   chain means, MMV048_PIB: 43.12 43.10 43.08 43.16 | MMV048_PartB: 40.07 40.17 40.11 40.10
+np_bs15_nc384-pinned-s20261015 (51 > 1.05): log_lik[750] 1.099; log_lik[758] 1.099; log_lik[788] 1.098; log_lik[728] 1.098; log_lik[773] 1.097; log_lik[766] 1.097
+   chain means, MMV048_PIB: 43.07 43.12 42.66 42.99 | MMV048_PartB: 40.09 40.03 40.06 40.04
+np_wide_total0_nc384_t (0 > 1.05): log10_total0[7] 1.024; eta_cl[7] 1.021; logit_cl[7] 1.021; cycle_length[7] 1.021; b_off_vec[7,2] 1.019; b_off_vec[7,1] 1.018
+   chain means, MMV048_PIB: 43.00 42.95 42.45 42.98 | MMV048_PartB: 43.63 43.30 43.27 43.50
+np_wide_total0_nc384_t-pinned-s20261013 (1 > 1.05): sigma_logit_cl 1.067; lp__ 1.042; b_off_vec[2,1] 1.039; cycle_length[2] 1.036; cycle_length[4] 1.033; eta_cl[4] 1.032
+   chain means, MMV048_PIB: 42.90 42.71 43.08 43.02 | MMV048_PartB: 43.47 42.99 43.69 43.39
+np_wide_total0_nc384_t-pinned-s20261014 (0 > 1.05): log10_total0[13] 1.019; log10_total0[12] 1.018; log10_total0[8] 1.018; b_offset[12] 1.018; eta_cl[12] 1.017; logit_cl[12] 1.017
+   chain means, MMV048_PIB: 42.96 42.87 42.79 43.08 | MMV048_PartB: 43.06 43.48 43.29 43.20
+np_wide_total0_nc384_t-pinned-s20261015 (2 > 1.05): lp__ 1.061; sigma_logit_R 1.052; log10_total0[7] 1.047; b_off_vec[7,2] 1.040; eta_cl[7] 1.036; logit_cl[7] 1.036
+   chain means, MMV048_PIB: 42.94 43.07 42.98 42.49 | MMV048_PartB: 43.61 43.45 43.32 43.25

@@ -11,20 +11,14 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **SLURM 30858 — seed probe**, tasks 1-3 (pin 15) read 2026-10-14:
-      **1 of 5 pin-15 runs passes the gate**, failures in four different
-      trials, two-region behaviour in both MMV048 trials
-      (`_data/seed-probe-read-2026-10-14-partial.txt`). Tasks 4-6 (free)
-      still running. Originally: 6 runs, `--array=1-6%3`: entry 43 (pin
-      15) and entry 54 (free, tuned) × seeds 20261013-15, pinned driver. When
-      it lands: `Rscript --vanilla _scripts/seed-probe-read.R >
-      _data/seed-probe-read-<date>.txt`. Question: how often do chains reach
-      MMV048_PIB's low region (~39.9 h), and does any other trial show the
-      same? **Do not edit `wockner-fit.R` or `wockner-fit-pinned.sh` while it
-      runs.**
+- Nothing running (2026-10-15).
 
 ### Next
 
+- [ ] **Examine the higher-density chains in the two failing free runs**
+      (seed 20261013 chain 2, +5.9 to +8.1 `lp__`; seed 20261015 chain 4,
+      +3.8 to +5.4). Which parameters differ, and are the passing free runs
+      (41.82, 41.79 h) missing a better region? Cheap: reads saved fits.
 - [ ] **Extend the `cycle_length` profile down to 35 h** for the three
       profiles with a maximum at the 36.0 h grid edge (KAE609 fixed 15 and
       estimated, MMV048_PartB fixed 15). Question: is the short-period
@@ -56,6 +50,13 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Done
 
+- [x] **2026-10-15 — seed probe (SLURM 30858) complete.** Free `b_shape`
+      passes the gate in 2 of 4 runs (pin 15: 1 of 5); the two passing runs
+      give 41.82 and 41.79 h (mean over 13 trials) and agree within 0.17 h
+      per trial. Both free failures are narrow (1-2 quantities) and have one
+      chain at HIGHER `lp__` (+4 to +8), not a stuck chain; not yet examined.
+      `_data/seed-probe-read-2026-10-15.txt`; `findings.md`, "Seed probe,
+      complete".
 - [x] **2026-10-14 — `cycle_length` profile (SLURM 30869) read.**
       MMV048_PIB at pin 15: TWO PEAKS, 38.5 and 43.0 h, heights within 0.65
       ll units (lower marginally higher), 5.4-unit dip. Free `b_shape`
