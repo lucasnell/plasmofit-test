@@ -11,7 +11,21 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- Nothing running (2026-10-15).
+- [ ] **SLURM 30875 — simulation study of `cycle_length` bias**, submitted
+      2026-10-15. 48 cells × 5 replicates = 240 fits × 8 chains = 1920
+      chain tasks, `--array=1-1920%96`, 2 CPUs and 4G each (192 CPUs: the
+      75% allowance Lucas gave for this study only). Design and reading rule
+      are in the `_scripts/simstudy.R` header: truths A (`pooled_cl`, n_c 96,
+      45.012 h) and B (entry 54, n_c 384, per-trial truths); generate × fit
+      `n_c` in {192, 384}; true `b_shape` × {0.5, 1, 3}; `b_shape` estimated
+      under sd_log_b_shape 1.5 or fixed at the truth. **SLURM 30876** merges
+      and runs `simstudy-read.R` once the array ends (`afterany`), writing
+      `_data/simstudy-read-<date>.txt`. Expected 1-3 days. Tasks run the
+      frozen copy `_data/simstudy/simstudy-run.R` (md5 526f217f…, =
+      commit `4ab83b9`), so `_scripts/simstudy.R` may be edited; **do not
+      reinstall the package until the array ends.** Partial read at any
+      time: `SIMSTUDY_MODE=merge Rscript --vanilla _scripts/simstudy.R`, then
+      the reader.
 
 ### Next
 
@@ -126,32 +140,6 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Next
 
-- [ ] **Simulation study of `cycle_length` bias — Lucas's next step once
-      SLURM 30858 has finished** (set 2026-10-14). Step back from the
-      real-data fits and measure, on simulated data with a known truth, how
-      the `cycle_length` bias depends on (a) `n_c`, (b) the true `b_shape`,
-      and (c) how `b_shape` is fitted. This replaces the narrower "measure
-      the bias at the production settings" item. Why: the schedule
-      simulation has measured the bias only at `n_c` 96 and 192 with
-      `b_shape` estimated (+1.97 and +1.55 h on the diagonal of the 2x2,
-      `_data/nc-bias-correct-2026-10-07.txt`), so every ~41 h estimate at
-      `n_c` 384 is uncorrected, and with `b_shape` fixed the bias has never
-      been measured at all. Design to settle with Lucas before writing
-      anything, not assume:
-      - which `n_c` to generate at and which to fit at (diagonal only, or
-        crossed as in the 2x2);
-      - which true `b_shape` values (the free estimates at `n_c` 384 sit
-        near 12, the old pin is 400);
-      - which ways of fitting `b_shape`: estimated (and under which prior),
-        fixed at the truth, fixed at a wrong value (15, 400);
-      - where the true parameters come from: the current truth (45.012 h)
-        comes from an `n_c` 96 fit, so whether to regenerate it from an
-        `n_c` 384 fit;
-      - replicates per cell, the reading rule, and the cost. Each `n_c` 384
-        fit is ~3-8 h on the pinned driver at 40 CPUs, at most 3 at once,
-        so the cell count sets the calendar time.
-      Do not edit `wockner-fit.R`, `wockner-fit-pinned.sh`, or
-      `wockner-schedule-sim.R` before 30858 has finished.
 - [ ] **Decide what cycle-length number to report, and with what
       qualifications.** It is conditional on the `b_shape` pin *and* now on
       `n_c`. Bias-corrected estimates sit in the low 40s under either

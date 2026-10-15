@@ -2,16 +2,18 @@
 
 ## State of play right now — read this first
 
-**Nothing running (2026-10-15).** SLURM 30858 is complete and read
-(`_data/seed-probe-read-2026-10-15.txt`; `findings.md`, "Seed probe,
-complete"): free `b_shape` passes the gate in 2 of 4 runs against pin 15's
-1 of 5, and the two passing free runs give 41.82 and 41.79 h (mean over 13
-trials). Both free failures have one chain at higher `lp__`, not examined.
+**Running (2026-10-15): the simulation study of `cycle_length` bias.**
+SLURM 30875 (1920 chain tasks, 96 at a time) and 30876 (merge plus reader,
+starts when 30875 ends). Details, files, and what not to touch: `TODO.md`,
+"In progress". Design and reading rule: `_scripts/simstudy.R` header.
+Expected 1-3 days. The node allowance for it is 75%, not 50%, by Lucas's
+temporary exception in `CLAUDE.md`.
 
-**Next (Lucas, 2026-10-14):** step back and run
-a simulation study of `cycle_length` bias across `n_c`, true `b_shape`, and
-how `b_shape` is fitted. The design is still to settle with Lucas; the open
-questions are listed under "Cycle-length bias" in `TODO.md`.
+**SLURM 30858 read 2026-10-15** (`_data/seed-probe-read-2026-10-15.txt`;
+`findings.md`, "Seed probe, complete"): free `b_shape` passes the gate in 2
+of 4 runs against pin 15's 1 of 5, and the two passing free runs give 41.82
+and 41.79 h (mean over 13 trials). Both free failures have one chain at
+higher `lp__`, not yet examined.
 
 **SLURM 30869 read 2026-10-14** (`_data/cl-profile-read-2026-10-14.txt`;
 `findings.md`, "The `cycle_length` profile"). MMV048_PIB at pin 15 has two

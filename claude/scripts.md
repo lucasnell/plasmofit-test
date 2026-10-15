@@ -18,6 +18,9 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-fit-analyze.R` | local | reads the saved fits and reports diagnostics and `loo` |
 | `wockner-fit-kfold.R` | cluster | leave-one-trial-out stability check, one (model, trial) fold per SLURM array task |
 | `wockner-kfold-analyze.R` | local | reads the saved kfold summaries and reports fold-to-fold stability |
+| `simstudy.R` | cluster | 2026-10-15 simulation study of `cycle_length` bias (48 cells × 5 reps); modes `chain` (one chain per array task), `merge` (fits plus one-row summaries), `check` (no sampling); design and reading rule in its header. Outputs in `_data/simstudy/`: `chain-<name>-c<k>.rds`, `fit-<name>.rds`, `sum-<name>.rds`; `smoke-*` files are the 20-iteration smoke test |
+| `simstudy.sh` / `simstudy-merge.sh` | cluster | the 1920-task chain array (runs the frozen copy `_data/simstudy/simstudy-run.R`) and the merge-plus-read job |
+| `simstudy-read.R` | cluster | applies the study's reading rule to the summaries; `SIMSTUDY_SUMGLOB` points it elsewhere |
 | `wockner-pooling-offset.R` | local | decomposes the no_pool / pooled_cl cycle-length gap from the saved fits |
 | `wockner-cl-clustering.R` | local | tests whether the per-trial cycle_length clustering is real |
 | `test-archer-fit.R` | local | simulates from known parameters, fits, checks recovery |
