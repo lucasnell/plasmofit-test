@@ -66,6 +66,12 @@ claude/references.md, not as authorship. -->
   | 4 | 48G | 32 | 10 | **10** |
   | 40 | 32G | 3 | 15 | **3** |
 
+  **Temporary exception (Lucas, 2026-10-15): the simulation study
+  (`_scripts/simstudy.sh`) may use up to 75% of the node, 192 CPUs and
+  773,505 MB** (its throttle is `%96` at 2 CPUs and 4G per task). This applies
+  to that study alone; the half-node rule is back in force for everything
+  else, and fully once the study ends.
+
   No script in `_scripts/` currently needs a throttle — the largest array is
   `wockner-schedule-sim-batch.sh` at 16 tasks × 4 CPUs × 16G = 64 CPUs and
   262,144 MB, half the budget on memory and half on CPUs. **But the rule binds

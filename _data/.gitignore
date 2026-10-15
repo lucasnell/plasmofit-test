@@ -31,3 +31,4 @@
 !seed-probe-read-*.txt
 !pin15-pooled-*.txt
 !cl-profile-read-*.txt
+!simstudy-read-*.txt
