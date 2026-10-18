@@ -32,9 +32,10 @@ match where a thread exists. This file is the actionable layer. -->
       24 fits, 20 severely, even at the truth. **Lucas chose to cancel the
       still-pending fixed-`b_shape` `n_c` 384 chain tasks** (reps 3-5):
       207 cancelled 2026-10-18, listed in
-      `_data/simstudy/fixed384-cancelled-2026-10-18.txt`; those already
-      running were left to finish. Those 12 cells will hold 2 replicates
-      plus whatever rep-3+ fits complete all 8 chains; merge skips fits
+      `_data/simstudy/fixed384-cancelled-2026-10-18.txt`; the 46 running
+      ones were cancelled too, on Lucas's say-so the same day
+      (`_data/simstudy/fixed384-cancelled-running-2026-10-18.txt`). Those 12 cells will hold 2 replicates
+      plus any rep-3+ fit whose 8 chains had all finished before the cancellation; merge skips fits
       with missing chains, and 30876 still runs (`afterany` counts
       cancelled tasks as ended).
 
