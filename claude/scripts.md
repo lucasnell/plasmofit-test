@@ -21,6 +21,8 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `simstudy.R` | cluster | 2026-10-15 simulation study of `cycle_length` bias (48 cells × 5 reps); modes `chain` (one chain per array task), `merge` (fits plus one-row summaries), `check` (no sampling); design and reading rule in its header. Outputs in `_data/simstudy/`: `chain-<name>-c<k>.rds`, `fit-<name>.rds`, `sum-<name>.rds`; `smoke-*` files are the 20-iteration smoke test |
 | `simstudy.sh` / `simstudy-merge.sh` | cluster | the 1920-task chain array (runs the frozen copy `_data/simstudy/simstudy-run.R`) and the merge-plus-read job |
 | `simstudy-read.R` | cluster | applies the study's reading rule to the summaries; `SIMSTUDY_SUMGLOB` points it elsewhere |
+| `simstudy-health.R` | cluster | descriptive breakdown of gate failures by method and fit `n_c` (bins chosen after the data; not part of the reading rule) |
+| `simstudy-eta.R` | cluster | replays the remaining chain queue through 96 slots with run times resampled from completed chains, to estimate the finish |
 | `wockner-pooling-offset.R` | local | decomposes the no_pool / pooled_cl cycle-length gap from the saved fits |
 | `wockner-cl-clustering.R` | local | tests whether the per-trial cycle_length clustering is real |
 | `test-archer-fit.R` | local | simulates from known parameters, fits, checks recovery |

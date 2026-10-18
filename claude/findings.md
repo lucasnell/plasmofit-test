@@ -3948,6 +3948,12 @@ cost rather than the model's. Not tested.
 Cost: chains fitting at `n_c` 384 take a median 18 h (longest chain per
 fit), against 1.2-4.4 h estimated at submission.
 
+**Consequence, 2026-10-18:** on Lucas's say-so every remaining chain task
+for fixed `b_shape` at fit `n_c` 384 (reps 3-5) was cancelled, pending and
+running (lists in `_data/simstudy/fixed384-cancelled-*.txt`). Those 12
+cells end with 2 replicates, so their bias stays unreadable under the
+rule; their pass rate (1 of 24) is the result.
+
 ### Seed probe, complete: free `b_shape` passes the gate in 2 of 4 runs, and the passing runs agree
 
 SLURM 30858 tasks 4-6 (free `b_shape`, tuned settings, seeds

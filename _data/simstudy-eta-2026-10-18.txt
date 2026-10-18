@@ -1,0 +1,15 @@
+completed chains by class: mean hours (n)
+  f192-fixed  1.76 (192)
+  f192-wide   1.94 (192)
+  f384-fixed  12.92 (226)
+  f384-wide   13.60 (227)
+remaining: 96 running, 733 pending
+            state
+class        PENDING RUNNING
+  f192-fixed     272      16
+  f192-wide      269      19
+  f384-wide      192      61
+
+now 2026-10-18 12:57
+chain array ends, hours from now: 10% 50.0, median 53.4, 90% 57.0
+as clock times: Tue 2026-10-20 14:58 | Tue 2026-10-20 18:19 | Tue 2026-10-20 21:54 

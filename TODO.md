@@ -20,7 +20,7 @@ match where a thread exists. This file is the actionable layer. -->
       `n_c` in {192, 384}; true `b_shape` × {0.5, 1, 3}; `b_shape` estimated
       under sd_log_b_shape 1.5 or fixed at the truth. **SLURM 30876** merges
       and runs `simstudy-read.R` once the array ends (`afterany`), writing
-      `_data/simstudy-read-<date>.txt`. Estimated 1-3 days at submission; WRONG: by 2026-10-18 chains fitting at `n_c` 384 averaged 13.3 h (411 done) and at 192 1.85 h (384 done), putting the end near 2026-10-21. Tasks run the
+      `_data/simstudy-read-<date>.txt`. Estimated 1-3 days at submission, which was wrong: chains fitting at `n_c` 384 average 12.9-13.6 h, at 192 1.8-1.9 h; the 2026-10-18 replay of the remaining queue (`_scripts/simstudy-eta.R`, `_data/simstudy-eta-2026-10-18.txt`) puts the chain array's end at Tue 2026-10-20 ~18:00 (10-90%: 15:00-22:00), then ~20 min of merging. Tasks run the
       frozen copy `_data/simstudy/simstudy-run.R` (md5 526f217f…, =
       commit `4ab83b9`), so `_scripts/simstudy.R` may be edited; **do not
       reinstall the package until the array ends.** Partial read at any
@@ -34,7 +34,7 @@ match where a thread exists. This file is the actionable layer. -->
       207 cancelled 2026-10-18, listed in
       `_data/simstudy/fixed384-cancelled-2026-10-18.txt`; the 46 running
       ones were cancelled too, on Lucas's say-so the same day
-      (`_data/simstudy/fixed384-cancelled-running-2026-10-18.txt`). Those 12 cells will hold 2 replicates
+      (`_data/simstudy/fixed384-cancelled-running-2026-10-18.txt`). Task 1728 escaped both (a parsing slip) and was cancelled separately; it is appended to the first list. Those 12 cells will hold 2 replicates
       plus any rep-3+ fit whose 8 chains had all finished before the cancellation; merge skips fits
       with missing chains, and 30876 still runs (`afterany` counts
       cancelled tasks as ended).

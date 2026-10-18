@@ -35,3 +35,4 @@ simstudy/
 !cl-profile-read-*.txt
 !simstudy-read-*.txt
 !simstudy-health-*.txt
+!simstudy-eta-*.txt

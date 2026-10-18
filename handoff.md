@@ -6,7 +6,14 @@
 SLURM 30875 (1920 chain tasks, 96 at a time) and 30876 (merge plus reader,
 starts when 30875 ends). Details, files, and what not to touch: `TODO.md`,
 "In progress". Design and reading rule: `_scripts/simstudy.R` header.
-Estimated 1-3 days at submission, which was wrong: at the 2026-10-18 rate it ends near 2026-10-21 (see `TODO.md`). The node allowance for it is 75%, not 50%, by Lucas's
+Estimated 1-3 days at submission, which was wrong: the 2026-10-18 replay of the remaining queue (`_scripts/simstudy-eta.R`, `_data/simstudy-eta-2026-10-18.txt`) puts the chain array's end at Tue 2026-10-20 ~18:00 (10-90%: 15:00-22:00), then ~20 min of merging.
+
+**Partial read 2026-10-18** (96 of 240 fits; `findings.md`, "Simulation
+study, partial read"): 24 of 96 pass the gate, no cell readable yet.
+Fixed `b_shape` at fit `n_c` 384 fails in 23 of 24 fits, 20 severely, even
+at the true value, so Lucas had every remaining fixed-`b_shape` `n_c` 384
+chain task cancelled (pending and running, reps 3-5). Elsewhere failures
+are mostly marginal, possibly from the 500-draw chains. The node allowance for it is 75%, not 50%, by Lucas's
 temporary exception in `CLAUDE.md`.
 
 **SLURM 30858 read 2026-10-15** (`_data/seed-probe-read-2026-10-15.txt`;

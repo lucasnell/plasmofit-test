@@ -144,7 +144,10 @@ claude/references.md, not as authorship. -->
   conditional on this pin and must be reported with the ladder.** *That
   ladder was run at `n_c` = 96. At `n_c` = 384 (2026-10-13) pins from 50 up
   have not converged at default settings, free `b_shape` sits at 12.2, and a
-  pin of 15 ties free on elpd; see `claude/findings.md`.*
+  pin of 15 ties free on elpd; see `claude/findings.md`. On SIMULATED data
+  (2026-10-18, partial), fixed `b_shape` at fit `n_c` 384 fails the gate in
+  23 of 24 fits even at the true value, so the failure is the model's, not
+  the real data's.*
 - **2026-10-04 — The hierarchy question has no robust evidence either way.**
   Design A is mask-dependent (−3.27 at the last third, −0.04 at the last
   quarter) and the horizon ladder is flat once a non-converged fit is
