@@ -26,6 +26,12 @@ match where a thread exists. This file is the actionable layer. -->
       reinstall the package until the array ends.** Partial read at any
       time: `SIMSTUDY_MODE=merge Rscript --vanilla _scripts/simstudy.R`, then
       the reader.
+      **Partial read 2026-10-18** (96 of 240 fits, reps 1-2;
+      `findings.md`, "Simulation study, partial read"): 24 of 96 pass; no
+      cell readable yet. Fixed `b_shape` at fit `n_c` 384 fails in 23 of
+      24 fits, 20 severely, even at the truth. Decision pending with Lucas:
+      whether to cancel the 288 remaining fixed-`b_shape` `n_c` 384 chain
+      tasks (reps 3-5; list in `_data/simstudy/fixed384-reps3to5-tasks.txt`).
 
 ### Next
 

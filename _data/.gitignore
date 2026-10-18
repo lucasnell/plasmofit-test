@@ -34,3 +34,4 @@ simstudy/
 !pin15-pooled-*.txt
 !cl-profile-read-*.txt
 !simstudy-read-*.txt
+!simstudy-health-*.txt

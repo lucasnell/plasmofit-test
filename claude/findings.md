@@ -3903,6 +3903,51 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Simulation study, partial read: 24 of 96 fits pass, and fixed `b_shape` at fit `n_c` 384 fails almost always
+
+SLURM 30875 (design and reading rule in the `_scripts/simstudy.R` header).
+Merged by hand on 2026-10-18 with the array still running: replicates 1-2
+of all 48 cells, 96 of 240 fits. Reader `_scripts/simstudy-read.R`, output
+`_data/simstudy-read-2026-10-18-partial.txt`; failure breakdown
+`_scripts/simstudy-health.R`, output `_data/simstudy-health-2026-10-18.txt`.
+The breakdown's bins (marginal 1.05-1.15, severe >= 1.15) were chosen after
+seeing the data and are descriptive only.
+
+**No cell is readable yet**: the rule needs 3 passing replicates and only 2
+exist. No bias is quoted here.
+
+Cells: counts of merged fits by max R-hat over all quantities (8 chains ×
+500 post-warmup draws); `lp_only` = failing fits whose only quantity at or
+above 1.05 is `lp__`; spread = median over fits of the range of per-chain
+mean `lp__`; hours = median longest chain.
+
+| `b_shape` | fit `n_c` | fits | pass | marginal | severe | `lp_only` | spread | hours |
+|---|---|---|---|---|---|---|---|---|
+| fixed at truth | 192 | 24 | 5 | 15 | 4 | 4 | 9.8 | 2.0 |
+| fixed at truth | 384 | 24 | **1** | 3 | **20** | 1 | **66.5** | 18.0 |
+| estimated, wide prior | 192 | 24 | 10 | 14 | 0 | 6 | 11.5 | 2.3 |
+| estimated, wide prior | 384 | 24 | 8 | 13 | 3 | 6 | 11.3 | 18.1 |
+
+**Fixing `b_shape` while fitting at `n_c` 384 fails in 23 of 24 fits, 20 of
+them severely** (max R-hat 1.27-7.59, chains tens of `lp__` units apart),
+including when `b_shape` is fixed at its TRUE value and the data were
+generated at `n_c` 384 (B, gen 384, fit 384, × 1: R-hat 2.36 and 3.37). So
+the real-data failures of fixed `b_shape` at `n_c` 384 (every pin from 50
+up; pin 15 in 4 of 5 runs) are not caused by the real data disagreeing
+with the pin: the model with `b_shape` fixed at `n_c` 384 has separated
+regions even on data it generated itself. The worst quantity in the severe
+failures is most often EFITA_OZGAM's `cycle_length` (7), then OZ439 (4).
+
+**Everywhere else the failures are mostly marginal**: max R-hat
+1.05-1.15, often through `lp__` alone, with per-chain `lp__` means ~10-12
+units apart. The run uses 500 post-warmup draws per chain, half the
+production length, chosen to keep 4000 total draws over 8 chains; shorter
+chains make split R-hat noisier, so part of this is likely the design's
+cost rather than the model's. Not tested.
+
+Cost: chains fitting at `n_c` 384 take a median 18 h (longest chain per
+fit), against 1.2-4.4 h estimated at submission.
+
 ### Seed probe, complete: free `b_shape` passes the gate in 2 of 4 runs, and the passing runs agree
 
 SLURM 30858 tasks 4-6 (free `b_shape`, tuned settings, seeds
