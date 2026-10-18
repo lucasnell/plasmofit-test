@@ -38,6 +38,17 @@ match where a thread exists. This file is the actionable layer. -->
       plus any rep-3+ fit whose 8 chains had all finished before the cancellation; merge skips fits
       with missing chains, and 30876 still runs (`afterany` counts
       cancelled tasks as ended).
+- [ ] **Open, 2026-10-18: the study's `n_c` 384 chains run ~7x slower per
+      gradient than with few chains running** (260 against 38 ms; ~1.8x at 192),
+      so most of their 13 h is layout, not model (`findings.md`, "Where the
+      simulation study's time goes"; `_data/simstudy-cost-2026-10-18.txt`).
+      Lucas's question, a low `n_c` plus a desynchronisation-rate parameter
+      to cut fit time, was answered against the existing record
+      (`claude/ipm-decision.md`): inside the chain it cannot reach the
+      dispersion the data want (Erlang floor); outside it, the only forward
+      map we have that separates mesh from dispersion is slower per
+      gradient than the chain at 384. Not decided: whether to re-run the
+      pending fit `n_c` 384 chains under the pinned layout.
 
 ### Next
 

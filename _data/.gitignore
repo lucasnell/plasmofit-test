@@ -36,3 +36,4 @@ simstudy/
 !simstudy-read-*.txt
 !simstudy-health-*.txt
 !simstudy-eta-*.txt
+!simstudy-cost-*.txt

@@ -1,0 +1,24 @@
+There were 50 or more warnings (use warnings() to see the first 50)
+fits read: 96 ; chains: 768 
+
+Cells: per chain, median over chains in the group; gradients in thousands
+(warmup 700 + sampling 500 iterations); ms per gradient = chain seconds /
+chain gradients. Unpaired; all fits merged so far, passing or not.
+
+ fit_nc method chains k_grads ms_per_grad hours
+    192  fixed    192   133.9       39.48  1.62
+    192   wide    192   161.7       38.36  1.85
+    384  fixed    192   221.9      235.90 12.18
+    384   wide    192   206.2      259.67 13.52
+
+Ratio fit_nc 384 / 192 of the medians above, by method:
+ method hours grads ms_per_grad
+  fixed  7.52  1.66        5.98
+   wide  7.31  1.28        6.77
+
+Same, restricted to fits that pass the gate:
+ fit_nc method chains k_grads ms_per_grad hours
+    192  fixed     40   139.9       39.16  1.65
+    192   wide     80   135.2       38.71  1.66
+    384  fixed      8   246.6      278.64 19.00
+    384   wide     64   189.1      263.73 12.41

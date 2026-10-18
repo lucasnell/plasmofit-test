@@ -16,6 +16,14 @@ chain task cancelled (pending and running, reps 3-5). Elsewhere failures
 are mostly marginal, possibly from the 500-draw chains. The node allowance for it is 75%, not 50%, by Lucas's
 temporary exception in `CLAUDE.md`.
 
+**Fit time, 2026-10-18** (`findings.md`, "Where the simulation study's
+time goes"): the study's `n_c` 384 chains take 7.3-7.5x as long as its 192
+chains, 1.3-1.7x from more gradients and 6.0-6.8x from cost per gradient,
+~6.8x worse than one chain per core with few running. The layout, not the
+model, is most of the 13 h. Lucas's proposal of a low `n_c` plus a
+desynchronisation parameter was weighed against `claude/ipm-decision.md`;
+no decision.
+
 **SLURM 30858 read 2026-10-15** (`_data/seed-probe-read-2026-10-15.txt`;
 `findings.md`, "Seed probe, complete"): free `b_shape` passes the gate in 2
 of 4 runs against pin 15's 1 of 5, and the two passing free runs give 41.82

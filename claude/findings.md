@@ -3408,7 +3408,9 @@ That is the wrong function. Real production fits, from `sacct`:
 About **2.9× per doubling** of `n_c`, so `n_c` = 768 is on the order of **3
 days**, not 540 h. And the per-gradient table above shows the forward map is
 roughly linear, so most of that 2.9× is the sampler's leapfrog count rising,
-not the trajectory cost. Seed-to-seed variance is large as well — 30525 reran
+not the trajectory cost (*contradicted 2026-10-18 from saved fits: under
+load most of it is cost per gradient; see "Where the simulation study's
+time goes"*). Seed-to-seed variance is large as well — 30525 reran
 29635_39's exact configuration and took 24.2 h against 8.3 h.
 
 **What this changes.** `n_c` = 768 was never blocked by the forward map, so the
@@ -3953,6 +3955,45 @@ for fixed `b_shape` at fit `n_c` 384 (reps 3-5) was cancelled, pending and
 running (lists in `_data/simstudy/fixed384-cancelled-*.txt`). Those 12
 cells end with 2 replicates, so their bias stays unreadable under the
 rule; their pass rate (1 of 24) is the result.
+
+### Where the simulation study's time goes: cost per gradient, not gradient count
+
+`_scripts/simstudy-cost.R`, output `_data/simstudy-cost-2026-10-18.txt`, on
+the 96 fits merged so far (768 chains). Descriptive, added 2026-10-18 to
+answer whether a cheaper forward map at the `n_c` 384 dispersion (a low
+`n_c` plus a desynchronisation parameter) would shorten fits.
+
+Cells: per chain, median over the 192 chains in each group (passing or
+not); gradients = `n_leapfrog` summed over 700 warmup and 500 sampling
+iterations, in thousands; ms per gradient = chain seconds / chain
+gradients. Unpaired.
+
+| fit `n_c` | method | gradients (k) | ms per gradient | hours |
+|---|---|---|---|---|
+| 192 | fixed | 133.9 | 39.5 | 1.62 |
+| 192 | wide | 161.7 | 38.4 | 1.85 |
+| 384 | fixed | 221.9 | 235.9 | 12.18 |
+| 384 | wide | 206.2 | 259.7 | 13.52 |
+
+Of the 7.3-7.5x longer chains at fit `n_c` 384, **1.3-1.7x is more
+gradients and 6.0-6.8x is cost per gradient.** The thread-layout
+benchmark gives 38 ms for one single-threaded `n_c` 384 chain per core
+with four chains running (layout F), so under this study's layout (one
+chain per 2-CPU task, 96 at once, each pinned to one logical CPU) an
+`n_c` 384 gradient costs ~6.8x that. There is no single-threaded
+quiet-node figure at 192; the `grad_log_prob` timings above put 384 at
+1.8x the cost of 192 (9 against 5 ms, threading not recorded), which would
+make it ~21 ms and the study's slowdown at 192 ~1.8x. The likely cause is the shared
+L3 cache (the thread-layout benchmark's finding 1); that is inferred, not
+measured here. The study's layout was the wrong one for its `n_c` 384
+chains: the pinned layout (one chain per L3 group, 4 threads) ran entry 43
+at 28 ms per gradient.
+
+This contradicts the earlier reading under "Correction: an `n_c` = 768
+production fit was never ~540 h", that most of the cost of a doubling is
+the leapfrog count. That reading divided wall time by a quiet-node
+per-gradient benchmark; measured from saved fits here, it is the other way
+round.
 
 ### Seed probe, complete: free `b_shape` passes the gate in 2 of 4 runs, and the passing runs agree
 
