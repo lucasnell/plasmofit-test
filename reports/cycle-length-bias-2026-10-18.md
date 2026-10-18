@@ -167,7 +167,7 @@ outputs `schedsim-analyze-2026-10-05.txt` and `-2026-10-06.txt`.*
 | all nuisance priors widened | 6 | −0.46 | −1.08 to −0.07 |
 | cycle-length prior centred on the truth | 3 | −0.44 | −0.51 to −0.29 |
 | cycle-length prior centred 2.9 h below the truth | 3 | −0.64 | −0.76 to −0.51 |
-| hierarchy on cycle length removed | 2 | about −0.25 | — |
+| hierarchy on cycle length removed | 2 | −0.26 | −0.29 to −0.23 |
 | initial-density prior widened | 6 | +0.15 | −0.16 to +0.43 |
 | observation-error SD fixed at its true value | 2 | +0.10 | +0.03 to +0.18 |
 | cycle-length bounds moved, width kept | 4 | +0.03 | — |

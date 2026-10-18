@@ -1,0 +1,418 @@
+<title>Cycle-Length Bias in plasmofit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~46rem) with full-width tables; light only, by the author's standing preference. */
+:root {
+  --paper: #fbfcfd;
+  --ink: #17212b;
+  --muted: #5a6672;
+  --rule: #dce3e9;
+  --panel: #f1f5f8;
+  --accent: #1d5d78;
+  --accent-soft: #dcebf2;
+  --est-fg: #2c6337; --est-bg: #e3f0e5;
+  --sup-fg: #7d5200; --sup-bg: #f8edd5;
+  --open-fg: #47505c; --open-bg: #e9edf2;
+  --bar-pos: #a9b3bd;
+  --f-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+.wrap { max-width: 46rem; margin: 0 auto; display: flex; flex-direction: column; gap: 2.4rem; }
+section { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 2.05rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); }
+h3 { font-size: 1.08rem; margin-top: 0.4rem; }
+p, ul, ol { margin: 0; }
+ul, ol { padding-left: 1.3rem; display: flex; flex-direction: column; gap: 0.45rem; }
+code { font-family: var(--f-mono); font-size: 0.84em; background: var(--panel); padding: 0.05em 0.3em; border-radius: 3px; overflow-wrap: anywhere; }
+strong { font-weight: 600; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.eyebrow { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+header { display: flex; flex-direction: column; gap: 0.8rem; }
+.lede { font-size: 1.06rem; color: var(--ink); }
+.meta { font-size: 0.9rem; color: var(--muted); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; font-size: 0.88rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.chip { display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.12rem 0.45rem; border-radius: 3px; white-space: nowrap; vertical-align: 0.1em; }
+.est { color: var(--est-fg); background: var(--est-bg); }
+.sup { color: var(--sup-fg); background: var(--sup-bg); }
+.open { color: var(--open-fg); background: var(--open-bg); }
+
+.summary { list-style: none; padding: 0; gap: 0; counter-reset: s; border-top: 1px solid var(--rule); }
+.summary li { counter-increment: s; display: grid; grid-template-columns: 1.6rem 1fr; gap: 0 0.6rem; padding: 0.85rem 0; border-bottom: 1px solid var(--rule); }
+.summary li::before { content: counter(s); font-family: var(--f-display); font-weight: 600; color: var(--accent); font-size: 1.05rem; line-height: 1.5; }
+.summary li > div { min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.summary .claim { font-weight: 600; }
+
+.callout { background: var(--accent-soft); border-radius: 4px; padding: 0.9rem 1rem; }
+
+.cells { font-size: 0.84rem; color: var(--muted); line-height: 1.45; }
+.cells b { color: var(--ink); font-weight: 600; }
+.tbl { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 0.42rem 0.6rem 0.42rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; font-size: 0.8rem; color: var(--muted); border-bottom: 1.5px solid var(--ink); }
+td.n, th.n { text-align: right; font-family: var(--f-mono); font-size: 0.84rem; padding-right: 0.2rem; padding-left: 0.6rem; }
+tr.total td { font-weight: 600; border-top: 1.5px solid var(--ink); }
+.terms td:first-child { white-space: nowrap; font-weight: 600; padding-right: 1rem; }
+
+.figure { display: flex; flex-direction: column; gap: 0.5rem; }
+.chartbox { overflow-x: auto; }
+.chart { display: block; width: 100%; min-width: 560px; height: auto; font-family: var(--f-body); }
+.chart .lab { font-size: 12.5px; fill: var(--ink); }
+.chart .tick, .chart .val { font-size: 11.5px; fill: var(--muted); font-family: var(--f-mono); }
+.chart .val { fill: var(--ink); }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.chart .axis0 { stroke: var(--ink); stroke-width: 1.2; }
+.chart .bar.neg { fill: var(--accent); fill-opacity: 0.55; }
+.chart .bar.neg.key { fill-opacity: 1; }
+.chart .bar.pos { fill: var(--bar-pos); }
+.chart .whisk { stroke: var(--ink); stroke-width: 1.2; fill: none; }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.split > div { min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+@media (max-width: 640px) {
+  h1 { font-size: 1.65rem; }
+  .split { grid-template-columns: 1fr; }
+  .terms td:first-child { white-space: normal; }
+}
+footer { font-size: 0.85rem; color: var(--muted); }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">plasmofit · within-host dynamics of <i>P. falciparum</i> · 18 October 2026 · draft</div>
+  <h1>Why the model's cycle-length estimates are biased</h1>
+  <p class="lede">What we currently know about why the stage-structured model returns asexual cycle lengths that are too long, which explanations have been tested and ruled out, and what is still open.</p>
+  <p class="meta">Every number names the script and saved output it comes from: repository <code>github.com/lucasnell/plasmofit-test</code>, scripts in <code>_scripts/</code>, outputs in <code>_data/</code> (not tracked). Full working record in <code>claude/findings.md</code>.</p>
+  <div class="legend">
+    <span><span class="chip est">Established</span> direct test, reproduced</span>
+    <span><span class="chip sup">Supported</span> direct test, thin replication or a known caveat</span>
+    <span><span class="chip open">Open</span> not yet tested at the settings that matter</span>
+  </div>
+</header>
+
+<section aria-labelledby="sum">
+  <h2 id="sum">Summary</h2>
+  <ol class="summary">
+    <li><div>
+      <p class="claim">The bias exists. <span class="chip est">Established</span></p>
+      <p>On data simulated from known parameters at the real observation schedules, the model returns a cycle length that is too long: +1.97 h on average over 3 simulated datasets (range +1.14 to +2.58 h, truth 45.01 h), with 96 developmental compartments used both to simulate and to fit. It survives corrected priors (+1.63 to +1.83 h) and is still +1.55 h at 192 compartments.</p>
+    </div></li>
+    <li><div>
+      <p class="claim">Most of it is the cost of estimating the nuisance parameters, and among them only initial synchrony matters. <span class="chip sup">Supported</span></p>
+      <p>With every nuisance parameter held at its true value, the likelihood alone peaks +0.41 h high. Fixing initial synchrony at the truth removes about 0.9–1.0 h; the location of the cycle-length prior (centred at 48 h) accounts for about 0.44 h. The other nuisance parameters contribute nothing. The decisive fixed-synchrony arm has one replicate that passes the convergence gate; a weaker version of the same intervention, on six replicates, agrees in direction.</p>
+    </div></li>
+    <li><div>
+      <p class="claim">The underlying reason is an identification gap. <span class="chip est">Established</span> <span class="chip sup">Supported</span></p>
+      <p>Parasites are first observed 1.6 cycles after inoculation, so the data constrain only the total spread of developmental ages during the observation window, not how it divides between synchrony at inoculation and desynchronisation accumulated since. Initial synchrony is therefore not identified (established), and the fit trades oscillation amplitude against period, so an error in synchrony is partly absorbed by the cycle length (supported).</p>
+    </div></li>
+    <li><div>
+      <p class="claim">A second, separate source: the number of compartments is a biological assumption. <span class="chip est">Established</span> <span class="chip sup">Supported</span></p>
+      <p>It fixes the desynchronisation rate. Because only about the first 40% of each cycle is visible before parasites sequester, the observable period differs from the cycle-length parameter by an amount that depends on the compartment count (0.75 h short at 96, within 0.25 h at 384; established). A compartment count wrong by a factor of two moves the estimate 1.0–1.5 h, and on the real data the estimate fell from 44.24 h to 41.04 h as the count rose from 96 to 384 (supported).</p>
+    </div></li>
+    <li><div>
+      <p class="claim">Ruled out.</p>
+      <p>Solver mismatch, the posterior summary statistic, the prior's width, the parameter bounds, the initial-density prior, the observation-error scale, and two phase-based explanations: period–phase compensation, and excess phase-space volume at periods commensurate with the 12 h sampling grid.</p>
+    </div></li>
+    <li><div>
+      <p class="claim">Not yet known: the size of the bias at the settings now used for the real data. <span class="chip open">Open</span></p>
+      <p>That is 384 compartments with synchrony estimated. A simulation study to measure it is running; its partial read has no readable cell. <strong>The current real-data estimates, 41.3 h and 41.8 h (mean over 13 trials), are uncorrected and should not be reported as final.</strong></p>
+    </div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="terms">
+  <h2 id="terms">The model, and the terms used below</h2>
+  <p>A hierarchical Bayesian ODE model, fitted in Stan through the <code>plasmofit</code> R package, of parasite density (infected red blood cells per mL) in 13 volunteer infection trials: 1130 observations on 177 series. Observations run from 72 h to 216 h after inoculation (1.6 to 4.8 cycles), 4–8 per series, mostly 12 h apart.</p>
+  <div class="tbl"><table class="terms">
+    <thead><tr><th>term</th><th>meaning</th></tr></thead>
+    <tbody>
+      <tr><td>cycle length</td><td>duration of the asexual blood-stage cycle, in hours; one per trial (<code>cycle_length</code>)</td></tr>
+      <tr><td>compartment count</td><td>parasites pass through <code>n_c</code> sequential exponential compartments per cycle, so the time to complete a cycle is Erlang-distributed with coefficient of variation 1/√<code>n_c</code>. After <i>k</i> cycles the spread of developmental age is √(<i>k</i>/<code>n_c</code>) cycles. <code>n_c</code> therefore sets the <strong>desynchronisation rate</strong>, and the model has no separate parameter for it</td></tr>
+      <tr><td>initial synchrony</td><td>concentration of the developmental-age distribution at inoculation; larger means more tightly synchronised (<code>b_shape</code>)</td></tr>
+      <tr><td>initial phase</td><td>median developmental age at inoculation (<code>b_offset</code>)</td></tr>
+      <tr><td>sequestration</td><td>parasites leave circulation from 18.58 h of development, so only the first ~40% of a ~45 h cycle is observable</td></tr>
+      <tr><td>other parameters</td><td>multiplication per cycle (<code>R</code>); log10 initial density (<code>log10_total0</code>); observation-error SD on the log10 scale (<code>sd_iRBC</code>)</td></tr>
+      <tr><td>nuisance parameters</td><td>initial synchrony, initial phase, and the three above: everything except cycle length</td></tr>
+      <tr><td>convergence gate</td><td>a fit counts only if the maximum split R-hat over all parameters is below 1.05</td></tr>
+      <tr><td>elpd</td><td>expected log pointwise predictive density, by PSIS leave-one-out over the 1130 observations; higher is better</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="how">
+  <h2 id="how">How bias is measured</h2>
+  <ol>
+    <li><strong>Simulation and refit.</strong> Simulate data from known parameters at the real observation times and group structure, add observation noise, fit the model, and compare. <strong>Bias</strong> throughout is: for each trial, posterior mean cycle length minus the true cycle length; then the mean over the 13 trials; in hours; positive means too long. Interventions (fix a parameter, move a prior) are refitted to the <strong>same</strong> simulated datasets, so their effects are paired differences. Pairing matters: different noise draws of the same design move the bias by about 1 h, more than most of the effects measured.</li>
+    <li><strong>Prior-free profile likelihood.</strong> Maximum likelihood, with chosen parameters held at the truth, to see where the likelihood itself peaks.</li>
+    <li><strong>Deterministic forward-map checks.</strong> Noiseless trajectories, no estimation, to isolate what is built into the model's arithmetic.</li>
+  </ol>
+</section>
+
+<section aria-labelledby="s1">
+  <h2 id="s1">1. The model overestimates cycle length in simulation</h2>
+  <p>Simulated from the posterior means of a fit that shares one cycle length across all trials (45.01 h), at <code>n_c</code> = 96, under the priors then in use; fitted with the same model.</p>
+  <div class="split">
+    <div>
+      <p class="cells"><b>Cells:</b> bias in hours (mean over 13 trials of posterior mean minus truth); one simulated dataset per row. <code>wockner-schedule-sim.R</code>, <code>wockner-schedule-sim-analyze.R</code> → <code>schedsim-analyze-2026-10-06.txt</code>.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>simulated dataset</th><th class="n">bias</th></tr></thead>
+        <tbody>
+          <tr><td>replicate 1</td><td class="n">+2.58</td></tr>
+          <tr><td>replicate 2</td><td class="n">+1.14</td></tr>
+          <tr><td>replicate 3</td><td class="n">+2.19</td></tr>
+          <tr class="total"><td>mean</td><td class="n">+1.97</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div>
+      <p><strong>It is robust to the choices that might have manufactured it.</strong></p>
+      <ul>
+        <li><strong>Not a solver mismatch.</strong> Simulator and likelihood use different numerical routines; they agree to a maximum relative difference of 5e−13.</li>
+        <li><strong>Not the truth construction.</strong> Simulating from single posterior draws gives +1.68 and +0.86 h, inside the spread (<code>schedsim-analyze.log</code>).</li>
+        <li><strong>Not the posterior summary.</strong> Mean, median, and mode differ by at most 0.09 h (<code>summary-stat-check.log</code>).</li>
+      </ul>
+    </div>
+  </div>
+  <ul>
+    <li><strong>Not the priors since corrected.</strong> With the initial-density and synchrony priors both widened, and data simulated from a fit under those priors, the bias is +1.69 to +2.05 h (mean +1.83, 3 datasets); from the original truth under the same priors, +1.63 h (5 datasets) (<code>schedsim-truthfit-check.R</code> → <code>schedsim-truthfit-check.log</code>).</li>
+    <li><strong>Not specific to <code>n_c</code> = 96.</strong> Simulated and fitted at 192, the bias is +1.55 h (3 datasets; <code>nc-2x2-read.R</code> → <code>nc-2x2-2026-10-07.txt</code>).</li>
+  </ul>
+</section>
+
+<section aria-labelledby="s2">
+  <h2 id="s2">2. Where it comes from: estimating initial synchrony</h2>
+
+  <h3>The likelihood carries about a fifth of it</h3>
+  <p>With every nuisance parameter at its true value and only a common phase shift free, the profile likelihood over cycle length peaks close to the truth.</p>
+  <p class="cells"><b>Cells:</b> hours. "Likelihood peak" is where the prior-free profile likelihood peaks, minus the 45.01 h truth (grid 0.25 h). "Full fit" is the bias of the full Bayesian fit to the same simulated dataset. Paired within a row. <code>phase-volume-test.R</code> → <code>phase-volume-test.log</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>simulated dataset</th><th class="n">likelihood peak</th><th class="n">full fit</th></tr></thead>
+    <tbody>
+      <tr><td>replicate 1</td><td class="n">+0.74</td><td class="n">+2.58</td></tr>
+      <tr><td>replicate 2</td><td class="n">−0.01</td><td class="n">+1.14</td></tr>
+      <tr><td>replicate 3</td><td class="n">+0.49</td><td class="n">+2.19</td></tr>
+      <tr class="total"><td>mean</td><td class="n">+0.41</td><td class="n">+1.97</td></tr>
+    </tbody>
+  </table></div>
+  <p>The likelihood's share varies with the noise draw and tracks the full bias (largest in replicate 1, smallest in replicate 2). The remaining ~1.56 h appears only when the nuisance parameters are estimated.</p>
+
+  <h3>Which nuisance: only initial synchrony</h3>
+  <div class="figure">
+    <p class="cells"><b>Bars:</b> paired change in bias, in hours: the intervention's bias minus the baseline fit's bias on the same simulated dataset, averaged over <i>n</i> pairs in which both fits pass the convergence gate; whiskers span the pairs. Left of zero means the intervention reduces the bias. Baseline bias +1.97 h. Single interventions against a common baseline; they <b>do not add</b>. <code>wockner-schedule-sim-analyze.R</code> → <code>schedsim-analyze-2026-10-05.txt</code>, <code>schedsim-analyze-2026-10-06.txt</code>.</p>
+    <div class="chartbox">
+<svg viewBox="0 0 680 316" role="img" aria-labelledby="bud-t" class="chart"><title id="bud-t">Paired change in simulated cycle-length bias by intervention</title>
+<line x1="335.3" x2="335.3" y1="28" y2="286" class="grid"/>
+<text x="335.3" y="304" class="tick" text-anchor="middle">−1.0</text>
+<line x1="423.5" x2="423.5" y1="28" y2="286" class="grid"/>
+<text x="423.5" y="304" class="tick" text-anchor="middle">−0.5</text>
+<line x1="511.8" x2="511.8" y1="28" y2="286" class="axis0"/>
+<text x="511.8" y="304" class="tick" text-anchor="middle">0</text>
+<line x1="600.0" x2="600.0" y1="28" y2="286" class="grid"/>
+<text x="600.0" y="304" class="tick" text-anchor="middle">+0.5</text>
+<text x="505.8" y="20" class="tick" text-anchor="end">← reduces bias</text>
+<text x="517.8" y="20" class="tick" text-anchor="start">adds →</text>
+<text x="676" y="20" class="tick" text-anchor="end">h · n</text>
+<text x="288" y="52.0" class="lab" text-anchor="end">Synchrony fixed at its true value</text>
+<rect x="349.4" y="41.0" width="162.4" height="14" class="bar neg key"/>
+<text x="676" y="52.0" class="val" text-anchor="end">−0.92 · 1</text>
+<text x="288" y="80.0" class="lab" text-anchor="end">Synchrony prior widened</text>
+<rect x="421.8" y="69.0" width="90.0" height="14" class="bar neg"/>
+<line x1="358.2" x2="471.2" y1="76.0" y2="76.0" class="whisk"/>
+<line x1="358.2" x2="358.2" y1="72.0" y2="80.0" class="whisk"/>
+<line x1="471.2" x2="471.2" y1="72.0" y2="80.0" class="whisk"/>
+<text x="676" y="80.0" class="val" text-anchor="end">−0.51 · 6</text>
+<text x="288" y="108.0" class="lab" text-anchor="end">All nuisance priors widened</text>
+<rect x="430.6" y="97.0" width="81.2" height="14" class="bar neg"/>
+<line x1="321.2" x2="499.4" y1="104.0" y2="104.0" class="whisk"/>
+<line x1="321.2" x2="321.2" y1="100.0" y2="108.0" class="whisk"/>
+<line x1="499.4" x2="499.4" y1="100.0" y2="108.0" class="whisk"/>
+<text x="676" y="108.0" class="val" text-anchor="end">−0.46 · 6</text>
+<text x="288" y="136.0" class="lab" text-anchor="end">Cycle-length prior centred on truth</text>
+<rect x="434.1" y="125.0" width="77.6" height="14" class="bar neg"/>
+<line x1="421.8" x2="460.6" y1="132.0" y2="132.0" class="whisk"/>
+<line x1="421.8" x2="421.8" y1="128.0" y2="136.0" class="whisk"/>
+<line x1="460.6" x2="460.6" y1="128.0" y2="136.0" class="whisk"/>
+<text x="676" y="136.0" class="val" text-anchor="end">−0.44 · 3</text>
+<text x="288" y="164.0" class="lab" text-anchor="end">Cycle-length prior 2.9 h below truth</text>
+<rect x="398.8" y="153.0" width="112.9" height="14" class="bar neg"/>
+<line x1="377.6" x2="421.8" y1="160.0" y2="160.0" class="whisk"/>
+<line x1="377.6" x2="377.6" y1="156.0" y2="164.0" class="whisk"/>
+<line x1="421.8" x2="421.8" y1="156.0" y2="164.0" class="whisk"/>
+<text x="676" y="164.0" class="val" text-anchor="end">−0.64 · 3</text>
+<text x="288" y="192.0" class="lab" text-anchor="end">Hierarchy on cycle length removed</text>
+<rect x="465.9" y="181.0" width="45.9" height="14" class="bar neg"/>
+<line x1="460.6" x2="471.2" y1="188.0" y2="188.0" class="whisk"/>
+<line x1="460.6" x2="460.6" y1="184.0" y2="192.0" class="whisk"/>
+<line x1="471.2" x2="471.2" y1="184.0" y2="192.0" class="whisk"/>
+<text x="676" y="192.0" class="val" text-anchor="end">−0.26 · 2</text>
+<text x="288" y="220.0" class="lab" text-anchor="end">Initial-density prior widened</text>
+<rect x="511.8" y="209.0" width="26.5" height="14" class="bar pos"/>
+<line x1="483.5" x2="587.6" y1="216.0" y2="216.0" class="whisk"/>
+<line x1="483.5" x2="483.5" y1="212.0" y2="220.0" class="whisk"/>
+<line x1="587.6" x2="587.6" y1="212.0" y2="220.0" class="whisk"/>
+<text x="676" y="220.0" class="val" text-anchor="end">+0.15 · 6</text>
+<text x="288" y="248.0" class="lab" text-anchor="end">Error SD fixed at its true value</text>
+<rect x="511.8" y="237.0" width="17.6" height="14" class="bar pos"/>
+<line x1="517.1" x2="543.5" y1="244.0" y2="244.0" class="whisk"/>
+<line x1="517.1" x2="517.1" y1="240.0" y2="248.0" class="whisk"/>
+<line x1="543.5" x2="543.5" y1="240.0" y2="248.0" class="whisk"/>
+<text x="676" y="248.0" class="val" text-anchor="end">+0.10 · 2</text>
+<text x="288" y="276.0" class="lab" text-anchor="end">Bounds moved, width kept</text>
+<rect x="511.8" y="265.0" width="5.3" height="14" class="bar pos"/>
+<text x="676" y="276.0" class="val" text-anchor="end">+0.03 · 4</text>
+</svg>
+    </div>
+  </div>
+  <ul>
+    <li><strong>Fixing synchrony is the largest lever.</strong> Only one of three fixed-synchrony fits passes the gate, which is why <i>n</i> = 1. The other two fail narrowly (R-hat 1.055 and 1.052 after reseeding) and give −1.26 and −0.96 h; all three together average −1.04 h. Fixing a parameter made sampling harder, not easier, which is itself a sign that synchrony was absorbing something.</li>
+    <li><strong>The well-converged corroboration is the widened synchrony prior</strong> (log-scale SD 0.5 → 1.5): six pairs, all negative. Loosening the prior buys about half of what fixing the value buys, a dose–response in the expected direction.</li>
+    <li><strong>No other nuisance moves cycle length.</strong> Widening all nuisance priors does no better than widening the synchrony prior alone; the initial-density prior and the error SD have no effect.</li>
+    <li><strong>Prior location matters more than prior width.</strong> The cycle-length prior is centred at 48 h (motivated by reports of 24 h-multiple cycles under circadian coordination). Widening it barely moves the estimate because its median stays at 48 h; moving its centre to the truth removes 0.44 h, and the effect saturates. A correctly placed prior still leaves +1.53 h.</li>
+  </ul>
+  <p class="callout">Likelihood +0.41 h, synchrony estimation ~0.92 h, and prior location ~0.44 h sum to 1.77 of 1.97 h. The last two overlap (both remove uncertainty), so this says the pieces are the right size to close the budget, not that it decomposes exactly.</p>
+
+  <h3>Why synchrony is not identified <span class="chip est">Established</span></h3>
+  <p>The first observation is 1.6 cycles after inoculation. By then the developmental-age spread is the sum (in quadrature) of the spread at inoculation, set by <code>b_shape</code>, and the spread accumulated since, set by <code>n_c</code>. The data see the total and not the split.</p>
+  <p>From a prior-free likelihood profile over the desynchronisation rate (<code>nc-profile-fast.R</code> → <code>nc-profile-fast-2026-10-09.txt</code>): across settings where the accumulated spread varies 2.0-fold (compartment model) or 4.4-fold (a continuous-age alternative), the fitted <strong>total</strong> spread at the last observation varies by only 12.7% and 23.8% of its mean. The fitted <code>b_shape</code> falls as <code>n_c</code> rises in all 14 trial-by-inoculum units (Spearman correlation −1.00, median over units): the fit holds the total fixed and trades one component against the other.</p>
+  <p>The same gap appears in simulation as attenuation toward ~25.</p>
+  <p class="cells"><b>Cells:</b> <code>b_shape</code> as the mean over the 14 trial-by-inoculum units; true value, and the range over simulated datasets of the posterior mean. <code>schedsim-truthfit-check.log</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>true <code>b_shape</code></th><th class="n">datasets</th><th class="n">recovered</th></tr></thead>
+    <tbody>
+      <tr><td>14.9</td><td class="n">5</td><td class="n">19.5 to 27.9</td></tr>
+      <tr><td>65.0</td><td class="n">3</td><td class="n">32.2 to 37.4</td></tr>
+    </tbody>
+  </table></div>
+  <p>A 4.4-fold change in the truth produces a 1.5-fold change in the estimate. On the real data the posterior for <code>b_shape</code> is barely narrower than its prior (coefficient of variation 0.43 against 0.53), and widening the prior moves the posterior mean from 14.9 to 65.4 (<code>panel-bshape-spread.log</code>).</p>
+
+  <h3>How synchrony error reaches cycle length <span class="chip sup">Supported</span></h3>
+  <p>The model can reproduce an observed oscillation with high amplitude and a short period, or with lower amplitude and a longer one. Synchrony sets amplitude; if it is misjudged, the period adjusts to compensate. On the real data, with <code>n_c</code> fixed, widening the synchrony prior moved the mean cycle length over 13 trials by −0.47 h, and by −1.29 h once the initial-density prior was also corrected (<code>wockner-prior-panel.R</code> → <code>prior-panel.log</code>). These are shifts on real data, where there is no truth, so they show sensitivity, not bias.</p>
+</section>
+
+<section aria-labelledby="s3">
+  <h2 id="s3">3. A second source: the compartment count sets the desynchronisation rate</h2>
+
+  <h3>The observable period is not the cycle-length parameter <span class="chip est">Established</span></h3>
+  <p class="cells"><b>Cells:</b> deterministic, noiseless trajectories with no estimation. The third peak-to-peak interval of the detrended log10 trajectory minus the cycle length that generated it, in hours; negative means the visible oscillation runs short of the parameter. Peaks refined below the 0.25 h grid. <code>nc-period-check.R</code> → <code>nc-period-check-2026-10-07.txt</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th><code>b_shape</code></th><th class="n"><code>n_c</code> = 96</th><th class="n">192</th><th class="n">384</th></tr></thead>
+    <tbody>
+      <tr><td>15</td><td class="n">−0.77</td><td class="n">−0.28</td><td class="n">−0.05</td></tr>
+      <tr><td>400</td><td class="n">−0.74</td><td class="n">−0.14</td><td class="n">+0.24</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Mechanism.</strong> Only parasites younger than 18.58 h circulate, so the visibility window is one-sided. As the age distribution broadens and becomes right-skewed at a rate set by <code>n_c</code>, the centre of the visible subpopulation drifts relative to the true cycle boundary, and the drift reads as a change in period. The intervals shorten from cycle to cycle (44.62, 44.35, 44.24 h at <code>n_c</code> 96, <code>b_shape</code> 15), as this account requires. A fit with too few compartments must therefore lengthen the cycle-length parameter to match an observed period. A competing channel, the coarseness of the sequestration grid at low <code>n_c</code>, has the wrong sign and an eighth of the size (<code>nc-mechanism.R</code> → <code>nc-mechanism-2026-10-07.txt</code>). Matching the whole trajectory by least squares rather than peak intervals, the shift needed over a 96 h window is −1.0 to −2.4 h depending on <code>b_shape</code> and the target <code>n_c</code> (same output).</p>
+
+  <h3>Misspecifying the compartment count moves the estimate both ways</h3>
+  <p class="cells"><b>Cells:</b> bias in hours (mean over 13 trials of posterior mean minus the 45.01 h truth), averaged over simulated datasets that pass the gate (<i>n</i> in brackets). The diagonal is correctly specified. <code>nc-2x2-read.R</code> → <code>nc-2x2-2026-10-07.txt</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th class="n">fitted at <code>n_c</code> 96</th><th class="n">fitted at <code>n_c</code> 192</th></tr></thead>
+    <tbody>
+      <tr><td>simulated at 96</td><td class="n">+1.97 (3)</td><td class="n">+0.93 (3)</td></tr>
+      <tr><td>simulated at 192</td><td class="n">+3.00 (2)</td><td class="n">+1.55 (3)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Fitting with too few compartments adds +1.45 h over the correctly specified fit; too many removes 1.04 h. An assumption about the desynchronisation rate that is wrong by a factor of two moves the estimate by about an hour, in the direction the mechanism predicts.</p>
+
+  <h3>What this did to the real-data estimates <span class="chip sup">Supported</span></h3>
+  <p class="cells"><b>Cells:</b> posterior means, averaged over the 13 trials (cycle length) or the 14 trial-by-inoculum units (<code>b_shape</code>); elpd summed over 1130 observations. <code>b_shape</code> estimated under the widened prior in all three fits. <code>nc-ladder-read.R</code> → <code>nc-ladder-2026-10-06.txt</code>; elpd from <code>nc-ladder-loo.R</code> → <code>nc-ladder-loo-2026-10-18.txt</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th><code>n_c</code></th><th class="n"><code>b_shape</code></th><th class="n">cycle length (h)</th><th class="n">elpd</th><th class="n">max R-hat</th></tr></thead>
+    <tbody>
+      <tr><td>96</td><td class="n">64.45</td><td class="n">44.24</td><td class="n">−926.2</td><td class="n">1.019</td></tr>
+      <tr><td>192</td><td class="n">61.57</td><td class="n">42.07</td><td class="n">−857.6</td><td class="n">1.032</td></tr>
+      <tr><td>384</td><td class="n">25.94</td><td class="n">41.04</td><td class="n">−854.4</td><td class="n">1.055</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cells"><b>Paired elpd differences,</b> higher count minus lower, summed over the 1130 observations, with the standard error of the paired difference in brackets: 192 over 96, +68.6 (9.7); 384 over 96, +71.8 (13.2); 384 over 192, +3.2 (5.0).</p>
+  <p>So 96 is clearly worse, and 192 and 384 are indistinguishable. This is not numerical error: the model's own cross-check puts relative error at 8e−13 at 96, and it grows slightly with <code>n_c</code> (<code>nc-numerical-check-2026-10-06.txt</code>). It is the biology the model assumes, and it holds without priors: a prior-free profile likelihood favours 192 over 96 by 72.4 log-likelihood units summed over the 14 trial-by-inoculum units, with all 14 agreeing (<code>decay-law-read.R</code> → <code>decay-law-read-2026-10-08.txt</code>). The 384 fit sits marginally above the gate; the comparison that carries the conclusion is 96 against 192.</p>
+  <p>Above 384 the estimate stabilises: across the compartment counts within 2 log-likelihood units of the best in the prior-free profile, cycle length spans 40.93 to 41.15 h (<code>nc-profile-fast-2026-10-09.txt</code>). Roughly half to two thirds of the real-data fall from 96 to 192 or 384 compartments is reproduced by the noiseless forward-map effect alone. The remainder is not attributed.</p>
+</section>
+
+<section aria-labelledby="s4">
+  <h2 id="s4">4. One phenomenon, seen twice</h2>
+  <p>Sections 2 and 3 are the same trade-off approached from two sides. The data constrain the total developmental-age spread over the window. How that spread is attributed, to synchrony at inoculation or to desynchronisation since, changes the amplitude the model can produce at each time and how far the visible oscillation's period departs from the cycle-length parameter. The cycle length absorbs the mismatch. With <code>n_c</code> correctly specified, estimating the unidentified synchrony costs about an hour; with <code>n_c</code> misspecified, the fixed desynchronisation rate forces a further error of similar size. Both push in the same direction at the settings this project began with, which is why the early estimates (~45 h) were high.</p>
+  <p>This is the interaction Greischar and Childs (2023, <i>Trends in Parasitology</i> 39(8), doi 10.1016/j.pt.2023.05.006) describe for the parasite multiplication rate: some developmental ages are easier to sample than others, and the age distribution changes over the infection. They report the largest errors in synchronised infections and when the median parasite age is offset from the sampling times by about 12 h. Here 87.8% of within-series sampling intervals are 12 h. Their result concerns multiplication rate and a different estimator, so it motivates a prediction rather than transferring directly: the cycle-length bias should depend on the true initial phase relative to the sampling grid, and should be larger at high synchrony. <span class="chip open">Open</span> Every simulation so far shares one true phase.</p>
+</section>
+
+<section aria-labelledby="s5">
+  <h2 id="s5">5. Explanations tested and ruled out</h2>
+  <p class="cells"><b>Cells:</b> paired change in bias in hours against the baseline fit, as in section 2, or the stated test result. <code>wockner-schedule-sim-analyze.R</code>, <code>summary-stat-check.R</code>, <code>schedsim-phase-period.R</code>, <code>phase-volume-test.R</code>, <code>wockner-schedule-bias-profile.R</code> (<code>wock-schedbias-profile.rds</code>).</p>
+  <div class="tbl"><table>
+    <thead><tr><th>explanation</th><th>test</th><th>result</th></tr></thead>
+    <tbody>
+      <tr><td>simulator and likelihood use different solvers</td><td>maximum relative difference over 150 draws</td><td>5e−13</td></tr>
+      <tr><td>skewed posterior, wrong summary</td><td>mean vs median vs mode</td><td>differ by ≤ 0.09 h</td></tr>
+      <tr><td>cycle-length prior width</td><td>prior variance quadrupled</td><td>−0.15 h</td></tr>
+      <tr><td>bounds on cycle length</td><td>bounds moved, width kept (<i>n</i> = 4)</td><td>+0.03 h</td></tr>
+      <tr><td>initial-density prior, or its trade-off with <code>R</code></td><td>prior widened (<i>n</i> = 6)</td><td>+0.15 h, sign inconsistent</td></tr>
+      <tr><td>observation-error scale</td><td>fixed at truth (<i>n</i> = 2)</td><td>+0.10 h, wrong sign</td></tr>
+      <tr><td>period and initial phase compensate along a ridge</td><td>posterior correlation; phase decomposition</td><td>|r| ≤ 0.16; no ridge</td></tr>
+      <tr><td>more phase-space volume at 48 h, commensurate with the 12 h grid</td><td>profile vs phase-integrated likelihood</td><td>both peak at the same place; volume at 48 h slightly lower</td></tr>
+      <tr><td>sampling schedules alias the likelihood</td><td>per-trial maximum-likelihood estimates</td><td>mean bias −0.20 h, indistinguishable from zero</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="s6">
+  <h2 id="s6">6. What is not yet known</h2>
+  <ol>
+    <li><strong>The bias at production settings.</strong> <span class="chip open">Open</span> Every bias measurement above uses a truth taken from a 96-compartment fit, and none was made at 384 compartments or with the current priors together. A simulation study (SLURM 30875, started 15 October) measures it: two truths (the original, and the converged 384-compartment fit with per-trial cycle lengths 39.4–45.6 h), simulated and fitted at 192 and 384 compartments crossed, true synchrony at 0.5, 1, and 3 times the fitted value, synchrony estimated or fixed at the truth, five datasets per cell. Reading rule, fixed before any fit: a cell needs three datasets passing the gate. <strong>Partial read (96 of 240 fits; <code>simstudy-read.R</code> → <code>simstudy-read-2026-10-18-partial.txt</code>): no cell readable yet.</strong></li>
+    <li><strong>Fixing synchrony at 384 compartments does not sample.</strong> In the same partial read, 23 of 24 fits with synchrony fixed and 384 compartments fail the gate, 20 severely, including fits with synchrony fixed at the true value on data the model generated itself (<code>simstudy-health-2026-10-18.txt</code>). So the fixed-synchrony diagnostic in section 2 cannot be repeated at 384 compartments, and the remaining fits of that arm were cancelled. The comparison of estimated against fixed synchrony will be readable only at 192.</li>
+    <li><strong>Some trials have two likelihood peaks.</strong> With synchrony pinned at 15, the trial MMV048_PIB has profile-likelihood peaks at 38.5 h and 43.0 h, 0.65 log-likelihood units apart (<code>cl-profile.R</code> → <code>cl-profile-read-2026-10-14.txt</code>). This is uncertainty rather than bias, and moving one trial by 4.5 h moves the 13-trial mean by at most 0.35 h.</li>
+    <li><strong>The real-data link between sampling density and cycle length.</strong> In the 96-compartment fits, trials whose series were sampled more sparsely had longer estimated cycles (correlation across 13 trials −0.93 on posterior means; −0.52 within draws, 95% interval −0.85 to +0.14). Simulating every trial from one cycle length reproduces a correlation of −0.19 to −0.89 (7 datasets), so the design manufactures part of it, but none of the 7 reaches the real value (<code>wockner-cl-clustering.R</code>, <code>schedsim-analyze.log</code>). Not re-examined at higher compartment counts.</li>
+  </ol>
+</section>
+
+<section aria-labelledby="s7">
+  <h2 id="s7">Consequences for reported numbers</h2>
+  <ul>
+    <li>The current real-data estimates, mean over 13 trials at 384 compartments, are <strong>41.34 h</strong> with synchrony pinned at 15 (41.29–41.41 h over five runs, one of which passes the gate) and <strong>41.82 h</strong> with synchrony estimated (41.79 and 41.82 h in the two of four runs that pass) (<code>seed-probe-read.R</code> → <code>seed-probe-read-2026-10-15.txt</code>, <code>pin15-pooled-2026-10-14.txt</code>). Neither is corrected for bias, because the bias has not been measured at these settings.</li>
+    <li>Any cycle length from this model is conditional on the compartment count and on how synchrony is handled, and should be reported with that sensitivity rather than as a single number.</li>
+    <li>Correcting the real-data estimates with the 96- and 192-compartment biases places them in the low 40s (40.5–42.3 h; <code>nc-bias-correct.R</code> → <code>nc-bias-correct-2026-10-07.txt</code>). Those biases were measured under different priors and from a truth near 45 h, so this range indicates direction and is not an estimate.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="src">
+  <h2 id="src">Sources</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>claim</th><th>script (<code>_scripts/</code>)</th><th>saved output (<code>_data/</code>)</th></tr></thead>
+    <tbody>
+      <tr><td>baseline simulated bias; intervention chart</td><td><code>wockner-schedule-sim.R</code>, <code>wockner-schedule-sim-analyze.R</code></td><td><code>schedsim-analyze-2026-10-05.txt</code>, <code>schedsim-analyze-2026-10-06.txt</code>, <code>schedsim-analyze.log</code></td></tr>
+      <tr><td>likelihood share of the bias</td><td><code>phase-volume-test.R</code></td><td><code>phase-volume-test.log</code></td></tr>
+      <tr><td>per-trial ML bias near zero</td><td><code>wockner-schedule-bias-profile.R</code></td><td><code>wock-schedbias-profile.rds</code></td></tr>
+      <tr><td>summary statistic ruled out</td><td><code>summary-stat-check.R</code>, <code>wockner-schedule-sim-mode.R</code></td><td><code>summary-stat-check.log</code>, <code>wock-schedsim-mode.rds</code></td></tr>
+      <tr><td>bias under corrected priors; synchrony attenuation</td><td><code>schedsim-truthfit-check.R</code></td><td><code>schedsim-truthfit-check.log</code></td></tr>
+      <tr><td>real-data prior sensitivity</td><td><code>wockner-prior-panel.R</code>, <code>panel-bshape-spread.R</code></td><td><code>prior-panel.log</code>, <code>panel-bshape-spread.log</code></td></tr>
+      <tr><td>compartment-count ladder on real data</td><td><code>nc-ladder-read.R</code>, <code>nc-ladder-loo.R</code>, <code>nc-numerical-check.R</code></td><td><code>nc-ladder-2026-10-06.txt</code>, <code>nc-ladder-loo-2026-10-18.txt</code>, <code>nc-numerical-check-2026-10-06.txt</code></td></tr>
+      <tr><td>compartment count without priors</td><td><code>decay-law-read.R</code></td><td><code>decay-law-read-2026-10-08.txt</code></td></tr>
+      <tr><td>observable period vs parameter</td><td><code>nc-period-check.R</code>, <code>nc-mechanism.R</code></td><td><code>nc-period-check-2026-10-07.txt</code>, <code>nc-mechanism-2026-10-07.txt</code></td></tr>
+      <tr><td>compartment-count misspecification</td><td><code>nc-2x2-read.R</code>, <code>nc-bias-correct.R</code></td><td><code>nc-2x2-2026-10-07.txt</code>, <code>nc-bias-correct-2026-10-07.txt</code></td></tr>
+      <tr><td>total spread fixed; profile over compartment count</td><td><code>nc-profile-fast.R</code>, <code>nc-profile-fast-read.R</code></td><td><code>nc-profile-fast-2026-10-09.txt</code></td></tr>
+      <tr><td>simulation study, partial</td><td><code>simstudy.R</code>, <code>simstudy-read.R</code>, <code>simstudy-health.R</code></td><td><code>simstudy-read-2026-10-18-partial.txt</code>, <code>simstudy-health-2026-10-18.txt</code></td></tr>
+      <tr><td>two-peak trial</td><td><code>cl-profile.R</code>, <code>cl-profile-read.R</code></td><td><code>cl-profile-read-2026-10-14.txt</code></td></tr>
+      <tr><td>current real-data estimates</td><td><code>seed-probe-read.R</code></td><td><code>seed-probe-read-2026-10-15.txt</code>, <code>pin15-pooled-2026-10-14.txt</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>plasmofit · draft of 18 October 2026 · source markdown <code>reports/cycle-length-bias-2026-10-18.md</code></footer>
+</div>
