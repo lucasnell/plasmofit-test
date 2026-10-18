@@ -3995,6 +3995,13 @@ the leapfrog count. That reading divided wall time by a quiet-node
 per-gradient benchmark; measured from saved fits here, it is the other way
 round.
 
+**Consequence, 2026-10-18:** on Lucas's say-so the 192 pending fit `n_c`
+384 chain tasks and 16 that had run 34-70 min were moved to pinned jobs
+31864 and 31865 (`_scripts/simstudy-relayout.sh`, record
+`_data/simstudy/relayout-2026-10-18.txt`), and the pinned layout became a
+standing rule (`CLAUDE.md`). Their per-gradient cost has not been measured
+yet.
+
 ### Seed probe, complete: free `b_shape` passes the gate in 2 of 4 runs, and the passing runs agree
 
 SLURM 30858 tasks 4-6 (free `b_shape`, tuned settings, seeds

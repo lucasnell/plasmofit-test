@@ -22,7 +22,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `simstudy.sh` / `simstudy-merge.sh` | cluster | the 1920-task chain array (runs the frozen copy `_data/simstudy/simstudy-run.R`) and the merge-plus-read job |
 | `simstudy-read.R` | cluster | applies the study's reading rule to the summaries; `SIMSTUDY_SUMGLOB` points it elsewhere |
 | `simstudy-health.R` | cluster | descriptive breakdown of gate failures by method and fit `n_c` (bins chosen after the data; not part of the reading rule) |
-| `simstudy-eta.R` | cluster | replays the remaining chain queue through 96 slots with run times resampled from completed chains, to estimate the finish |
+| `simstudy-eta.R` | cluster | replays the remaining chain queue through 96 slots with run times resampled from completed chains, to estimate the finish. **Stale after the 2026-10-18 relayout** (48 slots plus pinned workers); do not rerun as is |
 | `simstudy-cost.R` | cluster | splits the study's fit `n_c` 384 / 192 chain-time ratio into gradients (`n_leapfrog`) and ms per gradient, from the merged fits |
 | `simstudy-pinned.sh` | cluster | pinned-layout workers for the study: one job's physical cores split into 4-core workers (whole L3 groups first), each running chain tasks from a list, claimed by `mkdir` locks |
 | `simstudy-relayout.sh` | cluster | one-off 2026-10-18: moves the pending fit `n_c` 384 tasks from 30875 into two pinned jobs within the 192-CPU allowance and extends 30876's dependency |

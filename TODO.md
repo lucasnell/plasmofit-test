@@ -13,14 +13,14 @@ match where a thread exists. This file is the actionable layer. -->
 
 - [ ] **SLURM 30875 — simulation study of `cycle_length` bias**, submitted
       2026-10-15. 48 cells × 5 replicates = 240 fits × 8 chains = 1920
-      chain tasks, `--array=1-1920%96`, 2 CPUs and 4G each (192 CPUs: the
+      chain tasks, `--array=1-1920%96` (48 from 2026-10-18), 2 CPUs and 4G each (192 CPUs: the
       75% allowance Lucas gave for this study only). Design and reading rule
       are in the `_scripts/simstudy.R` header: truths A (`pooled_cl`, n_c 96,
       45.012 h) and B (entry 54, n_c 384, per-trial truths); generate × fit
       `n_c` in {192, 384}; true `b_shape` × {0.5, 1, 3}; `b_shape` estimated
       under sd_log_b_shape 1.5 or fixed at the truth. **SLURM 30876** merges
       and runs `simstudy-read.R` once the array ends (`afterany`), writing
-      `_data/simstudy-read-<date>.txt`. Estimated 1-3 days at submission, which was wrong: chains fitting at `n_c` 384 average 12.9-13.6 h, at 192 1.8-1.9 h; the 2026-10-18 replay of the remaining queue (`_scripts/simstudy-eta.R`, `_data/simstudy-eta-2026-10-18.txt`) puts the chain array's end at Tue 2026-10-20 ~18:00 (10-90%: 15:00-22:00), then ~20 min of merging. Tasks run the
+      `_data/simstudy-read-<date>.txt`. Estimated 1-3 days at submission, which was wrong: chains fitting at `n_c` 384 average 12.9-13.6 h, at 192 1.8-1.9 h; the 2026-10-18 replay of the remaining queue (`_scripts/simstudy-eta.R`, `_data/simstudy-eta-2026-10-18.txt`) put the chain array's end at Tue 2026-10-20 ~18:00 (10-90%: 15:00-22:00); **superseded by the 2026-10-18 relayout below** (throttle now 48; the fit `n_c` 384 chains moved to pinned jobs 31864/31865). Tasks run the
       frozen copy `_data/simstudy/simstudy-run.R` (md5 526f217f…, =
       commit `4ab83b9`), so `_scripts/simstudy.R` may be edited; **do not
       reinstall the package until the array ends.** Partial read at any
