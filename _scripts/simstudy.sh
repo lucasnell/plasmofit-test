@@ -1,5 +1,9 @@
 #!/bin/bash
 # Chain tasks for the cycle_length simulation study (_scripts/simstudy.R):
+# DO NOT REUSE THIS LAYOUT (2026-10-18). Packed single-threaded chains ran
+# fit n_c 384 at ~260 ms per gradient against 28 ms pinned. Use the pinned
+# layout (_scripts/simstudy-pinned.sh, _scripts/wockner-fit-pinned.sh).
+#
 # 240 fits x 8 chains = 1920 tasks, one chain each, pinned to one logical CPU
 # of one physical core (2 CPUs = one core and its hyperthread sibling; the
 # sibling is left idle, since siblings slow a chain).

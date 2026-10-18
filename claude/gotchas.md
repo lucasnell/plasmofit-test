@@ -5,6 +5,11 @@
 the last session in `handoff.md`. (These four replaced `claude/CLAUDE.md`
 as the top layer on 2026-10-07.)*
 
+- **ALWAYS use the pinned layout for sampling (repo-root `CLAUDE.md`).**
+  The simulation study packed one single-threaded chain per core, 96 at once,
+  on a quiet-node benchmark's throughput-per-core figure; under that load its
+  `n_c` 384 chains ran ~9x slower per gradient than pinned (260 against 28
+  ms). Benchmark under the load the job will actually see, or just pin.
 - **`.libPaths()` at the top of `wockner-fit.R` points at the cluster library.**
   Locally that path does not exist and the call drops the user library, so
   `library(rstan)` fails. The script is cluster-only as written; neutralize that

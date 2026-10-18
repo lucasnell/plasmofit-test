@@ -47,8 +47,19 @@ match where a thread exists. This file is the actionable layer. -->
       (`claude/ipm-decision.md`): inside the chain it cannot reach the
       dispersion the data want (Erlang floor); outside it, the only forward
       map we have that separates mesh from dispersion is slower per
-      gradient than the chain at 384. Not decided: whether to re-run the
-      pending fit `n_c` 384 chains under the pinned layout.
+      gradient than the chain at 384. **Decided (Lucas): re-run the 192
+      pending fit `n_c` 384 chain tasks under the pinned layout.** Built:
+      `_scripts/simstudy-pinned.sh` (workers of 4 physical cores claim task
+      IDs from `_data/simstudy/pinned-tasks.txt` via `mkdir` locks in
+      `_data/simstudy/claims/`) and `_scripts/simstudy-relayout.sh` (drops
+      30875's throttle to 48, cancels those tasks, submits a 64-CPU and a
+      32-CPU pinned job that wait on enough running 30875 tasks to stay
+      within 192 CPUs, and adds both to 30876's dependency; records to
+      `_data/simstudy/relayout-<date>.txt`). **Not yet run**: the
+      `scontrol`/`scancel`/`sbatch` calls were blocked by the permission
+      classifier, so Lucas runs it. After it runs, check one worker's
+      first-chain log line ("threads, % cpu after 10 min") to confirm 4
+      threads.
 
 ### Next
 

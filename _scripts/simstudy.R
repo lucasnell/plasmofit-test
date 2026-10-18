@@ -41,6 +41,9 @@
 # (thread-bench-read-2026-10-13.txt) gave the best throughput per core with
 # one thread per chain (layout F, 27.1 against 16.0 for one chain per L3
 # group).
+# WRONG UNDER LOAD (2026-10-18): packed 96 at once, fit n_c 384 chains ran at
+# ~260 ms per gradient against 28 ms pinned; re-runs go through
+# _scripts/simstudy-pinned.sh (moved by _scripts/simstudy-relayout.sh). Always use the pinned layout (CLAUDE.md).
 #
 # READING RULE, fixed before any fit ran:
 #   gate      max R-hat < 1.05 over every monitored quantity (NA excluded),

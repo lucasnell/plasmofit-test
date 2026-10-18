@@ -38,6 +38,19 @@ claude/references.md, not as authorship. -->
 
 ## How this project works
 
+> **ALWAYS USE THE PINNED LAYOUT for any Stan sampling** — production fits,
+> simulation studies, reseeds, probes. Each chain is its own process pinned
+> with `taskset` to 4 physical cores of one L3 cache group (one thread per
+> core, hyperthread siblings idle), as `_scripts/wockner-fit-pinned.sh` and
+> `_scripts/simstudy-pinned.sh` do. **Never pack single-threaded chains one
+> per core, and never run several chains unpinned in one process.** Packed
+> single-threaded `n_c` 384 chains ran at ~260 ms per gradient in the
+> simulation study against 28 ms pinned, turning ~1.5 h chains into 13 h
+> (`claude/findings.md`, "Where the simulation study's time goes"); unpinned
+> production ran at 83 ms. A throughput-per-core argument from a quiet-node
+> benchmark is what led to the packed layout; it does not hold under load.
+> (Lucas, 2026-10-18.)
+
 - **Cluster, SLURM.** R is at `/programs/R-4.6.1/bin/Rscript`; the user library
   is only on the login-shell path, so run `bash -lc 'Rscript ...'` or the full
   path. Jobs are array scripts in `_scripts/*.sh`, output to `_data/`.
