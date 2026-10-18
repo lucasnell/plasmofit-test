@@ -3024,14 +3024,17 @@ across `n_c` within a unit, in log-likelihood units, summed over the 14
 | 384 over 96 | +82.8 | 14 of 14 |
 | 384 over 192 | +10.4 | 10 of 14 |
 
-The Bayesian comparison on the same 1130 observations put `n_c` = 96 **71.8
-elpd** (se 13.2) behind 192, with 192 and 384 effectively tied. The ordering,
+The Bayesian comparison on the same 1130 observations put `n_c` = 96 **68.6
+elpd** (se 9.7) behind 192 and 71.8 (se 13.2) behind 384, with 192 and 384
+effectively tied (`_scripts/nc-ladder-loo.R`, `_data/nc-ladder-loo-2026-10-18.txt`;
+corrected 2026-10-18, this line earlier gave 71.8 against 192). The ordering,
 the magnitude and the plateau all reproduce here with no priors, a simplified
 deterministic forward model and a different inferential machine.
 
 Two things that agreement is not. It is **not independent confirmation of the
 number**: an in-sample maximised likelihood and an out-of-sample elpd
-difference are different quantities, and matching to 0.6 units is coincidence.
+difference are different quantities, and their closeness (72.4 against 68.6)
+is coincidence.
 And the per-unit gains are concentrated — `MMV048_PIB|1800` and
 `Piperaquine|1800` contribute +10.2 and +10.8 of the +72.4 while
 `MMV048_PartB|2800` and `OZ439|1800` contribute +0.30 and +0.33 — so the

@@ -513,7 +513,7 @@ Roughly in priority order.
     distribution at t = 0, **1.6 cycles before the first observation**, so it
     is pure backward extrapolation. A dispersion rate would govern change
     WITHIN the observed window instead, so it should be **better** identified
-    than `b_shape`, not worse -- and the 71.8 elpd gap between `n_c` 96 and
+    than `b_shape`, not worse -- and the 68.6 elpd gap between `n_c` 96 and
     192 is direct evidence that the data constrain the within-window amplitude
     trajectory strongly.
     **RESULT, 2026-10-08: the test cannot tell.** All 14 tasks COMPLETED, 9-21
@@ -598,7 +598,7 @@ Roughly in priority order.
     **By-product worth more than the test.** Model A alone is a priors-free
     likelihood profile over `n_c`: 192 beats 96 in **14 of 14 units, summed
     +72.4 log-likelihood units**, and 384 beats 192 in 10 of 14 summed +10.4.
-    The Bayesian elpd gap was 71.8 on the same 1130 observations. Same
+    The Bayesian elpd gap (192 over 96) was 68.6 on the same 1130 observations. Same
     ordering, same magnitude, same plateau, no priors anywhere — so **`n_c` =
     96 being wrong is not a prior artefact**.
     Design and validation, kept because they explain what the numbers mean:

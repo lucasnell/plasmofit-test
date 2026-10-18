@@ -183,6 +183,8 @@ Papers bearing on thread 2, kept here so a search is not repeated.
   with `b_shape` estimated. SLURM 29633, done.
 - `_scripts/nc-ladder-read.R` — reads that ladder: `b_shape`, `cycle_length`,
   sampler health across `n_c`.
+- `_scripts/nc-ladder-loo.R` — paired PSIS-LOO for the same ladder, from the
+  saved LOO objects; output `_data/nc-ladder-loo-<date>.txt`.
 - `_scripts/nc-numerical-check.R` — short probe fits with `run_check = 1`, to
   separate a numerical explanation from a structural one via `max_rel_diff`.
   Answered: structural.

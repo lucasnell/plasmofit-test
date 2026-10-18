@@ -171,7 +171,8 @@ claude/references.md, not as authorship. -->
   +1.97 h; widening its prior removes −0.51 h; `sd_iRBC` and `log10_total0`
   remove none. Of the five nuisances only `b_shape` moves `cycle_length`.
 - **2026-10-06 — `n_c` is a biological assumption, not just a numerical
-  setting, and 96 is wrong.** It predicts 71.8 elpd worse than 192. The effect
+  setting, and 96 is wrong.** It predicts 68.6 elpd worse than 192 (se 9.7)
+  and 71.8 worse than 384 (se 13.2). The effect
   is structural, not arithmetic: `max_rel_diff` is 8e−13 at 96 and *grows*
   with `n_c`, so better arithmetic cannot be the cause.
 - **2026-10-07 — The observable period is not the `cycle_length` parameter.**
