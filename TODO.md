@@ -20,7 +20,7 @@ match where a thread exists. This file is the actionable layer. -->
       `n_c` in {192, 384}; true `b_shape` × {0.5, 1, 3}; `b_shape` estimated
       under sd_log_b_shape 1.5 or fixed at the truth. **SLURM 30876** merges
       and runs `simstudy-read.R` once the array ends (`afterany`), writing
-      `_data/simstudy-read-<date>.txt`. Expected 1-3 days. Tasks run the
+      `_data/simstudy-read-<date>.txt`. Estimated 1-3 days at submission; WRONG: by 2026-10-18 chains fitting at `n_c` 384 averaged 13.3 h (411 done) and at 192 1.85 h (384 done), putting the end near 2026-10-21. Tasks run the
       frozen copy `_data/simstudy/simstudy-run.R` (md5 526f217f…, =
       commit `4ab83b9`), so `_scripts/simstudy.R` may be edited; **do not
       reinstall the package until the array ends.** Partial read at any

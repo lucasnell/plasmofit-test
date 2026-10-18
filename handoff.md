@@ -6,7 +6,7 @@
 SLURM 30875 (1920 chain tasks, 96 at a time) and 30876 (merge plus reader,
 starts when 30875 ends). Details, files, and what not to touch: `TODO.md`,
 "In progress". Design and reading rule: `_scripts/simstudy.R` header.
-Expected 1-3 days. The node allowance for it is 75%, not 50%, by Lucas's
+Estimated 1-3 days at submission, which was wrong: at the 2026-10-18 rate it ends near 2026-10-21 (see `TODO.md`). The node allowance for it is 75%, not 50%, by Lucas's
 temporary exception in `CLAUDE.md`.
 
 **SLURM 30858 read 2026-10-15** (`_data/seed-probe-read-2026-10-15.txt`;
