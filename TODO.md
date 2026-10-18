@@ -29,9 +29,14 @@ match where a thread exists. This file is the actionable layer. -->
       **Partial read 2026-10-18** (96 of 240 fits, reps 1-2;
       `findings.md`, "Simulation study, partial read"): 24 of 96 pass; no
       cell readable yet. Fixed `b_shape` at fit `n_c` 384 fails in 23 of
-      24 fits, 20 severely, even at the truth. Decision pending with Lucas:
-      whether to cancel the 288 remaining fixed-`b_shape` `n_c` 384 chain
-      tasks (reps 3-5; list in `_data/simstudy/fixed384-reps3to5-tasks.txt`).
+      24 fits, 20 severely, even at the truth. **Lucas chose to cancel the
+      still-pending fixed-`b_shape` `n_c` 384 chain tasks** (reps 3-5):
+      207 cancelled 2026-10-18, listed in
+      `_data/simstudy/fixed384-cancelled-2026-10-18.txt`; those already
+      running were left to finish. Those 12 cells will hold 2 replicates
+      plus whatever rep-3+ fits complete all 8 chains; merge skips fits
+      with missing chains, and 30876 still runs (`afterany` counts
+      cancelled tasks as ended).
 
 ### Next
 
