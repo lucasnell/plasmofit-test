@@ -30,13 +30,17 @@ hrs() { awk '{n=split($4,p,/[-:]/); s=0;
               else if (n==3) s=p[1]*3600+p[2]*60+p[3]; else s=p[1]*60+p[2];
               print $1, $2, $3, s}'; }
 
-scontrol update JobId=30875 ArrayTaskThrottle=48
-echo "30875 throttle: $(scontrol show job 30875 | grep -o 'ArrayTaskThrottle=[0-9]*' | head -1)"
+## scontrol reports an error for array tasks that have already finished and
+## exits non-zero although the throttle is set; check the value instead.
+scontrol update JobId=30875 ArrayTaskThrottle=48 || true
+THR=$(scontrol show job 30875 | grep -o 'ArrayTaskThrottle=[0-9]*' | head -1)
+echo "30875 throttle: $THR"
+[ "$THR" = "ArrayTaskThrottle=48" ] || { echo "ERROR: throttle not set; stopping" >&2; exit 1; }
 
 LIST=_data/simstudy/pinned-tasks.txt
 squeue -j 30875 -h -r -t PD -o "%i %M" | cls | awk '$2==384 && $3=="wide" {print $1}' | sort -n > "$LIST"
 echo "pending fit n_c 384 tasks to move: $(wc -l < "$LIST") ($(head -1 "$LIST")-$(tail -1 "$LIST"))"
-scancel $(sed 's/^/30875_/' "$LIST")
+scancel $(sed 's/^/30875_/' "$LIST") || true
 sleep 5
 LEFT=$(squeue -j 30875 -h -r -t PD -o "%i" | sed 's/.*_//' | grep -Fxf "$LIST" | wc -l || true)
 echo "still pending after scancel: $LEFT"
@@ -46,7 +50,7 @@ echo "still pending after scancel: $LEFT"
 ## pinned as well (Lucas, 2026-10-18: the 16 that had run under ~1 h).
 if [ -n "${MOVE_RUNNING:-}" ]; then
     echo "cancelling running tasks to re-run pinned: $MOVE_RUNNING"
-    scancel $(tr ' ' '\n' <<< "$MOVE_RUNNING" | grep -v '^$' | sed 's/^/30875_/')
+    scancel $(tr ' ' '\n' <<< "$MOVE_RUNNING" | grep -v '^$' | sed 's/^/30875_/') || true
     tr ' ' '\n' <<< "$MOVE_RUNNING" | grep -v '^$' >> "$LIST"
     sort -n -u -o "$LIST" "$LIST"
     for i in $(seq 1 24); do
