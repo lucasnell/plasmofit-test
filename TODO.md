@@ -55,13 +55,18 @@ match where a thread exists. This file is the actionable layer. -->
       30875's throttle to 48, cancels those tasks, submits a 64-CPU and a
       32-CPU pinned job that wait on enough running 30875 tasks to stay
       within 192 CPUs, and adds both to 30876's dependency; records to
-      `_data/simstudy/relayout-<date>.txt`). **Not yet run**: the
-      `scontrol`/`scancel`/`sbatch` calls were blocked by the permission
-      classifier, so Lucas runs it, with `MOVE_RUNNING` naming the 16
-      fit `n_c` 384 tasks that had run under ~1 h (929-936, 945-952), which
-      Lucas also chose to move. After it runs, check one worker's
-      first-chain log line ("threads, % cpu after 10 min") to confirm 4
-      threads.
+      `_data/simstudy/relayout-<date>.txt`). **Run by Lucas 2026-10-18
+      13:34** (`_data/simstudy/relayout-2026-10-18.txt`): 30875 throttle
+      48; 192 pending plus 16 running fit `n_c` 384 tasks (929-936,
+      945-952, which had run 34-70 min) cancelled and listed in
+      `_data/simstudy/pinned-tasks.txt` (208); **pinned jobs 31864** (64
+      CPUs, 8 workers; waits on 15 running 30875 tasks) **and 31865** (32
+      CPUs, 4 workers; waits on 31); 30876 now waits on 30875, 31864, and
+      31865. To do once a pinned job has run 10 min: check its log
+      (`_data/simstudy/logs/pin-<job>.out`) for 4 threads, and the first
+      chains' ms per gradient. Finish estimate: ~28 h from start (Mon
+      2026-10-19 evening) if pinned chains run at the 28 ms of entry 43;
+      no better than before (Tue evening) at ~50 ms. Not measured yet.
 
 ### Next
 

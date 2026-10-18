@@ -22,9 +22,10 @@ chains, 1.3-1.7x from more gradients and 6.0-6.8x from cost per gradient,
 ~6.8x worse than one chain per core with few running. The layout, not the
 model, is most of the 13 h. Lucas's proposal of a low `n_c` plus a
 desynchronisation parameter was weighed against `claude/ipm-decision.md`;
-no decision. Lucas chose to move the 192 pending `n_c` 384 chain tasks to
-the pinned layout: `_scripts/simstudy-relayout.sh`, built but not yet run
-(cluster commands need Lucas's permission). **Always use the pinned layout**
+no decision. Lucas moved the 192 pending `n_c` 384 chain tasks, plus 16 that had
+run under ~1 h, to the pinned layout with `_scripts/simstudy-relayout.sh`
+(13:34): pinned jobs 31864 and 31865, 30875 throttled to 48, 30876 waits on
+all three (`TODO.md`). **Always use the pinned layout**
 (`CLAUDE.md`).
 
 **SLURM 30858 read 2026-10-15** (`_data/seed-probe-read-2026-10-15.txt`;

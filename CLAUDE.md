@@ -81,7 +81,8 @@ claude/references.md, not as authorship. -->
 
   **Temporary exception (Lucas, 2026-10-15): the simulation study
   (`_scripts/simstudy.sh`) may use up to 75% of the node, 192 CPUs and
-  773,505 MB** (its throttle is `%96` at 2 CPUs and 4G per task). This applies
+  773,505 MB**: from 2026-10-18, 30875 throttled to 48 tasks × 2 CPUs (96)
+  plus pinned jobs 31864 (64 CPUs) and 31865 (32 CPUs). This applies
   to that study alone; the half-node rule is back in force for everything
   else, and fully once the study ends.
 
