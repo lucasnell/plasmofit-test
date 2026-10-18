@@ -42,6 +42,21 @@ LEFT=$(squeue -j 30875 -h -r -t PD -o "%i" | sed 's/.*_//' | grep -Fxf "$LIST" |
 echo "still pending after scancel: $LEFT"
 [ "$LEFT" -eq 0 ] || { echo "ERROR: some tasks were not cancelled; stopping before submitting" >&2; exit 1; }
 
+## MOVE_RUNNING="id id ...": running fit n_c 384 tasks to cancel and re-run
+## pinned as well (Lucas, 2026-10-18: the 16 that had run under ~1 h).
+if [ -n "${MOVE_RUNNING:-}" ]; then
+    echo "cancelling running tasks to re-run pinned: $MOVE_RUNNING"
+    scancel $(tr ' ' '\n' <<< "$MOVE_RUNNING" | grep -v '^$' | sed 's/^/30875_/')
+    tr ' ' '\n' <<< "$MOVE_RUNNING" | grep -v '^$' >> "$LIST"
+    sort -n -u -o "$LIST" "$LIST"
+    for i in $(seq 1 24); do
+        STILL=$(squeue -j 30875 -h -r -o "%i" | sed 's/.*_//' | grep -Fxf <(tr ' ' '\n' <<< "$MOVE_RUNNING") | wc -l || true)
+        [ "$STILL" -eq 0 ] && break; sleep 5
+    done
+    echo "of those, still in the queue: $STILL; list now $(wc -l < "$LIST") tasks"
+    [ "$STILL" -eq 0 ] || { echo "ERROR: running tasks did not end; stopping before submitting" >&2; exit 1; }
+fi
+
 RUN=$(squeue -j 30875 -h -r -t R -o "%i %M" | cls | hrs | sort -k2,2n -k4,4nr | awk '{print $1}')
 R=$(wc -w <<< "$RUN")
 deps() { local n=$1; [ "$n" -gt 0 ] || return 0

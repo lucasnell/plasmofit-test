@@ -57,7 +57,9 @@ match where a thread exists. This file is the actionable layer. -->
       within 192 CPUs, and adds both to 30876's dependency; records to
       `_data/simstudy/relayout-<date>.txt`). **Not yet run**: the
       `scontrol`/`scancel`/`sbatch` calls were blocked by the permission
-      classifier, so Lucas runs it. After it runs, check one worker's
+      classifier, so Lucas runs it, with `MOVE_RUNNING` naming the 16
+      fit `n_c` 384 tasks that had run under ~1 h (929-936, 945-952), which
+      Lucas also chose to move. After it runs, check one worker's
       first-chain log line ("threads, % cpu after 10 min") to confirm 4
       threads.
 
