@@ -1,0 +1,13 @@
+There were 50 or more warnings (use warnings() to see the first 50)
+Cells: fit n_c 384 chains with a finished chain file, per chain, median
+(range) over chains; gradients in thousands; ms per gradient = chain
+seconds / chain gradients. Unpaired: different simulated datasets.
+
+ layout method chains      k_grads          ms_per_grad              hours
+ packed  fixed    226 205 (70-512)  227.5 (109.7-498.8) 11.87 (5.78-30.05)
+ packed   wide    272  199 (2-505) 249.8 (95.8-22193.6) 12.90 (5.38-29.05)
+ pinned   wide    100 244 (67-512)     45.8 (26.3-94.0)   2.55 (1.26-4.93)
+
+pinned: 100 of 208 chains finished, 108 left (running or unclaimed)
+crude projection: 108 left / 12 workers x 2.55 h median = 22.9 h of pinned work from now
+now 2026-10-19 15:04

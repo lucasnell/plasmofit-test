@@ -25,6 +25,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `simstudy-eta.R` | cluster | replays the remaining chain queue through 96 slots with run times resampled from completed chains, to estimate the finish. **Stale after the 2026-10-18 relayout** (48 slots plus pinned workers); do not rerun as is |
 | `simstudy-cost.R` | cluster | splits the study's fit `n_c` 384 / 192 chain-time ratio into gradients (`n_leapfrog`) and ms per gradient, from the merged fits |
 | `simstudy-pinned.sh` | cluster | pinned-layout workers for the study: one job's physical cores split into 4-core workers (whole L3 groups first), each running chain tasks from a list, claimed by `mkdir` locks |
+| `simstudy-pinned-speed.R` | cluster | per-chain gradients, ms per gradient, and hours for fit `n_c` 384 chains, pinned against packed, from the chain files; crude end projection for the pinned queue |
 | `simstudy-relayout.sh` | cluster | one-off 2026-10-18: moves the pending fit `n_c` 384 tasks from 30875 into two pinned jobs within the 192-CPU allowance and extends 30876's dependency |
 | `wockner-pooling-offset.R` | local | decomposes the no_pool / pooled_cl cycle-length gap from the saved fits |
 | `wockner-cl-clustering.R` | local | tests whether the per-trial cycle_length clustering is real |

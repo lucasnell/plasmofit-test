@@ -7,7 +7,7 @@ SLURM 30875 (1920 chain tasks, 96 at a time, 48 from 2026-10-18), pinned
 jobs 31864 and 31865 (the remaining fit `n_c` 384 chains, from 2026-10-18),
 and 30876 (merge plus reader, starts when all three end). Details, files, and what not to touch: `TODO.md`,
 "In progress". Design and reading rule: `_scripts/simstudy.R` header.
-Estimated 1-3 days at submission, which was wrong: the 2026-10-18 replay of the remaining queue (`_scripts/simstudy-eta.R`, `_data/simstudy-eta-2026-10-18.txt`) put the chain array's end at Tue 2026-10-20 ~18:00 (10-90%: 15:00-22:00). Superseded by the relayout: ~Mon 2026-10-19 evening if pinned chains run at 28 ms per gradient, no better than Tue evening at ~50 ms; not measured yet.
+Estimated 1-3 days at submission, which was wrong: the 2026-10-18 replay of the remaining queue (`_scripts/simstudy-eta.R`, `_data/simstudy-eta-2026-10-18.txt`) put the chain array's end at Tue 2026-10-20 ~18:00 (10-90%: 15:00-22:00). Superseded by the relayout: measured 2026-10-19: pinned chains run at 45.8 ms per gradient (2.55 h each), so the pinned queue ends ~Tue 2026-10-20 14:00 with 12 workers (`TODO.md`).
 
 **Partial read 2026-10-18** (96 of 240 fits; `findings.md`, "Simulation
 study, partial read"): 24 of 96 pass the gate, no cell readable yet.

@@ -37,3 +37,4 @@ simstudy/
 !simstudy-health-*.txt
 !simstudy-eta-*.txt
 !simstudy-cost-*.txt
+!simstudy-pinned-speed-*.txt

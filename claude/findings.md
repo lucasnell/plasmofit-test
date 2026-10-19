@@ -4002,8 +4002,24 @@ round.
 384 chain tasks and 16 that had run 34-70 min were moved to pinned jobs
 31864 and 31865 (`_scripts/simstudy-relayout.sh`, record
 `_data/simstudy/relayout-2026-10-18.txt`), and the pinned layout became a
-standing rule (`CLAUDE.md`). Their per-gradient cost has not been measured
-yet.
+standing rule (`CLAUDE.md`).
+
+**Measured 2026-10-19** (`_scripts/simstudy-pinned-speed.R`, output
+`_data/simstudy-pinned-speed-2026-10-19.txt`). Cells: fit `n_c` 384 chains
+with a chain file still on disk, per chain, median (range) over chains;
+gradients in thousands over warmup and sampling; ms per gradient = chain
+seconds / chain gradients. Unpaired: different simulated datasets.
+
+| layout | method | chains | gradients (k) | ms per gradient | hours |
+|---|---|---|---|---|---|
+| packed (30875) | fixed | 226 | 205 (70-512) | 227.5 (109.7-498.8) | 11.87 (5.78-30.05) |
+| packed (30875) | wide | 272 | 199 (2-505) | 249.8 (95.8-22193.6) | 12.90 (5.38-29.05) |
+| pinned (31864/5) | wide | 100 | 244 (67-512) | 45.8 (26.3-94.0) | 2.55 (1.26-4.93) |
+
+**Pinned is 5.5x faster per gradient and 5.1x per chain**, but slower than
+the 28 ms of entry 43: 10 of the 12 workers got cores split across L3
+groups (Slurm chose the cores), and each chain shows 5 threads at only
+217-273% CPU after 10 min, so 4 threads buy ~2.5 cores of work.
 
 ### Seed probe, complete: free `b_shape` passes the gate in 2 of 4 runs, and the passing runs agree
 

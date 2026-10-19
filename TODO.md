@@ -64,9 +64,13 @@ match where a thread exists. This file is the actionable layer. -->
       CPUs, 4 workers; waits on 31); 30876 now waits on 30875, 31864, and
       31865. To do once a pinned job has run 10 min: check its log
       (`_data/simstudy/logs/pin-<job>.out`) for 4 threads, and the first
-      chains' ms per gradient. Finish estimate: ~28 h from start (Mon
-      2026-10-19 evening) if pinned chains run at the 28 ms of entry 43;
-      no better than before (Tue evening) at ~50 ms. Not measured yet.
+      chains' ms per gradient. **Checked 2026-10-19 15:04**: 5 threads at
+      217-273% CPU; pinned chains median 45.8 ms per gradient and 2.55 h
+      against 249.8 ms and 12.9 h packed (`findings.md`;
+      `_data/simstudy-pinned-speed-2026-10-19.txt`). 100 of 208 done;
+      108 left over 12 workers ~ 23 h, so ~Tue 2026-10-20 14:00. 30875
+      (48 f192 running, 17 pending) ends in a few hours and its 96 CPUs then
+      sit idle unless a third pinned job takes them (not decided).
 
 ### Next
 
