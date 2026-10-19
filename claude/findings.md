@@ -4017,7 +4017,7 @@ seconds / chain gradients. Unpaired: different simulated datasets.
 | pinned (31864/5) | wide | 100 | 244 (67-512) | 45.8 (26.3-94.0) | 2.55 (1.26-4.93) |
 
 **Pinned is 5.5x faster per gradient and 5.1x per chain**, but slower than
-the 28 ms of entry 43: 10 of the 12 workers got cores split across L3
+the 28 ms of entry 43: 8 of the 12 workers got cores split across L3
 groups (Slurm chose the cores), and each chain shows 5 threads at only
 217-273% CPU after 10 min, so 4 threads buy ~2.5 cores of work.
 
