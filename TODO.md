@@ -70,7 +70,11 @@ match where a thread exists. This file is the actionable layer. -->
       `_data/simstudy-pinned-speed-2026-10-19.txt`). 100 of 208 done;
       108 left over 12 workers ~ 23 h, so ~Tue 2026-10-20 14:00. 30875
       (48 f192 running, 17 pending) ends in a few hours and its 96 CPUs then
-      sit idle unless a third pinned job takes them (not decided).
+      sit idle unless a third pinned job takes them. **Lucas submitted it,
+      2026-10-19: pinned job 32391** (96 CPUs, 12 workers, same list),
+      `afterany:30875`; 30876 now waits on 30875, 31864, 31865, and 32391.
+      Rough end: ~Tue 2026-10-20 04:00-05:00 (arithmetic at 2.55 h per
+      chain, not a replay).
 
 ### Next
 
