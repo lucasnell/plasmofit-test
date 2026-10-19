@@ -47,3 +47,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Claude Code worktrees: other checkouts of this repo, never commit them
+.claude/worktrees/
