@@ -3908,6 +3908,74 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Simulation study, full read: 62 of 205 fits pass, 9 of 48 cells readable, and fitting `n_c` 384 gives a shorter cycle length than 192 in all 12 paired replicates
+
+SLURM 30875 (packed chains), 31864, 31865, and 32391 (pinned chains),
+merged and read by 30876 on 2026-10-20. Design and reading rule:
+`_scripts/simstudy.R` header. Output `_data/simstudy-read-2026-10-20-v2.txt`
+(`_scripts/simstudy-read.R`). The job's own `_data/simstudy-read-2026-10-20.txt`
+is identical except that its per-cell ranges are NA, from a reader bug
+(`summarise()` overwrote `bias` before `lo` and `hi` used it), fixed the
+same day. Descriptive health: `_data/simstudy-health-2026-10-20.txt`
+(`_scripts/simstudy-health.R`). 205 of 240 fits merged: the 35 missing are
+the cancelled fixed-`b_shape` fit `n_c` 384 replicates 3-5 (one rep-3 fit
+had all 8 chains before the cancellation).
+
+**Gate.** Cells: fits passing max R-hat < 1.05 (8 chains × 500 draws), of
+fits merged; marginal = 1.05-1.15, severe >= 1.15 (bins chosen after the
+data, descriptive).
+
+| method | fit `n_c` | fits | pass | marginal | severe | median `lp__` spread |
+|---|---|---|---|---|---|---|
+| fixed | 192 | 60 | 16 | 35 | 9 | 9.5 |
+| fixed | 384 | 25 | 1 | 4 | 20 | 66.1 |
+| wide | 192 | 60 | 25 | 29 | 6 | 11.1 |
+| wide | 384 | 60 | 20 | 34 | 6 | 10.5 |
+
+**Readable cells (>= 3 of 5 replicates pass).** Cells: bias = mean over the
+13 trials of (posterior mean `cycle_length` − truth), hours, positive =
+runs long; mean and range over the passing replicates; unpaired across
+cells. `bs_logratio` (wide arm): mean over 14 units of log(posterior mean
+`b_shape` / true `b_shape`), 0 = recovered.
+
+| truth | gen `n_c` | fit `n_c` | `b_shape` × | method | pass | bias | range | `bs_logratio` |
+|---|---|---|---|---|---|---|---|---|
+| A | 192 | 192 | 3 | fixed | 3 | +0.087 | −0.572 to +0.761 | |
+| A | 192 | 192 | 3 | wide | 3 | +1.186 | +0.929 to +1.390 | −0.386 |
+| A | 192 | 384 | 1 | wide | 3 | +0.403 | −0.613 to +1.121 | −0.562 |
+| A | 384 | 384 | 1 | wide | 3 | +0.357 | −0.349 to +0.728 | +0.293 |
+| B | 192 | 192 | 0.5 | wide | 4 | −0.601 | −1.261 to +0.494 | +0.623 |
+| B | 192 | 192 | 1 | wide | 3 | +0.025 | −0.670 to +0.591 | +0.436 |
+| B | 192 | 192 | 3 | fixed | 4 | +0.447 | −0.208 to +1.136 | |
+| B | 192 | 192 | 3 | wide | 3 | +0.728 | +0.179 to +1.285 | −0.028 |
+| B | 384 | 384 | 3 | wide | 3 | +0.603 | +0.386 to +0.835 | +0.058 |
+
+The other 39 cells are NOT READABLE, including **every gen `n_c` 384 /
+fit `n_c` 192 cell**, so the bias of under-specifying `n_c` is not
+measured. Within the readable cells the replicate range is 1-2 h wide and
+crosses zero in 6 of 9, so cells cannot be told apart at 3-4 replicates.
+
+**Paired contrasts** (same simulated data, both fits passing, hours):
+
+- **fit `n_c` 384 − 192: negative in all 12 pairs**, −0.095 to −1.487,
+  mean −0.55, over 9 (truth, gen `n_c`, `b_shape` ×, method)
+  combinations, at both generating `n_c`. A sign test on 12 of 12 gives
+  two-sided p = 0.0005, but the pairs are the fits that passed, which may
+  not be a random sample of replicates.
+- **wide − fixed**: 9 pairs, −0.177 to +1.355; too few to read.
+
+**What it does and does not say.** On identical data, choosing `n_c` 384
+over 192 shortens the fitted cycle length by about half an hour, whichever
+`n_c` generated the data. Bias against the truth is within about ±1.2 h
+in the cells that can be read, positive in 8 of 9, with no
+measurable dependence on true `b_shape` or on how it is fitted. Fixing
+`b_shape` at its true value is not workable at fit `n_c` 384 (1 of 25 pass,
+20 severely, `lp__` spread 66). Estimated `b_shape` (wide arm) lands
+within −0.56 to +0.62 log units of the truth (a factor of 0.57 to 1.86),
+with no clear pattern by true value. Most other failures are marginal and
+often through `lp__` alone; the 500-draw chains likely contribute (not
+tested).
+
 ### Simulation study, partial read: 24 of 96 fits pass, and fixed `b_shape` at fit `n_c` 384 fails almost always
 
 SLURM 30875 (design and reading rule in the `_scripts/simstudy.R` header).

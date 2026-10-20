@@ -11,7 +11,14 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **SLURM 30875 — simulation study of `cycle_length` bias**, submitted
+- [x] **DONE 2026-10-20 — full read** (`findings.md`, "Simulation study,
+      full read"; `_data/simstudy-read-2026-10-20-v2.txt`): 62 of 205 fits
+      pass; 9 of 48 cells readable, none of them gen `n_c` 384 / fit 192;
+      readable biases −0.60 to +1.19 h with replicate ranges 1-2 h wide;
+      **fit `n_c` 384 − 192 negative in all 12 paired replicates, mean
+      −0.55 h**; fixed `b_shape` at fit 384 passes 1 of 25. All jobs ended
+      07:35; the 75% allowance has lapsed. The record of how it ran follows.
+- [x] **SLURM 30875 — simulation study of `cycle_length` bias**, submitted
       2026-10-15. 48 cells × 5 replicates = 240 fits × 8 chains = 1920
       chain tasks, `--array=1-1920%96` (48 from 2026-10-18), 2 CPUs and 4G each (192 CPUs: the
       75% allowance Lucas gave for this study only). Design and reading rule
@@ -38,7 +45,7 @@ match where a thread exists. This file is the actionable layer. -->
       plus any rep-3+ fit whose 8 chains had all finished before the cancellation; merge skips fits
       with missing chains, and 30876 still runs (`afterany` counts
       cancelled tasks as ended).
-- [ ] **Open, 2026-10-18: the study's `n_c` 384 chains run ~7x slower per
+- [x] **Done, 2026-10-18/19: the study's `n_c` 384 chains run ~7x slower per
       gradient than with few chains running** (260 against 38 ms; ~1.8x at 192),
       so most of their 13 h is layout, not model (`findings.md`, "Where the
       simulation study's time goes"; `_data/simstudy-cost-2026-10-18.txt`).
@@ -77,6 +84,13 @@ match where a thread exists. This file is the actionable layer. -->
       chain, not a replay).
 
 ### Next
+
+- [ ] **Decide what to do about the simulation study's unreadable cells**
+      (39 of 48, 2026-10-20). Options, none chosen: refit the marginal
+      failures (max R-hat 1.05-1.15) with 1000 post-warmup draws per chain,
+      pinned, as a pre-registered second stage; report the study as it
+      stands, leading with the paired `n_c` contrast; or a descriptive
+      sensitivity at a looser gate, shown but not used for any number.
 
 - [ ] **Examine the higher-density chains in the two failing free runs**
       (seed 20261013 chain 2, +5.9 to +8.1 `lp__`; seed 20261015 chain 4,

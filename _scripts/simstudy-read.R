@@ -30,9 +30,11 @@ cat("truths, mean 41.82 h. Unpaired across cells.\n\n")
 cells <- S |>
     group_by(truth, gen_nc, fit_nc, bs_scale, method) |>
     summarise(n = n(), n_pass = sum(pass),
-              bias = if (sum(pass) >= 3) mean(bias[pass]) else NA_real_,
+              ## lo and hi before bias: summarise() would otherwise see the
+              ## new one-number bias (the 2026-10-20 job output has NA ranges)
               lo = if (sum(pass) >= 3) min(bias[pass]) else NA_real_,
               hi = if (sum(pass) >= 3) max(bias[pass]) else NA_real_,
+              bias = if (sum(pass) >= 3) mean(bias[pass]) else NA_real_,
               bs_logratio = if (sum(pass) >= 3) mean(bs_logratio[pass]) else NA_real_,
               .groups = "drop") |>
     mutate(across(c(bias, lo, hi, bs_logratio), \(x) round(x, 3)),

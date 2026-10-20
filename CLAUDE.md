@@ -79,13 +79,8 @@ claude/references.md, not as authorship. -->
   | 4 | 48G | 32 | 10 | **10** |
   | 40 | 32G | 3 | 15 | **3** |
 
-  **Temporary exception (Lucas, 2026-10-15): the simulation study
-  (`_scripts/simstudy.sh`) may use up to 75% of the node, 192 CPUs and
-  773,505 MB**: from 2026-10-18, 30875 throttled to 48 tasks × 2 CPUs (96)
-  plus pinned jobs 31864 (64 CPUs) and 31865 (32 CPUs); pinned job 32391
-  (96 CPUs) replaces 30875 when it ends. This applies
-  to that study alone; the half-node rule is back in force for everything
-  else, and fully once the study ends.
+  *A temporary 75% exception for the simulation study (2026-10-15) ended
+  with the study on 2026-10-20; the half-node rule applies to everything.*
 
   No script in `_scripts/` currently needs a throttle — the largest array is
   `wockner-schedule-sim-batch.sh` at 16 tasks × 4 CPUs × 16G = 64 CPUs and
@@ -160,8 +155,8 @@ claude/references.md, not as authorship. -->
   ladder was run at `n_c` = 96. At `n_c` = 384 (2026-10-13) pins from 50 up
   have not converged at default settings, free `b_shape` sits at 12.2, and a
   pin of 15 ties free on elpd; see `claude/findings.md`. On SIMULATED data
-  (2026-10-18, partial), fixed `b_shape` at fit `n_c` 384 fails the gate in
-  23 of 24 fits even at the true value, so the failure is the model's, not
+  (2026-10-20), fixed `b_shape` at fit `n_c` 384 fails the gate in
+  24 of 25 fits even at the true value, so the failure is the model's, not
   the real data's.*
 - **2026-10-04 — The hierarchy question has no robust evidence either way.**
   Design A is mask-dependent (−3.27 at the last third, −0.04 at the last

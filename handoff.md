@@ -2,12 +2,16 @@
 
 ## State of play right now — read this first
 
-**Running (2026-10-15): the simulation study of `cycle_length` bias.**
-SLURM 30875 (1920 chain tasks, 96 at a time, 48 from 2026-10-18), pinned
-jobs 31864 and 31865 (the remaining fit `n_c` 384 chains, from 2026-10-18),
-and 30876 (merge plus reader, starts when all three end). Details, files, and what not to touch: `TODO.md`,
-"In progress". Design and reading rule: `_scripts/simstudy.R` header.
-Estimated 1-3 days at submission, which was wrong: the 2026-10-18 replay of the remaining queue (`_scripts/simstudy-eta.R`, `_data/simstudy-eta-2026-10-18.txt`) put the chain array's end at Tue 2026-10-20 ~18:00 (10-90%: 15:00-22:00). Superseded by the relayout: measured 2026-10-19: pinned chains run at 45.8 ms per gradient (2.55 h each), so the pinned queue would end ~Tue 2026-10-20 14:00 with 12 workers; a third pinned job, 32391 (96 CPUs, starts when 30875 ends), brings that to ~Tue 04:00-05:00 (`TODO.md`).
+**Simulation study of `cycle_length` bias: finished and read 2026-10-20**
+(`findings.md`, "Simulation study, full read";
+`_data/simstudy-read-2026-10-20-v2.txt`). 62 of 205 fits pass the gate and
+9 of 48 cells are readable, none of them the misspecified gen `n_c` 384 /
+fit 192 cells. Readable biases run −0.60 to +1.19 h, with replicate ranges
+1-2 h wide. **Fitting `n_c` 384 instead of 192 shortens `cycle_length` in
+all 12 paired replicates, mean −0.55 h**, at either generating `n_c`.
+Fixed `b_shape` at fit 384 passes 1 of 25. The job's own read file has NA
+ranges from a reader bug, fixed; use `-v2`. Open: what to do about the
+unreadable cells (`TODO.md`). The 75% node allowance has lapsed.
 
 **Partial read 2026-10-18** (96 of 240 fits; `findings.md`, "Simulation
 study, partial read"): 24 of 96 pass the gate, no cell readable yet.

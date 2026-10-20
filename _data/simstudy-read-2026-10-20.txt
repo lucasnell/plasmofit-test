@@ -1,0 +1,240 @@
+fits merged: 205 of 240
+
+=== sampler health over all merged fits ===
+pass the gate (max R-hat < 1.05, 8 chains): 62 of 205
+divergent % of post-warmup transitions: median 1.32, max 13.75
+longest chain, hours: median 2.93, max 30.05; chain-hours in total 8728
+
+=== bias by cell ===
+Cells: bias = mean over 13 trials of (posterior mean cycle_length - truth),
+hours, positive = estimate runs long; mean and range over the replicates
+that pass the gate, n_pass of the replicates merged. NOT READABLE if fewer
+than 3 replicates pass. Truth A: 45.012 h in every trial; truth B: per-trial
+truths, mean 41.82 h. Unpaired across cells.
+
+ truth gen_nc fit_nc bs_scale method n n_pass   bias lo hi bs_logratio         note
+     A    192    192      0.5  fixed 5      2     NA NA NA          NA NOT READABLE
+     A    192    192      0.5   wide 5      2     NA NA NA          NA NOT READABLE
+     A    192    192      1.0  fixed 5      2     NA NA NA          NA NOT READABLE
+     A    192    192      1.0   wide 5      2     NA NA NA          NA NOT READABLE
+     A    192    192      3.0  fixed 5      3  0.087 NA NA          NA             
+     A    192    192      3.0   wide 5      3  1.186 NA NA      -0.386             
+     A    192    384      0.5  fixed 3      0     NA NA NA          NA NOT READABLE
+     A    192    384      0.5   wide 5      1     NA NA NA          NA NOT READABLE
+     A    192    384      1.0  fixed 2      1     NA NA NA          NA NOT READABLE
+     A    192    384      1.0   wide 5      3  0.403 NA NA      -0.562             
+     A    192    384      3.0  fixed 2      0     NA NA NA          NA NOT READABLE
+     A    192    384      3.0   wide 5      2     NA NA NA          NA NOT READABLE
+     A    384    192      0.5  fixed 5      1     NA NA NA          NA NOT READABLE
+     A    384    192      0.5   wide 5      2     NA NA NA          NA NOT READABLE
+     A    384    192      1.0  fixed 5      1     NA NA NA          NA NOT READABLE
+     A    384    192      1.0   wide 5      2     NA NA NA          NA NOT READABLE
+     A    384    192      3.0  fixed 5      2     NA NA NA          NA NOT READABLE
+     A    384    192      3.0   wide 5      2     NA NA NA          NA NOT READABLE
+     A    384    384      0.5  fixed 2      0     NA NA NA          NA NOT READABLE
+     A    384    384      0.5   wide 5      1     NA NA NA          NA NOT READABLE
+     A    384    384      1.0  fixed 2      0     NA NA NA          NA NOT READABLE
+     A    384    384      1.0   wide 5      3  0.357 NA NA       0.293             
+     A    384    384      3.0  fixed 2      0     NA NA NA          NA NOT READABLE
+     A    384    384      3.0   wide 5      1     NA NA NA          NA NOT READABLE
+     B    192    192      0.5  fixed 5      0     NA NA NA          NA NOT READABLE
+     B    192    192      0.5   wide 5      4 -0.601 NA NA       0.623             
+     B    192    192      1.0  fixed 5      1     NA NA NA          NA NOT READABLE
+     B    192    192      1.0   wide 5      3  0.025 NA NA       0.436             
+     B    192    192      3.0  fixed 5      4  0.447 NA NA          NA             
+     B    192    192      3.0   wide 5      3  0.728 NA NA      -0.028             
+     B    192    384      0.5  fixed 2      0     NA NA NA          NA NOT READABLE
+     B    192    384      0.5   wide 5      1     NA NA NA          NA NOT READABLE
+     B    192    384      1.0  fixed 2      0     NA NA NA          NA NOT READABLE
+     B    192    384      1.0   wide 5      2     NA NA NA          NA NOT READABLE
+     B    192    384      3.0  fixed 2      0     NA NA NA          NA NOT READABLE
+     B    192    384      3.0   wide 5      1     NA NA NA          NA NOT READABLE
+     B    384    192      0.5  fixed 5      0     NA NA NA          NA NOT READABLE
+     B    384    192      0.5   wide 5      1     NA NA NA          NA NOT READABLE
+     B    384    192      1.0  fixed 5      0     NA NA NA          NA NOT READABLE
+     B    384    192      1.0   wide 5      1     NA NA NA          NA NOT READABLE
+     B    384    192      3.0  fixed 5      0     NA NA NA          NA NOT READABLE
+     B    384    192      3.0   wide 5      0     NA NA NA          NA NOT READABLE
+     B    384    384      0.5  fixed 2      0     NA NA NA          NA NOT READABLE
+     B    384    384      0.5   wide 5      0     NA NA NA          NA NOT READABLE
+     B    384    384      1.0  fixed 2      0     NA NA NA          NA NOT READABLE
+     B    384    384      1.0   wide 5      2     NA NA NA          NA NOT READABLE
+     B    384    384      3.0  fixed 2      0     NA NA NA          NA NOT READABLE
+     B    384    384      3.0   wide 5      3  0.603 NA NA       0.058             
+
+bs_logratio: wide arm only, mean over 14 units of log(posterior mean b_shape /
+true b_shape); 0 = recovered, negative = estimated too low (less synchronous).
+
+=== paired: wide - fixed, same simulated data and fit_nc ===
+Cells: mean (range) over replicates where both fits pass, hours.
+
+ truth gen_nc fit_nc bs_scale n_pair   mean     lo     hi
+     A    192    192        1      1 -0.027 -0.027 -0.027
+     A    192    192        3      2  0.668  0.479  0.858
+     A    192    384        1      1  1.355  1.355  1.355
+     A    384    192        1      1 -0.177 -0.177 -0.177
+     A    384    192        3      1  0.073  0.073  0.073
+     B    192    192        1      1 -0.159 -0.159 -0.159
+     B    192    192        3      2  0.302  0.289  0.314
+
+=== paired: fit_nc 384 - fit_nc 192, same simulated data and method ===
+Cells: mean (range) over replicates where both fits pass, hours. At gen_nc 192
+this is over-specifying n_c; at gen_nc 384, the correct fit minus the
+under-specified one.
+
+ truth gen_nc bs_scale method n_pair   mean     lo     hi
+     A    192      1.0  fixed      1 -1.487 -1.487 -1.487
+     A    192      1.0   wide      2 -0.228 -0.327 -0.129
+     A    192      3.0   wide      2 -0.448 -0.551 -0.345
+     A    384      0.5   wide      1 -0.405 -0.405 -0.405
+     A    384      1.0   wide      1 -0.703 -0.703 -0.703
+     A    384      3.0   wide      1 -1.191 -1.191 -1.191
+     B    192      0.5   wide      1 -0.260 -0.260 -0.260
+     B    192      1.0   wide      2 -0.382 -0.669 -0.095
+     B    192      3.0   wide      1 -0.437 -0.437 -0.437
+
+=== fits that fail the gate ===
+                         name max_rhat            worst n_rhat_over lp_spread
+ A-g192-f192-bs0.5-fixed-rep1    1.056             lp__           2     9.152
+ A-g192-f192-bs0.5-fixed-rep2    1.069   sigma_logit_cl          12     7.859
+ A-g192-f192-bs0.5-fixed-rep4    1.099    sigma_logit_R           6    16.722
+  A-g192-f192-bs0.5-wide-rep3    1.087             lp__           1    19.251
+  A-g192-f192-bs0.5-wide-rep4    1.093   sigma_logit_cl           4     5.195
+  A-g192-f192-bs0.5-wide-rep5    1.276      sd_iRBC[16]          20    22.065
+ A-g192-f192-bs1.0-fixed-rep3    1.091             lp__           3     8.659
+ A-g192-f192-bs1.0-fixed-rep4    1.088             lp__           2    14.677
+ A-g192-f192-bs1.0-fixed-rep5    1.052   sigma_logit_cl           1     4.614
+  A-g192-f192-bs1.0-wide-rep1    1.055             lp__           1    14.196
+  A-g192-f192-bs1.0-wide-rep3    1.160             lp__           3    21.191
+  A-g192-f192-bs1.0-wide-rep4    1.549  b_shape_free[8]         103    37.745
+ A-g192-f192-bs3.0-fixed-rep1    1.063             lp__           1    11.788
+ A-g192-f192-bs3.0-fixed-rep4    1.131             lp__           3    16.211
+  A-g192-f192-bs3.0-wide-rep2    1.085             lp__           2    13.946
+  A-g192-f192-bs3.0-wide-rep4    1.075             lp__           2    14.885
+ A-g192-f384-bs0.5-fixed-rep1    1.569   b_off_vec[5,2]          11    12.876
+ A-g192-f384-bs0.5-fixed-rep2    3.191        eta_cl[9]          97    43.167
+ A-g192-f384-bs0.5-fixed-rep3    1.113   b_off_vec[5,2]           5     5.013
+  A-g192-f384-bs0.5-wide-rep1    1.061             lp__           1    13.226
+  A-g192-f384-bs0.5-wide-rep2    1.128             lp__           2    13.915
+  A-g192-f384-bs0.5-wide-rep4    1.090             lp__           2    17.650
+  A-g192-f384-bs0.5-wide-rep5    1.065      mu_logit_cl           7     6.782
+ A-g192-f384-bs1.0-fixed-rep2    3.897        eta_cl[9]          97    47.560
+  A-g192-f384-bs1.0-wide-rep3    1.071             lp__           1    17.756
+  A-g192-f384-bs1.0-wide-rep4    1.058    sigma_logit_R           2    12.229
+ A-g192-f384-bs3.0-fixed-rep1    4.324        eta_cl[9]          94    67.139
+ A-g192-f384-bs3.0-fixed-rep2    3.638  cycle_length[1]         108    75.760
+  A-g192-f384-bs3.0-wide-rep1    1.069    sigma_logit_R           2    11.643
+  A-g192-f384-bs3.0-wide-rep2    1.074             lp__           2    12.955
+  A-g192-f384-bs3.0-wide-rep4    1.081             lp__           2    14.540
+ A-g384-f192-bs0.5-fixed-rep1    1.069             lp__           1    14.036
+ A-g384-f192-bs0.5-fixed-rep2    1.562             lp__          55    53.372
+ A-g384-f192-bs0.5-fixed-rep3    1.252      sd_iRBC[20]          30    21.807
+ A-g384-f192-bs0.5-fixed-rep5    1.070             lp__           2    12.847
+  A-g384-f192-bs0.5-wide-rep2    1.054             lp__           1     7.153
+  A-g384-f192-bs0.5-wide-rep4    1.058             lp__           1    12.692
+  A-g384-f192-bs0.5-wide-rep5    1.056   sigma_logit_cl           1    10.465
+ A-g384-f192-bs1.0-fixed-rep1    1.056             lp__           2    10.230
+ A-g384-f192-bs1.0-fixed-rep2    1.061   sigma_logit_cl           1     7.285
+ A-g384-f192-bs1.0-fixed-rep3    1.101             lp__           5    12.758
+ A-g384-f192-bs1.0-fixed-rep4    1.090             lp__           1     7.864
+  A-g384-f192-bs1.0-wide-rep1    1.124      b_offset[2]          26    19.483
+  A-g384-f192-bs1.0-wide-rep2    1.107             lp__           2    17.581
+  A-g384-f192-bs1.0-wide-rep4    1.103             lp__           2    18.541
+ A-g384-f192-bs3.0-fixed-rep1    1.071             lp__           1    14.469
+ A-g384-f192-bs3.0-fixed-rep2    1.058             lp__           1    13.019
+ A-g384-f192-bs3.0-fixed-rep3    1.104             lp__           5    18.935
+  A-g384-f192-bs3.0-wide-rep1    1.135  b_off_vec[13,1]          31    13.323
+  A-g384-f192-bs3.0-wide-rep3    1.298      b_offset[9]          43    27.289
+  A-g384-f192-bs3.0-wide-rep5    1.051             lp__           1     9.474
+ A-g384-f384-bs0.5-fixed-rep1    1.063             lp__           1     7.664
+ A-g384-f384-bs0.5-fixed-rep2    1.274  cycle_length[5]          20     6.544
+  A-g384-f384-bs0.5-wide-rep1    1.187             lp__          13    23.686
+  A-g384-f384-bs0.5-wide-rep2    1.051             lp__           1    10.367
+  A-g384-f384-bs0.5-wide-rep4    1.089   sigma_logit_cl           2    12.040
+  A-g384-f384-bs0.5-wide-rep5    1.088   sigma_logit_cl           6    16.519
+ A-g384-f384-bs1.0-fixed-rep1    1.069             lp__           2    14.130
+ A-g384-f384-bs1.0-fixed-rep2    5.171  cycle_length[9]          71    66.861
+  A-g384-f384-bs1.0-wide-rep1    1.132             lp__           2    25.264
+  A-g384-f384-bs1.0-wide-rep5    1.070             lp__           2    17.877
+ A-g384-f384-bs3.0-fixed-rep1    5.588 cycle_length[13]          50    84.645
+ A-g384-f384-bs3.0-fixed-rep2    7.592  cycle_length[9]          79    71.032
+  A-g384-f384-bs3.0-wide-rep1    1.050    sigma_logit_R           1     5.845
+  A-g384-f384-bs3.0-wide-rep3    1.080   sigma_logit_cl           7    10.736
+  A-g384-f384-bs3.0-wide-rep4    1.099             lp__           2    22.070
+  A-g384-f384-bs3.0-wide-rep5    1.844             lp__          50    62.962
+ B-g192-f192-bs0.5-fixed-rep1    1.172   b_off_vec[2,1]           8     8.524
+ B-g192-f192-bs0.5-fixed-rep2    1.140  cycle_length[2]           6     8.801
+ B-g192-f192-bs0.5-fixed-rep3    1.072             lp__           7     7.548
+ B-g192-f192-bs0.5-fixed-rep4    1.321  cycle_length[4]          11     6.309
+ B-g192-f192-bs0.5-fixed-rep5    1.068             lp__           4    13.425
+  B-g192-f192-bs0.5-wide-rep2    1.112   sigma_logit_cl           6    11.501
+ B-g192-f192-bs1.0-fixed-rep1    1.065             lp__           2     8.553
+ B-g192-f192-bs1.0-fixed-rep3    1.156  cycle_length[2]          11     6.357
+ B-g192-f192-bs1.0-fixed-rep4    1.082  cycle_length[4]           7    10.053
+ B-g192-f192-bs1.0-fixed-rep5    1.058            R[13]           4     6.529
+  B-g192-f192-bs1.0-wide-rep4    1.104             lp__           1    15.056
+  B-g192-f192-bs1.0-wide-rep5    1.125             lp__           2    18.591
+ B-g192-f192-bs3.0-fixed-rep2    1.094        eta_cl[7]           5     7.950
+  B-g192-f192-bs3.0-wide-rep1    1.090             lp__           3    12.170
+  B-g192-f192-bs3.0-wide-rep4    1.086             lp__           2    15.084
+ B-g192-f384-bs0.5-fixed-rep1    1.075             lp__           2     7.679
+ B-g192-f384-bs0.5-fixed-rep2    1.526  cycle_length[2]          24     5.903
+  B-g192-f384-bs0.5-wide-rep2    1.216 cycle_length[13]          24    11.967
+  B-g192-f384-bs0.5-wide-rep3    1.173 cycle_length[13]          15     9.407
+  B-g192-f384-bs0.5-wide-rep4    1.060             lp__           2     8.442
+  B-g192-f384-bs0.5-wide-rep5    1.070  b_off_vec[10,2]           8    10.506
+ B-g192-f384-bs1.0-fixed-rep1    3.528        eta_cl[9]          49    66.075
+ B-g192-f384-bs1.0-fixed-rep2    4.196 cycle_length[12]          89    94.780
+  B-g192-f384-bs1.0-wide-rep3    1.055  cycle_length[2]           3     7.900
+  B-g192-f384-bs1.0-wide-rep4    1.054        eta_cl[7]           3     8.336
+  B-g192-f384-bs1.0-wide-rep5    1.103   sigma_logit_cl           6    10.574
+ B-g192-f384-bs3.0-fixed-rep1    3.400             lp__         130    97.595
+ B-g192-f384-bs3.0-fixed-rep2    6.724   b_off_vec[1,1]          78   104.457
+  B-g192-f384-bs3.0-wide-rep1    1.742   b_off_vec[4,2]          49    57.368
+  B-g192-f384-bs3.0-wide-rep2    1.068   b_off_vec[7,2]           4     4.271
+  B-g192-f384-bs3.0-wide-rep4    1.081             lp__           2    16.055
+  B-g192-f384-bs3.0-wide-rep5    1.060   b_off_vec[9,2]           5     5.549
+ B-g384-f192-bs0.5-fixed-rep1    1.079   b_off_vec[2,1]           7    12.345
+ B-g384-f192-bs0.5-fixed-rep2    1.059  cycle_length[2]           3    10.920
+ B-g384-f192-bs0.5-fixed-rep3    1.093             lp__           8    11.247
+ B-g384-f192-bs0.5-fixed-rep4    1.141             lp__           2    18.125
+ B-g384-f192-bs0.5-fixed-rep5    1.080  cycle_length[4]           8     9.663
+  B-g384-f192-bs0.5-wide-rep1    1.125             lp__           2    23.400
+  B-g384-f192-bs0.5-wide-rep2    1.053   sigma_logit_cl           2     9.420
+  B-g384-f192-bs0.5-wide-rep3    1.053             lp__           1    11.505
+  B-g384-f192-bs0.5-wide-rep4    1.232      sd_iRBC[25]          41    24.443
+ B-g384-f192-bs1.0-fixed-rep1    1.091   b_off_vec[9,2]          16     9.329
+ B-g384-f192-bs1.0-fixed-rep2    1.422  cycle_length[2]          16     8.794
+ B-g384-f192-bs1.0-fixed-rep3    1.065  cycle_length[5]           8    11.743
+ B-g384-f192-bs1.0-fixed-rep4    1.831  cycle_length[4]          22    11.029
+ B-g384-f192-bs1.0-fixed-rep5    1.075   sigma_logit_cl           7    11.541
+  B-g384-f192-bs1.0-wide-rep1    1.087             lp__           1    15.212
+  B-g384-f192-bs1.0-wide-rep2    1.065             lp__           1    11.424
+  B-g384-f192-bs1.0-wide-rep3    1.057             lp__           1     9.879
+  B-g384-f192-bs1.0-wide-rep5    1.951             lp__          20    42.841
+ B-g384-f192-bs3.0-fixed-rep1    1.658  cycle_length[2]          40    19.265
+ B-g384-f192-bs3.0-fixed-rep2    1.066  cycle_length[1]           8     6.869
+ B-g384-f192-bs3.0-fixed-rep3    1.093             lp__           4     8.229
+ B-g384-f192-bs3.0-fixed-rep4    1.174   b_off_vec[4,2]          10     9.633
+ B-g384-f192-bs3.0-fixed-rep5    1.099   b_off_vec[9,2]           6     4.885
+  B-g384-f192-bs3.0-wide-rep1    1.062             lp__           1    10.823
+  B-g384-f192-bs3.0-wide-rep2    1.066             lp__           1    11.900
+  B-g384-f192-bs3.0-wide-rep3    1.105             lp__           2    16.437
+  B-g384-f192-bs3.0-wide-rep4    1.058             lp__           1     6.841
+  B-g384-f192-bs3.0-wide-rep5    1.052             lp__           1     9.336
+ B-g384-f384-bs0.5-fixed-rep1    1.815   b_off_vec[2,1]          35     7.964
+ B-g384-f384-bs0.5-fixed-rep2    1.436  cycle_length[2]          13     7.062
+  B-g384-f384-bs0.5-wide-rep1    1.062             lp__           1    11.104
+  B-g384-f384-bs0.5-wide-rep2    1.089 cycle_length[13]          11    11.505
+  B-g384-f384-bs0.5-wide-rep3    1.095 cycle_length[13]          14     8.591
+  B-g384-f384-bs0.5-wide-rep4    1.940   b_off_vec[2,2]          16    11.216
+  B-g384-f384-bs0.5-wide-rep5    1.075   sigma_logit_cl           4     5.924
+ B-g384-f384-bs1.0-fixed-rep1    2.360             lp__          30    85.683
+ B-g384-f384-bs1.0-fixed-rep2    3.369        eta_cl[9]          31    74.640
+  B-g384-f384-bs1.0-wide-rep1    1.086             lp__           1    11.779
+  B-g384-f384-bs1.0-wide-rep2    1.081             lp__           1    10.536
+  B-g384-f384-bs1.0-wide-rep4    1.068             lp__           2    11.439
+ B-g384-f384-bs3.0-fixed-rep1    3.889             lp__          68   106.852
+ B-g384-f384-bs3.0-fixed-rep2    2.771      sd_iRBC[11]          30    86.612
+  B-g384-f384-bs3.0-wide-rep1    1.056             lp__           1    14.603
+  B-g384-f384-bs3.0-wide-rep3    1.076             lp__           2    11.827
