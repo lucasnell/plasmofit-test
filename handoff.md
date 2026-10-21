@@ -2,6 +2,11 @@
 
 ## State of play right now — read this first
 
+**Start here next session: `TODO.md`, "NEXT SESSION" item** (single-unit
+study design: n = 60 per cell decided; fixed `b_shape` passed 3 of 4 in probe
+32412, `_data/unitsim-read-probe2-2026-10-21.txt`; seeds, fixed-arm settings,
+reading rule, a two-chains-per-L3 benchmark, and a load-balancing test to do).
+
 **New simulation work, 2026-10-21** (`findings.md`, "Second simulation study
 and single-unit study"). Lucas wants fewer fits, each sampled enough to
 converge, always fit at `n_c` 384, with one truth: the posterior means of the
