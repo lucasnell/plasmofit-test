@@ -10,8 +10,8 @@ fit 192 cells. Readable biases run −0.60 to +1.19 h, with replicate ranges
 1-2 h wide. **Fitting `n_c` 384 instead of 192 shortens `cycle_length` in
 all 12 paired replicates, mean −0.55 h**, at either generating `n_c`.
 Fixed `b_shape` at fit 384 passes 1 of 25. The job's own read file has NA
-ranges from a reader bug, fixed; use `-v2`. Open: what to do about the
-unreadable cells (`TODO.md`). The 75% node allowance has lapsed.
+ranges from a reader bug, fixed; use `-v2`. Reported as it stands (Lucas,
+2026-10-21, no second stage): `reports/simstudy-2026-10-21.html`. The 75% node allowance has lapsed.
 
 **Partial read 2026-10-18** (96 of 240 fits; `findings.md`, "Simulation
 study, partial read"): 24 of 96 pass the gate, no cell readable yet.

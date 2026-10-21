@@ -85,12 +85,12 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### Next
 
-- [ ] **Decide what to do about the simulation study's unreadable cells**
-      (39 of 48, 2026-10-20). Options, none chosen: refit the marginal
-      failures (max R-hat 1.05-1.15) with 1000 post-warmup draws per chain,
-      pinned, as a pre-registered second stage; report the study as it
-      stands, leading with the paired `n_c` contrast; or a descriptive
-      sensitivity at a looser gate, shown but not used for any number.
+- [x] **Decided 2026-10-21 (Lucas): report the simulation study as it
+      stands**, no second stage. A 1000-draw refit was costed at ~3.7-7
+      days at the half-node budget (all 180 fits outside the fixed-384 arm,
+      or only the 119 failing ones, the latter with a second-try selection
+      problem). Report: `reports/simstudy-2026-10-21.html` (local, not
+      published).
 
 - [ ] **Examine the higher-density chains in the two failing free runs**
       (seed 20261013 chain 2, +5.9 to +8.1 `lp__`; seed 20261015 chain 4,

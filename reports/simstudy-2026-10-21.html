@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cycle-Length Simulation Study</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1d1f23; --muted: #5d6470; --rule: #d9dde3;
+    --panel: #f5f7f9; --good: #dcefe2; --good-ink: #1f6b3a; --none: #eef0f3;
+    --cancel: #f6efe4; --accent: #2f5d9e; --neg: #b4472f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 28px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 30px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--rule); }
+  p, li { margin: 6px 0; }
+  .sub { color: var(--muted); margin: 0 0 18px; }
+  .cap { color: var(--muted); font-size: 12.5px; margin: 4px 0 8px; }
+  .box { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; }
+  .box ol { margin: 4px 0; padding-left: 20px; }
+  table { border-collapse: collapse; font-size: 13px; margin: 6px 0; }
+  th, td { border: 1px solid var(--rule); padding: 3px 7px; text-align: right; white-space: nowrap; }
+  th { background: var(--panel); font-weight: 600; }
+  td.l, th.l { text-align: left; }
+  .wrap { overflow-x: auto; }
+  .grid td { text-align: center; min-width: 74px; }
+  .grid td.r { background: var(--good); color: var(--good-ink); font-weight: 600; }
+  .grid td.u { background: var(--none); color: var(--muted); }
+  .grid td.c { background: var(--cancel); color: var(--muted); }
+  .grid small { display: block; font-weight: 400; font-size: 11.5px; }
+  code { font: 12.5px ui-monospace, Menlo, Consolas, monospace; background: var(--panel); padding: 0 3px; border-radius: 3px; }
+  svg { display: block; max-width: 100%; height: auto; }
+  svg text { font: 11px -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: var(--fg); }
+  svg .mut { fill: var(--muted); }
+  .legend span { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; margin: 0 4px 0 12px; border: 1px solid var(--rule); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Simulation study of cycle-length bias</h1>
+<p class="sub">Results as they stand, 2026-10-21. All 240 planned fits ran or were cancelled by decision; no second stage. Design and reading rule fixed before any fit ran (<code>_scripts/simstudy.R</code> header).</p>
+
+<div class="box">
+<strong>Bottom line</strong>
+<ol>
+  <li><strong>The fitted <code>n_c</code> moves the cycle length.</strong> On identical simulated data, fitting <code>n_c</code> = 384 instead of 192 gives a shorter <code>cycle_length</code> in <strong>12 of 12</strong> paired replicates: −0.10 to −1.49 h, mean −0.55 h, whichever <code>n_c</code> generated the data.</li>
+  <li><strong>Bias against the truth is within about ±1.2 h</strong> in the 9 cells that can be read, positive in 8 of 9 (−0.60 to +1.19 h). Replicate ranges are 1–2 h wide, so the cells cannot be told apart.</li>
+  <li><strong>Fixing <code>b_shape</code> does not work at fit <code>n_c</code> = 384, even at its true value</strong>: 1 of 25 fits converges. The pin-<code>b_shape</code> strategy settled at <code>n_c</code> = 96 does not carry over.</li>
+  <li><strong>Most of the design is unreadable</strong>: 62 of 205 fits pass the convergence gate, and 39 of 48 cells have fewer than 3 passing replicates. That includes every cell that generates at 384 and fits at 192, so <strong>the bias from under-specifying <code>n_c</code> is not measured</strong>, nor how bias depends on the true <code>b_shape</code> or on how it is fitted.</li>
+</ol>
+</div>
+
+<h2>Design</h2>
+<div class="wrap"><table>
+<tr><th class="l">factor</th><th class="l">levels</th></tr>
+<tr><td class="l">truth</td><td class="l"><strong>A</strong>: posterior means of the <code>n_c</code> = 96 pooled-cycle-length fit, 45.012 h in every trial. <strong>B</strong>: posterior means of the converged <code>n_c</code> = 384 no-pool fit with <code>b_shape</code> estimated (entry 54), per-trial cycle lengths 39.4–45.6 h, mean 41.82 h.</td></tr>
+<tr><td class="l">generate × fit <code>n_c</code></td><td class="l">{192, 384} × {192, 384}, crossed. <code>n_c</code> is the number of Erlang stages in the asexual cycle; it sets how fast a cohort desynchronises.</td></tr>
+<tr><td class="l">true <code>b_shape</code></td><td class="l">the truth fit's per-unit value × {0.5, 1, 3}. <code>b_shape</code> sets how synchronous the parasites are at t = 0 (higher = more synchronous).</td></tr>
+<tr><td class="l"><code>b_shape</code> in the fit</td><td class="l"><strong>estimated</strong> under a wide prior, lognormal(2, 1.5); or <strong>fixed</strong> at the simulated truth (possible only in simulation).</td></tr>
+<tr><td class="l">replicates</td><td class="l">5 noise seeds per cell; simulated data shared across fit <code>n_c</code> and method, so those contrasts are paired.</td></tr>
+<tr><td class="l">fit</td><td class="l">production no-pool model and priors; 8 chains × 500 post-warmup draws (700 warmup).</td></tr>
+<tr><td class="l">rule</td><td class="l">a fit counts only if max R-hat &lt; 1.05 over every quantity. Bias per fit = mean over 13 trials of (posterior mean <code>cycle_length</code> − truth). A cell is read only if ≥ 3 of its replicates pass.</td></tr>
+</table></div>
+<p class="cap">48 cells × 5 replicates = 240 fits. The 36 fixed-<code>b_shape</code>, fit-384 fits of replicates 3–5 were cancelled after replicates 1–2 failed in 23 of 24; one of them had already finished, so 205 fits were merged.</p>
+
+<h2>Convergence</h2>
+<p class="cap">Cells: counts of merged fits. Marginal = max R-hat 1.05–1.15, severe ≥ 1.15 (bins chosen after seeing the data; descriptive only). <code>lp__</code> spread = median over fits of the range of the 8 chains' mean log density.</p>
+<div class="wrap"><table>
+<tr><th class="l"><code>b_shape</code></th><th>fit <code>n_c</code></th><th>fits</th><th>pass</th><th>marginal</th><th>severe</th><th><code>lp__</code> spread</th></tr>
+<tr><td class="l">estimated</td><td>192</td><td>60</td><td>25</td><td>29</td><td>6</td><td>11.1</td></tr>
+<tr><td class="l">estimated</td><td>384</td><td>60</td><td>20</td><td>34</td><td>6</td><td>10.5</td></tr>
+<tr><td class="l">fixed at truth</td><td>192</td><td>60</td><td>16</td><td>35</td><td>9</td><td>9.5</td></tr>
+<tr><td class="l">fixed at truth</td><td>384</td><td>25</td><td>1</td><td>4</td><td>20</td><td><strong>66.1</strong></td></tr>
+</table></div>
+<p>Fixed <code>b_shape</code> at fit 384 fails through chains in separate regions of the posterior (<code>lp__</code> spread 66). Among all severe failures the trial most often worst is EFITA_OZGAM (7), then OZ439 (5). Elsewhere failures are mostly marginal and often through <code>lp__</code> alone; the 500-draw chains, which make split R-hat noisier, likely contribute (not tested).</p>
+
+<h2>Which cells can be read</h2>
+<p class="cap">Cells: passing replicates / replicates merged; for readable cells (green, ≥ 3 pass), the bias: mean over passing replicates of the 13-trial mean (posterior mean − truth), hours, positive = runs long. Beige: fixed-<code>b_shape</code> fit-384 cells capped at 2–3 replicates by the cancellation.</p>
+<div class="wrap"><table class="grid">
+<tr><th class="l" rowspan="2">truth</th><th rowspan="2">generate</th><th rowspan="2">fit</th><th colspan="3"><code>b_shape</code> estimated, true × </th><th colspan="3"><code>b_shape</code> fixed at truth, true × </th></tr>
+<tr><th>0.5</th><th>1</th><th>3</th><th>0.5</th><th>1</th><th>3</th></tr>
+<tr><td class="l">A</td><td>192</td><td>192</td><td class="u">2/5</td><td class="u">2/5</td><td class="r">3/5<small>+1.19</small></td><td class="u">2/5</td><td class="u">2/5</td><td class="r">3/5<small>+0.09</small></td></tr>
+<tr><td class="l">A</td><td>192</td><td>384</td><td class="u">1/5</td><td class="r">3/5<small>+0.40</small></td><td class="u">2/5</td><td class="c">0/3</td><td class="c">1/2</td><td class="c">0/2</td></tr>
+<tr><td class="l">A</td><td>384</td><td>192</td><td class="u">2/5</td><td class="u">2/5</td><td class="u">2/5</td><td class="u">1/5</td><td class="u">1/5</td><td class="u">2/5</td></tr>
+<tr><td class="l">A</td><td>384</td><td>384</td><td class="u">1/5</td><td class="r">3/5<small>+0.36</small></td><td class="u">1/5</td><td class="c">0/2</td><td class="c">0/2</td><td class="c">0/2</td></tr>
+<tr><td class="l">B</td><td>192</td><td>192</td><td class="r">4/5<small>−0.60</small></td><td class="r">3/5<small>+0.03</small></td><td class="r">3/5<small>+0.73</small></td><td class="u">0/5</td><td class="u">1/5</td><td class="r">4/5<small>+0.45</small></td></tr>
+<tr><td class="l">B</td><td>192</td><td>384</td><td class="u">1/5</td><td class="u">2/5</td><td class="u">1/5</td><td class="c">0/2</td><td class="c">0/2</td><td class="c">0/2</td></tr>
+<tr><td class="l">B</td><td>384</td><td>192</td><td class="u">1/5</td><td class="u">1/5</td><td class="u">0/5</td><td class="u">0/5</td><td class="u">0/5</td><td class="u">0/5</td></tr>
+<tr><td class="l">B</td><td>384</td><td>384</td><td class="u">0/5</td><td class="u">2/5</td><td class="r">3/5<small>+0.60</small></td><td class="c">0/2</td><td class="c">0/2</td><td class="c">0/2</td></tr>
+</table></div>
+<p class="legend cap"><span style="background:var(--good)"></span>readable <span style="background:var(--none)"></span>fewer than 3 pass <span style="background:var(--cancel)"></span>replicates 3–5 cancelled</p>
+
+<h2>Bias in the readable cells</h2>
+<p class="cap">Cells: bias = mean over the 13 trials of (posterior mean <code>cycle_length</code> − true <code>cycle_length</code>), hours, positive = runs long; mean and range over the replicates that pass. <code>b_shape</code> recovery (estimated arm) = mean over 14 units of log(posterior mean / truth), 0 = recovered. Unpaired across rows.</p>
+<div class="wrap"><table>
+<tr><th class="l">truth</th><th>generate</th><th>fit</th><th>true <code>b_shape</code> ×</th><th class="l"><code>b_shape</code></th><th>pass</th><th>bias, h</th><th>range, h</th><th><code>b_shape</code> recovery</th></tr>
+<tr><td class="l">A</td><td>192</td><td>192</td><td>3</td><td class="l">fixed</td><td>3</td><td>+0.09</td><td>−0.57 to +0.76</td><td></td></tr>
+<tr><td class="l">A</td><td>192</td><td>192</td><td>3</td><td class="l">estimated</td><td>3</td><td>+1.19</td><td>+0.93 to +1.39</td><td>−0.39</td></tr>
+<tr><td class="l">A</td><td>192</td><td>384</td><td>1</td><td class="l">estimated</td><td>3</td><td>+0.40</td><td>−0.61 to +1.12</td><td>−0.56</td></tr>
+<tr><td class="l">A</td><td>384</td><td>384</td><td>1</td><td class="l">estimated</td><td>3</td><td>+0.36</td><td>−0.35 to +0.73</td><td>+0.29</td></tr>
+<tr><td class="l">B</td><td>192</td><td>192</td><td>0.5</td><td class="l">estimated</td><td>4</td><td>−0.60</td><td>−1.26 to +0.49</td><td>+0.62</td></tr>
+<tr><td class="l">B</td><td>192</td><td>192</td><td>1</td><td class="l">estimated</td><td>3</td><td>+0.03</td><td>−0.67 to +0.59</td><td>+0.44</td></tr>
+<tr><td class="l">B</td><td>192</td><td>192</td><td>3</td><td class="l">fixed</td><td>4</td><td>+0.45</td><td>−0.21 to +1.14</td><td></td></tr>
+<tr><td class="l">B</td><td>192</td><td>192</td><td>3</td><td class="l">estimated</td><td>3</td><td>+0.73</td><td>+0.18 to +1.29</td><td>−0.03</td></tr>
+<tr><td class="l">B</td><td>384</td><td>384</td><td>3</td><td class="l">estimated</td><td>3</td><td>+0.60</td><td>+0.39 to +0.84</td><td>+0.06</td></tr>
+</table></div>
+<p>Ranges cross zero in 6 of 9 cells. Estimated <code>b_shape</code> lands within a factor of 0.57 to 1.86 of the truth, with no pattern by true value.</p>
+
+<h2>Paired contrasts</h2>
+<p class="cap">Each dot is one replicate: the difference in 13-trial mean posterior <code>cycle_length</code>, hours, between two fits of the <em>same</em> simulated dataset, both passing the gate. Dashed line: mean over dots.</p>
+
+<p><strong>Fit <code>n_c</code> 384 − fit <code>n_c</code> 192</strong> (12 pairs). At generate 192 this over-specifies <code>n_c</code>; at generate 384 it is the correct fit minus the under-specified one.</p>
+<svg viewBox="0 0 640 200" role="img" aria-label="Dot plot: fit n_c 384 minus 192, all 12 paired differences negative, mean -0.55 h">
+  <line x1="410" y1="4" x2="410" y2="172" stroke="#9aa1ab"/>
+  <line x1="337.8" y1="4" x2="337.8" y2="172" stroke="#b4472f" stroke-dasharray="4 3"/>
+  <g class="lab">
+    <text x="195" y="18" text-anchor="end">A · gen 192 · ×1 · fixed</text>
+    <text x="195" y="36" text-anchor="end">A · gen 192 · ×1 · estimated</text>
+    <text x="195" y="54" text-anchor="end">A · gen 192 · ×3 · estimated</text>
+    <text x="195" y="72" text-anchor="end">A · gen 384 · ×0.5 · estimated</text>
+    <text x="195" y="90" text-anchor="end">A · gen 384 · ×1 · estimated</text>
+    <text x="195" y="108" text-anchor="end">A · gen 384 · ×3 · estimated</text>
+    <text x="195" y="126" text-anchor="end">B · gen 192 · ×0.5 · estimated</text>
+    <text x="195" y="144" text-anchor="end">B · gen 192 · ×1 · estimated</text>
+    <text x="195" y="162" text-anchor="end">B · gen 192 · ×3 · estimated</text>
+  </g>
+  <g stroke="#e3e6ea"><line x1="200" y1="14" x2="620" y2="14"/><line x1="200" y1="32" x2="620" y2="32"/><line x1="200" y1="50" x2="620" y2="50"/><line x1="200" y1="68" x2="620" y2="68"/><line x1="200" y1="86" x2="620" y2="86"/><line x1="200" y1="104" x2="620" y2="104"/><line x1="200" y1="122" x2="620" y2="122"/><line x1="200" y1="140" x2="620" y2="140"/><line x1="200" y1="158" x2="620" y2="158"/></g>
+  <g fill="#2f5d9e">
+    <circle cx="214.8" cy="14" r="4.5"/>
+    <circle cx="367.1" cy="32" r="4.5"/><circle cx="393.1" cy="32" r="4.5"/>
+    <circle cx="337.7" cy="50" r="4.5"/><circle cx="364.7" cy="50" r="4.5"/>
+    <circle cx="356.8" cy="68" r="4.5"/>
+    <circle cx="317.7" cy="86" r="4.5"/>
+    <circle cx="253.7" cy="104" r="4.5"/>
+    <circle cx="375.9" cy="122" r="4.5"/>
+    <circle cx="322.2" cy="140" r="4.5"/><circle cx="397.5" cy="140" r="4.5"/>
+    <circle cx="352.6" cy="158" r="4.5"/>
+  </g>
+  <line x1="200" y1="172" x2="620" y2="172" stroke="#9aa1ab"/>
+  <g class="mut" text-anchor="middle">
+    <text x="213.1" y="187">−1.5</text><text x="278.8" y="187">−1.0</text><text x="344.4" y="187">−0.5</text><text x="410" y="187">0</text><text x="475.6" y="187">+0.5</text><text x="541.3" y="187">+1.0</text><text x="606.9" y="187">+1.5</text>
+  </g>
+  <text x="620" y="199" text-anchor="end" class="mut">hours (mean −0.55)</text>
+</svg>
+<p>All 12 negative, so a sign test gives two-sided p = 0.0005. The caveat is selection: only pairs in which both fits passed are shown, and passing may not be independent of the estimate.</p>
+
+<p><strong><code>b_shape</code> estimated − fixed at truth</strong> (9 pairs), same fit <code>n_c</code>.</p>
+<svg viewBox="0 0 640 164" role="img" aria-label="Dot plot: b_shape estimated minus fixed, 6 of 9 positive, mean +0.33 h">
+  <line x1="410" y1="4" x2="410" y2="136" stroke="#9aa1ab"/>
+  <line x1="453.8" y1="4" x2="453.8" y2="136" stroke="#b4472f" stroke-dasharray="4 3"/>
+  <g>
+    <text x="195" y="18" text-anchor="end">A · gen 192 · fit 192 · ×1</text>
+    <text x="195" y="36" text-anchor="end">A · gen 192 · fit 192 · ×3</text>
+    <text x="195" y="54" text-anchor="end">A · gen 192 · fit 384 · ×1</text>
+    <text x="195" y="72" text-anchor="end">A · gen 384 · fit 192 · ×1</text>
+    <text x="195" y="90" text-anchor="end">A · gen 384 · fit 192 · ×3</text>
+    <text x="195" y="108" text-anchor="end">B · gen 192 · fit 192 · ×1</text>
+    <text x="195" y="126" text-anchor="end">B · gen 192 · fit 192 · ×3</text>
+  </g>
+  <g stroke="#e3e6ea"><line x1="200" y1="14" x2="620" y2="14"/><line x1="200" y1="32" x2="620" y2="32"/><line x1="200" y1="50" x2="620" y2="50"/><line x1="200" y1="68" x2="620" y2="68"/><line x1="200" y1="86" x2="620" y2="86"/><line x1="200" y1="104" x2="620" y2="104"/><line x1="200" y1="122" x2="620" y2="122"/></g>
+  <g fill="#2f5d9e">
+    <circle cx="406.5" cy="14" r="4.5"/>
+    <circle cx="472.9" cy="32" r="4.5"/><circle cx="522.6" cy="32" r="4.5"/>
+    <circle cx="587.8" cy="50" r="4.5"/>
+    <circle cx="386.8" cy="68" r="4.5"/>
+    <circle cx="419.6" cy="86" r="4.5"/>
+    <circle cx="389.1" cy="104" r="4.5"/>
+    <circle cx="447.9" cy="122" r="4.5"/><circle cx="451.2" cy="122" r="4.5"/>
+  </g>
+  <line x1="200" y1="136" x2="620" y2="136" stroke="#9aa1ab"/>
+  <g class="mut" text-anchor="middle">
+    <text x="213.1" y="151">−1.5</text><text x="278.8" y="151">−1.0</text><text x="344.4" y="151">−0.5</text><text x="410" y="151">0</text><text x="475.6" y="151">+0.5</text><text x="541.3" y="151">+1.0</text><text x="606.9" y="151">+1.5</text>
+  </g>
+  <text x="620" y="163" text-anchor="end" class="mut">hours (mean +0.33)</text>
+</svg>
+<p>6 of 9 positive, −0.18 to +1.36 h. The direction matches the earlier attribution of simulated bias to estimating <code>b_shape</code> (2026-10-06, at <code>n_c</code> 96), but nine pairs cannot confirm it.</p>
+
+<h2>What this means for the analysis</h2>
+<ul>
+  <li><strong>A reported cycle length must state its <code>n_c</code>.</strong> On simulated data, moving the fit from 192 to 384 moves it by about half an hour on identical data, comparable to the bias itself.</li>
+  <li><strong>Which <code>n_c</code> is less biased is not answered.</strong> The cells that would show the cost of under-specifying (generate 384, fit 192) are all unreadable, and the readable diagonal cells overlap.</li>
+  <li><strong>At <code>n_c</code> = 384, <code>b_shape</code> has to be estimated.</strong> Fixing it fails even at the truth, so the failures of pinned real-data fits at 384 are what the model does when it is correctly specified, not a sign of misfit to the real data.</li>
+  <li><strong>No bias correction can be read from this study.</strong> Biases of −0.6 to +1.2 h, with replicate ranges of 1–2 h, do not pin down a correction for the real-data estimates (41.2–41.8 h).</li>
+</ul>
+
+<h2>Not measured, and caveats</h2>
+<ul>
+  <li>Bias from under-specifying <code>n_c</code>; dependence of bias on the true <code>b_shape</code>; the cost of estimating rather than fixing <code>b_shape</code>.</li>
+  <li>Truth A comes from an <code>n_c</code> = 96 fit, which is known to be the wrong <code>n_c</code>; its parameters are used only as a plausible generating point.</li>
+  <li>500 draws per chain, half the production length, chosen to keep 4,000 total draws over 8 chains. A second stage with 1,000 draws was costed (about 4–7 days at the half-node budget) and not run.</li>
+  <li>Paired contrasts include only pairs where both fits passed.</li>
+</ul>
+
+<h2>Sources</h2>
+<p class="cap">Repository <code>plasmofit-test</code>. All numbers on this page come from these outputs.</p>
+<div class="wrap"><table>
+<tr><th class="l">what</th><th class="l">script</th><th class="l">output</th></tr>
+<tr><td class="l">design, reading rule, fits, merge</td><td class="l"><code>_scripts/simstudy.R</code></td><td class="l"><code>_data/simstudy/</code> (fits and one-row summaries)</td></tr>
+<tr><td class="l">cell biases, paired contrasts</td><td class="l"><code>_scripts/simstudy-read.R</code></td><td class="l"><code>_data/simstudy-read-2026-10-20-v2.txt</code></td></tr>
+<tr><td class="l">convergence bins, pass counts by cell</td><td class="l"><code>_scripts/simstudy-health.R</code></td><td class="l"><code>_data/simstudy-health-2026-10-20.txt</code></td></tr>
+<tr><td class="l">running record and full write-up</td><td class="l" colspan="2"><code>claude/findings.md</code>, "Simulation study, full read"</td></tr>
+</table></div>
+<p class="cap">SLURM 30875 (chains), 31864, 31865, and 32391 (chains in the pinned layout), 30876 (merge and read), 2026-10-15 to 2026-10-20. The job's own read file, <code>_data/simstudy-read-2026-10-20.txt</code>, has NA ranges from a reader bug fixed on 2026-10-20; its means are identical to the -v2 output.</p>
+
+</main>
+</body>
+</html>
