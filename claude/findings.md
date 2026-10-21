@@ -3910,6 +3910,9 @@ before the run. Read with `_scripts/cl-profile-read.R`.
 
 ### Simulation study, full read: 62 of 205 fits pass, 9 of 48 cells readable, and fitting `n_c` 384 gives a shorter cycle length than 192 in all 12 paired replicates
 
+Report for Lucas, statistics explained: `reports/simstudy-2026-10-21.html`,
+published privately at https://claude.ai/artifact/7seQba92rjtufpQgHxWn3H.
+
 SLURM 30875 (packed chains), 31864, 31865, and 32391 (pinned chains),
 merged and read by 30876 on 2026-10-20. Design and reading rule:
 `_scripts/simstudy.R` header. Output `_data/simstudy-read-2026-10-20-v2.txt`

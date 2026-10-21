@@ -20,7 +20,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-kfold-analyze.R` | local | reads the saved kfold summaries and reports fold-to-fold stability |
 | `simstudy.R` | cluster | 2026-10-15 simulation study of `cycle_length` bias (48 cells × 5 reps); modes `chain` (one chain per array task), `merge` (fits plus one-row summaries), `check` (no sampling); design and reading rule in its header. Outputs in `_data/simstudy/`: `chain-<name>-c<k>.rds`, `fit-<name>.rds`, `sum-<name>.rds`; `smoke-*` files are the 20-iteration smoke test |
 | `simstudy.sh` / `simstudy-merge.sh` | cluster | the 1920-task chain array (runs the frozen copy `_data/simstudy/simstudy-run.R`) and the merge-plus-read job |
-| `simstudy-read.R` | cluster | applies the study's reading rule to the summaries; `SIMSTUDY_SUMGLOB` points it elsewhere |
+| `simstudy-read.R` | cluster | applies the study's reading rule to the summaries; `SIMSTUDY_SUMGLOB` points it elsewhere. Per-cell ranges were NA before the 2026-10-20 fix; use `_data/simstudy-read-2026-10-20-v2.txt` |
 | `simstudy-health.R` | cluster | descriptive breakdown of gate failures by method and fit `n_c` (bins chosen after the data; not part of the reading rule) |
 | `simstudy-eta.R` | cluster | replays the remaining chain queue through 96 slots with run times resampled from completed chains, to estimate the finish. **Stale after the 2026-10-18 relayout** (48 slots plus pinned workers); do not rerun as is |
 | `simstudy-cost.R` | cluster | splits the study's fit `n_c` 384 / 192 chain-time ratio into gradients (`n_leapfrog`) and ms per gradient, from the merged fits |

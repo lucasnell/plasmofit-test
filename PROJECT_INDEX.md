@@ -83,6 +83,9 @@ mask is appropriate. The convergence gate is max R-hat < 1.05.
   `reports/cycle-length-bias-2026-10-18.md` (markdown for Google Docs
   import) and `.html`, published privately at
   https://claude.ai/artifact/4z8jeubKob6e341xXayFcK (version 1)
+- Simulation study report (2026-10-21, for Lucas, statistics explained):
+  `reports/simstudy-2026-10-21.html`, published privately at
+  https://claude.ai/artifact/7seQba92rjtufpQgHxWn3H
 - Age-structure design decision and the validated prototype: `claude/ipm-decision.md`
 - Prior art on the same confound: Greischar & Childs (2023) *Trends
   Parasitol* 39(8). PDFs at the repo root as `mmcm.pdf` / `mmc1.pdf`,

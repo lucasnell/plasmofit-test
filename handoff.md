@@ -1,4 +1,4 @@
-# Handoff — 2026-10-13
+# Handoff — 2026-10-21
 
 ## State of play right now — read this first
 

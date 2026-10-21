@@ -114,7 +114,11 @@ match where a thread exists. This file is the actionable layer. -->
 - [ ] **Decide the `n_c` default.** The ML profile says `cycle_length` is
       stable at **40.93–41.15 h once `n_c` >= 384** and the gains beyond 512
       are under 1.3 ll units over 1130 observations, so the choice is between
-      384 and 512 on cost. 96 and 192 are out.
+      384 and 512 on cost. 96 and 192 are out. The simulation study
+      (2026-10-20) adds that on identical simulated data, fitting 384
+      instead of 192 shortens `cycle_length` by 0.55 h on average (12 of 12
+      paired replicates), and that `b_shape` cannot be fixed at 384 even at
+      its true value; it does not say which `n_c` is less biased.
 - [x] **Nothing to install.** `conv_series()` was added, measured, and removed
       again (`bba580f`); the package is byte-identical to `8dde0c1`, which is
       what is already in the live library. No reinstall is needed and the
@@ -208,7 +212,9 @@ match where a thread exists. This file is the actionable layer. -->
 - [ ] **Decide what cycle-length number to report, and with what
       qualifications.** It is conditional on the `b_shape` pin *and* now on
       `n_c`. Bias-corrected estimates sit in the low 40s under either
-      hypothesis about the true `n_c`.
+      hypothesis about the true `n_c`. The 2026-10-20 simulation study gives
+      no usable correction at `n_c` 192 or 384 (readable biases −0.60 to
+      +1.19 h, replicate ranges 1-2 h wide; `reports/simstudy-2026-10-21.html`).
 
 ### Blocked
 
