@@ -2,6 +2,27 @@
 
 ## State of play right now — read this first
 
+**New simulation work, 2026-10-21** (`findings.md`, "Second simulation study
+and single-unit study"). Lucas wants fewer fits, each sampled enough to
+converge, always fit at `n_c` 384, with one truth: the posterior means of the
+real-data fit `np_wide_total0_nc384_t` (`no_pool`, `n_c` 384, `b_shape`
+estimated under lognormal(2, 0.5), tuned sampler; 41.815 h). Data generated
+at `n_c` 384 and 1024 (at 1024 `b_shape` lowered to keep the total stage
+spread). Two instruments:
+
+- **Single-unit study, running first** (`_scripts/unitsim.R`): one `grp_init`
+  unit's series fitted alone with `pooled_both`. **Timing probe SLURM 32409**
+  (MMV048_PIB.1800 and Mefloquine.1800, 4 chains each) submitted 15:22.
+  Merge and read cost when it ends (`TODO.md`), then agree the design.
+- **Full-model study** (`_scripts/simstudy2.R`): built, **on hold; do not run
+  unless Lucas explicitly says so.**
+
+Cost found on the way: the real-data fit with `b_shape` estimated at `n_c`
+384 runs at tree depth 11-12, ~24 h per pinned chain, ~5x the leapfrog steps
+of pin 15 at the same cost per gradient (`_data/simstudy2-cost-2026-10-21.txt`).
+`_scripts/simstudy-pinned.sh` now takes `SIMSTUDY_DIR`/`SIMSTUDY_RUN` (defaults
+unchanged) and token task IDs.
+
 **Simulation study of `cycle_length` bias: finished and read 2026-10-20**
 (`findings.md`, "Simulation study, full read";
 `_data/simstudy-read-2026-10-20-v2.txt`). 62 of 205 fits pass the gate and

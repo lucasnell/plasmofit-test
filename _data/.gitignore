@@ -3,8 +3,10 @@
 *.err
 *.out
 *.log
-# The simulation study's fits, logs, and frozen run copy of simstudy.R
+# The simulation studies' fits, logs, and frozen run copies
 simstudy/
+simstudy2/
+unitsim/
 
 # Exceptions: the saved reader output behind a claim in the notes. Everything
 # else here is a fit or a log and stays on the cluster -- 726 files, 5.2 GB --
@@ -38,3 +40,6 @@ simstudy/
 !simstudy-eta-*.txt
 !simstudy-cost-*.txt
 !simstudy-pinned-speed-*.txt
+!simstudy2-cost-*.txt
+!unitsim-check-*.txt
+!unitsim-read-*.txt

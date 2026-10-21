@@ -690,3 +690,24 @@ Fit cost also depends 3-4x on how many of OUR OWN tasks share the node
 (`claude/findings.md`, "Where the time goes at `n_c` = 384"), so a cost
 measured on a quiet node does not carry to a full array, and vice versa.
 
+## One-unit fits: two traps in building the Stan data
+
+`archer_stan_data()` stops when `grp_R` or `grp_cl` has one level (it guards
+`no_pool`'s hierarchy), even for `pooled_both`, which does not use it.
+`_scripts/unitsim.R` splits the series into two labels for those columns;
+`pooled_both` broadcasts its one `R` and `cycle_length`, so `log_prob` is
+unchanged (checked), at the price of computing the trajectory twice per
+gradient. Second, **rstan passes a length-1 R vector as a scalar**, so with
+`n_grp_init` = 1 the per-unit fields (`mean_log_b_shape`, ...) fail with
+"mismatch in number dimensions". Wrap them in `as.array()`; `unitsim.R` does
+so for every field that is not length 1 in the full data.
+
+## Saved fits hold no warmup draws: sampler parameters are sampling only
+
+`get_sampler_params(fit, inc_warmup = TRUE)` on the project's saved fits
+returns only the post-warmup rows, because `save_warmup = FALSE`. Indexing
+the first 700 rows as "warmup" silently reads sampling iterations, and summing
+`n_leapfrog` undercounts gradients, which inflates ms per gradient. Measure
+cost per gradient as sampling seconds over sampling `n_leapfrog` (2026-10-21,
+`_scripts/simstudy2-cost.R`, caught before anything was reported).
+

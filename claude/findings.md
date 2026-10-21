@@ -3908,6 +3908,68 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Second simulation study and single-unit study: set up 2026-10-21; the estimated-`b_shape` fit at `n_c` 384 costs ~24 h per chain
+
+**What was agreed (Lucas, 2026-10-21).** A second study of `cycle_length`
+bias with one truth, one fitting procedure, and every fit at `n_c` 384. The
+truth is the posterior means of the real-data fit `np_wide_total0_nc384_t`
+(`no_pool`, `n_c` 384, `b_shape` estimated under lognormal(2, 0.5),
+`sd_log10_total0` 1, adapt_delta 0.95, max_treedepth 12; 41.815 h mean over
+13 trials). Data are generated at `n_c` 384 and 1024; at 1024 each unit's
+`b_shape` is lowered so the total stage spread at its last observation
+matches the truth's at 384. Two instruments were built:
+
+- **Full-model study**, `_scripts/simstudy2.R`: all 177 series, fitted as
+  the real-data fit was, 4 chains x 1000 draws, pilot of 4 replicates per
+  generating `n_c`. **On hold: not to run unless Lucas says so.** Its check
+  mode has not completed (stopped after 18 min; rerun under `srun` if the
+  study is resumed).
+- **Single-unit study**, `_scripts/unitsim.R`, chosen to run first: one
+  `grp_init` unit's series, simulated at its real observation times and
+  fitted alone with `pooled_both` (one `R`, one `cycle_length`; the
+  production top-level priors placed directly on them). Isolates the bias of
+  the likelihood, nuisances, and priors from the hierarchy. Its design
+  (units, factors, replicates) is not fixed yet; a timing probe runs first.
+
+**Cost of the full-model fit**, measured on saved chains
+(`_scripts/simstudy2-cost.R`, `_data/simstudy2-cost-2026-10-21.txt`). No
+simulated fit has run under lognormal(2, 0.5) with the tuned sampler, so
+these are proxies. Cells: per chain, median (range) over chains; hours =
+warmup + sampling; ms per gradient = sampling seconds / sampling
+`n_leapfrog` (saved fits hold no warmup draws); leapfrog steps per
+iteration and tree depth over post-warmup iterations. Unpaired.
+
+| chains | config | n | hours | ms per gradient | leapfrog per iteration | tree depth |
+|---|---|---|---|---|---|---|
+| real data, pinned (seed probe) | `b_shape` estimated, sd 0.5, tuned | 12 | 23.97 (16.54-30.75) | 22.4 (17.4-26.9) | 2062 (1286-4095) | median 11, max 12 |
+| real data, pinned | `b_shape` pinned at 15, default sampler | 16 | 4.78 (2.36-8.08) | 20.9 (12.4-25.0) | 431 (275-905) | median 8.5, max 10 |
+| simulated (old study, truth as above, fit 384), mostly packed | `b_shape` estimated, sd 1.5, default sampler; 700 + 500 iterations | 80 | 6.66 (2.05-29.05) | 35.3 (12.0-113.0) | 499 (247-1000) | median 9, max 10 |
+
+**The estimated-`b_shape` fit is expensive because of tree depth, not cost
+per gradient:** the same ~21-22 ms per gradient as pin 15, but ~5x the
+leapfrog steps, at tree depth 11-12. The original unpinned run of the same
+fit shows the same depth (10-11, 1047-2041 steps per iteration). Which of
+real data, prior sd 0.5, or adapt_delta 0.95 causes the depth is not known;
+the simulated fits at sd 1.5 and the default sampler took a quarter of the
+steps. Implied full-model pilot (32 chains, 16 pinned workers): ~0.5-2.6
+days; full study (32 fits): ~3-8 days.
+
+**Single-unit checks** (`_data/unitsim-check-2026-10-21.txt`):
+- a unit's simulated data are exactly (max |diff| 0) its observations in
+  the old study's gen-384 data for the same truth and noise seed, so the
+  single-unit, full-model, and old studies share datasets;
+- `archer_stan_data()` refuses one level of `grp_R`/`grp_cl`, so series are
+  split into two labels for them; `log_prob` is unchanged by the split (max
+  |diff| 7.3e-12 over three random points in each of two units);
+- a 20-iteration smoke run costs ~2.3 ms per gradient for MMV048_PIB (6
+  series), against ~22 ms for the full model.
+
+**Timing probe, SLURM 32409**, submitted 2026-10-21 15:22: MMV048_PIB.1800
+(6 series, 96-168 h, the smallest unit) and Mefloquine.1800 (22 series,
+96-216 h, the longest window), gen 384, `b_shape` estimated, replicate 1, 4
+chains each, pinned (64 CPUs, 8 workers, 7 on whole L3 groups). It reads
+cost per chain; its pass/fail is one dataset each and is not a pass rate.
+
 ### Simulation study, full read: 62 of 205 fits pass, 9 of 48 cells readable, and fitting `n_c` 384 gives a shorter cycle length than 192 in all 12 paired replicates
 
 Report for Lucas, statistics explained: `reports/simstudy-2026-10-21.html`,

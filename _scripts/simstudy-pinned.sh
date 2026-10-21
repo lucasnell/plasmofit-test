@@ -22,6 +22,18 @@
 # appears (worker died, walltime) is listed at the end; remove the claim
 # directory and rerun to retry it.
 #
+# OTHER STUDIES (added 2026-10-21). SIMSTUDY_DIR (default _data/simstudy)
+# holds claims/ and logs/; SIMSTUDY_RUN (default $SIMSTUDY_DIR/simstudy-run.R)
+# is the frozen script each task runs. A list line is passed unchanged as
+# SLURM_ARRAY_TASK_ID, so it may be a token rather than a number (as
+# _scripts/unitsim.R uses); it must not contain "/". Pass --output and --error
+# under the study's logs/ on the sbatch line, since #SBATCH paths are fixed.
+#
+#   sbatch --cpus-per-task=64 --mem=16G \
+#       --output=_data/unitsim/logs/pin-%j.out --error=_data/unitsim/logs/pin-%j.err \
+#       --export=ALL,SIMSTUDY_DIR=_data/unitsim,SIMSTUDY_RUN=_data/unitsim/unitsim-run.R,SIMSTUDY_PIN_LIST=_data/unitsim/probe-tasks.txt \
+#       _scripts/simstudy-pinned.sh
+#
 # FOOTPRINT. Counts against the study's 75% allowance (192 CPUs, 773,505 MB)
 # together with 30875; see TODO.md for the throttle split.
 #
@@ -42,8 +54,12 @@
 
 set -u
 LIST=${SIMSTUDY_PIN_LIST:?set SIMSTUDY_PIN_LIST}
-CLAIMS=_data/simstudy/claims
-mkdir -p "$CLAIMS"
+DIR=${SIMSTUDY_DIR:-_data/simstudy}
+RUN=${SIMSTUDY_RUN:-$DIR/simstudy-run.R}
+CLAIMS=$DIR/claims
+LOGS=$DIR/logs
+[ -f "$RUN" ] || { echo "ERROR: no run script $RUN" >&2; exit 1; }
+mkdir -p "$CLAIMS" "$LOGS"
 JOB=${SLURM_JOB_ID:-local}
 
 CPUSET=$(grep Cpus_allowed_list /proc/self/status | awk '{print $2}')
@@ -72,6 +88,7 @@ done
 while [ ${#LEFT[@]} -ge 4 ]; do
     WORKERS+=("$(IFS=,; echo "${LEFT[*]:0:4}") split"); LEFT=("${LEFT[@]:4}")
 done
+echo "job ${JOB} run ${RUN}, list ${LIST}"
 echo "job ${JOB} cpuset ${CPUSET}; ${#CORES[@]} physical cores, ${#WORKERS[@]} workers; idle cores: ${LEFT[*]:-none}"
 for w in "${WORKERS[@]}"; do echo "  worker cores ${w% *} (${w#* } L3 group)"; done
 [ ${#WORKERS[@]} -ge 1 ] || { echo "ERROR: no worker can be formed" >&2; exit 1; }
@@ -83,8 +100,8 @@ worker() {
         mkdir "$CLAIMS/$id" 2>/dev/null || continue
         echo "$(date '+%F %T') job ${JOB} cores ${cores}: task ${id}"
         SLURM_ARRAY_TASK_ID=$id SIMSTUDY_MODE=chain taskset -c "$cores" \
-            /programs/R-4.6.1/bin/Rscript --vanilla _data/simstudy/simstudy-run.R \
-            > "_data/simstudy/logs/${id}.out" 2> "_data/simstudy/logs/${id}.err" &
+            /programs/R-4.6.1/bin/Rscript --vanilla "$RUN" \
+            > "$LOGS/${id}.out" 2> "$LOGS/${id}.err" &
         local pid=$!
         if [ $n -eq 0 ]; then   # once per worker: confirm the thread count
             ( sleep 600; ps -o nlwp=,pcpu= -p $pid | awk -v c="$cores" -v t="$id" \
@@ -102,5 +119,5 @@ wait
 echo "claims without a finished chain, including any still running in other jobs (retry by removing the claim):"
 for d in "$CLAIMS"/*; do
     id=$(basename "$d")
-    grep -q "wrote" "_data/simstudy/logs/${id}.out" 2>/dev/null || echo "  $id"
+    grep -q "wrote" "$LOGS/${id}.out" 2>/dev/null || echo "  $id"
 done

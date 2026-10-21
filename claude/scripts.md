@@ -51,6 +51,10 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `wockner-schedule-sim-truth.sh` | cluster | option 2: submits `wockner-schedule-sim.R` with `SCHEDSIM_TRUTH_FIT=pl_wide_both`, so the truth has `b_shape` ~ 65 and `cycle_length` 43.7361 h. Tasks 31-33 |
 | `panel-bshape-spread.R` | anywhere | reads `_data/wock-prior-panel.rds` only (87 KB, no fits): posterior sd and CV of `b_shape` against its prior's CV, and the within-fit posterior sd of `cycle_length`; seconds to run |
 | `_data/panel-watch.sh` | *deleted* | scaffolding, in history at `071cd34`: waits for a SLURM array to drain, logs exit states and which fits landed, then runs the analysis. Run under `setsid` it survives a cleared session or a dropped SSH -- worth copying when arming a long run |
+| `simstudy2.R` | cluster | second full-model simulation study (2026-10-21; ON HOLD): one truth, gen `n_c` 384/1024, fit 384 as `np_wide_total0_nc384_t`; modes check/chain/merge; design and reading rule in its header |
+| `simstudy2-cost.R` | cluster | cost per chain of the estimated-`b_shape` fit at `n_c` 384 from saved chains (real-data pinned, pin 15, old simulated); output `_data/simstudy2-cost-<date>.txt` |
+| `unitsim.R` | cluster | single-unit simulation study (2026-10-21): one `grp_init` unit fitted alone with `pooled_both`; token task IDs `u<unit>-g<gen_nc>-<est|fix>-rep<r>-c<k>`; modes check/chain/merge; run through `simstudy-pinned.sh` with `SIMSTUDY_DIR=_data/unitsim` |
+| `simstudy-pinned.sh` | cluster | pinned-layout workers for any study: `SIMSTUDY_DIR` (claims, logs) and `SIMSTUDY_RUN` (frozen script), defaults the first simulation study's; list lines may be tokens |
 
 The cluster workflow is in the header comment of `wockner-fit.R` (and
 `wockner-fit-kfold.R`, which follows the same pattern): `scp` the script and
