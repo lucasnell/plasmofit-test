@@ -11,7 +11,8 @@ fit 192 cells. Readable biases run −0.60 to +1.19 h, with replicate ranges
 all 12 paired replicates, mean −0.55 h**, at either generating `n_c`.
 Fixed `b_shape` at fit 384 passes 1 of 25. The job's own read file has NA
 ranges from a reader bug, fixed; use `-v2`. Reported as it stands (Lucas,
-2026-10-21, no second stage): `reports/simstudy-2026-10-21.html`. The 75% node allowance has lapsed.
+2026-10-21, no second stage): `reports/simstudy-2026-10-21.html`, published
+privately at https://claude.ai/artifact/7seQba92rjtufpQgHxWn3H. The 75% node allowance has lapsed.
 
 **Partial read 2026-10-18** (96 of 240 fits; `findings.md`, "Simulation
 study, partial read"): 24 of 96 pass the gate, no cell readable yet.

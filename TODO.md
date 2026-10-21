@@ -89,8 +89,10 @@ match where a thread exists. This file is the actionable layer. -->
       stands**, no second stage. A 1000-draw refit was costed at ~3.7-7
       days at the half-node budget (all 180 fits outside the fixed-384 arm,
       or only the 119 failing ones, the latter with a second-try selection
-      problem). Report: `reports/simstudy-2026-10-21.html` (local, not
-      published).
+      problem). Report: `reports/simstudy-2026-10-21.html`, rewritten the
+      same day for Lucas as a reader new to the statistics (what was done
+      and why, terms explained), published privately at
+      https://claude.ai/artifact/7seQba92rjtufpQgHxWn3H.
 
 - [ ] **Examine the higher-density chains in the two failing free runs**
       (seed 20261013 chain 2, +5.9 to +8.1 `lp__`; seed 20261015 chain 4,

@@ -1,87 +1,139 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cycle-Length Simulation Study</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <style>
+  /* Layout: one reading column, plain-language prose with tables and two dot plots. Light theme only, by request. */
   :root {
-    --bg: #ffffff; --fg: #1d1f23; --muted: #5d6470; --rule: #d9dde3;
-    --panel: #f5f7f9; --good: #dcefe2; --good-ink: #1f6b3a; --none: #eef0f3;
-    --cancel: #f6efe4; --accent: #2f5d9e; --neg: #b4472f;
+    --bg: #ffffff; --fg: #1c2027; --muted: #5a6371; --rule: #d8dde4;
+    --panel: #f4f6f9; --good: #dbeee1; --good-ink: #1e6a39; --none: #eceff3;
+    --cancel: #f7efe2; --accent: #2d5b9b; --mean: #b0452e;
+    color-scheme: light;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--fg);
-         font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  main { max-width: 920px; margin: 0 auto; padding: 28px 16px 60px; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  h2 { font-size: 16px; margin: 30px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--rule); }
-  p, li { margin: 6px 0; }
+         font: 15px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding-block: 28px 64px;
+         padding-left: max(16px, env(safe-area-inset-left, 0px));
+         padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { font-size: 24px; margin: 0 0 4px; text-wrap: balance; }
+  h2 { font-size: 17px; margin: 34px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--rule); text-wrap: balance; }
+  h3 { font-size: 15px; margin: 20px 0 4px; }
+  p, li { margin: 6px 0; max-width: 72ch; }
+  ol, ul { padding-left: 22px; }
   .sub { color: var(--muted); margin: 0 0 18px; }
-  .cap { color: var(--muted); font-size: 12.5px; margin: 4px 0 8px; }
-  .box { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; }
-  .box ol { margin: 4px 0; padding-left: 20px; }
-  table { border-collapse: collapse; font-size: 13px; margin: 6px 0; }
-  th, td { border: 1px solid var(--rule); padding: 3px 7px; text-align: right; white-space: nowrap; }
+  .cap { color: var(--muted); font-size: 13px; margin: 4px 0 8px; }
+  .box { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 16px; }
+  .term { background: var(--panel); border-left: 3px solid var(--accent); padding: 8px 14px; margin: 10px 0; }
+  .term p, .term li { max-width: none; }
+  table { border-collapse: collapse; font-size: 13.5px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--rule); padding: 4px 8px; text-align: right; vertical-align: top; }
   th { background: var(--panel); font-weight: 600; }
   td.l, th.l { text-align: left; }
+  .prose td { white-space: normal; }
   .wrap { overflow-x: auto; }
-  .grid td { text-align: center; min-width: 74px; }
+  .grid td { text-align: center; min-width: 70px; white-space: nowrap; }
   .grid td.r { background: var(--good); color: var(--good-ink); font-weight: 600; }
   .grid td.u { background: var(--none); color: var(--muted); }
   .grid td.c { background: var(--cancel); color: var(--muted); }
-  .grid small { display: block; font-weight: 400; font-size: 11.5px; }
-  code { font: 12.5px ui-monospace, Menlo, Consolas, monospace; background: var(--panel); padding: 0 3px; border-radius: 3px; }
-  svg { display: block; max-width: 100%; height: auto; }
+  .grid small { display: block; font-weight: 400; font-size: 12px; }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; background: var(--panel); padding: 0 3px; border-radius: 3px; }
+  svg { display: block; width: 100%; max-width: 640px; height: auto; }
   svg text { font: 11px -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: var(--fg); }
   svg .mut { fill: var(--muted); }
   .legend span { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; margin: 0 4px 0 12px; border: 1px solid var(--rule); }
 </style>
-</head>
-<body>
+
 <main>
 
-<h1>Simulation study of cycle-length bias</h1>
-<p class="sub">Results as they stand, 2026-10-21. All 240 planned fits ran or were cancelled by decision; no second stage. Design and reading rule fixed before any fit ran (<code>_scripts/simstudy.R</code> header).</p>
+<h1>Cycle-length simulation study</h1>
+<p class="sub">What it did, why, and what it found. Results as they stand on 2026-10-21; no second stage was run. The design and the rules for reading it were written down before any fit ran (<code>_scripts/simstudy.R</code>, header).</p>
 
 <div class="box">
-<strong>Bottom line</strong>
-<ol>
-  <li><strong>The fitted <code>n_c</code> moves the cycle length.</strong> On identical simulated data, fitting <code>n_c</code> = 384 instead of 192 gives a shorter <code>cycle_length</code> in <strong>12 of 12</strong> paired replicates: −0.10 to −1.49 h, mean −0.55 h, whichever <code>n_c</code> generated the data.</li>
-  <li><strong>Bias against the truth is within about ±1.2 h</strong> in the 9 cells that can be read, positive in 8 of 9 (−0.60 to +1.19 h). Replicate ranges are 1–2 h wide, so the cells cannot be told apart.</li>
-  <li><strong>Fixing <code>b_shape</code> does not work at fit <code>n_c</code> = 384, even at its true value</strong>: 1 of 25 fits converges. The pin-<code>b_shape</code> strategy settled at <code>n_c</code> = 96 does not carry over.</li>
-  <li><strong>Most of the design is unreadable</strong>: 62 of 205 fits pass the convergence gate, and 39 of 48 cells have fewer than 3 passing replicates. That includes every cell that generates at 384 and fits at 192, so <strong>the bias from under-specifying <code>n_c</code> is not measured</strong>, nor how bias depends on the true <code>b_shape</code> or on how it is fitted.</li>
-</ol>
+<strong>Short answer</strong>
+<ul>
+  <li><strong>The number of model stages we assume changes the cycle length we get.</strong> Fitting the same artificial data with 384 stages instead of 192 gave a shorter cycle length every time we could compare (12 of 12), by 0.55 h on average.</li>
+  <li><strong>Where it could be measured, the model's error was within about ±1.2 h</strong> and usually too long, but the study was too small to pin it down further.</li>
+  <li><strong>Holding the starting synchrony fixed does not work with 384 stages</strong>, even at its true value: those fits almost never settle (1 of 25).</li>
+  <li><strong>Most of the design could not be read</strong>, because too few fits passed the convergence check. In particular, it does not tell us what assuming too few stages does.</li>
+</ul>
 </div>
 
-<h2>Design</h2>
-<div class="wrap"><table>
-<tr><th class="l">factor</th><th class="l">levels</th></tr>
-<tr><td class="l">truth</td><td class="l"><strong>A</strong>: posterior means of the <code>n_c</code> = 96 pooled-cycle-length fit, 45.012 h in every trial. <strong>B</strong>: posterior means of the converged <code>n_c</code> = 384 no-pool fit with <code>b_shape</code> estimated (entry 54), per-trial cycle lengths 39.4–45.6 h, mean 41.82 h.</td></tr>
-<tr><td class="l">generate × fit <code>n_c</code></td><td class="l">{192, 384} × {192, 384}, crossed. <code>n_c</code> is the number of Erlang stages in the asexual cycle; it sets how fast a cohort desynchronises.</td></tr>
-<tr><td class="l">true <code>b_shape</code></td><td class="l">the truth fit's per-unit value × {0.5, 1, 3}. <code>b_shape</code> sets how synchronous the parasites are at t = 0 (higher = more synchronous).</td></tr>
-<tr><td class="l"><code>b_shape</code> in the fit</td><td class="l"><strong>estimated</strong> under a wide prior, lognormal(2, 1.5); or <strong>fixed</strong> at the simulated truth (possible only in simulation).</td></tr>
-<tr><td class="l">replicates</td><td class="l">5 noise seeds per cell; simulated data shared across fit <code>n_c</code> and method, so those contrasts are paired.</td></tr>
-<tr><td class="l">fit</td><td class="l">production no-pool model and priors; 8 chains × 500 post-warmup draws (700 warmup).</td></tr>
-<tr><td class="l">rule</td><td class="l">a fit counts only if max R-hat &lt; 1.05 over every quantity. Bias per fit = mean over 13 trials of (posterior mean <code>cycle_length</code> − truth). A cell is read only if ≥ 3 of its replicates pass.</td></tr>
-</table></div>
-<p class="cap">48 cells × 5 replicates = 240 fits. The 36 fixed-<code>b_shape</code>, fit-384 fits of replicates 3–5 were cancelled after replicates 1–2 failed in 23 of 24; one of them had already finished, so 205 fits were merged.</p>
+<h2>1. Why we ran it</h2>
+<p>The project asks how long the parasite's blood-stage cycle is, and how much of the answer comes from modelling assumptions rather than from the data. Our fits to the real infection data give 41.2–41.8 h, depending on two modelling choices.</p>
 
-<h2>Convergence</h2>
-<p class="cap">Cells: counts of merged fits. Marginal = max R-hat 1.05–1.15, severe ≥ 1.15 (bins chosen after seeing the data; descriptive only). <code>lp__</code> spread = median over fits of the range of the 8 chains' mean log density.</p>
+<div class="term">
+<p><strong><code>n_c</code>, the number of stages.</strong> The model splits each parasite's cycle into <code>n_c</code> equal stages, and a parasite moves on from each stage after a random wait. With more stages, the random waits average out over more steps, so every parasite's cycle takes closer to the same time. A group of parasites that starts in step then stays in step for longer. <code>n_c</code> therefore sets how fast the infection's rise-and-fall pattern fades, as well as how finely the model resolves parasite age.</p>
+<p><strong><code>b_shape</code>, the starting synchrony.</strong> How tightly bunched the parasites' ages are at the start of infection. Higher means more in step.</p>
+<p>Blood samples start only at 72 h, after one and a half cycles. By then both how in step the parasites started (<code>b_shape</code>) and how fast they drift apart (<code>n_c</code>) show up only through how strong the rise-and-fall still is. The data constrain the two together, not each one separately.</p>
+</div>
+
+<p>What we knew before this study:</p>
+<ul>
+  <li>An earlier simulation, with 96 stages, found the model read the cycle length <strong>1.97 h too long</strong>. Most of that came from having to estimate <code>b_shape</code>: fixing it at its true value removed 0.92 h.</li>
+  <li>96 stages was later shown to be wrong for the real data (192 fits better, and 384 better still), so the real-data fits moved to 192 and 384.</li>
+  <li>With 384 stages, real-data fits with <code>b_shape</code> fixed failed to converge.</li>
+</ul>
+<p>So three questions were open:</p>
+<ol>
+  <li><strong>How far off is the model at the stage counts we now use?</strong></li>
+  <li><strong>Does the stage count we assume change the answer, and what happens if it is wrong?</strong></li>
+  <li><strong>Does it matter how <code>b_shape</code> is handled (estimated or fixed), and how synchronous the start really was?</strong></li>
+</ol>
+
+<h2>2. How a simulation study answers that</h2>
+<p>Real data have no answer key, so you cannot see the model's error by fitting them. A simulation supplies one:</p>
+<ol>
+  <li>Choose a full set of "true" parameter values: each trial's cycle length, growth rate, starting parasite numbers, <code>b_shape</code>, and measurement noise.</li>
+  <li>Use the model to generate an artificial dataset with the same 13 trials, the same 177 volunteers' series, and the same 1,130 sampling times as the real data. Then add random measurement noise of the size estimated from the real data.</li>
+  <li>Fit the model to the artificial data exactly as we fit the real data.</li>
+  <li>Compare the estimated cycle length with the true one we put in. <strong>Bias = estimate − truth</strong>, averaged over the 13 trials, in hours. Positive means the model reads the cycle too long.</li>
+  <li>Repeat with 5 different random noise draws ("replicates"), to see how much the result moves by chance alone.</li>
+</ol>
+
+<h2>3. What we varied, and why</h2>
+<div class="wrap"><table class="prose">
+<tr><th class="l">what</th><th class="l">settings</th><th class="l">why</th></tr>
+<tr><td class="l">true parameter values</td><td class="l"><strong>A</strong>: from an older 96-stage fit; one cycle length, 45.0 h, for every trial.<br><strong>B</strong>: from our best converged 384-stage fit; a separate cycle length per trial, 39.4–45.6 h (mean 41.8).</td><td class="l">A is the truth every earlier simulation used, so results connect to them. B looks more like what we now believe about the real data.</td></tr>
+<tr><td class="l">stages used to <em>generate</em> the data × stages used to <em>fit</em></td><td class="l">192 or 384 for each, in all four combinations</td><td class="l">When the two match, the model is correct, and any bias is the method's own. When they differ, the model is wrong about the stage count, which is our real situation if we pick the wrong <code>n_c</code>.</td></tr>
+<tr><td class="l">true <code>b_shape</code></td><td class="l">the truth's value × 0.5, × 1, or × 3</td><td class="l">Does the error depend on how synchronous the infection really started?</td></tr>
+<tr><td class="l">how <code>b_shape</code> is fitted</td><td class="l"><strong>estimated</strong>: the data choose it, within a deliberately broad allowed range.<br><strong>fixed</strong>: set to its true value.</td><td class="l">Fixing it at the truth shows how much error is left once <code>b_shape</code> is known. The gap between the two is the cost of having to estimate it. Fixing at the truth is impossible with real data, so it is a diagnostic.</td></tr>
+</table></div>
+<p class="cap">2 × 2 × 2 × 3 × 2 = 48 combinations ("cells") × 5 replicates = 240 fits. Within a replicate, the same artificial dataset is fitted under both stage counts and both <code>b_shape</code> methods.</p>
+
+<h2>4. How a fit is judged</h2>
+<div class="term">
+<p><strong>What fitting produces.</strong> The fitting method (Bayesian sampling) does not return one best answer. It explores which parameter values are consistent with the data and returns a large collection of plausible values ("draws"). The cycle length we report for a fit is the average of its draws, the <strong>posterior mean</strong>.</p>
+<p><strong>Chains.</strong> The exploration is run 8 times independently ("chains"), each from a different starting point. Each chain spends 700 steps tuning itself and then records 500 draws.</p>
+<p><strong>The convergence check, R-hat</strong>, in steps:</p>
+<ol>
+  <li>If all 8 chains have found the same answer, each chain's draws spread about as widely as all the draws pooled together.</li>
+  <li>If one chain is stuck somewhere else, the pooled draws spread wider than any single chain's.</li>
+  <li>R-hat is, roughly, the square root of the pooled spread divided by the typical within-chain spread. (The version used also splits each chain in half, which catches a chain that drifts.)</li>
+  <li>R-hat = 1.00 means the chains are indistinguishable. Larger means they disagree.</li>
+  <li><strong>Project rule: R-hat must be below 1.05 for every quantity in the model.</strong> A fit that fails is not trusted, and its estimate is not used.</li>
+</ol>
+<p><strong><code>lp__</code></strong> is the model's overall score for a set of parameter values: how well they fit the data, plus how plausible they were thought to be beforehand. Chains whose average <code>lp__</code> differ widely are sitting in different places.</p>
+<p><strong>Reading rule.</strong> A cell is reported only if at least 3 of its 5 replicates pass the check. With fewer, there is too little to say. Both rules were fixed before any fit ran, so they could not be tuned to the results.</p>
+<p><strong>Paired comparisons.</strong> The same artificial dataset is fitted twice, for example with 192 and with 384 stages, and the two estimates are subtracted. The dataset's own random noise is common to both fits and cancels out. That makes a paired difference much more precise than comparing fits to different datasets.</p>
+</div>
+
+<h2>5. Results</h2>
+
+<h3>5.1 Convergence</h3>
+<p class="cap">Cells: counts of fits. "Near miss" = R-hat 1.05–1.15, "clear failure" = 1.15 or more; these two labels were chosen after seeing the data and are descriptive only. <code>lp__</code> spread = median over fits of the gap between the highest and lowest chain's average <code>lp__</code>.</p>
 <div class="wrap"><table>
-<tr><th class="l"><code>b_shape</code></th><th>fit <code>n_c</code></th><th>fits</th><th>pass</th><th>marginal</th><th>severe</th><th><code>lp__</code> spread</th></tr>
+<tr><th class="l"><code>b_shape</code></th><th>fit stages</th><th>fits</th><th>pass</th><th>near miss</th><th>clear failure</th><th><code>lp__</code> spread</th></tr>
 <tr><td class="l">estimated</td><td>192</td><td>60</td><td>25</td><td>29</td><td>6</td><td>11.1</td></tr>
 <tr><td class="l">estimated</td><td>384</td><td>60</td><td>20</td><td>34</td><td>6</td><td>10.5</td></tr>
 <tr><td class="l">fixed at truth</td><td>192</td><td>60</td><td>16</td><td>35</td><td>9</td><td>9.5</td></tr>
 <tr><td class="l">fixed at truth</td><td>384</td><td>25</td><td>1</td><td>4</td><td>20</td><td><strong>66.1</strong></td></tr>
 </table></div>
-<p>Fixed <code>b_shape</code> at fit 384 fails through chains in separate regions of the posterior (<code>lp__</code> spread 66). Among all severe failures the trial most often worst is EFITA_OZGAM (7), then OZ439 (5). Elsewhere failures are mostly marginal and often through <code>lp__</code> alone; the 500-draw chains, which make split R-hat noisier, likely contribute (not tested).</p>
+<p>Only 62 of 205 fits passed. Most failures were near misses, often caught only by <code>lp__</code>. With 500 draws per chain (half our usual length) R-hat is noisier, which probably accounts for part of this; that was not tested.</p>
+<p>One group failed for a different reason. With <code>b_shape</code> fixed and 384 stages, the chains sat in clearly different places (<code>lp__</code> spread 66), so more draws would not help. After replicates 1–2 failed in 23 of 24 fits, the remaining replicates of that group were cancelled. That is why it has 25 fits rather than 60; one later replicate had already finished.</p>
 
-<h2>Which cells can be read</h2>
-<p class="cap">Cells: passing replicates / replicates merged; for readable cells (green, ≥ 3 pass), the bias: mean over passing replicates of the 13-trial mean (posterior mean − truth), hours, positive = runs long. Beige: fixed-<code>b_shape</code> fit-384 cells capped at 2–3 replicates by the cancellation.</p>
+<h3>5.2 Which cells can be read</h3>
+<p class="cap">Cells: passing replicates / replicates run. Green cells (≥ 3 pass) also show the bias: average over passing replicates of (estimated − true cycle length, averaged over 13 trials), hours, positive = too long. Beige: the cancelled group.</p>
 <div class="wrap"><table class="grid">
-<tr><th class="l" rowspan="2">truth</th><th rowspan="2">generate</th><th rowspan="2">fit</th><th colspan="3"><code>b_shape</code> estimated, true × </th><th colspan="3"><code>b_shape</code> fixed at truth, true × </th></tr>
+<tr><th class="l" rowspan="2">truth</th><th rowspan="2">generate</th><th rowspan="2">fit</th><th colspan="3"><code>b_shape</code> estimated, true ×</th><th colspan="3"><code>b_shape</code> fixed at truth, true ×</th></tr>
 <tr><th>0.5</th><th>1</th><th>3</th><th>0.5</th><th>1</th><th>3</th></tr>
 <tr><td class="l">A</td><td>192</td><td>192</td><td class="u">2/5</td><td class="u">2/5</td><td class="r">3/5<small>+1.19</small></td><td class="u">2/5</td><td class="u">2/5</td><td class="r">3/5<small>+0.09</small></td></tr>
 <tr><td class="l">A</td><td>192</td><td>384</td><td class="u">1/5</td><td class="r">3/5<small>+0.40</small></td><td class="u">2/5</td><td class="c">0/3</td><td class="c">1/2</td><td class="c">0/2</td></tr>
@@ -92,10 +144,11 @@
 <tr><td class="l">B</td><td>384</td><td>192</td><td class="u">1/5</td><td class="u">1/5</td><td class="u">0/5</td><td class="u">0/5</td><td class="u">0/5</td><td class="u">0/5</td></tr>
 <tr><td class="l">B</td><td>384</td><td>384</td><td class="u">0/5</td><td class="u">2/5</td><td class="r">3/5<small>+0.60</small></td><td class="c">0/2</td><td class="c">0/2</td><td class="c">0/2</td></tr>
 </table></div>
-<p class="legend cap"><span style="background:var(--good)"></span>readable <span style="background:var(--none)"></span>fewer than 3 pass <span style="background:var(--cancel)"></span>replicates 3–5 cancelled</p>
+<p class="legend cap"><span style="background:var(--good)"></span>readable <span style="background:var(--none)"></span>fewer than 3 pass <span style="background:var(--cancel)"></span>later replicates cancelled</p>
+<p>9 of 48 cells can be read. None of them generates with 384 stages and fits with 192, so <strong>what happens when the model assumes too few stages is not measured</strong>.</p>
 
-<h2>Bias in the readable cells</h2>
-<p class="cap">Cells: bias = mean over the 13 trials of (posterior mean <code>cycle_length</code> − true <code>cycle_length</code>), hours, positive = runs long; mean and range over the replicates that pass. <code>b_shape</code> recovery (estimated arm) = mean over 14 units of log(posterior mean / truth), 0 = recovered. Unpaired across rows.</p>
+<h3>5.3 Bias in the readable cells</h3>
+<p class="cap">Cells: bias = (estimated − true cycle length) averaged over the 13 trials, hours, positive = too long; average and range over the replicates that pass. <code>b_shape</code> recovery (estimated rows only) = average over the 14 trial-by-dose groups of log(estimate / truth); 0 = recovered, +0.69 = twice the truth, −0.69 = half. Rows are different datasets, so they are not paired.</p>
 <div class="wrap"><table>
 <tr><th class="l">truth</th><th>generate</th><th>fit</th><th>true <code>b_shape</code> ×</th><th class="l"><code>b_shape</code></th><th>pass</th><th>bias, h</th><th>range, h</th><th><code>b_shape</code> recovery</th></tr>
 <tr><td class="l">A</td><td>192</td><td>192</td><td>3</td><td class="l">fixed</td><td>3</td><td>+0.09</td><td>−0.57 to +0.76</td><td></td></tr>
@@ -108,16 +161,16 @@
 <tr><td class="l">B</td><td>192</td><td>192</td><td>3</td><td class="l">estimated</td><td>3</td><td>+0.73</td><td>+0.18 to +1.29</td><td>−0.03</td></tr>
 <tr><td class="l">B</td><td>384</td><td>384</td><td>3</td><td class="l">estimated</td><td>3</td><td>+0.60</td><td>+0.39 to +0.84</td><td>+0.06</td></tr>
 </table></div>
-<p>Ranges cross zero in 6 of 9 cells. Estimated <code>b_shape</code> lands within a factor of 0.57 to 1.86 of the truth, with no pattern by true value.</p>
+<p>8 of 9 averages are positive, but the replicate ranges are 1–2 h wide and 6 of 9 include zero. With 3 or 4 replicates per cell, these cells cannot be told apart from each other. Estimated <code>b_shape</code> came out between 0.57 and 1.86 times its true value, with no pattern by how synchronous the truth was.</p>
 
-<h2>Paired contrasts</h2>
-<p class="cap">Each dot is one replicate: the difference in 13-trial mean posterior <code>cycle_length</code>, hours, between two fits of the <em>same</em> simulated dataset, both passing the gate. Dashed line: mean over dots.</p>
+<h3>5.4 Paired comparisons</h3>
+<p class="cap">Each dot is one replicate: the difference in estimated cycle length (averaged over 13 trials), hours, between two fits of the <em>same</em> artificial dataset, both passing the check. Dashed line: average of the dots. Row labels: truth · stages used to generate · true <code>b_shape</code> scale · how <code>b_shape</code> was fitted.</p>
 
-<p><strong>Fit <code>n_c</code> 384 − fit <code>n_c</code> 192</strong> (12 pairs). At generate 192 this over-specifies <code>n_c</code>; at generate 384 it is the correct fit minus the under-specified one.</p>
-<svg viewBox="0 0 640 200" role="img" aria-label="Dot plot: fit n_c 384 minus 192, all 12 paired differences negative, mean -0.55 h">
+<p><strong>384 stages minus 192 stages</strong> (12 pairs).</p>
+<svg viewBox="0 0 640 200" role="img" aria-label="Dot plot: fit with 384 stages minus 192, all 12 paired differences negative, mean -0.55 h">
   <line x1="410" y1="4" x2="410" y2="172" stroke="#9aa1ab"/>
-  <line x1="337.8" y1="4" x2="337.8" y2="172" stroke="#b4472f" stroke-dasharray="4 3"/>
-  <g class="lab">
+  <line x1="337.8" y1="4" x2="337.8" y2="172" stroke="#b0452e" stroke-dasharray="4 3"/>
+  <g>
     <text x="195" y="18" text-anchor="end">A · gen 192 · ×1 · fixed</text>
     <text x="195" y="36" text-anchor="end">A · gen 192 · ×1 · estimated</text>
     <text x="195" y="54" text-anchor="end">A · gen 192 · ×3 · estimated</text>
@@ -129,7 +182,7 @@
     <text x="195" y="162" text-anchor="end">B · gen 192 · ×3 · estimated</text>
   </g>
   <g stroke="#e3e6ea"><line x1="200" y1="14" x2="620" y2="14"/><line x1="200" y1="32" x2="620" y2="32"/><line x1="200" y1="50" x2="620" y2="50"/><line x1="200" y1="68" x2="620" y2="68"/><line x1="200" y1="86" x2="620" y2="86"/><line x1="200" y1="104" x2="620" y2="104"/><line x1="200" y1="122" x2="620" y2="122"/><line x1="200" y1="140" x2="620" y2="140"/><line x1="200" y1="158" x2="620" y2="158"/></g>
-  <g fill="#2f5d9e">
+  <g fill="#2d5b9b">
     <circle cx="214.8" cy="14" r="4.5"/>
     <circle cx="367.1" cy="32" r="4.5"/><circle cx="393.1" cy="32" r="4.5"/>
     <circle cx="337.7" cy="50" r="4.5"/><circle cx="364.7" cy="50" r="4.5"/>
@@ -144,14 +197,20 @@
   <g class="mut" text-anchor="middle">
     <text x="213.1" y="187">−1.5</text><text x="278.8" y="187">−1.0</text><text x="344.4" y="187">−0.5</text><text x="410" y="187">0</text><text x="475.6" y="187">+0.5</text><text x="541.3" y="187">+1.0</text><text x="606.9" y="187">+1.5</text>
   </g>
-  <text x="620" y="199" text-anchor="end" class="mut">hours (mean −0.55)</text>
+  <text x="620" y="199" text-anchor="end" class="mut">hours (average −0.55)</text>
 </svg>
-<p>All 12 negative, so a sign test gives two-sided p = 0.0005. The caveat is selection: only pairs in which both fits passed are shown, and passing may not be independent of the estimate.</p>
+<p>All 12 are negative, from −0.10 to −1.49 h. This holds whether the data were generated with 192 stages (so 384 assumes too many) or with 384 (so 384 is correct and 192 too few). How unlikely is that by chance?</p>
+<ol>
+  <li>If the stage count made no difference, each pair would be equally likely to come out positive or negative, like a coin toss.</li>
+  <li>The chance that 12 tosses all land the same way is 2 × (½)<sup>12</sup> = 1 in 2,048, about 0.0005. This is a sign test.</li>
+  <li>Caveat: only pairs in which both fits passed the check are included. If passing were linked to the estimate itself, the 12 would not be a fair sample.</li>
+</ol>
+<p>A possible mechanism, proposed earlier and not tested here: the model can produce the observed rise-and-fall either with strong oscillation and a short cycle or with weaker oscillation and a longer one. With fewer stages the oscillation fades faster, and earlier fits made up for it with a more synchronous start and a longer cycle. The result above fits that account.</p>
 
-<p><strong><code>b_shape</code> estimated − fixed at truth</strong> (9 pairs), same fit <code>n_c</code>.</p>
+<p><strong><code>b_shape</code> estimated minus fixed at truth</strong> (9 pairs), same stage count.</p>
 <svg viewBox="0 0 640 164" role="img" aria-label="Dot plot: b_shape estimated minus fixed, 6 of 9 positive, mean +0.33 h">
   <line x1="410" y1="4" x2="410" y2="136" stroke="#9aa1ab"/>
-  <line x1="453.8" y1="4" x2="453.8" y2="136" stroke="#b4472f" stroke-dasharray="4 3"/>
+  <line x1="453.8" y1="4" x2="453.8" y2="136" stroke="#b0452e" stroke-dasharray="4 3"/>
   <g>
     <text x="195" y="18" text-anchor="end">A · gen 192 · fit 192 · ×1</text>
     <text x="195" y="36" text-anchor="end">A · gen 192 · fit 192 · ×3</text>
@@ -162,7 +221,7 @@
     <text x="195" y="126" text-anchor="end">B · gen 192 · fit 192 · ×3</text>
   </g>
   <g stroke="#e3e6ea"><line x1="200" y1="14" x2="620" y2="14"/><line x1="200" y1="32" x2="620" y2="32"/><line x1="200" y1="50" x2="620" y2="50"/><line x1="200" y1="68" x2="620" y2="68"/><line x1="200" y1="86" x2="620" y2="86"/><line x1="200" y1="104" x2="620" y2="104"/><line x1="200" y1="122" x2="620" y2="122"/></g>
-  <g fill="#2f5d9e">
+  <g fill="#2d5b9b">
     <circle cx="406.5" cy="14" r="4.5"/>
     <circle cx="472.9" cy="32" r="4.5"/><circle cx="522.6" cy="32" r="4.5"/>
     <circle cx="587.8" cy="50" r="4.5"/>
@@ -175,37 +234,42 @@
   <g class="mut" text-anchor="middle">
     <text x="213.1" y="151">−1.5</text><text x="278.8" y="151">−1.0</text><text x="344.4" y="151">−0.5</text><text x="410" y="151">0</text><text x="475.6" y="151">+0.5</text><text x="541.3" y="151">+1.0</text><text x="606.9" y="151">+1.5</text>
   </g>
-  <text x="620" y="163" text-anchor="end" class="mut">hours (mean +0.33)</text>
+  <text x="620" y="163" text-anchor="end" class="mut">hours (average +0.33)</text>
 </svg>
-<p>6 of 9 positive, −0.18 to +1.36 h. The direction matches the earlier attribution of simulated bias to estimating <code>b_shape</code> (2026-10-06, at <code>n_c</code> 96), but nine pairs cannot confirm it.</p>
+<p>6 of 9 are positive, from −0.18 to +1.36 h. Having to estimate <code>b_shape</code> lengthens the estimate, the same direction as the earlier 96-stage finding, but nine pairs are too few to confirm it.</p>
 
-<h2>What this means for the analysis</h2>
+<h2>6. Answers to the three questions</h2>
+<ol>
+  <li><strong>How far off is the model at the stage counts we now use?</strong> Where the stage count is right and enough fits passed, the error is between −0.6 and +1.2 h, usually too long. The study cannot give a single, precise figure.</li>
+  <li><strong>Does the stage count change the answer, and what if it is wrong?</strong> Yes: assuming 384 stages instead of 192 shortens the estimate by about half an hour on the same data. What a wrong stage count does to the error against the truth is answered only for assuming too many (one readable cell, +0.40 h). Assuming too few is not measured.</li>
+  <li><strong>Does <code>b_shape</code> handling matter?</strong> With 384 stages, <code>b_shape</code> cannot be fixed, because the fits do not converge even at the true value. Estimating it probably lengthens the estimate (+0.33 h on average, 6 of 9 pairs), but this is not established. No dependence on the true synchrony is visible.</li>
+</ol>
+
+<h2>7. What it means for the analysis</h2>
 <ul>
-  <li><strong>A reported cycle length must state its <code>n_c</code>.</strong> On simulated data, moving the fit from 192 to 384 moves it by about half an hour on identical data, comparable to the bias itself.</li>
-  <li><strong>Which <code>n_c</code> is less biased is not answered.</strong> The cells that would show the cost of under-specifying (generate 384, fit 192) are all unreadable, and the readable diagonal cells overlap.</li>
-  <li><strong>At <code>n_c</code> = 384, <code>b_shape</code> has to be estimated.</strong> Fixing it fails even at the truth, so the failures of pinned real-data fits at 384 are what the model does when it is correctly specified, not a sign of misfit to the real data.</li>
-  <li><strong>No bias correction can be read from this study.</strong> Biases of −0.6 to +1.2 h, with replicate ranges of 1–2 h, do not pin down a correction for the real-data estimates (41.2–41.8 h).</li>
+  <li><strong>Any reported cycle length must state its stage count.</strong> Changing it from 192 to 384 moves the estimate by about as much as the bias we are trying to measure.</li>
+  <li><strong>The study does not say which stage count gives the less biased answer.</strong></li>
+  <li><strong>With 384 stages, <code>b_shape</code> has to be estimated.</strong> The earlier project decision to fix <code>b_shape</code> (at 400) was made with 96 stages and does not carry over. The convergence failures of fixed-<code>b_shape</code> real-data fits at 384 are what the model does even when correctly specified, not a sign that it misfits the real data.</li>
+  <li><strong>No bias correction can be taken from this study</strong> for the real-data estimates of 41.2–41.8 h.</li>
 </ul>
 
-<h2>Not measured, and caveats</h2>
+<h2>8. Limits</h2>
 <ul>
-  <li>Bias from under-specifying <code>n_c</code>; dependence of bias on the true <code>b_shape</code>; the cost of estimating rather than fixing <code>b_shape</code>.</li>
-  <li>Truth A comes from an <code>n_c</code> = 96 fit, which is known to be the wrong <code>n_c</code>; its parameters are used only as a plausible generating point.</li>
-  <li>500 draws per chain, half the production length, chosen to keep 4,000 total draws over 8 chains. A second stage with 1,000 draws was costed (about 4–7 days at the half-node budget) and not run.</li>
-  <li>Paired contrasts include only pairs where both fits passed.</li>
+  <li>500 draws per chain, half our usual length, chosen so that 8 chains gave the usual 4,000 draws in total. A second stage with 1,000 draws per chain was costed at about 4–7 days on half the cluster node, and not run.</li>
+  <li>Truth A comes from a 96-stage fit, which we now know is the wrong stage count. It serves only as a plausible set of values to generate from.</li>
+  <li>Paired comparisons include only pairs in which both fits passed.</li>
 </ul>
 
-<h2>Sources</h2>
-<p class="cap">Repository <code>plasmofit-test</code>. All numbers on this page come from these outputs.</p>
-<div class="wrap"><table>
+<h2>9. Sources</h2>
+<p class="cap">Repository <code>plasmofit-test</code>. Every number on this page comes from these outputs.</p>
+<div class="wrap"><table class="prose">
 <tr><th class="l">what</th><th class="l">script</th><th class="l">output</th></tr>
-<tr><td class="l">design, reading rule, fits, merge</td><td class="l"><code>_scripts/simstudy.R</code></td><td class="l"><code>_data/simstudy/</code> (fits and one-row summaries)</td></tr>
-<tr><td class="l">cell biases, paired contrasts</td><td class="l"><code>_scripts/simstudy-read.R</code></td><td class="l"><code>_data/simstudy-read-2026-10-20-v2.txt</code></td></tr>
-<tr><td class="l">convergence bins, pass counts by cell</td><td class="l"><code>_scripts/simstudy-health.R</code></td><td class="l"><code>_data/simstudy-health-2026-10-20.txt</code></td></tr>
-<tr><td class="l">running record and full write-up</td><td class="l" colspan="2"><code>claude/findings.md</code>, "Simulation study, full read"</td></tr>
+<tr><td class="l">design, reading rules, simulation, fits</td><td class="l"><code>_scripts/simstudy.R</code></td><td class="l"><code>_data/simstudy/</code> (fits and one-row summaries)</td></tr>
+<tr><td class="l">cell biases, paired comparisons</td><td class="l"><code>_scripts/simstudy-read.R</code></td><td class="l"><code>_data/simstudy-read-2026-10-20-v2.txt</code></td></tr>
+<tr><td class="l">convergence counts by cell</td><td class="l"><code>_scripts/simstudy-health.R</code></td><td class="l"><code>_data/simstudy-health-2026-10-20.txt</code></td></tr>
+<tr><td class="l">earlier 96-stage results quoted in section 1</td><td class="l" colspan="2"><code>claude/findings.md</code>; settled decisions in <code>CLAUDE.md</code> (2026-10-01, 10-02, 10-06)</td></tr>
+<tr><td class="l">full write-up of this study</td><td class="l" colspan="2"><code>claude/findings.md</code>, "Simulation study, full read"</td></tr>
 </table></div>
-<p class="cap">SLURM 30875 (chains), 31864, 31865, and 32391 (chains in the pinned layout), 30876 (merge and read), 2026-10-15 to 2026-10-20. The job's own read file, <code>_data/simstudy-read-2026-10-20.txt</code>, has NA ranges from a reader bug fixed on 2026-10-20; its means are identical to the -v2 output.</p>
+<p class="cap">SLURM jobs 30875 (chains), 31864, 31865, and 32391 (chains in the pinned layout), and 30876 (merge and read), 2026-10-15 to 2026-10-20. The merge job's own output, <code>_data/simstudy-read-2026-10-20.txt</code>, shows blank ranges because of a reader bug fixed on 2026-10-20; its averages match the -v2 output.</p>
 
 </main>
-</body>
-</html>
