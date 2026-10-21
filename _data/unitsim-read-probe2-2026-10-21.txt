@@ -1,0 +1,57 @@
+8 merged fits
+
+Cells: one row per fit (4 chains x 1000 post-warmup draws). max_rhat over
+all monitored quantities; true_cl, cl_mean (posterior mean), cl_sd
+(posterior sd), bias = cl_mean - true_cl, all hours, positive = long;
+in_80 = truth inside the central 80% posterior interval; bs_logratio =
+log(posterior mean b_shape / true b_shape); lp_apart = largest distance of
+a chain's mean lp__ from the median of the other three; div and
+treedepth-at-cap (12) in % of 4000 post-warmup iterations.
+
+              name            unit max_rhat           worst  pass true_cl cl_mean cl_sd  bias in_80 bs_logratio lp_apart div_pct td_cap_pct
+ u1-g1024-est-rep1 Mefloquine.1800    1.003 cycle_length[1]  TRUE   42.64   44.48  2.00 1.839  TRUE       0.593     0.12    0.05          0
+ u1-g1024-fix-rep1 Mefloquine.1800    1.170        logit_cl FALSE   42.64   42.69  1.80 0.055  TRUE       0.000     0.40    0.07          0
+  u1-g384-est-rep1 Mefloquine.1800    1.012 cycle_length[1]  TRUE   42.64   43.25  1.86 0.609  TRUE      -0.009     0.34    0.15          0
+  u1-g384-fix-rep1 Mefloquine.1800    1.013  b_off_vec[1,1]  TRUE   42.64   43.62  1.78 0.982  TRUE       0.000     0.19    0.10          0
+ u7-g1024-est-rep1 MMV048_PIB.1800    1.004  b_off_vec[1,1]  TRUE   42.84   47.23  2.03 4.391 FALSE      -0.277     0.16    0.30          0
+ u7-g1024-fix-rep1 MMV048_PIB.1800    1.003 cycle_length[1]  TRUE   42.84   46.01  2.08 3.162 FALSE       0.000     0.10    0.40          0
+  u7-g384-est-rep1 MMV048_PIB.1800    1.005            lp__  TRUE   42.84   47.32  1.95 4.477 FALSE      -0.816     0.32    0.25          0
+  u7-g384-fix-rep1 MMV048_PIB.1800    1.010        logit_cl  TRUE   42.84   44.15  2.15 1.310  TRUE       0.000     0.41    0.43          0
+
+Cells: per chain. hours = warmup + sampling; leapfrog steps per
+post-warmup iteration; ms per gradient = sampling seconds / sampling
+n_leapfrog; lp_mean and cl_mean = the chain's posterior means.
+
+              name chain lp_mean cl_mean hours warmup_hours leapfrog_per_iter ms_per_grad
+ u1-g1024-est-rep1     1 -120.68   44.45 0.118        0.065                74        2.57
+ u1-g1024-est-rep1     2 -120.58   44.45 0.123        0.056                94        2.58
+ u1-g1024-est-rep1     3 -120.48   44.52 0.162        0.091               121        2.12
+ u1-g1024-est-rep1     4 -120.60   44.48 0.158        0.072               126        2.48
+ u1-g1024-fix-rep1     1 -119.54   42.21 0.144        0.050               113        3.00
+ u1-g1024-fix-rep1     2 -119.86   42.19 0.129        0.052                99        2.81
+ u1-g1024-fix-rep1     3 -120.06   43.66 0.108        0.038                90        2.77
+ u1-g1024-fix-rep1     4 -119.94   42.71 0.175        0.055               162        2.67
+  u1-g384-est-rep1     1 -121.23   43.10 0.121        0.067                75        2.59
+  u1-g384-est-rep1     2 -120.89   43.18 0.152        0.069               117        2.54
+  u1-g384-est-rep1     3 -120.83   43.17 0.125        0.065                99        2.19
+  u1-g384-est-rep1     4 -121.12   43.54 0.155        0.073               117        2.54
+  u1-g384-fix-rep1     1 -119.34   43.65 0.154        0.061               122        2.74
+  u1-g384-fix-rep1     2 -119.11   43.54 0.129        0.054                99        2.74
+  u1-g384-fix-rep1     3 -119.26   43.76 0.241        0.063               229        2.78
+  u1-g384-fix-rep1     4 -119.31   43.53 0.121        0.051               107        2.36
+ u7-g1024-est-rep1     1  -17.52   47.29 0.105        0.043               100        2.24
+ u7-g1024-est-rep1     2  -17.36   47.14 0.102        0.038               102        2.24
+ u7-g1024-est-rep1     3  -17.44   47.33 0.087        0.038                78        2.23
+ u7-g1024-est-rep1     4  -17.32   47.17 0.079        0.040                64        2.23
+ u7-g1024-fix-rep1     1  -15.78   46.04 0.083        0.038                72        2.26
+ u7-g1024-fix-rep1     2  -15.70   46.00 0.108        0.043               105        2.24
+ u7-g1024-fix-rep1     3  -15.80   46.12 0.077        0.038                62        2.26
+ u7-g1024-fix-rep1     4  -15.80   45.87 0.082        0.037                71        2.25
+  u7-g384-est-rep1     1  -17.32   47.49 0.082        0.039                69        2.27
+  u7-g384-est-rep1     2  -17.39   47.21 0.079        0.035                69        2.27
+  u7-g384-est-rep1     3  -17.71   47.28 0.078        0.039                61        2.27
+  u7-g384-est-rep1     4  -17.48   47.30 0.094        0.045                80        2.23
+  u7-g384-fix-rep1     1  -16.24   43.80 0.108        0.039               111        2.24
+  u7-g384-fix-rep1     2  -16.64   44.37 0.088        0.048                64        2.24
+  u7-g384-fix-rep1     3  -16.67   44.36 0.097        0.042                88        2.24
+  u7-g384-fix-rep1     4  -16.62   44.09 0.102        0.044                93        2.23

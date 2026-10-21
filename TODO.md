@@ -14,19 +14,40 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] **SLURM 32409 — single-unit timing probe, done 2026-10-21** (10 min):
       chains 0.08-0.16 h, both fits pass (`_data/unitsim-read-probe-2026-10-21.txt`;
       `findings.md`, "Second simulation study and single-unit study").
-- [ ] **SLURM 32412 — second probe** (submitted 15:51; frozen script
-      `_data/unitsim/unitsim-run-2.R`, md5 57facb8c…): fixed `b_shape` at
-      gen 384 and 1024, estimated at 1024, both units, rep 1. When it ends:
-      `UNITSIM_MODE=merge Rscript --vanilla _scripts/unitsim.R`, then
-      `_scripts/unitsim-read.R > _data/unitsim-read-probe2-<date>.txt`.
-- [ ] **Agree the single-unit design with Lucas, then write it and its
-      reading rule into the `unitsim.R` header.** Settled 2026-10-21: units
-      = shortest window (MMV048_PIB.1800, 96-168 h, fewest observations among
-      the four 96-168 h units) and longest (Mefloquine.1800, 96-216 h); gen
-      `n_c` 384 and 1024; `b_shape` estimated and fixed at truth, with more
-      sampling or other settings for the fixed arm if it does not converge.
-      Open: replicates (~10, to discuss) and whether to change the
-      within-chain threading (single-unit fits use 2 of 4 pinned cores).
+- [x] **SLURM 32412 — second probe, read 2026-10-21**
+      (`_data/unitsim-read-probe2-2026-10-21.txt`): fixed `b_shape` passes in
+      3 of 4 fits at production settings (fails: Mefloquine, gen 1024, max
+      R-hat 1.170 on `logit_cl`, `lp__` within 0.4 across chains, so not a
+      separated chain); estimated passes 2 of 2 at gen 1024. Chains
+      0.11-0.24 h. One dataset per fit: no bias is read.
+- [ ] **NEXT SESSION (Lucas, 2026-10-21): finish the single-unit design and
+      write it into the `unitsim.R` header before any study fit.**
+      Decided: units MMV048_PIB.1800 and Mefloquine.1800; gen `n_c` 384 and
+      1024; `b_shape` estimated and fixed at truth; **n = 60 replicates per
+      cell, fixed now** (2 x 2 x 2 x 60 = 480 fits, 1920 chains; at
+      ~0.1-0.25 h per chain on 16 workers ~15-25 h). To do:
+      1. Draw 44 more noise seeds (reps 17-60; 1-16 stay shared with the
+         full-model study), written into the header.
+      2. Fixed arm sampler settings: the one failure was marginal at
+         production settings. Decide, before seeing more fits, one setting
+         for the WHOLE fixed arm (e.g. 2000 warmup + 2000 draws), not a
+         per-failure retry.
+      3. Reading rule (gate, bias mean and se over passing fits, 80%
+         coverage, est - fix paired contrast, gen 1024 - 384, failure bins)
+         into the header and `unitsim-read.R`.
+      4. **Benchmark two chains per L3 group** (Lucas chose this over a
+         package change): one-unit chains, 2 physical cores each, two per
+         group, against the current one per group, under a full 16-worker
+         load. Needs `simstudy-pinned.sh` to form 2-core workers (new env
+         var, default 4). Lucas's always-pin rule changes only on his say-so
+         after the result.
+      5. **Cheap load-balancing test** (Lucas asked): no sampling. For the
+         full model, time `grad_log_prob` per trajectory combo (build each
+         unit's data alone, ~100 gradient evaluations each at the truth),
+         then compare the sum over 14 combos / 4 threads (perfect balance)
+         against the measured 4-thread full-model gradient (~22 ms). The gap
+         bounds what finer slicing over (combo, time) pairs could buy. Same
+         per-time timing inside one unit tells how uneven time points are.
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`
