@@ -3970,6 +3970,34 @@ days; full study (32 fits): ~3-8 days.
 chains each, pinned (64 CPUs, 8 workers, 7 on whole L3 groups). It reads
 cost per chain; its pass/fail is one dataset each and is not a pass rate.
 
+**Probe read 2026-10-21** (`_scripts/unitsim-read.R`,
+`_data/unitsim-read-probe-2026-10-21.txt`): the whole job took 10 min.
+Cells: per chain, 700 warmup + 1000 draws, pinned.
+
+| unit | chain hours | leapfrog steps per iteration | ms per gradient | max R-hat (4 chains) |
+|---|---|---|---|---|
+| MMV048_PIB.1800 (6 series) | 0.078-0.094 | 61-80 | 2.23-2.27 | 1.005 |
+| Mefloquine.1800 (22 series) | 0.121-0.155 | 75-117 | 2.19-2.59 | 1.012 |
+
+**A single-unit fit costs ~1/150 of a full-model chain**: ~10x cheaper per
+gradient and ~20x fewer steps per iteration (tree depth ~6-7 against 11-12).
+Display only, one dataset each: posterior mean minus truth +0.61 h
+(Mefloquine) and +4.48 h (MMV048_PIB: 47.32 h, posterior sd 1.95, against a
+42.84 h truth, outside the central 80% interval, with `b_shape` at 0.44x its
+truth). Not a bias estimate.
+
+**Simulating at gen `n_c` 1024** was ~8 min per Mefloquine chain when each
+series called `mat_exp_series` (~22 s per call at 1024). `unitsim.R` now
+evaluates the unit's one shared trajectory once at its distinct times (23 s
+per unit; identical values at 384, max |diff| 0). Frozen as
+`_data/unitsim/unitsim-run-2.R` (md5 57facb8c…).
+
+**Second probe, SLURM 32412** (submitted 15:51; 64 CPUs, tasks
+`_data/unitsim/probe2-tasks.txt`): `b_shape` fixed at the truth for both
+units at gen 384 and 1024, and estimated at gen 1024; rep 1, production
+settings. Reads whether fixed `b_shape` converges at production settings and
+what gen 1024 costs, to set the fixed arm's sampler settings before the study.
+
 ### Simulation study, full read: 62 of 205 fits pass, 9 of 48 cells readable, and fitting `n_c` 384 gives a shorter cycle length than 192 in all 12 paired replicates
 
 Report for Lucas, statistics explained: `reports/simstudy-2026-10-21.html`,

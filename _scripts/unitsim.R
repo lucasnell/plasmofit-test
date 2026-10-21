@@ -132,7 +132,6 @@ T_FULL <- list(b_shape = pm("b_shape"), b_offset = pm("b_offset"),
                sd_iRBC = pm("sd_iRBC"), cycle_length = pm("cycle_length"))
 rm(f_truth)
 
-ends0 <- cumsum(d0$n_obs); starts0 <- ends0 - d0$n_obs + 1L
 obs_key0 <- paste(rep(lv0$series, d0$n_obs), d0$ts)
 sd_obs0 <- T_FULL$sd_iRBC[rep(d0$grp_sd, d0$n_obs)]
 
@@ -190,15 +189,17 @@ make_fit_inputs <- function(nm, split = "alt") {
     stopifnot(d$n_grp_init == 1L, d$n_c == FIT_NC,
               d$b_shape_fixed == as.integer(cf$method == "fix"))
     lv <- attr(d, "levels")
-    ends <- cumsum(d$n_obs); starts <- ends - d$n_obs + 1L
     y0 <- plasmofit:::generate_starts(truth$cycle_length, cf$gen_nc, truth$b_shape,
                                       truth$b_offset, truth$log10_total0)
-    y_hat <- numeric(d$n_total_obs)
-    for (s in seq_len(d$n_ts)) {
-        ix <- starts[s]:ends[s]
-        y_hat[ix] <- plasmofit:::mat_exp_series(y0, truth$cycle_length, cf$gen_nc,
-                                                truth$R, d$mu, d$ts[ix], d$dt_full)
-    }
+    ## Every series in the unit shares every parameter, so they share one
+    ## trajectory: evaluate it once at the unit's distinct times (one matrix
+    ## exponential, ~22 s at n_c 1024; gotchas.md, "Trajectory cost is roughly
+    ## CUBIC"). mat_exp_series steps from t = 0, so a value at time t does not
+    ## depend on which other times are requested: identical to per-series calls.
+    u_ts <- sort(unique(d$ts))
+    y_u <- plasmofit:::mat_exp_series(y0, truth$cycle_length, cf$gen_nc,
+                                      truth$R, d$mu, u_ts, d$dt_full)
+    y_hat <- y_u[match(d$ts, u_ts)]
     stopifnot(all(is.finite(y_hat)), all(y_hat >= 0))
     ## The unit's observations within the full noise vector, by (series, time).
     key <- paste(rep(lv$series, d$n_obs), d$ts)

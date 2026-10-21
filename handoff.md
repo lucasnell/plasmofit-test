@@ -13,7 +13,11 @@ spread). Two instruments:
 - **Single-unit study, running first** (`_scripts/unitsim.R`): one `grp_init`
   unit's series fitted alone with `pooled_both`. **Timing probe SLURM 32409**
   (MMV048_PIB.1800 and Mefloquine.1800, 4 chains each) submitted 15:22.
-  Merge and read cost when it ends (`TODO.md`), then agree the design.
+  It took 10 min: single-unit chains run 5-10 min, both fits passed
+  (`_data/unitsim-read-probe-2026-10-21.txt`). **Second probe SLURM 32412**
+  (fixed `b_shape`, and gen 1024) submitted 15:51. Units settled as
+  MMV048_PIB.1800 and Mefloquine.1800; replicates and threading still open
+  (`TODO.md`).
 - **Full-model study** (`_scripts/simstudy2.R`): built, **on hold; do not run
   unless Lucas explicitly says so.**
 

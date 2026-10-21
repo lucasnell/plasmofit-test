@@ -11,16 +11,22 @@ match where a thread exists. This file is the actionable layer. -->
 
 ### In progress
 
-- [ ] **SLURM 32409 — single-unit study timing probe**, submitted 2026-10-21
-      15:22 (`_scripts/unitsim.R`, frozen copy `_data/unitsim/unitsim-run.R`,
-      md5 4f861747…; tasks `_data/unitsim/probe-tasks.txt`; logs
-      `_data/unitsim/logs/`). Units MMV048_PIB.1800 and Mefloquine.1800, gen
-      `n_c` 384, `b_shape` estimated, rep 1, 4 chains each, pinned. When it
-      ends: `UNITSIM_MODE=merge Rscript --vanilla _scripts/unitsim.R`, then
-      read cost per chain from the summaries' `per_chain`. **Then draft the
-      single-unit design with Lucas** (units, factors, replicates, reading
-      rule) and write it into the `unitsim.R` header before any study fit.
-      Do not edit `_data/unitsim/unitsim-run.R` while it runs.
+- [x] **SLURM 32409 — single-unit timing probe, done 2026-10-21** (10 min):
+      chains 0.08-0.16 h, both fits pass (`_data/unitsim-read-probe-2026-10-21.txt`;
+      `findings.md`, "Second simulation study and single-unit study").
+- [ ] **SLURM 32412 — second probe** (submitted 15:51; frozen script
+      `_data/unitsim/unitsim-run-2.R`, md5 57facb8c…): fixed `b_shape` at
+      gen 384 and 1024, estimated at 1024, both units, rep 1. When it ends:
+      `UNITSIM_MODE=merge Rscript --vanilla _scripts/unitsim.R`, then
+      `_scripts/unitsim-read.R > _data/unitsim-read-probe2-<date>.txt`.
+- [ ] **Agree the single-unit design with Lucas, then write it and its
+      reading rule into the `unitsim.R` header.** Settled 2026-10-21: units
+      = shortest window (MMV048_PIB.1800, 96-168 h, fewest observations among
+      the four 96-168 h units) and longest (Mefloquine.1800, 96-216 h); gen
+      `n_c` 384 and 1024; `b_shape` estimated and fixed at truth, with more
+      sampling or other settings for the fixed arm if it does not converge.
+      Open: replicates (~10, to discuss) and whether to change the
+      within-chain threading (single-unit fits use 2 of 4 pinned cores).
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`

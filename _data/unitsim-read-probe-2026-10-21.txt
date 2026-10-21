@@ -1,0 +1,27 @@
+2 merged fits
+
+Cells: one row per fit (4 chains x 1000 post-warmup draws). max_rhat over
+all monitored quantities; true_cl, cl_mean (posterior mean), cl_sd
+(posterior sd), bias = cl_mean - true_cl, all hours, positive = long;
+in_80 = truth inside the central 80% posterior interval; bs_logratio =
+log(posterior mean b_shape / true b_shape); lp_apart = largest distance of
+a chain's mean lp__ from the median of the other three; div and
+treedepth-at-cap (12) in % of 4000 post-warmup iterations.
+
+             name            unit max_rhat           worst pass true_cl cl_mean cl_sd  bias in_80 bs_logratio lp_apart div_pct td_cap_pct
+ u1-g384-est-rep1 Mefloquine.1800    1.012 cycle_length[1] TRUE   42.64   43.25  1.86 0.609  TRUE      -0.009     0.34    0.15          0
+ u7-g384-est-rep1 MMV048_PIB.1800    1.005            lp__ TRUE   42.84   47.32  1.95 4.477 FALSE      -0.816     0.32    0.25          0
+
+Cells: per chain. hours = warmup + sampling; leapfrog steps per
+post-warmup iteration; ms per gradient = sampling seconds / sampling
+n_leapfrog; lp_mean and cl_mean = the chain's posterior means.
+
+             name chain lp_mean cl_mean hours warmup_hours leapfrog_per_iter ms_per_grad
+ u1-g384-est-rep1     1 -121.23   43.10 0.121        0.067                75        2.59
+ u1-g384-est-rep1     2 -120.89   43.18 0.152        0.069               117        2.54
+ u1-g384-est-rep1     3 -120.83   43.17 0.125        0.065                99        2.19
+ u1-g384-est-rep1     4 -121.12   43.54 0.155        0.073               117        2.54
+ u7-g384-est-rep1     1  -17.32   47.49 0.082        0.039                69        2.27
+ u7-g384-est-rep1     2  -17.39   47.21 0.079        0.035                69        2.27
+ u7-g384-est-rep1     3  -17.71   47.28 0.078        0.039                61        2.27
+ u7-g384-est-rep1     4  -17.48   47.30 0.094        0.045                80        2.23
