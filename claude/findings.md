@@ -4051,7 +4051,7 @@ per gradient, median of 5 blocks of 40 evaluations.
   contradicts the `plasmofit.stan` comment that `make_DC` "measures as free
   next to ew_poly_eval" at these time counts.
 
-**Study cost** at one chain per L3group, scaled from the benchmark's
+**Study cost** at one chain per L3 group, scaled from the benchmark's
 MMV048_PIB chains (estimated arm ~0.10 h, fixed arm ~0.23 h per chain):
 ~22 h for 1920 chains on 16 workers.
 
