@@ -3998,6 +3998,10 @@ units at gen 384 and 1024, and estimated at gen 1024; rep 1, production
 settings. Reads whether fixed `b_shape` converges at production settings and
 what gen 1024 costs, to set the fixed arm's sampler settings before the study.
 
+**2026-10-22: design fixed** (`_scripts/unitsim.R` header; decision log).
+Before the study, a layout benchmark (SLURM 32417/32418) and a no-sampling
+load-balancing timing (SLURM 32419); results to be added here.
+
 ### Simulation study, full read: 62 of 205 fits pass, 9 of 48 cells readable, and fitting `n_c` 384 gives a shorter cycle length than 192 in all 12 paired replicates
 
 Report for Lucas, statistics explained: `reports/simstudy-2026-10-21.html`,

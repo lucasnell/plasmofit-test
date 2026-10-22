@@ -32,8 +32,14 @@
 #   bounds 35-50 h; logit_R normal(-2, 1)); b_shape lognormal(2, 0.5) when
 #   estimated (method "est") or fixed at the truth (method "fix");
 #   log10_total0 normal(1, 1); n_c 384 always; adapt_delta 0.95,
-#   max_treedepth 12; 4 chains x (700 warmup + 1000 draws); sampler seed
-#   538065874, chain_id k.
+#   max_treedepth 12; 4 chains; sampler seed 538065874, chain_id k.
+#   Iterations per chain by method (Lucas, 2026-10-22, before any study fit):
+#   est 700 warmup + 1000 draws (production); fix 2000 warmup + 2000 draws.
+#   The probe (SLURM 32412) passed fixed b_shape in 3 of 4 fits at production
+#   length, the failure marginal (max R-hat 1.170, chains' mean lp__ within
+#   0.4). Sampler settings change exploration, not the posterior, so the two
+#   arms are comparable; the longer setting applies to EVERY fixed fit, and
+#   no failed fit is retried.
 #   archer_stan_data() refuses grp_R or grp_cl with one level (it guards
 #   no_pool's hierarchy). pooled_both broadcasts its single R and
 #   cycle_length to every group, so the series are split into two labels
@@ -42,12 +48,46 @@
 #   instead of once, on two threads. check mode verifies log_prob is the same
 #   under a different split.
 #
-# DESIGN: not fixed yet. This file first serves a TIMING PROBE (2026-10-21):
-#   units MMV048_PIB.1800 (6 series, 34 obs, 96-168 h: the smallest) and
-#   Mefloquine.1800 (22 series, 132 obs, 96-216 h: the longest window), gen
-#   384, est, rep 1, 4 chains each. Chosen to bound cost per chain; the probe
-#   reads cost, not bias. The design (units, factors, replicates) and its
-#   reading rule go into this header before any study fit runs.
+# DESIGN, fixed 2026-10-22 with Lucas before any study fit ran:
+#   unit     u7 MMV048_PIB.1800 (6 series, 34 obs, 96-168 h): the shortest
+#               window, fewest observations among the four 96-168 h units;
+#            u1 Mefloquine.1800 (22 series, 132 obs, 96-216 h): the longest
+#               window. Chosen on design alone.
+#   gen_nc   384, 1024
+#   method   est (b_shape estimated), fix (b_shape fixed at the truth)
+#   rep      1-60 (REP_SEEDS; 1-16 shared with simstudy2.R, 17-60 drawn
+#            2026-10-22 with set.seed(20261022)). n fixed in advance.
+#   = 8 cells x 60 = 480 fits, 1920 chains, in _data/unitsim/study/.
+#   Replicate 1 is refitted although the probes fitted some of its cells:
+#   every study fit then comes from one frozen script and one setting.
+#   Probes (2026-10-21, SLURM 32409, 32412) wrote to _data/unitsim/ and are
+#   not part of the study.
+#
+# READING RULE, fixed 2026-10-22 before any study fit ran
+#   (_scripts/unitsim-read.R):
+#   gate      max R-hat < 1.05 over every monitored quantity (NA excluded),
+#             4 chains. A failed fit is not used for bias and not retried.
+#   bias      per fit: posterior mean of cycle_length - true cycle_length,
+#             hours; positive = long.
+#   per cell  n passing of 60 (an outcome in itself); mean and se (sd /
+#             sqrt(n)) of bias over passing fits; READABLE if >= 45 of 60
+#             pass. Display only: mean over all fits, and passing against
+#             failing fits.
+#   coverage  share of passing fits whose central 80% interval holds the
+#             truth.
+#   b_shape   est arm: log(posterior mean / true b_shape), mean over fits.
+#   contrasts paired on identical data, both fits passing, per rep: est -
+#             fix (cost of estimating b_shape) at each (unit, gen_nc); gen
+#             1024 - 384 at each (unit, method) (same noise draws, different
+#             noiseless trajectories, so partially paired).
+#   failures  marginal 1.05-1.15, severe >= 1.15; ONE CHAIN APART if a
+#             chain's mean lp__ is more than 3 units from the median of the
+#             other three.
+#
+# LAYOUT: pinned through _scripts/simstudy-pinned.sh. A benchmark of two
+#   chains per L3 group (2 physical cores each) against one (4 cores) runs
+#   first (2026-10-22; Lucas decides the layout from its numbers), in
+#   _data/unitsim/bench-w4/ and bench-w2/; its fits are not part of the study.
 #
 # TASKS are tokens "u<unit>-g<gen_nc>-<est|fix>-rep<r>-c<chain>", unit = index
 #   into the grp_init levels (check mode lists them), so file names do not
@@ -60,10 +100,14 @@
 #   check  list units with their truths; for UNITSIM_CHECK tokens (comma-
 #          separated fit names, default the probe's two fits) build and
 #          simulate, compare against simstudy2.R's data, and check the split.
+#   tasks  print the study's 1920 chain tokens, rep-major.
 #   UNITSIM_ITER overrides iterations in chain mode (smoke test; "smoke-").
+#   UNITSIM_DIR overrides the output directory (default _data/unitsim/study/).
 #
 #   cd /home2/lan68/plasmofit/plasmofit-test
 #   UNITSIM_MODE=check Rscript --vanilla _scripts/unitsim.R
+#   UNITSIM_MODE=tasks Rscript --vanilla _scripts/unitsim.R > _data/unitsim/study/tasks.txt
+#   (submit through simstudy-pinned.sh; see TODO.md for the command)
 #   UNITSIM_MODE=merge Rscript --vanilla _scripts/unitsim.R
 
 .libPaths("/home/lan68/R/x86_64-pc-linux-gnu-library/4.6")
@@ -75,22 +119,36 @@ suppressPackageStartupMessages({
 })
 
 N_CHAINS <- 4L
-WARMUP <- 700L
-ITER <- 1000L + WARMUP
+SETTINGS <- list(est = list(warmup = 700L, iter = 1700L),
+                 fix = list(warmup = 2000L, iter = 4000L))
 FIT_NC <- 384L
 CONTROL <- list(adapt_delta = 0.95, max_treedepth = 12)
 SEED_FIT <- 538065874L
 REP_SEEDS <- c(742160183L, 1908445027L, 355721694L, 1414213562L, 1732050808L,
                273469144L, 923590678L, 832351853L, 1481098644L, 996583259L,
                1100299434L, 938347168L, 681577182L, 1986708724L, 1346550232L,
-               1529979755L)                  # as simstudy2.R
+               1529979755L,                  # 1-16 as simstudy2.R
+               504979627L, 1539660851L, 1627240572L, 610765287L, 567525470L,
+               762245924L, 1968057179L, 992715895L, 1643895353L, 1163691978L,
+               1888244126L, 1178995960L, 27758083L, 450201449L, 1211793044L,
+               1227917299L, 265085477L, 1429626433L, 1635957329L, 1154687219L,
+               942277168L, 205349015L, 1724489978L, 1988255862L, 634536402L,
+               1519008358L, 434208822L, 1165502811L, 1554585708L, 756201702L,
+               1695726929L, 843984591L, 749845090L, 712884944L, 2123819819L,
+               1607165064L, 516892384L, 1034340295L, 647742746L, 1996862138L,
+               628141401L, 1693362474L, 1341215164L, 536629132L)
+stopifnot(length(REP_SEEDS) == 60L, !anyDuplicated(REP_SEEDS))
+STUDY <- expand.grid(unit = c(7L, 1L), gen_nc = c(384L, 1024L),
+                     method = c("est", "fix"), rep = seq_along(REP_SEEDS),
+                     stringsAsFactors = FALSE)
+STUDY$name <- with(STUDY, sprintf("u%d-g%d-%s-rep%d", unit, gen_nc, method, rep))
 TRUTH <- "np_wide_total0_nc384_t"
 
 MODE <- Sys.getenv("UNITSIM_MODE", "chain")
 iter_env <- Sys.getenv("UNITSIM_ITER", "")
 SMOKE <- nzchar(iter_env)
-if (SMOKE) { ITER <- as.integer(iter_env); WARMUP <- ITER %/% 2L }
-DIR <- "_data/unitsim/"
+DIR <- Sys.getenv("UNITSIM_DIR", "_data/unitsim/study/")
+if (!endsWith(DIR, "/")) DIR <- paste0(DIR, "/")
 PFX <- if (SMOKE) paste0(DIR, "smoke-") else DIR
 chain_path <- function(nm, k) sprintf("%schain-%s-c%d.rds", PFX, nm, k)
 fit_path <- function(nm) sprintf("%sfit-%s.rds", PFX, nm)
@@ -273,12 +331,21 @@ if (MODE == "check") {
     quit(save = "no")
 }
 
+if (MODE == "tasks") {
+    ## rep-major, chains innermost
+    cat(paste0(rep(STUDY$name, each = N_CHAINS), "-c", seq_len(N_CHAINS)), sep = "\n")
+    quit(save = "no")
+}
+
 if (MODE == "chain") {
     tok <- Sys.getenv("SLURM_ARRAY_TASK_ID", "")
     m <- regmatches(tok, regexec("^(.*)-c([0-9]+)$", tok))[[1]]
     stopifnot(length(m) == 3L)
     nm <- m[2]; k <- as.integer(m[3]); stopifnot(k >= 1L, k <= N_CHAINS)
     out <- chain_path(nm, k)
+    st <- SETTINGS[[parse_fit(nm)$method]]
+    ITER <- st$iter; WARMUP <- st$warmup
+    if (SMOKE) { ITER <- as.integer(iter_env); WARMUP <- ITER %/% 2L }
     cat(sprintf("task %s: fit %s, chain %d of %d, %d iter (%d warmup), cpus %s\n",
                 tok, nm, k, N_CHAINS, ITER, WARMUP,
                 sub(".*:\\s*", "", grep("Cpus_allowed_list",
@@ -310,6 +377,7 @@ if (MODE == "merge") {
         stopifnot(identical(vapply(parts, `[[`, integer(1), "chain"), seq_len(N_CHAINS)))
         f <- rstan::sflist2stanfit(lapply(parts, `[[`, "fit"))
         tru <- parts[[1]]$truth; cf <- parts[[1]]$cf
+        n_draws <- parts[[1]]$iter - parts[[1]]$warmup
         el <- do.call(rbind, lapply(parts, \(p) rstan::get_elapsed_time(p$fit)))
         rm(parts)
         write_rds(f, fit_path(nm))
@@ -341,7 +409,7 @@ if (MODE == "merge") {
                                      cl_mean = apply(rstan::extract(f, "cycle_length", permuted = FALSE)[, , 1], 2, mean),
                                      hours = rowSums(el) / 3600,
                                      warmup_hours = el[, "warmup"] / 3600,
-                                     leapfrog_per_iter = lf / (ITER - WARMUP),
+                                     leapfrog_per_iter = lf / n_draws,
                                      ms_per_grad = 1e3 * el[, "sample"] / lf))
         write_rds(row, sum_path(nm))
         n_done <- n_done + 1L

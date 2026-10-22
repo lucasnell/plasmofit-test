@@ -2,10 +2,13 @@
 
 ## State of play right now — read this first
 
-**Start here next session: `TODO.md`, "NEXT SESSION" item** (single-unit
-study design: n = 60 per cell decided; fixed `b_shape` passed 3 of 4 in probe
-32412, `_data/unitsim-read-probe2-2026-10-21.txt`; seeds, fixed-arm settings,
-reading rule, a two-chains-per-L3 benchmark, and a load-balancing test to do).
+**2026-10-22: single-unit study designed; layout benchmark running.** Design
+and reading rule fixed in the `_scripts/unitsim.R` header (fixed `b_shape` at
+2000 + 2000 iterations, estimated at production length; 60 replicates;
+readable at >= 45 of 60). Benchmark of one against two chains per L3 group:
+SLURM 32417 then 32418; load-balancing timing SLURM 32419 after them. Lucas
+decides the layout from the benchmark numbers, then the study is submitted
+(command in `TODO.md`).
 
 **New simulation work, 2026-10-21** (`findings.md`, "Second simulation study
 and single-unit study"). Lucas wants fewer fits, each sampled enough to

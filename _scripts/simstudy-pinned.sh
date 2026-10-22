@@ -75,18 +75,29 @@ for c in $(expand "$CPUSET" | sort -n); do
     CORES+=("$g:$c")
 done
 
-## Workers: whole L3 groups (4 held cores) first, then the leftover cores in
-## group order, 4 at a time. Fewer than 4 left over are left idle.
+## Workers of W physical cores (SIMSTUDY_CORES_PER_WORKER, default 4; 1, 2,
+## or 4). Whole L3 groups (4 held cores) first, each split into 4/W workers,
+## then the leftover cores in group order, W at a time. Fewer than W left over
+## are left idle. W < 4 puts 4/W chains in one L3 group, which the always-pin
+## rule (CLAUDE.md) forbids except to benchmark it (added 2026-10-22).
+W=${SIMSTUDY_CORES_PER_WORKER:-4}
+case "$W" in 1|2|4) ;; *) echo "ERROR: SIMSTUDY_CORES_PER_WORKER must be 1, 2, or 4" >&2; exit 1;; esac
+GLABEL=$([ "$W" -eq 4 ] && echo whole || echo shared)
 declare -A BYG
 for gc in "${CORES[@]}"; do BYG[${gc%%:*}]+="${gc##*:} "; done
 WORKERS=(); LEFT=()
 for g in $(printf '%s\n' "${!BYG[@]}" | sort -n); do
     set -- ${BYG[$g]}
-    if [ $# -ge 4 ]; then WORKERS+=("$(IFS=,; echo "$1,$2,$3,$4") whole"); shift 4; fi
+    if [ $# -ge 4 ]; then
+        GRP=("$1" "$2" "$3" "$4"); shift 4
+        for ((i = 0; i < 4; i += W)); do
+            WORKERS+=("$(IFS=,; echo "${GRP[*]:$i:$W}") $GLABEL")
+        done
+    fi
     LEFT+=("$@")
 done
-while [ ${#LEFT[@]} -ge 4 ]; do
-    WORKERS+=("$(IFS=,; echo "${LEFT[*]:0:4}") split"); LEFT=("${LEFT[@]:4}")
+while [ ${#LEFT[@]} -ge "$W" ]; do
+    WORKERS+=("$(IFS=,; echo "${LEFT[*]:0:$W}") split"); LEFT=("${LEFT[@]:$W}")
 done
 echo "job ${JOB} run ${RUN}, list ${LIST}"
 echo "job ${JOB} cpuset ${CPUSET}; ${#CORES[@]} physical cores, ${#WORKERS[@]} workers; idle cores: ${LEFT[*]:-none}"

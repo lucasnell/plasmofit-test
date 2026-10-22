@@ -20,34 +20,35 @@ match where a thread exists. This file is the actionable layer. -->
       R-hat 1.170 on `logit_cl`, `lp__` within 0.4 across chains, so not a
       separated chain); estimated passes 2 of 2 at gen 1024. Chains
       0.11-0.24 h. One dataset per fit: no bias is read.
-- [ ] **NEXT SESSION (Lucas, 2026-10-21): finish the single-unit design and
-      write it into the `unitsim.R` header before any study fit.**
-      Decided: units MMV048_PIB.1800 and Mefloquine.1800; gen `n_c` 384 and
-      1024; `b_shape` estimated and fixed at truth; **n = 60 replicates per
-      cell, fixed now** (2 x 2 x 2 x 60 = 480 fits, 1920 chains; at
-      ~0.1-0.25 h per chain on 16 workers ~15-25 h). To do:
-      1. Draw 44 more noise seeds (reps 17-60; 1-16 stay shared with the
-         full-model study), written into the header.
-      2. Fixed arm sampler settings: the one failure was marginal at
-         production settings. Decide, before seeing more fits, one setting
-         for the WHOLE fixed arm (e.g. 2000 warmup + 2000 draws), not a
-         per-failure retry.
-      3. Reading rule (gate, bias mean and se over passing fits, 80%
-         coverage, est - fix paired contrast, gen 1024 - 384, failure bins)
-         into the header and `unitsim-read.R`.
-      4. **Benchmark two chains per L3 group** (Lucas chose this over a
-         package change): one-unit chains, 2 physical cores each, two per
-         group, against the current one per group, under a full 16-worker
-         load. Needs `simstudy-pinned.sh` to form 2-core workers (new env
-         var, default 4). Lucas's always-pin rule changes only on his say-so
-         after the result.
-      5. **Cheap load-balancing test** (Lucas asked): no sampling. For the
-         full model, time `grad_log_prob` per trajectory combo (build each
-         unit's data alone, ~100 gradient evaluations each at the truth),
-         then compare the sum over 14 combos / 4 threads (perfect balance)
-         against the measured 4-thread full-model gradient (~22 ms). The gap
-         bounds what finer slicing over (combo, time) pairs could buy. Same
-         per-time timing inside one unit tells how uneven time points are.
+- [x] **2026-10-22 — single-unit design and reading rule fixed** in the
+      `_scripts/unitsim.R` header before any study fit: units MMV048_PIB.1800
+      and Mefloquine.1800; gen `n_c` 384, 1024; `b_shape` estimated (700 +
+      1000 iterations) and fixed at truth (2000 + 2000, every fixed fit, no
+      retries); 60 replicates (seeds 17-60 drawn with set.seed(20261022));
+      readable if >= 45 of 60 pass; replicate 1 refitted. Output dir
+      `_data/unitsim/study/`. Frozen script `_data/unitsim/unitsim-run-3.R`
+      (md5 6ff151ef…). Reader `_scripts/unitsim-read.R` implements the rule.
+- [ ] **Layout benchmark, SLURM 32417 (one chain per L3 group) then 32418
+      (two per group)**, submitted 2026-10-22 05:40; the same 64 chain tasks
+      (study reps 1-2, all 8 cells) in `_data/unitsim/bench-w4/` and
+      `bench-w2/`, not part of the study. When both end:
+      `Rscript --vanilla _scripts/unitsim-bench-read.R > _data/unitsim-bench-read-<date>.txt`
+      and **report the numbers to Lucas; he decides the layout** (no rule).
+- [ ] **Load-balancing test, SLURM 32419** (`_scripts/loadbalance-test.sh`,
+      waits on 32418; 8 CPUs; no sampling): outputs
+      `_data/loadbalance-{full1,unit,full4}-<date>.txt`. Report: per-combo
+      gradient cost against the 4-thread full-model gradient, and per-time
+      cost within Mefloquine. Not smoke-tested (the half-node budget was in
+      use); check its `.err` first. Do not edit `loadbalance-test.R` until it ends.
+- [ ] **Then submit the single-unit study** in the layout Lucas picks
+      (Lucas's say-so needed): `UNITSIM_MODE=tasks Rscript --vanilla
+      _scripts/unitsim.R > _data/unitsim/study/tasks.txt`, then
+      `sbatch --cpus-per-task=128 --mem=48G --time=3-00:00:00
+      --output=_data/unitsim/study/logs/pin-%j.out
+      --error=_data/unitsim/study/logs/pin-%j.err
+      --export=ALL,UNITSIM_DIR=_data/unitsim/study,SIMSTUDY_CORES_PER_WORKER=<4|2>,SIMSTUDY_DIR=_data/unitsim/study,SIMSTUDY_RUN=_data/unitsim/unitsim-run-3.R,SIMSTUDY_PIN_LIST=_data/unitsim/study/tasks.txt
+      _scripts/simstudy-pinned.sh`. Estimated ~20-30 h at one chain per
+      group (scaled from probe chain times, not measured at 4000 iterations).
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`
