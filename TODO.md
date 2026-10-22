@@ -47,15 +47,17 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] Study script frozen as `_data/unitsim/unitsim-run-4.R` (md5
       18384d98…); 20-iteration smoke chains of `w168` (est, gen 384) and
       `w192` (fix, gen 1024) passed through the driver.
-- [ ] **Then submit the single-unit study** in the layout Lucas picks
-      (Lucas's say-so needed): `UNITSIM_MODE=tasks Rscript --vanilla
-      _scripts/unitsim.R > _data/unitsim/study/tasks.txt`, then
-      `sbatch --cpus-per-task=128 --mem=48G --time=3-00:00:00
-      --output=_data/unitsim/study/logs/pin-%j.out
-      --error=_data/unitsim/study/logs/pin-%j.err
-      --export=ALL,UNITSIM_DIR=_data/unitsim/study,SIMSTUDY_CORES_PER_WORKER=<4|2>,SIMSTUDY_DIR=_data/unitsim/study,SIMSTUDY_RUN=_data/unitsim/unitsim-run-4.R,SIMSTUDY_PIN_LIST=_data/unitsim/study/tasks.txt
-      _scripts/simstudy-pinned.sh`. Estimated ~22 h at one chain per group
-      (scaled from the benchmark's MMV048_PIB chains).
+- [ ] **SLURM 32423 — single-unit study, submitted 2026-10-22 11:14**
+      (Lucas: one chain per L3 group). 1920 chain tasks
+      (`_data/unitsim/study/tasks.txt`), frozen script
+      `_data/unitsim/unitsim-run-4.R` (md5 18384d98…), 128 CPUs, 16 workers
+      (15 on whole L3 groups, 1 split: cores 5,6,7,68), walltime 3 days,
+      expected ~22 h. Logs `_data/unitsim/study/logs/`. **Do not edit
+      `unitsim-run-4.R` or `simstudy-pinned.sh` while it runs.** When it ends:
+      `UNITSIM_MODE=merge Rscript --vanilla _scripts/unitsim.R`, then
+      `Rscript --vanilla _scripts/unitsim-read.R > _data/unitsim-read-study-<date>.txt`,
+      and read it by the rule in the `unitsim.R` header. Any claim directory
+      without a chain file is listed at the end of the driver log.
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`

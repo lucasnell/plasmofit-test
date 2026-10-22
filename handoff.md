@@ -10,8 +10,9 @@ at truth (2000 + 2000); 60 replicates; readable at >= 45 of 60. (A two-unit
 design was dropped the same morning: it confounded window with series count,
 starts, cohorts, and truth.) Benchmark read: two chains per L3 group cut throughput
 27%; load-balancing timing shows combos even and most trajectory cost fixed
-(`findings.md`). Script frozen (`unitsim-run-4.R`) and smoke-tested. Waiting on
-Lucas's layout choice and go-ahead to submit (command in `TODO.md`, ~22 h).
+(`findings.md`). Script frozen (`unitsim-run-4.R`) and smoke-tested. **Submitted as
+SLURM 32423** (2026-10-22 11:14, one chain per L3 group, ~22 h); how to read it
+is in `TODO.md`.
 
 **New simulation work, 2026-10-21** (`findings.md`, "Second simulation study
 and single-unit study"). Lucas wants fewer fits, each sampled enough to
