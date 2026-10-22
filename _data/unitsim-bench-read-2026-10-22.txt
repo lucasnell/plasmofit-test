@@ -1,0 +1,19 @@
+Chains finished: 64 64 (of 64 each)
+
+Cells: per layout, all 64 chains; wall = first start to last finish (h);
+throughput = chains per L3 group per hour = 64 / (16 groups x wall);
+chain hours and ms per gradient (sampling seconds / sampling n_leapfrog):
+median (range) over chains.
+
+ layout chains         chain_hours      ms_per_grad leapfrog_per_iter wall_h throughput
+     w4     64 0.208 (0.088-0.509) 2.67 (2.35-3.22)       83 (45-375)  1.070       3.74
+     w2     64 0.467 (0.261-1.177) 7.94 (2.46-9.56)       83 (45-375)  1.469       2.72
+
+Paired by chain (same data, seed, and settings in both layouts). Cells:
+ratio w2 / w4 of chain hours and of ms per gradient, median (range) over
+chains, by arm. A chain-hours ratio r means w2 has 2 / r times w4's
+throughput per L3 group, ignoring tail effects.
+
+ method pairs         hours_ratio   ms_per_grad_ratio      leapfrog_ratio
+    est    32 2.959 (1.538-3.136) 2.964 (1.191-3.133) 1.000 (1.000-1.000)
+    fix    32 2.407 (1.423-3.101) 2.225 (0.905-3.088) 1.000 (1.000-1.000)

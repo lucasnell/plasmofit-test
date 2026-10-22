@@ -1,0 +1,24 @@
+part full1 | cpus 5 
+full model, all observations fitted: 25.775 ms per gradient
+
+Cells: ms per gradient, one thread, median of 5 blocks of 40 evaluations;
+t_c = time with only unit c fitted (includes the fixed cost o).
+
+              unit series distinct_times last_h   t_c net_t_c
+   Mefloquine.1800     22             10    216 2.225   2.133
+        OZ439.1800     24              7    192 1.900   1.808
+       DSM265.1800      9              7    192 1.900   1.808
+  Piperaquine.1800     24              8    192 2.000   1.908
+   Ferroquine.1800      8              8    192 2.000   1.908
+    ACT451840.1800      8              6    168 1.775   1.683
+   MMV048_PIB.1800      6              6    168 1.775   1.683
+ OZ439/DSM265.1800     13              6    168 1.775   1.683
+  EFITA_OZGAM.2800     17              8    192 1.975   1.883
+       KAE609.1800      8              8    168 1.900   1.808
+      DSMOZ_2.2800      7              6    168 1.750   1.658
+  SJ733IBSMCS.2800      7              8    192 2.000   1.908
+  SJ733IBSMCS.2300      9              8    192 2.000   1.908
+ MMV048_PartB.2800     15              8    192 2.000   1.908
+
+T1 25.775 | sum t_c 26.975 | fixed cost o = (sum t_c - T1) / 13 = 0.092 | sum net t_c 25.687 | max net t_c 2.133
+4-thread lower bounds (ms): over combos max(sum/4, max) + o = 6.514; over (combo, time) pairs sum/4 + o = 6.514

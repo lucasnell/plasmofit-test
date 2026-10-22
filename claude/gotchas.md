@@ -711,3 +711,10 @@ the first 700 rows as "warmup" silently reads sampling iterations, and summing
 cost per gradient as sampling seconds over sampling `n_leapfrog` (2026-10-21,
 `_scripts/simstudy2-cost.R`, caught before anything was reported).
 
+## Two chains in one L3 group are slower even when each needs only 2 cores
+
+Single-unit chains keep only 2 threads busy, so two per L3 group (2 physical
+cores each) looked free. Measured 2026-10-22 (`_data/unitsim-bench-read-2026-10-22.txt`):
+each chain ran 2.4-3x slower and throughput per group fell 27%. Sharing the
+L3 cache is the cost, not the core count. Keep one chain per group.
+

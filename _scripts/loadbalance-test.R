@@ -10,8 +10,10 @@
 ##
 ## PART full1 (process pinned to ONE physical core, so one thread):
 ##   t_c   gradient time with every observation held out except unit c's
-##         (hold_out; a combo with no fitted observations skips its trajectory),
-##         minus the time with every observation held out (priors only);
+##         (hold_out; a combo with no fitted observations skips its
+##         trajectory). Each t_c also carries the fixed cost of the priors and
+##         the call, o; archer_stan_data() refuses to hold out everything, so
+##         o is estimated as (sum t_c - T1) / 13, and net t_c = t_c - o;
 ##   T1    the full model's gradient time.
 ## PART full4 (pinned to 4 physical cores of one L3 group, so 4 threads):
 ##   T4    the full model's gradient time.
@@ -84,24 +86,24 @@ if (part %in% c("full1", "full4")) {
     T_full <- time_grad(build_full(paras_df |> mutate(ho = 0L)), "archer_fit")
     cat(sprintf("full model, all observations fitted: %.3f ms per gradient\n", T_full))
     if (part == "full1") {
-        base <- time_grad(build_full(paras_df |> mutate(ho = 1L)), "archer_fit")
-        cat(sprintf("all observations held out (priors only): %.3f ms\n\n", base))
-        cat("Cells: ms per gradient, one thread, median of 5 blocks of", N_EVAL / 5,
-            "evaluations;\nt_c = time with only unit c fitted minus the priors-only time.\n\n")
+        cat("\nCells: ms per gradient, one thread, median of 5 blocks of", N_EVAL / 5,
+            "evaluations;\nt_c = time with only unit c fitted (includes the fixed cost o).\n\n")
         res <- do.call(rbind, lapply(units, \(u) {
             df <- paras_df |> mutate(ho = as.integer(inoc != u))
             tu <- time_grad(build_full(df), "archer_fit")
             dfu <- filter(paras_df, inoc == u)
             data.frame(unit = u, series = n_distinct(dfu$id),
                        distinct_times = n_distinct(dfu$time), last_h = max(dfu$time),
-                       t_c = round(tu - base, 3))
+                       t_c = round(tu, 3))
         }))
+        o <- (sum(res$t_c) - T_full) / (length(units) - 1)
+        res$net_t_c <- round(res$t_c - o, 3)
         print(res, row.names = FALSE)
-        s <- sum(res$t_c)
-        cat(sprintf("\nsum t_c %.3f | max t_c %.3f | T1 %.3f | T1 - priors %.3f\n",
-                    s, max(res$t_c), T_full, T_full - base))
-        cat(sprintf("4-thread bounds: combos max(sum/4, max) = %.3f; (combo, time) pairs sum/4 = %.3f (+ priors %.3f, serial)\n",
-                    max(s / 4, max(res$t_c)), s / 4, base))
+        s <- sum(res$net_t_c)
+        cat(sprintf("\nT1 %.3f | sum t_c %.3f | fixed cost o = (sum t_c - T1) / 13 = %.3f | sum net t_c %.3f | max net t_c %.3f\n",
+                    T_full, sum(res$t_c), o, s, max(res$net_t_c)))
+        cat(sprintf("4-thread lower bounds (ms): over combos max(sum/4, max) + o = %.3f; over (combo, time) pairs sum/4 + o = %.3f\n",
+                    max(s / 4, max(res$net_t_c)) + o, s / 4 + o))
     }
 }
 

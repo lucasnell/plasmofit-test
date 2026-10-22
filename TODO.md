@@ -37,19 +37,16 @@ match where a thread exists. This file is the actionable layer. -->
       frozen or smoke-tested (the half-node budget is in use by the
       benchmark): before submitting, freeze as `_data/unitsim/unitsim-run-4.R`
       and run a 20-iteration smoke chain of each window through the driver.
-- [ ] **Layout benchmark, SLURM 32417 (one chain per L3 group) then 32418
-      (two per group)**, submitted 2026-10-22 05:40; the same 64 chain tasks
-      (reps 1-2 of the superseded two-unit design: MMV048_PIB and
-      Mefloquine) in `_data/unitsim/bench-w4/` and `bench-w2/`, not part of
-      the study; it still answers the layout question. When both end:
-      `Rscript --vanilla _scripts/unitsim-bench-read.R > _data/unitsim-bench-read-<date>.txt`
-      and **report the numbers to Lucas; he decides the layout** (no rule).
-- [ ] **Load-balancing test, SLURM 32419** (`_scripts/loadbalance-test.sh`,
-      waits on 32418; 8 CPUs; no sampling): outputs
-      `_data/loadbalance-{full1,unit,full4}-<date>.txt`. Report: per-combo
-      gradient cost against the 4-thread full-model gradient, and per-time
-      cost within Mefloquine. Not smoke-tested (the half-node budget was in
-      use); check its `.err` first. Do not edit `loadbalance-test.R` until it ends.
+- [x] **Layout benchmark (32417/32418) and load-balancing timing (32419,
+      `full1` rerun after a baseline bug), read 2026-10-22** (`findings.md`,
+      "Second simulation study and single-unit study"): two chains per L3
+      group cut throughput 27% (each chain 2.4-3x slower); the 14 combos cost
+      nearly the same, and most per-trajectory cost is fixed, so threading
+      over time points would not pay. Numbers reported to Lucas; he decides
+      the layout.
+- [x] Study script frozen as `_data/unitsim/unitsim-run-4.R` (md5
+      18384d98…); 20-iteration smoke chains of `w168` (est, gen 384) and
+      `w192` (fix, gen 1024) passed through the driver.
 - [ ] **Then submit the single-unit study** in the layout Lucas picks
       (Lucas's say-so needed): `UNITSIM_MODE=tasks Rscript --vanilla
       _scripts/unitsim.R > _data/unitsim/study/tasks.txt`, then
@@ -57,8 +54,8 @@ match where a thread exists. This file is the actionable layer. -->
       --output=_data/unitsim/study/logs/pin-%j.out
       --error=_data/unitsim/study/logs/pin-%j.err
       --export=ALL,UNITSIM_DIR=_data/unitsim/study,SIMSTUDY_CORES_PER_WORKER=<4|2>,SIMSTUDY_DIR=_data/unitsim/study,SIMSTUDY_RUN=_data/unitsim/unitsim-run-4.R,SIMSTUDY_PIN_LIST=_data/unitsim/study/tasks.txt
-      _scripts/simstudy-pinned.sh`. Estimated ~20-30 h at one chain per
-      group (scaled from probe chain times, not measured at 4000 iterations).
+      _scripts/simstudy-pinned.sh`. Estimated ~22 h at one chain per group
+      (scaled from the benchmark's MMV048_PIB chains).
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`

@@ -4006,9 +4006,54 @@ truth, 60 replicates. Checks: `_data/unitsim-check-2026-10-22.txt`. **A
 correction to the 2026-10-21 description above:** Mefloquine.1800 is not a
 "96-216 h" unit in any useful sense: 21 of its 22 series end at 192 h and 8
 start at 144 h; one series reaches 216 h. Every unit's series end at 168 or
-192 h. Before the study, a layout benchmark (SLURM 32417/32418, on the
-superseded two-unit tasks) and a no-sampling load-balancing timing (SLURM
-32419); results to be added here.
+192 h. Before the study, a layout benchmark and a load-balancing
+timing, below.
+
+**Layout benchmark, SLURM 32417 (one chain per L3 group, 4 physical cores)
+and 32418 (two per group, 2 cores each)**, 2026-10-22, the same 64 single-unit
+chain tasks (the superseded two-unit design's reps 1-2) on 16 L3 groups,
+run one after the other (`_scripts/unitsim-bench-read.R`,
+`_data/unitsim-bench-read-2026-10-22.txt`). Cells: wall = first start to
+last finish; throughput = chains per L3 group per hour; chain hours and ms
+per gradient median (range) over 64 chains; ratios paired by chain (same
+data, seed, settings; leapfrog counts identical in every pair).
+
+| layout | wall (h) | throughput | chain hours | ms per gradient |
+|---|---|---|---|---|
+| one per group | 1.070 | **3.74** | 0.208 (0.088-0.509) | 2.67 (2.35-3.22) |
+| two per group | 1.469 | **2.72** | 0.467 (0.261-1.177) | 7.94 (2.46-9.56) |
+
+Paired w2 / w4 chain hours: 2.96 (1.54-3.14) for the estimated arm, 2.41
+(1.42-3.10) for the fixed arm. **Two chains per L3 group make each chain
+~2.4-3x slower, so throughput per group falls 27%**; the always-pin layout
+holds for single-unit chains too. Other users' load may have differed
+between the two runs (they ran in sequence).
+
+**Load balancing, SLURM 32419 plus a rerun of part `full1`**
+(`_scripts/loadbalance-test.R`; outputs `_data/loadbalance-{full1,full4,unit}-2026-10-22.txt`;
+no sampling, full model `no_pool` at `n_c` 384, simulated data). Cells: ms
+per gradient, median of 5 blocks of 40 evaluations.
+- **The 14 trajectory combos cost nearly the same**: net 1.66-2.13 ms each
+  on one thread (Mefloquine highest, with 10 distinct times; the 168 h units
+  lowest), fixed overhead 0.09 ms. Perfect 4-thread balance would take ~6.5
+  ms; with 14 equal combos on 4 threads the busiest thread carries 4, ~7.4 ms.
+- **Measured: 23.6-25.8 ms on one thread, 11.95 ms on 4** (one whole L3
+  group): a 2.0x speedup, not the ~3.5x the combo costs allow. The shortfall
+  is not imbalance between combos; its cause (thread overhead, memory or
+  cache) is not measured.
+- **Within one unit, most of a trajectory's cost does not depend on the
+  number of time points**: Mefloquine alone (two copies under the label
+  split, one thread) costs 2.65 ms at 2 distinct times and 3.70 ms at 10,
+  ~0.13 ms per added time (~0.07 ms per copy) against ~1.2 ms fixed per copy
+  (`make_DC` and setup). Threading over (combo, time) pairs would repeat
+  that fixed cost in every slice, so it would not pay; the package change
+  weighed on 2026-10-21 is not worth making on this evidence. This also
+  contradicts the `plasmofit.stan` comment that `make_DC` "measures as free
+  next to ew_poly_eval" at these time counts.
+
+**Study cost** at one chain per L3group, scaled from the benchmark's
+MMV048_PIB chains (estimated arm ~0.10 h, fixed arm ~0.23 h per chain):
+~22 h for 1920 chains on 16 workers.
 
 ### Simulation study, full read: 62 of 205 fits pass, 9 of 48 cells readable, and fitting `n_c` 384 gives a shorter cycle length than 192 in all 12 paired replicates
 

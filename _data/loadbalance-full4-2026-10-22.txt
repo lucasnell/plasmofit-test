@@ -1,0 +1,3 @@
+4 physical cores 0,1,2,3 span 1 L3 group(s) (1 = one whole group)
+part full4 | cpus 0-3 
+full model, all observations fitted: 11.950 ms per gradient

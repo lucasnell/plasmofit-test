@@ -8,10 +8,10 @@ one truth, its real schedule ending at 168 h against the same series extended
 to 192 h, gen `n_c` 384/1024, `b_shape` estimated (production length) or fixed
 at truth (2000 + 2000); 60 replicates; readable at >= 45 of 60. (A two-unit
 design was dropped the same morning: it confounded window with series count,
-starts, cohorts, and truth.) Benchmark of one against two chains per L3 group:
-SLURM 32417 then 32418; load-balancing timing SLURM 32419 after them. Lucas
-decides the layout from the benchmark numbers, then the study is submitted
-(command in `TODO.md`).
+starts, cohorts, and truth.) Benchmark read: two chains per L3 group cut throughput
+27%; load-balancing timing shows combos even and most trajectory cost fixed
+(`findings.md`). Script frozen (`unitsim-run-4.R`) and smoke-tested. Waiting on
+Lucas's layout choice and go-ahead to submit (command in `TODO.md`, ~22 h).
 
 **New simulation work, 2026-10-21** (`findings.md`, "Second simulation study
 and single-unit study"). Lucas wants fewer fits, each sampled enough to
