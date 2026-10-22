@@ -1,0 +1,26 @@
+Unit MMV048_PIB.1800, truth: cycle_length 42.844 h, R 13.87, b_shape 20.10 (gen 384) / 9.54 (gen 1024, mapped at k = 3.921), log10_total0 -0.795, b_offset 0.226
+w168: 6 series, 34 observations
+                  id                  times
+ MMV048_PIB:CH1:R101 96,120,132,144,156,168
+ MMV048_PIB:CH1:R102    120,132,144,156,168
+ MMV048_PIB:CH1:R103 96,120,132,144,156,168
+ MMV048_PIB:CH1:R104    120,132,144,156,168
+ MMV048_PIB:CH1:R105 96,120,132,144,156,168
+ MMV048_PIB:CH1:R106 96,120,132,144,156,168
+w192: 6 series, 46 observations
+                  id                          times
+ MMV048_PIB:CH1:R101 96,120,132,144,156,168,180,192
+ MMV048_PIB:CH1:R102    120,132,144,156,168,180,192
+ MMV048_PIB:CH1:R103 96,120,132,144,156,168,180,192
+ MMV048_PIB:CH1:R104    120,132,144,156,168,180,192
+ MMV048_PIB:CH1:R105 96,120,132,144,156,168,180,192
+ MMV048_PIB:CH1:R106 96,120,132,144,156,168,180,192
+gen 384, rep 1: log10(y + 1) mean w168 2.4659, w192 2.6835
+  w192 at the 34 shared observations vs w168: max |diff| 0.00e+00
+  w168 vs simstudy.R B-g384 rep 1 at these observations: max |diff| 0.00e+00
+  w168-g384-est-rep1 split check: max |diff| in log_prob over 3 points 0.00e+00
+  w192-g384-est-rep1 split check: max |diff| in log_prob over 3 points 4.55e-13
+gen 1024, rep 1: log10(y + 1) mean w168 2.5135, w192 2.7222
+  w192 at the 34 shared observations vs w168: max |diff| 0.00e+00
+  w168-g1024-est-rep1 split check: max |diff| in log_prob over 3 points 0.00e+00
+  w192-g1024-est-rep1 split check: max |diff| in log_prob over 3 points 0.00e+00

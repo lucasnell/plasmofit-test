@@ -5,26 +5,39 @@
 #
 # THE PROBLEM. One grp_init unit (trial x inoculum size). Inside a unit every
 #   series shares every parameter, so it is one trajectory with its series as
-#   replicates. Its own series are simulated at their real observation times
-#   and fitted alone, so no other unit and no hierarchy is involved: the bias
-#   is that of the likelihood, the nuisance parameters, and the priors.
+#   replicates. Its series are simulated and fitted alone, so no other unit and
+#   no hierarchy is involved: the bias is that of the likelihood, the nuisance
+#   parameters, and the priors.
 #
-# TRUTH, per unit: the posterior means of the real-data fit
+# WINDOW (Lucas, 2026-10-22, replacing a two-real-unit design that confounded
+#   window length with series count, start times, cohorts, and truth): ONE
+#   unit, MMV048_PIB.1800 (u7), ONE truth, two observation schedules.
+#     w168  its six real series at their real times (96 or 120 to 168 h by
+#           12 h, no 108; 34 observations);
+#     w192  the same six series and times plus 180 and 192 h on each (46
+#           observations). Only the end of the window differs (and with it,
+#           12 more observations): in the real data every series ends at 168
+#           or 192 h (Mefloquine.1800's one 216 h series aside).
+#
+# TRUTH: the posterior means of the real-data fit
 #   np_wide_total0_nc384_t (wockner-fit.R entry 54: no_pool, n_c 384, b_shape
 #   estimated under lognormal(2, 0.5), sd_log10_total0 1, adapt_delta 0.95,
 #   max_treedepth 12; 41.815 h mean over 13 trials) for that unit's b_shape,
 #   b_offset, log10_total0, its trial's R and cycle_length, and its cohorts'
 #   sd_iRBC. At gen n_c 1024, b_shape is lowered so the total stage spread at
-#   the unit's last observation equals the truth's at 384 (same mapping and
-#   reason as simstudy2.R: 1 / (4 (2b' + 1)) = 1 / (4 (2b + 1)) +
-#   k (1/384 - 1/1024), k = last observation / true cycle_length).
+#   the unit's REAL last observation (168 h) equals the truth's at 384 (same
+#   mapping and reason as simstudy2.R: 1 / (4 (2b' + 1)) = 1 / (4 (2b + 1)) +
+#   k (1/384 - 1/1024), k = 168 / true cycle_length). The truth is the same
+#   under both windows.
 #
-# SIMULATED DATA are exact subsets of simstudy2.R's: the noise is drawn for
-#   all 1130 observations with set.seed(REP_SEEDS[rep]) exactly as there, and
-#   the unit's observations are taken from it, so a unit's dataset here is the
-#   same numbers as that unit's part of the full-model dataset of the same
-#   (gen n_c, rep). Same seed at both gen n_c and both fitting methods
-#   (paired on identical noise).
+# SIMULATED DATA. The noise is drawn for all 1130 real observations with
+#   set.seed(REP_SEEDS[rep]) exactly as simstudy2.R draws it, and the unit's
+#   34 are taken from it, so w168's dataset is the same numbers as the unit's
+#   part of the full-model dataset of the same (gen n_c, rep). The 12 added
+#   observations of w192 take the next 12 draws of the same stream (series in
+#   order of first appearance, then 180 before 192), so w192 = w168's data
+#   plus 12 observations. Same seed at both windows, both gen n_c, and both
+#   methods (paired on identical noise).
 #
 # FIT. model = "pooled_both" on the unit's data: one R and one cycle_length
 #   shared by all series, with the production top-level priors placed
@@ -49,10 +62,7 @@
 #   under a different split.
 #
 # DESIGN, fixed 2026-10-22 with Lucas before any study fit ran:
-#   unit     u7 MMV048_PIB.1800 (6 series, 34 obs, 96-168 h): the shortest
-#               window, fewest observations among the four 96-168 h units;
-#            u1 Mefloquine.1800 (22 series, 132 obs, 96-216 h): the longest
-#               window. Chosen on design alone.
+#   window   w168, w192 (above), one unit and one truth
 #   gen_nc   384, 1024
 #   method   est (b_shape estimated), fix (b_shape fixed at the truth)
 #   rep      1-60 (REP_SEEDS; 1-16 shared with simstudy2.R, 17-60 drawn
@@ -76,10 +86,13 @@
 #   coverage  share of passing fits whose central 80% interval holds the
 #             truth.
 #   b_shape   est arm: log(posterior mean / true b_shape), mean over fits.
-#   contrasts paired on identical data, both fits passing, per rep: est -
-#             fix (cost of estimating b_shape) at each (unit, gen_nc); gen
-#             1024 - 384 at each (unit, method) (same noise draws, different
-#             noiseless trajectories, so partially paired).
+#   contrasts per rep, both fits passing:
+#             w192 - w168 at each (gen_nc, method): same truth, same noise on
+#               the 34 shared observations; the effect of the longer window;
+#             est - fix (cost of estimating b_shape) at each (window, gen_nc):
+#               identical data;
+#             gen 1024 - 384 at each (window, method): same noise draws,
+#               different noiseless trajectories, so partially paired.
 #   failures  marginal 1.05-1.15, severe >= 1.15; ONE CHAIN APART if a
 #             chain's mean lp__ is more than 3 units from the median of the
 #             other three.
@@ -89,17 +102,18 @@
 #   first (2026-10-22; Lucas decides the layout from its numbers), in
 #   _data/unitsim/bench-w4/ and bench-w2/; its fits are not part of the study.
 #
-# TASKS are tokens "u<unit>-g<gen_nc>-<est|fix>-rep<r>-c<chain>", unit = index
-#   into the grp_init levels (check mode lists them), so file names do not
-#   depend on a design grid. The pinned driver passes a token as
+# TASKS are tokens "w<168|192>-g<gen_nc>-<est|fix>-rep<r>-c<chain>", so file
+#   names do not depend on a design grid. (The 2026-10-21/22 probes and the
+#   layout benchmark used "u<unit>-..." tokens from earlier versions, frozen
+#   as _data/unitsim/unitsim-run{,-2,-3}.R.) The pinned driver passes a token as
 #   SLURM_ARRAY_TASK_ID.
 #
 # MODES (UNITSIM_MODE):
 #   chain  (default) one chain for the token in SLURM_ARRAY_TASK_ID.
 #   merge  merge every fit whose 4 chain files exist and that has no summary.
-#   check  list units with their truths; for UNITSIM_CHECK tokens (comma-
-#          separated fit names, default the probe's two fits) build and
-#          simulate, compare against simstudy2.R's data, and check the split.
+#   check  print the two schedules and the truth; for gen 384 and 1024, rep 1,
+#          check w168's data against simstudy.R's, w192's shared observations
+#          against w168's, and the split's log_prob invariance.
 #   tasks  print the study's 1920 chain tokens, rep-major.
 #   UNITSIM_ITER overrides iterations in chain mode (smoke test; "smoke-").
 #   UNITSIM_DIR overrides the output directory (default _data/unitsim/study/).
@@ -138,10 +152,11 @@ REP_SEEDS <- c(742160183L, 1908445027L, 355721694L, 1414213562L, 1732050808L,
                1607165064L, 516892384L, 1034340295L, 647742746L, 1996862138L,
                628141401L, 1693362474L, 1341215164L, 536629132L)
 stopifnot(length(REP_SEEDS) == 60L, !anyDuplicated(REP_SEEDS))
-STUDY <- expand.grid(unit = c(7L, 1L), gen_nc = c(384L, 1024L),
+UNIT <- 7L                                   # MMV048_PIB.1800
+STUDY <- expand.grid(window = c(168L, 192L), gen_nc = c(384L, 1024L),
                      method = c("est", "fix"), rep = seq_along(REP_SEEDS),
                      stringsAsFactors = FALSE)
-STUDY$name <- with(STUDY, sprintf("u%d-g%d-%s-rep%d", unit, gen_nc, method, rep))
+STUDY$name <- with(STUDY, sprintf("w%d-g%d-%s-rep%d", window, gen_nc, method, rep))
 TRUTH <- "np_wide_total0_nc384_t"
 
 MODE <- Sys.getenv("UNITSIM_MODE", "chain")
@@ -155,10 +170,10 @@ fit_path <- function(nm) sprintf("%sfit-%s.rds", PFX, nm)
 sum_path <- function(nm) sprintf("%ssum-%s.rds", PFX, nm)
 
 parse_fit <- function(nm) {
-    m <- regmatches(nm, regexec("^u([0-9]+)-g([0-9]+)-(est|fix)-rep([0-9]+)$", nm))[[1]]
+    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)$", nm))[[1]]
     if (length(m) != 5L) stop("bad fit name: ", nm)
-    list(unit = as.integer(m[2]), gen_nc = as.integer(m[3]), method = m[4],
-         rep = as.integer(m[5]), name = nm)
+    list(window = as.integer(m[2]), unit = UNIT, gen_nc = as.integer(m[3]),
+         method = m[4], rep = as.integer(m[5]), name = nm)
 }
 
 
@@ -203,8 +218,23 @@ b_from_var <- function(v) (1 / (4 * v) - 1) / 2
 ## The unit's rows, its Stan data under a given two-label split, and its truth.
 unit_rows <- function(u) paras_df |> filter(inoc == UNITS[u])
 
-build_unit <- function(u, split = "alt", ...) {
-    df <- unit_rows(u)
+## The schedule: the unit's real rows (w168), or those plus 180 and 192 h on
+## every series (w192). `para` of an added row is a placeholder; y is replaced
+## by simulated data before any fit.
+window_rows <- function(window) {
+    df <- unit_rows(UNIT)
+    stopifnot(max(df$time) == 168)
+    if (window == 168L) return(df)
+    ids <- unique(df$id)
+    add <- df[match(rep(ids, each = 2L), df$id), ] |>
+        mutate(time = rep(c(180, 192), length(ids)), para = 1)
+    bind_rows(df, add) |> arrange(match(id, ids), time)
+}
+ADDED_KEYS <- { ids <- unique(unit_rows(UNIT)$id)
+                paste(rep(ids, each = 2L), rep(c(180, 192), length(ids))) }
+
+build_unit <- function(window, split = "alt", ...) {
+    df <- window_rows(window)
     ids <- unique(df$id)
     lab <- if (split == "alt") rep_len(c("A", "B"), length(ids))
            else c(rep("A", ceiling(length(ids) / 2)), rep("B", floor(length(ids) / 2)))
@@ -242,8 +272,8 @@ unit_truth <- function(u, gen_nc) {
 make_fit_inputs <- function(nm, split = "alt") {
     cf <- parse_fit(nm)
     truth <- unit_truth(cf$unit, cf$gen_nc)
-    d <- if (cf$method == "fix") build_unit(cf$unit, split, b_shape = truth$b_shape)
-         else build_unit(cf$unit, split)
+    d <- if (cf$method == "fix") build_unit(cf$window, split, b_shape = truth$b_shape)
+         else build_unit(cf$window, split)
     stopifnot(d$n_grp_init == 1L, d$n_c == FIT_NC,
               d$b_shape_fixed == as.integer(cf$method == "fix"))
     lv <- attr(d, "levels")
@@ -259,15 +289,23 @@ make_fit_inputs <- function(nm, split = "alt") {
                                       truth$R, d$mu, u_ts, d$dt_full)
     y_hat <- y_u[match(d$ts, u_ts)]
     stopifnot(all(is.finite(y_hat)), all(y_hat >= 0))
-    ## The unit's observations within the full noise vector, by (series, time).
+    ## Noise: real observations from the full noise vector, by (series, time);
+    ## added ones from the next draws of the same stream (ADDED_KEYS order).
     key <- paste(rep(lv$series, d$n_obs), d$ts)
-    pos <- match(key, obs_key0); stopifnot(!anyNA(pos), !anyDuplicated(pos))
-    eps <- noise_full(cf$rep)[pos]
-    ## and the unit's cohorts map onto the full fit's sd_iRBC by name
-    stopifnot(isTRUE(all.equal(sd_obs0[pos],
-                               unname(truth$sd_iRBC[lv[[attr(d, "grp_columns")$grp_sd]]][rep(d$grp_sd, d$n_obs)]))))
+    sd_d <- unname(truth$sd_iRBC[lv[[attr(d, "grp_columns")$grp_sd]]][rep(d$grp_sd, d$n_obs)])
+    pos <- match(key, obs_key0)
+    added <- is.na(pos)
+    stopifnot(!anyDuplicated(pos[!added]), all(key[added] %in% ADDED_KEYS),
+              sum(added) == if (cf$window == 192L) length(ADDED_KEYS) else 0L,
+              isTRUE(all.equal(sd_obs0[pos[!added]], sd_d[!added])))
+    set.seed(REP_SEEDS[cf$rep])
+    z_full <- rnorm(d0$n_total_obs, 0, sd_obs0)
+    z_add <- rnorm(length(ADDED_KEYS))
+    eps <- numeric(d$n_total_obs)
+    eps[!added] <- z_full[pos[!added]]
+    eps[added] <- z_add[match(key[added], ADDED_KEYS)] * sd_d[added]
     d$y <- pmax(0, 10^(log10(y_hat + 1) + eps) - 1)
-    list(cf = cf, truth = truth, d = d, y_hat = y_hat, pos = pos)
+    list(cf = cf, truth = truth, d = d, y_hat = y_hat, pos = pos, key = key)
 }
 
 
@@ -278,54 +316,48 @@ make_fit_inputs <- function(nm, split = "alt") {
 dir.create(DIR, showWarnings = FALSE)
 
 if (MODE == "check") {
-    cat("Units (index = token's u), with the truth at gen n_c 384 and the mapped b_shape at 1024:\n\n")
-    print(do.call(rbind, lapply(seq_along(UNITS), \(u) {
-        t384 <- unit_truth(u, 384L); t1024 <- unit_truth(u, 1024L)
-        df <- unit_rows(u)
-        data.frame(u = u, unit = UNITS[u], series = n_distinct(df$id), obs = nrow(df),
-                   window_h = sprintf("%g-%g", min(df$time), max(df$time)),
-                   true_cl = round(t384$cycle_length, 3), R = round(t384$R, 2),
-                   b384 = round(t384$b_shape, 2), b1024 = round(t1024$b_shape, 2),
-                   k_last = round(t384$k_last, 3))
-    })), row.names = FALSE)
-
-    probe <- strsplit(Sys.getenv("UNITSIM_CHECK", "u7-g384-est-rep1,u1-g384-est-rep1"), ",")[[1]]
-    for (nm in probe) {
-        x <- make_fit_inputs(nm)
-        cat(sprintf("\n%s (%s): %d series, %d obs, grp_sd levels %s\n", nm, x$truth$unit,
-                    x$d$n_ts, x$d$n_total_obs,
-                    paste(attr(x$d, "levels")[[attr(x$d, "grp_columns")$grp_sd]], collapse = ", ")))
-        ## Same numbers as the unit's part of simstudy2.R's dataset? Rebuild the
-        ## noiseless full trajectory for this unit's series at the same truth.
-        cat(sprintf("  log10(y + 1): sim mean %.4f sd %.4f | real %.4f %.4f\n",
-                    mean(log10(x$d$y + 1)), sd(log10(x$d$y + 1)),
-                    mean(log10(d0$y[x$pos] + 1)), sd(log10(d0$y[x$pos] + 1))))
-        ## Gen 384, reps 1-5: the unit's data must be the same numbers as its
-        ## observations in simstudy.R's truth-B / gen-384 / b_shape x 1 data
-        ## (= simstudy2.R's gen-384 data for that rep).
-        if (x$cf$gen_nc == 384L && x$cf$rep <= 5L) {
-            old <- read_rds(sprintf("_data/simstudy/chain-B-g384-f384-bs1.0-wide-rep%d-c1.rds",
-                                    x$cf$rep))$d$y
-            cat(sprintf("  same y as simstudy.R B-g384 rep %d at these observations: max |diff| %.2e\n",
-                        x$cf$rep, max(abs(x$d$y - old[x$pos]))))
-            stopifnot(isTRUE(all.equal(x$d$y, old[x$pos], tolerance = 1e-10)))
+    t384 <- unit_truth(UNIT, 384L); t1024 <- unit_truth(UNIT, 1024L)
+    cat(sprintf("Unit %s, truth: cycle_length %.3f h, R %.2f, b_shape %.2f (gen 384) / %.2f (gen 1024, mapped at k = %.3f), log10_total0 %.3f, b_offset %.3f\n",
+                UNITS[UNIT], t384$cycle_length, t384$R, t384$b_shape, t1024$b_shape,
+                t384$k_last, t384$log10_total0, t384$b_offset))
+    for (w in c(168L, 192L)) {
+        df <- window_rows(w)
+        cat(sprintf("\nw%d: %d series, %d observations\n", w, n_distinct(df$id), nrow(df)))
+        df |> group_by(id) |> summarise(times = paste(time, collapse = ","), .groups = "drop") |>
+            as.data.frame() |> print(row.names = FALSE)
+    }
+    old_y <- read_rds("_data/simstudy/chain-B-g384-f384-bs1.0-wide-rep1-c1.rds")$d$y
+    mod <- plasmofit:::stanmodels[["archer_fit_pooled_both"]]
+    for (g in c(384L, 1024L)) {
+        a <- make_fit_inputs(sprintf("w168-g%d-est-rep1", g))
+        b <- make_fit_inputs(sprintf("w192-g%d-est-rep1", g))
+        cat(sprintf("\ngen %d, rep 1: log10(y + 1) mean w168 %.4f, w192 %.4f\n", g,
+                    mean(log10(a$d$y + 1)), mean(log10(b$d$y + 1))))
+        stopifnot(identical(a$truth, b$truth))
+        shared <- match(a$key, b$key); stopifnot(!anyNA(shared))
+        cat(sprintf("  w192 at the 34 shared observations vs w168: max |diff| %.2e\n",
+                    max(abs(b$d$y[shared] - a$d$y))))
+        stopifnot(isTRUE(all.equal(b$d$y[shared], a$d$y, tolerance = 1e-12)))
+        if (g == 384L) {
+            cat(sprintf("  w168 vs simstudy.R B-g384 rep 1 at these observations: max |diff| %.2e\n",
+                        max(abs(a$d$y - old_y[a$pos]))))
+            stopifnot(isTRUE(all.equal(a$d$y, old_y[a$pos], tolerance = 1e-10)))
         }
-        ## Split invariance: log_prob at the same unconstrained point under the
-        ## alternating split and a first-half / second-half split.
-        xb <- make_fit_inputs(nm, split = "halves")
-        stopifnot(identical(x$d$y[order(x$pos)], xb$d$y[order(xb$pos)]))
-        mod <- plasmofit:::stanmodels[["archer_fit_pooled_both"]]
-        fa <- rstan::sampling(mod, data = x$d, chains = 1, iter = 1, refresh = 0,
-                              seed = 1, algorithm = "Fixed_param")
-        fb <- rstan::sampling(mod, data = xb$d, chains = 1, iter = 1, refresh = 0,
-                              seed = 1, algorithm = "Fixed_param")
-        set.seed(7)
-        for (j in 1:3) {
-            up <- rnorm(rstan::get_num_upars(fa), 0, 0.5)
-            la <- rstan::log_prob(fa, up); lb <- rstan::log_prob(fb, up)
-            cat(sprintf("  split check %d: log_prob alt %.8f, halves %.8f, |diff| %.2e\n",
-                        j, la, lb, abs(la - lb)))
-            stopifnot(abs(la - lb) < 1e-8 * max(1, abs(la)))
+        ## Split invariance of log_prob (alternating vs first-half / second-half).
+        for (x in list(a, b)) {
+            xb <- make_fit_inputs(x$cf$name, split = "halves")
+            fa <- rstan::sampling(mod, data = x$d, chains = 1, iter = 1, refresh = 0,
+                                  seed = 1, algorithm = "Fixed_param")
+            fb <- rstan::sampling(mod, data = xb$d, chains = 1, iter = 1, refresh = 0,
+                                  seed = 1, algorithm = "Fixed_param")
+            set.seed(7); dmax <- 0
+            for (j in 1:3) {
+                up <- rnorm(rstan::get_num_upars(fa), 0, 0.5)
+                dmax <- max(dmax, abs(rstan::log_prob(fa, up) - rstan::log_prob(fb, up)))
+            }
+            cat(sprintf("  %s split check: max |diff| in log_prob over 3 points %.2e\n",
+                        x$cf$name, dmax))
+            stopifnot(dmax < 1e-6)
         }
     }
     quit(save = "no")
@@ -392,7 +424,8 @@ if (MODE == "merge") {
         sp <- rstan::get_sampler_params(f, inc_warmup = FALSE)
         lf <- vapply(sp, \(x) sum(x[, "n_leapfrog__"]), numeric(1))
         q <- quantile(cl, c(0.1, 0.9))
-        row <- tibble(name = nm, unit = tru$unit, gen_nc = cf$gen_nc, method = cf$method,
+        row <- tibble(name = nm, unit = tru$unit, window = cf$window,
+                      gen_nc = cf$gen_nc, method = cf$method,
                       rep = cf$rep, max_rhat = max(rh), worst = names(which.max(rh)),
                       pass = max(rh) < 1.05,
                       true_cl = tru$cycle_length, cl_mean = mean(cl), cl_sd = sd(cl),

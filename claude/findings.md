@@ -3998,9 +3998,17 @@ units at gen 384 and 1024, and estimated at gen 1024; rep 1, production
 settings. Reads whether fixed `b_shape` converges at production settings and
 what gen 1024 costs, to set the fixed arm's sampler settings before the study.
 
-**2026-10-22: design fixed** (`_scripts/unitsim.R` header; decision log).
-Before the study, a layout benchmark (SLURM 32417/32418) and a no-sampling
-load-balancing timing (SLURM 32419); results to be added here.
+**2026-10-22: design fixed** (`_scripts/unitsim.R` header; decision log):
+one unit (MMV048_PIB.1800), one truth, its real six-series schedule ending at
+168 h (`w168`, 34 observations) against the same series extended to 192 h
+(`w192`, 46), each at gen `n_c` 384 and 1024, `b_shape` estimated or fixed at
+truth, 60 replicates. Checks: `_data/unitsim-check-2026-10-22.txt`. **A
+correction to the 2026-10-21 description above:** Mefloquine.1800 is not a
+"96-216 h" unit in any useful sense: 21 of its 22 series end at 192 h and 8
+start at 144 h; one series reaches 216 h. Every unit's series end at 168 or
+192 h. Before the study, a layout benchmark (SLURM 32417/32418, on the
+superseded two-unit tasks) and a no-sampling load-balancing timing (SLURM
+32419); results to be added here.
 
 ### Simulation study, full read: 62 of 205 fits pass, 9 of 48 cells readable, and fitting `n_c` 384 gives a shorter cycle length than 192 in all 12 paired replicates
 

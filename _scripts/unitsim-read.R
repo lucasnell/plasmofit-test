@@ -1,9 +1,9 @@
 ## Reader for the single-unit study (_scripts/unitsim.R; design and reading
 ## rule in its header, fixed 2026-10-22 before any study fit ran). Reads the
-## merged summaries in UNITSIM_DIR (default _data/unitsim/study/). On a
-## directory of probe fits (2026-10-21: UNITSIM_DIR=_data/unitsim) the
-## per-fit and per-chain tables are the useful part; cells and contrasts need
-## the study.
+## merged summaries in UNITSIM_DIR (default _data/unitsim/study/). Cells are
+## keyed by `key` = window (w168 / w192) for the study; the 2026-10-21 probes
+## (UNITSIM_DIR=_data/unitsim) predate windows and are keyed by unit, and for
+## them the per-fit and per-chain tables are the useful part.
 ##
 ##   cd /home2/lan68/plasmofit/plasmofit-test
 ##   UNITSIM_MODE=merge Rscript --vanilla _scripts/unitsim.R
@@ -14,8 +14,11 @@ options(width = 150)
 DIR <- Sys.getenv("UNITSIM_DIR", "_data/unitsim/study/")
 N_REP <- 60L; READABLE <- 45L
 fs <- Sys.glob(file.path(DIR, "sum-*.rds"))
-x <- bind_rows(lapply(fs, readRDS)) |>
-    mutate(rhat_bin = case_when(pass ~ "pass", max_rhat < 1.15 ~ "marginal", TRUE ~ "severe"),
+x <- bind_rows(lapply(fs, readRDS))
+if (!"window" %in% names(x)) x$window <- NA_integer_
+x <- x |>
+    mutate(key = if_else(is.na(window), unit, paste0("w", window)),
+           rhat_bin = case_when(pass ~ "pass", max_rhat < 1.15 ~ "marginal", TRUE ~ "severe"),
            apart = lp_apart > 3)
 cat(length(fs), "merged fits in", DIR, "\n\n")
 
@@ -28,7 +31,7 @@ cat("1. PER CELL. Cells: n = merged fits; pass = max R-hat < 1.05 (4 chains);\n"
     " pass.\n", "cover80 = share of passing fits whose central 80% interval holds\n",
     "the truth. bs_log = est arm, mean log(posterior mean b_shape / truth).\n",
     "all_bias = mean over ALL fits, display only.\n\n", sep = "")
-cells <- x |> group_by(unit, gen_nc, method) |>
+cells <- x |> group_by(key, gen_nc, method) |>
     summarise(n = n(), pass = sum(pass), marginal = sum(rhat_bin == "marginal"),
               severe = sum(rhat_bin == "severe"), apart = sum(!pass & apart),
               bias = mean(bias[pass]), se = sd(bias[pass]) / sqrt(sum(pass)),
@@ -41,7 +44,7 @@ print(as.data.frame(cells), row.names = FALSE)
 
 cat("\nPassing against failing fits, display only. Cells: mean bias (hours) and\n",
     "count, by cell.\n\n", sep = "")
-x |> group_by(unit, gen_nc, method, pass) |>
+x |> group_by(key, gen_nc, method, pass) |>
     summarise(n = n(), mean_bias = round(mean(bias), 3), .groups = "drop") |>
     pivot_wider(names_from = pass, values_from = c(n, mean_bias), names_prefix = "pass_") |>
     as.data.frame() |> print(row.names = FALSE)
@@ -50,6 +53,8 @@ x |> group_by(unit, gen_nc, method, pass) |>
 cat("\n2. PAIRED CONTRASTS. Cells: per replicate, difference of posterior mean\n",
     "cycle_length (hours) between two fits of IDENTICAL noise draws, both\n",
     "passing; mean, se, range over pairs, and how many are negative.\n",
+    "w192 - w168: same truth and the same noise on the 34 shared\n",
+    "observations; the effect of extending the window to 192 h.\n",
     "est - fix: same data, b_shape estimated minus fixed at truth (cost of\n",
     "estimating it). gen 1024 - 384: same noise, different noiseless\n",
     "trajectories (partially paired).\n\n", sep = "")
@@ -58,13 +63,17 @@ pair_sum <- function(d) d |>
               lo = round(min(diff), 3), hi = round(max(diff), 3), negative = sum(diff < 0),
               .groups = "drop")
 xp <- filter(x, pass)
+w_diff <- inner_join(filter(xp, key == "w192"), filter(xp, key == "w168"),
+                     by = c("gen_nc", "method", "rep"), suffix = c("_l", "_s")) |>
+    mutate(diff = cl_mean_l - cl_mean_s) |> group_by(gen_nc, method) |> pair_sum()
+cat("w192 - w168\n"); print(as.data.frame(w_diff), row.names = FALSE)
 est_fix <- inner_join(filter(xp, method == "est"), filter(xp, method == "fix"),
-                      by = c("unit", "gen_nc", "rep"), suffix = c("_e", "_f")) |>
-    mutate(diff = cl_mean_e - cl_mean_f) |> group_by(unit, gen_nc) |> pair_sum()
-cat("est - fix\n"); print(as.data.frame(est_fix), row.names = FALSE)
+                      by = c("key", "gen_nc", "rep"), suffix = c("_e", "_f")) |>
+    mutate(diff = cl_mean_e - cl_mean_f) |> group_by(key, gen_nc) |> pair_sum()
+cat("\nest - fix\n"); print(as.data.frame(est_fix), row.names = FALSE)
 g_diff <- inner_join(filter(xp, gen_nc == 1024L), filter(xp, gen_nc == 384L),
-                     by = c("unit", "method", "rep"), suffix = c("_h", "_l")) |>
-    mutate(diff = bias_h - bias_l) |> group_by(unit, method) |> pair_sum()
+                     by = c("key", "method", "rep"), suffix = c("_h", "_l")) |>
+    mutate(diff = bias_h - bias_l) |> group_by(key, method) |> pair_sum()
 cat("\ngen 1024 - 384 (difference of bias, since the truths match)\n")
 print(as.data.frame(g_diff), row.names = FALSE)
 

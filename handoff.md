@@ -3,9 +3,12 @@
 ## State of play right now — read this first
 
 **2026-10-22: single-unit study designed; layout benchmark running.** Design
-and reading rule fixed in the `_scripts/unitsim.R` header (fixed `b_shape` at
-2000 + 2000 iterations, estimated at production length; 60 replicates;
-readable at >= 45 of 60). Benchmark of one against two chains per L3 group:
+and reading rule in the `_scripts/unitsim.R` header: one unit (MMV048_PIB.1800),
+one truth, its real schedule ending at 168 h against the same series extended
+to 192 h, gen `n_c` 384/1024, `b_shape` estimated (production length) or fixed
+at truth (2000 + 2000); 60 replicates; readable at >= 45 of 60. (A two-unit
+design was dropped the same morning: it confounded window with series count,
+starts, cohorts, and truth.) Benchmark of one against two chains per L3 group:
 SLURM 32417 then 32418; load-balancing timing SLURM 32419 after them. Lucas
 decides the layout from the benchmark numbers, then the study is submitted
 (command in `TODO.md`).

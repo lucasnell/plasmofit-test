@@ -20,27 +20,28 @@ match where a thread exists. This file is the actionable layer. -->
       R-hat 1.170 on `logit_cl`, `lp__` within 0.4 across chains, so not a
       separated chain); estimated passes 2 of 2 at gen 1024. Chains
       0.11-0.24 h. One dataset per fit: no bias is read.
-- [ ] **2026-10-22 — single-unit design REOPENED (Lucas): standardise the
-      number of series between the two units.** Found while checking: in the
-      real data every unit's series end at 168 or 192 h; Mefloquine.1800's
-      "96-216 h" is ONE series of 22 (S042, 144-216), the other 21 end at 192
-      and 8 start at 144. Options put to Lucas: subsample Mefloquine to 6;
-      swap it for a 6-8-series unit ending at 192 (SJ733IBSMCS.2800 7,
-      Ferroquine.1800 8) subsampled to 6; or a synthetic schedule (MMV048_PIB's
-      six series, same truth, extended to 192). Do not submit the study until
-      decided; the benchmark (32417/32418) still answers the layout question.
-- [x] **2026-10-22 — single-unit design and reading rule fixed** in the
-      `_scripts/unitsim.R` header before any study fit: units MMV048_PIB.1800
-      and Mefloquine.1800; gen `n_c` 384, 1024; `b_shape` estimated (700 +
-      1000 iterations) and fixed at truth (2000 + 2000, every fixed fit, no
-      retries); 60 replicates (seeds 17-60 drawn with set.seed(20261022));
-      readable if >= 45 of 60 pass; replicate 1 refitted. Output dir
-      `_data/unitsim/study/`. Frozen script `_data/unitsim/unitsim-run-3.R`
-      (md5 6ff151ef…). Reader `_scripts/unitsim-read.R` implements the rule.
+- [x] **2026-10-22 — single-unit design, final (Lucas chose a synthetic
+      schedule with one truth to remove the series-count confound):** ONE
+      unit, MMV048_PIB.1800, ONE truth (its posterior means from
+      `np_wide_total0_nc384_t`), two schedules: `w168` = its six real series
+      at their real times (34 obs), `w192` = the same plus 180 and 192 h on
+      each (46 obs). Window x gen `n_c` {384, 1024} x `b_shape` {estimated
+      700 + 1000, fixed at truth 2000 + 2000} x 60 reps = 480 fits. New main
+      contrast: w192 - w168, same truth, same noise on the 34 shared
+      observations. Reading rule otherwise as before (readable at >= 45 of
+      60; no retries). Header of `_scripts/unitsim.R`; reader
+      `_scripts/unitsim-read.R`; checks passed
+      (`_data/unitsim-check-2026-10-22.txt`: w168 data = earlier data
+      exactly, w192 adds 12 observations with the 34 shared ones identical,
+      truth identical across windows, split invariance <= 4.6e-13). Not yet
+      frozen or smoke-tested (the half-node budget is in use by the
+      benchmark): before submitting, freeze as `_data/unitsim/unitsim-run-4.R`
+      and run a 20-iteration smoke chain of each window through the driver.
 - [ ] **Layout benchmark, SLURM 32417 (one chain per L3 group) then 32418
       (two per group)**, submitted 2026-10-22 05:40; the same 64 chain tasks
-      (study reps 1-2, all 8 cells) in `_data/unitsim/bench-w4/` and
-      `bench-w2/`, not part of the study. When both end:
+      (reps 1-2 of the superseded two-unit design: MMV048_PIB and
+      Mefloquine) in `_data/unitsim/bench-w4/` and `bench-w2/`, not part of
+      the study; it still answers the layout question. When both end:
       `Rscript --vanilla _scripts/unitsim-bench-read.R > _data/unitsim-bench-read-<date>.txt`
       and **report the numbers to Lucas; he decides the layout** (no rule).
 - [ ] **Load-balancing test, SLURM 32419** (`_scripts/loadbalance-test.sh`,
@@ -55,7 +56,7 @@ match where a thread exists. This file is the actionable layer. -->
       `sbatch --cpus-per-task=128 --mem=48G --time=3-00:00:00
       --output=_data/unitsim/study/logs/pin-%j.out
       --error=_data/unitsim/study/logs/pin-%j.err
-      --export=ALL,UNITSIM_DIR=_data/unitsim/study,SIMSTUDY_CORES_PER_WORKER=<4|2>,SIMSTUDY_DIR=_data/unitsim/study,SIMSTUDY_RUN=_data/unitsim/unitsim-run-3.R,SIMSTUDY_PIN_LIST=_data/unitsim/study/tasks.txt
+      --export=ALL,UNITSIM_DIR=_data/unitsim/study,SIMSTUDY_CORES_PER_WORKER=<4|2>,SIMSTUDY_DIR=_data/unitsim/study,SIMSTUDY_RUN=_data/unitsim/unitsim-run-4.R,SIMSTUDY_PIN_LIST=_data/unitsim/study/tasks.txt
       _scripts/simstudy-pinned.sh`. Estimated ~20-30 h at one chain per
       group (scaled from probe chain times, not measured at 4000 iterations).
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
