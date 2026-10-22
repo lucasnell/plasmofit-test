@@ -20,6 +20,15 @@ match where a thread exists. This file is the actionable layer. -->
       R-hat 1.170 on `logit_cl`, `lp__` within 0.4 across chains, so not a
       separated chain); estimated passes 2 of 2 at gen 1024. Chains
       0.11-0.24 h. One dataset per fit: no bias is read.
+- [ ] **2026-10-22 — single-unit design REOPENED (Lucas): standardise the
+      number of series between the two units.** Found while checking: in the
+      real data every unit's series end at 168 or 192 h; Mefloquine.1800's
+      "96-216 h" is ONE series of 22 (S042, 144-216), the other 21 end at 192
+      and 8 start at 144. Options put to Lucas: subsample Mefloquine to 6;
+      swap it for a 6-8-series unit ending at 192 (SJ733IBSMCS.2800 7,
+      Ferroquine.1800 8) subsampled to 6; or a synthetic schedule (MMV048_PIB's
+      six series, same truth, extended to 192). Do not submit the study until
+      decided; the benchmark (32417/32418) still answers the layout question.
 - [x] **2026-10-22 — single-unit design and reading rule fixed** in the
       `_scripts/unitsim.R` header before any study fit: units MMV048_PIB.1800
       and Mefloquine.1800; gen `n_c` 384, 1024; `b_shape` estimated (700 +
