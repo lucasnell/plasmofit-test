@@ -43,3 +43,7 @@ unitsim/
 !simstudy2-cost-*.txt
 !unitsim-check-*.txt
 !unitsim-read-*.txt
+!unitsim-bench-read-*.txt
+!loadbalance-full1-*.txt
+!loadbalance-full4-*.txt
+!loadbalance-unit-*.txt
