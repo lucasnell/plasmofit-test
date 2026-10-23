@@ -32,15 +32,30 @@ cat("1. PER CELL. Cells: n = merged fits; pass = max R-hat < 1.05 (4 chains);\n"
     "the truth. bs_log = est arm, mean log(posterior mean b_shape / truth).\n",
     "all_bias = mean over ALL fits, display only.\n\n", sep = "")
 cells <- x |> group_by(key, gen_nc, method) |>
-    summarise(n = n(), pass = sum(pass), marginal = sum(rhat_bin == "marginal"),
-              severe = sum(rhat_bin == "severe"), apart = sum(!pass & apart),
-              bias = mean(bias[pass]), se = sd(bias[pass]) / sqrt(sum(pass)),
+    ## New names throughout: summarise() evaluates in order, so a summary
+    ## named `pass` or `bias` would replace the column for every later line
+    ## (the 2026-10-20 simstudy-read.R bug, repeated here and caught on the
+    ## first study read, 2026-10-23).
+    summarise(n = n(), n_pass = sum(pass), marginal = sum(rhat_bin == "marginal"),
+              severe = sum(rhat_bin == "severe"), n_apart = sum(!pass & apart),
+              mean_bias = mean(bias[pass]), se = sd(bias[pass]) / sqrt(sum(pass)),
               cover80 = mean(in_80[pass]),
               bs_log = if (first(method) == "est") mean(bs_logratio_gen[pass]) else NA_real_,
               all_bias = mean(bias), .groups = "drop") |>
-    mutate(readable = pass >= READABLE,
-           across(c(bias, se, cover80, bs_log, all_bias), \(v) round(v, 3)))
+    mutate(readable = n_pass >= READABLE,
+           across(c(mean_bias, se, cover80, bs_log, all_bias), \(v) round(v, 3)))
 print(as.data.frame(cells), row.names = FALSE)
+
+## The cycle_length prior every fit uses (logit-normal, mean_logit_cl 1.87,
+## sd_logit_cl 1, on [35, 50] h), for comparison with the posteriors: a
+## posterior whose mean and sd match these has learned little from the data.
+set.seed(1); pr <- 35 + 15 * plogis(rnorm(1e6, 1.87, 1))
+cat(sprintf("\nPrior on cycle_length (Monte Carlo, 1e6 draws): mean %.2f h, sd %.2f h; P(below the truth %.2f h) = %.3f\n",
+            mean(pr), sd(pr), unique(x$true_cl)[1], mean(pr < unique(x$true_cl)[1])))
+cat("Posterior, per cell over passing fits: median of posterior means and mean of posterior sds (h).\n\n")
+x |> filter(pass) |> group_by(key, gen_nc, method) |>
+    summarise(median_cl_mean = round(median(cl_mean), 2), mean_cl_sd = round(mean(cl_sd), 2),
+              .groups = "drop") |> as.data.frame() |> print(row.names = FALSE)
 
 cat("\nPassing against failing fits, display only. Cells: mean bias (hours) and\n",
     "count, by cell.\n\n", sep = "")

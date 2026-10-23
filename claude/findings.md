@@ -3908,6 +3908,80 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Single-unit study, read 2026-10-23: for MMV048_PIB's schedule the `cycle_length` posterior is mostly the prior
+
+SLURM 32423 (2026-10-22/23, 22.9 h, all 1920 chains finished). Design and
+reading rule: `_scripts/unitsim.R` header (one unit, MMV048_PIB.1800, one
+truth: `cycle_length` 42.84 h, `b_shape` 20.10 at gen `n_c` 384 / 9.54 at
+1024; its six real series to 168 h (`w168`) or extended to 192 h (`w192`);
+fit `pooled_both` at `n_c` 384). Reader `_scripts/unitsim-read.R`, output
+`_data/unitsim-read-study-2026-10-23.txt`. A reader bug made the first
+per-cell table wrong (see `gotchas.md`); the output file is the corrected
+run, and the cells were recomputed independently.
+
+**Gate: 477 of 480 fits pass; every cell is readable.** Fixed `b_shape`
+passes 238 of 240 within one unit, so the full model's fixed-`b_shape`
+failures at `n_c` 384 (1 of 25 passed) come from fitting units jointly, not
+from one trajectory.
+
+Cells: over passing fits of 60. bias = posterior mean `cycle_length` minus
+the 42.84 h truth, hours, positive = long, mean (se); cover80 = share whose
+central 80% interval holds the truth (nominal 0.80); post mean / sd =
+median of posterior means and mean of posterior sds, hours. Unpaired across
+cells. The prior alone (logit-normal centred 48 h, `sd_logit_cl` 1, on
+35-50 h) has mean 47.43 h, sd 1.99 h, and puts 3.8% below the truth.
+
+| window | gen `n_c` | `b_shape` | pass | bias (se) | cover80 | post mean / sd |
+|---|---|---|---|---|---|---|
+| 168 | 384 | estimated | 60 | +4.28 (0.13) | 0.08 | 47.34 / 1.85 |
+| 168 | 384 | fixed at truth | 58 | +2.16 (0.19) | 0.59 | 45.07 / 1.75 |
+| 168 | 1024 | estimated | 60 | +4.21 (0.13) | 0.12 | 47.28 / 1.90 |
+| 168 | 1024 | fixed at truth | 60 | +3.76 (0.17) | 0.10 | 46.82 / 1.72 |
+| 192 | 384 | estimated | 60 | +2.29 (0.15) | 0.25 | 45.17 / 1.50 |
+| 192 | 384 | fixed at truth | 60 | +0.65 (0.09) | 0.72 | 43.50 / 0.78 |
+| 192 | 1024 | estimated | 59 | +3.20 (0.16) | 0.17 | 46.36 / 1.67 |
+| 192 | 1024 | fixed at truth | 60 | +2.38 (0.13) | 0.07 | 45.12 / 1.25 |
+
+**With the real 168 h schedule and `b_shape` estimated, the posterior is
+close to the prior** (mean 47.3 against 47.4 h, sd 1.85-1.90 against 1.99),
+so the +4.2 h bias is the prior's pull on a `cycle_length` the data barely
+inform, and the 80% intervals hold the truth in only 8-12% of fits. Every
+cell is biased long (+0.65 to +4.28 h). The design does not separate the
+prior from the likelihood; that would need a prior arm.
+
+Paired contrasts (same replicate's noise; both fits passing; hours; mean
+(se), and how many of the pairs are negative):
+
+| contrast | where | mean (se) | negative |
+|---|---|---|---|
+| w192 - w168 | gen 384, estimated | −1.99 (0.15) | 56 of 60 |
+| w192 - w168 | gen 384, fixed | −1.51 (0.15) | 54 of 58 |
+| w192 - w168 | gen 1024, estimated | −1.03 (0.16) | 48 of 59 |
+| w192 - w168 | gen 1024, fixed | −1.38 (0.14) | 54 of 60 |
+| estimated - fixed | w168, gen 384 | +2.08 (0.11) | 0 of 58 |
+| estimated - fixed | w168, gen 1024 | +0.45 (0.10) | 19 of 60 |
+| estimated - fixed | w192, gen 384 | +1.64 (0.13) | 0 of 60 |
+| estimated - fixed | w192, gen 1024 | +0.82 (0.12) | 12 of 59 |
+| gen 1024 - 384 (bias) | w168, estimated | −0.07 (0.02) | 46 of 60 |
+| gen 1024 - 384 (bias) | w168, fixed | +1.56 (0.07) | 0 of 58 |
+| gen 1024 - 384 (bias) | w192, estimated | +0.89 (0.04) | 0 of 59 |
+| gen 1024 - 384 (bias) | w192, fixed | +1.73 (0.06) | 0 of 60 |
+
+- **Extending the window to 192 h shortens the estimate by 1.0-2.0 h** in
+  every arm, but leaves it biased long.
+- **Estimating `b_shape` costs +1.6 to +2.1 h when the fit's `n_c` is
+  right** (gen 384), +0.5 to +0.8 h when the truth is 1024.
+- **A true `n_c` of 1024 fitted at 384 adds +0.9 to +1.7 h**, except with
+  the 168 h window and `b_shape` estimated, where the posterior is already at
+  the prior and has nowhere further to go (−0.07 h).
+
+**Scope.** One unit, one truth, the most synchronous of the 14 (`b_shape`
+20.10), with 6 series and no hierarchy. In the full model the trials share
+a hierarchical `cycle_length` prior and 13 trials inform its centre, so the
+prior's pull on any one trial is not this one; these numbers are not a
+correction for the 41.82 h full-model estimate. Chains took a median
+0.13-0.17 h (estimated) and 0.25-0.29 h (fixed); divergences 0.16-0.37%.
+
 ### Second simulation study and single-unit study: set up 2026-10-21; the estimated-`b_shape` fit at `n_c` 384 costs ~24 h per chain
 
 **What was agreed (Lucas, 2026-10-21).** A second study of `cycle_length`

@@ -1,0 +1,76 @@
+480 merged fits in _data/unitsim/study/ 
+
+1. PER CELL. Cells: n = merged fits; pass = max R-hat < 1.05 (4 chains);
+marginal 1.05-1.15, severe >= 1.15; apart = failing fits with a chain's
+mean lp__ > 3 from the median of the other three. bias = posterior mean
+cycle_length - truth, hours, positive = long: mean and se (sd / sqrt(n))
+over PASSING fits, unpaired across cells. readable = >= 45 of 60 pass.
+cover80 = share of passing fits whose central 80% interval holds
+the truth. bs_log = est arm, mean log(posterior mean b_shape / truth).
+all_bias = mean over ALL fits, display only.
+
+  key gen_nc method  n n_pass marginal severe n_apart mean_bias    se cover80 bs_log all_bias readable
+ w168    384    est 60     60        0      0       0     4.278 0.131   0.083 -0.606    4.278     TRUE
+ w168    384    fix 60     58        1      1       0     2.161 0.186   0.586     NA    2.169     TRUE
+ w168   1024    est 60     60        0      0       0     4.212 0.132   0.117 -0.085    4.212     TRUE
+ w168   1024    fix 60     60        0      0       0     3.758 0.169   0.100     NA    3.758     TRUE
+ w192    384    est 60     60        0      0       0     2.288 0.145   0.250 -0.563    2.288     TRUE
+ w192    384    fix 60     60        0      0       0     0.646 0.086   0.717     NA    0.646     TRUE
+ w192   1024    est 60     59        1      0       0     3.204 0.158   0.169 -0.125    3.170     TRUE
+ w192   1024    fix 60     60        0      0       0     2.379 0.130   0.067     NA    2.379     TRUE
+
+Prior on cycle_length (Monte Carlo, 1e6 draws): mean 47.43 h, sd 1.99 h; P(below the truth 42.84 h) = 0.038
+Posterior, per cell over passing fits: median of posterior means and mean of posterior sds (h).
+
+  key gen_nc method median_cl_mean mean_cl_sd
+ w168    384    est          47.34       1.85
+ w168    384    fix          45.07       1.75
+ w168   1024    est          47.28       1.90
+ w168   1024    fix          46.82       1.72
+ w192    384    est          45.17       1.50
+ w192    384    fix          43.50       0.78
+ w192   1024    est          46.36       1.67
+ w192   1024    fix          45.12       1.25
+
+Passing against failing fits, display only. Cells: mean bias (hours) and
+count, by cell.
+
+  key gen_nc method n_pass_TRUE n_pass_FALSE mean_bias_pass_TRUE mean_bias_pass_FALSE
+ w168    384    est          60           NA               4.278                   NA
+ w168    384    fix          58            2               2.161                2.416
+ w168   1024    est          60           NA               4.212                   NA
+ w168   1024    fix          60           NA               3.758                   NA
+ w192    384    est          60           NA               2.288                   NA
+ w192    384    fix          60           NA               0.646                   NA
+ w192   1024    est          59            1               3.204                1.140
+ w192   1024    fix          60           NA               2.379                   NA
+
+2. PAIRED CONTRASTS. Cells: per replicate, difference of posterior mean
+cycle_length (hours) between two fits of IDENTICAL noise draws, both
+passing; mean, se, range over pairs, and how many are negative.
+w192 - w168: same truth and the same noise on the 34 shared
+observations; the effect of extending the window to 192 h.
+est - fix: same data, b_shape estimated minus fixed at truth (cost of
+estimating it). gen 1024 - 384: same noise, different noiseless
+trajectories (partially paired).
+
+w192 - w168
+ gen_nc method pairs   mean    se     lo    hi negative
+    384    est    60 -1.989 0.148 -5.010 0.974       56
+    384    fix    58 -1.512 0.152 -4.869 1.214       54
+   1024    est    59 -1.034 0.157 -4.331 2.144       48
+   1024    fix    60 -1.379 0.143 -3.508 1.751       54
+
+est - fix
+  key gen_nc pairs  mean    se     lo    hi negative
+ w168    384    58 2.080 0.105  0.277 3.554        0
+ w168   1024    60 0.454 0.103 -1.662 2.285       19
+ w192    384    60 1.642 0.126  0.103 4.008        0
+ w192   1024    59 0.815 0.123 -1.019 3.397       12
+
+gen 1024 - 384 (difference of bias, since the truths match)
+  key method pairs   mean    se     lo    hi negative
+ w168    est    60 -0.066 0.024 -0.518 0.648       46
+ w168    fix    58  1.560 0.071  0.466 2.967        0
+ w192    est    59  0.890 0.039  0.379 1.539        0
+ w192    fix    60  1.734 0.057  0.995 2.788        0

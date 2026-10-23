@@ -718,3 +718,13 @@ cores each) looked free. Measured 2026-10-22 (`_data/unitsim-bench-read-2026-10-
 each chain ran 2.4-3x slower and throughput per group fell 27%. Sharing the
 L3 cache is the cost, not the core count. Keep one chain per group.
 
+## `summarise()` evaluates in order: never name a summary after a column you use later
+
+`summarise(pass = sum(pass), bias = mean(bias[pass]), se = sd(bias[pass]))`
+replaces `pass` with a count, so `bias[pass]` picks ONE element, `se` is NA,
+and coverage reads 0 or 1. It bit `simstudy-read.R` on 2026-10-20 and again
+`unitsim-read.R` on 2026-10-23, and an independent check written the same
+way reproduced the same wrong numbers. Use new names (`n_pass`,
+`mean_bias`), and cross-check a table against one computed by a different
+route, e.g. `filter(pass)` first, then summarise.
+

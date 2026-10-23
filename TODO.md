@@ -47,17 +47,18 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] Study script frozen as `_data/unitsim/unitsim-run-4.R` (md5
       18384d98…); 20-iteration smoke chains of `w168` (est, gen 384) and
       `w192` (fix, gen 1024) passed through the driver.
-- [ ] **SLURM 32423 — single-unit study, submitted 2026-10-22 11:14**
-      (Lucas: one chain per L3 group). 1920 chain tasks
-      (`_data/unitsim/study/tasks.txt`), frozen script
-      `_data/unitsim/unitsim-run-4.R` (md5 18384d98…), 128 CPUs, 16 workers
-      (15 on whole L3 groups, 1 split: cores 5,6,7,68), walltime 3 days,
-      expected ~22 h. Logs `_data/unitsim/study/logs/`. **Do not edit
-      `unitsim-run-4.R` or `simstudy-pinned.sh` while it runs.** When it ends:
-      `UNITSIM_MODE=merge Rscript --vanilla _scripts/unitsim.R`, then
-      `Rscript --vanilla _scripts/unitsim-read.R > _data/unitsim-read-study-<date>.txt`,
-      and read it by the rule in the `unitsim.R` header. Any claim directory
-      without a chain file is listed at the end of the driver log.
+- [x] **SLURM 32423 — single-unit study, read 2026-10-23**
+      (`_data/unitsim-read-study-2026-10-23.txt`; `findings.md`,
+      "Single-unit study, read 2026-10-23"): 477 of 480 pass; biased long in
+      every cell (+0.65 to +4.28 h); with the real 168 h schedule and
+      `b_shape` estimated the posterior is close to the prior (mean 47.3 h,
+      sd 1.9); extending to 192 h shortens it by 1.0-2.0 h; estimating
+      `b_shape` costs +1.6 to +2.1 h at the right `n_c`; true `n_c` 1024
+      adds +0.9 to +1.7 h.
+- [ ] **Decide the next step with Lucas.** Options put to him 2026-10-23:
+      a prior arm (flat, or centred at the truth) to separate prior pull from
+      the likelihood; a second, less synchronous truth; the full-model study
+      (on hold, needs his say-so).
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`
