@@ -55,10 +55,22 @@ match where a thread exists. This file is the actionable layer. -->
       sd 1.9); extending to 192 h shortens it by 1.0-2.0 h; estimating
       `b_shape` costs +1.6 to +2.1 h at the right `n_c`; true `n_c` 1024
       adds +0.9 to +1.7 h.
-- [ ] **Decide the next step with Lucas.** Options put to him 2026-10-23:
-      a prior arm (flat, or centred at the truth) to separate prior pull from
-      the likelihood; a second, less synchronous truth; the full-model study
-      (on hold, needs his say-so).
+- [ ] **SLURM 32426 — prior arm, submitted 2026-10-23 16:36** (Lucas: prior
+      centred at the truth, all 8 cells, 60 reps): the same 480 datasets
+      refitted with `cl_prior_center` = 42.844 h (`sd_logit_cl` 1). Tokens end
+      `-ptruth`; list `_data/unitsim/study/tasks-prior.txt`; frozen script
+      `_data/unitsim/unitsim-run-5.R` (md5 e72c6747…); output into
+      `_data/unitsim/study/` beside the main study; ~22 h. Checks
+      (`_data/unitsim-check-2026-10-23.txt`): identical data, only
+      `mean_logit_cl` differs (1.872 -> 0.092). When it ends: merge with
+      `UNITSIM_MODE=merge Rscript --vanilla _data/unitsim/unitsim-run-5.R`,
+      then `_scripts/unitsim-read.R` (now keyed by prior; adds the paired
+      truth-centred - production contrast).
+- [ ] **Second, less synchronous truth (Lucas 2026-10-23):** MMV048_PIB's truth
+      and schedules with only `b_shape` lowered, production prior only, all 8
+      cells. **Value to be chosen by Lucas** (finished study's truth was
+      20.10; the 14 units' posterior means run 5.86-20.10, mean 12.22,
+      median 11.40). Runs after 32426 (half-node budget).
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`

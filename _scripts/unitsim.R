@@ -97,6 +97,17 @@
 #             chain's mean lp__ is more than 3 units from the median of the
 #             other three.
 #
+# PRIOR ARM, added 2026-10-23 (Lucas) after the main study's read, before any
+#   prior-arm fit ran: the same 480 (window, gen_nc, method, rep) datasets
+#   refitted with the cycle_length prior CENTRED AT THE TRUTH
+#   (cl_prior_center = 42.844 h, so mean_logit_cl = logit((42.844 - 35) / 15);
+#   sd_logit_cl 1 as production). Tokens end "-ptruth". The main study found
+#   the w168 / estimated posterior close to the production prior (centred
+#   48 h); this arm measures the bias when the prior's location is right.
+#   Reading rule as above per cell, plus the paired contrast truth-centred -
+#   production prior at each (window, gen_nc, method), identical data, both
+#   passing. `UNITSIM_TASKS=prior` in tasks mode lists its 1920 tokens.
+#
 # LAYOUT: pinned through _scripts/simstudy-pinned.sh. A benchmark of two
 #   chains per L3 group (2 physical cores each) against one (4 cores) runs
 #   first (2026-10-22; Lucas decides the layout from its numbers), in
@@ -170,10 +181,11 @@ fit_path <- function(nm) sprintf("%sfit-%s.rds", PFX, nm)
 sum_path <- function(nm) sprintf("%ssum-%s.rds", PFX, nm)
 
 parse_fit <- function(nm) {
-    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)$", nm))[[1]]
-    if (length(m) != 5L) stop("bad fit name: ", nm)
+    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-ptruth)?$", nm))[[1]]
+    if (length(m) != 6L) stop("bad fit name: ", nm)
     list(window = as.integer(m[2]), unit = UNIT, gen_nc = as.integer(m[3]),
-         method = m[4], rep = as.integer(m[5]), name = nm)
+         method = m[4], rep = as.integer(m[5]),
+         prior = if (nzchar(m[6])) "truth" else "prod", name = nm)
 }
 
 
@@ -272,8 +284,10 @@ unit_truth <- function(u, gen_nc) {
 make_fit_inputs <- function(nm, split = "alt") {
     cf <- parse_fit(nm)
     truth <- unit_truth(cf$unit, cf$gen_nc)
-    d <- if (cf$method == "fix") build_unit(cf$window, split, b_shape = truth$b_shape)
-         else build_unit(cf$window, split)
+    args <- list(window = cf$window, split = split)
+    if (cf$method == "fix") args$b_shape <- truth$b_shape
+    if (cf$prior == "truth") args$cl_prior_center <- truth$cycle_length
+    d <- do.call(build_unit, args)
     stopifnot(d$n_grp_init == 1L, d$n_c == FIT_NC,
               d$b_shape_fixed == as.integer(cf$method == "fix"))
     lv <- attr(d, "levels")
@@ -359,13 +373,23 @@ if (MODE == "check") {
                         x$cf$name, dmax))
             stopifnot(dmax < 1e-6)
         }
+        ## Prior arm: identical data, only the cycle_length prior's centre moves.
+        pa <- make_fit_inputs(sprintf("w168-g%d-est-rep1-ptruth", g))
+        stopifnot(identical(pa$d$y, a$d$y))
+        nd <- setdiff(names(a$d)[!vapply(names(a$d), \(n) isTRUE(all.equal(a$d[[n]], pa$d[[n]])), logical(1))], character(0))
+        cat(sprintf("  prior arm: same y; fields differing from production: %s; mean_logit_cl %.4f -> %.4f (implied centre %.3f h)\n",
+                    paste(nd, collapse = ", "), a$d$mean_logit_cl, pa$d$mean_logit_cl,
+                    35 + 15 * plogis(pa$d$mean_logit_cl)))
+        stopifnot(identical(nd, "mean_logit_cl"))
     }
     quit(save = "no")
 }
 
 if (MODE == "tasks") {
     ## rep-major, chains innermost
-    cat(paste0(rep(STUDY$name, each = N_CHAINS), "-c", seq_len(N_CHAINS)), sep = "\n")
+    nms <- STUDY$name
+    if (Sys.getenv("UNITSIM_TASKS", "main") == "prior") nms <- paste0(nms, "-ptruth")
+    cat(paste0(rep(nms, each = N_CHAINS), "-c", seq_len(N_CHAINS)), sep = "\n")
     quit(save = "no")
 }
 
@@ -425,6 +449,7 @@ if (MODE == "merge") {
         lf <- vapply(sp, \(x) sum(x[, "n_leapfrog__"]), numeric(1))
         q <- quantile(cl, c(0.1, 0.9))
         row <- tibble(name = nm, unit = tru$unit, window = cf$window,
+                      prior = if (is.null(cf$prior)) "prod" else cf$prior,
                       gen_nc = cf$gen_nc, method = cf$method,
                       rep = cf$rep, max_rhat = max(rh), worst = names(which.max(rh)),
                       pass = max(rh) < 1.05,

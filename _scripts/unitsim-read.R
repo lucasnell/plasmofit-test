@@ -16,6 +16,8 @@ N_REP <- 60L; READABLE <- 45L
 fs <- Sys.glob(file.path(DIR, "sum-*.rds"))
 x <- bind_rows(lapply(fs, readRDS))
 if (!"window" %in% names(x)) x$window <- NA_integer_
+if (!"prior" %in% names(x)) x$prior <- NA_character_
+x$prior[is.na(x$prior)] <- "prod"      # main-study summaries predate the prior arm
 x <- x |>
     mutate(key = if_else(is.na(window), unit, paste0("w", window)),
            rhat_bin = case_when(pass ~ "pass", max_rhat < 1.15 ~ "marginal", TRUE ~ "severe"),
@@ -31,7 +33,7 @@ cat("1. PER CELL. Cells: n = merged fits; pass = max R-hat < 1.05 (4 chains);\n"
     " pass.\n", "cover80 = share of passing fits whose central 80% interval holds\n",
     "the truth. bs_log = est arm, mean log(posterior mean b_shape / truth).\n",
     "all_bias = mean over ALL fits, display only.\n\n", sep = "")
-cells <- x |> group_by(key, gen_nc, method) |>
+cells <- x |> group_by(prior, key, gen_nc, method) |>
     ## New names throughout: summarise() evaluates in order, so a summary
     ## named `pass` or `bias` would replace the column for every later line
     ## (the 2026-10-20 simstudy-read.R bug, repeated here and caught on the
@@ -53,13 +55,13 @@ set.seed(1); pr <- 35 + 15 * plogis(rnorm(1e6, 1.87, 1))
 cat(sprintf("\nPrior on cycle_length (Monte Carlo, 1e6 draws): mean %.2f h, sd %.2f h; P(below the truth %.2f h) = %.3f\n",
             mean(pr), sd(pr), unique(x$true_cl)[1], mean(pr < unique(x$true_cl)[1])))
 cat("Posterior, per cell over passing fits: median of posterior means and mean of posterior sds (h).\n\n")
-x |> filter(pass) |> group_by(key, gen_nc, method) |>
+x |> filter(pass) |> group_by(prior, key, gen_nc, method) |>
     summarise(median_cl_mean = round(median(cl_mean), 2), mean_cl_sd = round(mean(cl_sd), 2),
               .groups = "drop") |> as.data.frame() |> print(row.names = FALSE)
 
 cat("\nPassing against failing fits, display only. Cells: mean bias (hours) and\n",
     "count, by cell.\n\n", sep = "")
-x |> group_by(key, gen_nc, method, pass) |>
+x |> group_by(prior, key, gen_nc, method, pass) |>
     summarise(n = n(), mean_bias = round(mean(bias), 3), .groups = "drop") |>
     pivot_wider(names_from = pass, values_from = c(n, mean_bias), names_prefix = "pass_") |>
     as.data.frame() |> print(row.names = FALSE)
@@ -79,18 +81,25 @@ pair_sum <- function(d) d |>
               .groups = "drop")
 xp <- filter(x, pass)
 w_diff <- inner_join(filter(xp, key == "w192"), filter(xp, key == "w168"),
-                     by = c("gen_nc", "method", "rep"), suffix = c("_l", "_s")) |>
-    mutate(diff = cl_mean_l - cl_mean_s) |> group_by(gen_nc, method) |> pair_sum()
+                     by = c("prior", "gen_nc", "method", "rep"), suffix = c("_l", "_s")) |>
+    mutate(diff = cl_mean_l - cl_mean_s) |> group_by(prior, gen_nc, method) |> pair_sum()
 cat("w192 - w168\n"); print(as.data.frame(w_diff), row.names = FALSE)
 est_fix <- inner_join(filter(xp, method == "est"), filter(xp, method == "fix"),
-                      by = c("key", "gen_nc", "rep"), suffix = c("_e", "_f")) |>
-    mutate(diff = cl_mean_e - cl_mean_f) |> group_by(key, gen_nc) |> pair_sum()
+                      by = c("prior", "key", "gen_nc", "rep"), suffix = c("_e", "_f")) |>
+    mutate(diff = cl_mean_e - cl_mean_f) |> group_by(prior, key, gen_nc) |> pair_sum()
 cat("\nest - fix\n"); print(as.data.frame(est_fix), row.names = FALSE)
 g_diff <- inner_join(filter(xp, gen_nc == 1024L), filter(xp, gen_nc == 384L),
-                     by = c("key", "method", "rep"), suffix = c("_h", "_l")) |>
-    mutate(diff = bias_h - bias_l) |> group_by(key, method) |> pair_sum()
+                     by = c("prior", "key", "method", "rep"), suffix = c("_h", "_l")) |>
+    mutate(diff = bias_h - bias_l) |> group_by(prior, key, method) |> pair_sum()
 cat("\ngen 1024 - 384 (difference of bias, since the truths match)\n")
 print(as.data.frame(g_diff), row.names = FALSE)
+if (any(xp$prior == "truth")) {
+    p_diff <- inner_join(filter(xp, prior == "truth"), filter(xp, prior == "prod"),
+                         by = c("key", "gen_nc", "method", "rep"), suffix = c("_t", "_p")) |>
+        mutate(diff = cl_mean_t - cl_mean_p) |> group_by(key, gen_nc, method) |> pair_sum()
+    cat("\ntruth-centred - production prior (identical data; the prior's location effect)\n")
+    print(as.data.frame(p_diff), row.names = FALSE)
+}
 
 ## ---- 3. Per fit and per chain (probes; or to inspect) ------------------------
 if (nrow(x) <= 24L || nzchar(Sys.getenv("UNITSIM_DETAIL"))) {

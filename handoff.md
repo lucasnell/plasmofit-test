@@ -5,7 +5,9 @@
 **2026-10-23: single-unit study read** (`findings.md`, "Single-unit study,
 read 2026-10-23"): 477 of 480 pass; biased long everywhere; with MMV048_PIB's
 real 168 h schedule and `b_shape` estimated the `cycle_length` posterior is
-close to the prior (centred 48 h). Next step is Lucas's (`TODO.md`).
+close to the prior (centred 48 h). Prior arm (prior centred at the truth) running as **SLURM 32426**;
+a less synchronous truth (only `b_shape` lowered) next, value to be chosen
+(`TODO.md`).
 
 **2026-10-22: single-unit study designed; layout benchmark running.** Design
 and reading rule in the `_scripts/unitsim.R` header: one unit (MMV048_PIB.1800),
