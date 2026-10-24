@@ -108,6 +108,16 @@
 #   production prior at each (window, gen_nc, method), identical data, both
 #   passing. `UNITSIM_TASKS=prior` in tasks mode lists its 1920 tokens.
 #
+# LOW-SYNCHRONY TRUTH, added 2026-10-24 (Lucas) before any of its fits ran:
+#   the main study's truth with ONLY b_shape changed, to 5.86, the lowest
+#   posterior mean of the 14 units in the same real-data fit
+#   (MMV048_PartB.2800); mapped to ~4.30 at gen n_c 1024 as above (k = 168 h /
+#   true cycle_length). Same schedules, production prior, all 8 cells, 60
+#   reps, same noise seeds (so paired on noise with the main study, on a
+#   different noiseless trajectory). Tokens carry "-bslow" after the rep;
+#   `UNITSIM_TASKS=bslow` lists its 1920. Reading rule as above per cell,
+#   plus bslow - main bias at each (window, gen_nc, method), same noise.
+#
 # LAYOUT: pinned through _scripts/simstudy-pinned.sh. A benchmark of two
 #   chains per L3 group (2 physical cores each) against one (4 cores) runs
 #   first (2026-10-22; Lucas decides the layout from its numbers), in
@@ -181,11 +191,12 @@ fit_path <- function(nm) sprintf("%sfit-%s.rds", PFX, nm)
 sum_path <- function(nm) sprintf("%ssum-%s.rds", PFX, nm)
 
 parse_fit <- function(nm) {
-    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-ptruth)?$", nm))[[1]]
-    if (length(m) != 6L) stop("bad fit name: ", nm)
+    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-bslow)?(-ptruth)?$", nm))[[1]]
+    if (length(m) != 7L) stop("bad fit name: ", nm)
     list(window = as.integer(m[2]), unit = UNIT, gen_nc = as.integer(m[3]),
          method = m[4], rep = as.integer(m[5]),
-         prior = if (nzchar(m[6])) "truth" else "prod", name = nm)
+         truth_set = if (nzchar(m[6])) "bslow" else "main",
+         prior = if (nzchar(m[7])) "truth" else "prod", name = nm)
 }
 
 
@@ -267,11 +278,14 @@ build_unit <- function(window, split = "alt", ...) {
     d
 }
 
-unit_truth <- function(u, gen_nc) {
+## The low-synchrony truth's b_shape: the lowest unit posterior mean.
+B_LOW <- T_FULL$b_shape[UNITS == "MMV048_PartB.2800"]
+stopifnot(length(B_LOW) == 1L, B_LOW == min(T_FULL$b_shape))
+
+unit_truth <- function(u, gen_nc, b384 = T_FULL$b_shape[u]) {
     tr <- unique(d0$grp_cl[d0$grp_init == u]); stopifnot(length(tr) == 1L)
     df <- unit_rows(u)
     k_last <- max(df$time) / T_FULL$cycle_length[tr]
-    b384 <- T_FULL$b_shape[u]
     b <- b_from_var(var_init(b384) + k_last * (1 / FIT_NC - 1 / gen_nc))
     stopifnot(b > 2, b < d0$max_shape)
     list(unit = UNITS[u], trial = TRIALS[tr], b_shape = b, b_shape_384 = b384,
@@ -283,7 +297,8 @@ unit_truth <- function(u, gen_nc) {
 
 make_fit_inputs <- function(nm, split = "alt") {
     cf <- parse_fit(nm)
-    truth <- unit_truth(cf$unit, cf$gen_nc)
+    truth <- if (cf$truth_set == "bslow") unit_truth(cf$unit, cf$gen_nc, B_LOW)
+             else unit_truth(cf$unit, cf$gen_nc)
     args <- list(window = cf$window, split = split)
     if (cf$method == "fix") args$b_shape <- truth$b_shape
     if (cf$prior == "truth") args$cl_prior_center <- truth$cycle_length
@@ -381,6 +396,13 @@ if (MODE == "check") {
                     paste(nd, collapse = ", "), a$d$mean_logit_cl, pa$d$mean_logit_cl,
                     35 + 15 * plogis(pa$d$mean_logit_cl)))
         stopifnot(identical(nd, "mean_logit_cl"))
+        ## Low-synchrony truth: only b_shape differs from the main truth.
+        lo <- make_fit_inputs(sprintf("w168-g%d-fix-rep1-bslow", g))
+        mn <- make_fit_inputs(sprintf("w168-g%d-fix-rep1", g))
+        dt <- names(mn$truth)[!vapply(names(mn$truth), \(n) identical(mn$truth[[n]], lo$truth[[n]]), logical(1))]
+        cat(sprintf("  bslow truth: fields differing from main: %s; b_shape %.3f (main %.3f); fixed b_shape in fit data %.3f\n",
+                    paste(dt, collapse = ", "), lo$truth$b_shape, mn$truth$b_shape, lo$d$b_shape_data))
+        stopifnot(setequal(dt, c("b_shape", "b_shape_384")), lo$d$b_shape_data == lo$truth$b_shape)
     }
     quit(save = "no")
 }
@@ -388,7 +410,10 @@ if (MODE == "check") {
 if (MODE == "tasks") {
     ## rep-major, chains innermost
     nms <- STUDY$name
-    if (Sys.getenv("UNITSIM_TASKS", "main") == "prior") nms <- paste0(nms, "-ptruth")
+    which_tasks <- Sys.getenv("UNITSIM_TASKS", "main")
+    stopifnot(which_tasks %in% c("main", "prior", "bslow"))
+    if (which_tasks == "prior") nms <- paste0(nms, "-ptruth")
+    if (which_tasks == "bslow") nms <- paste0(nms, "-bslow")
     cat(paste0(rep(nms, each = N_CHAINS), "-c", seq_len(N_CHAINS)), sep = "\n")
     quit(save = "no")
 }
@@ -450,6 +475,7 @@ if (MODE == "merge") {
         q <- quantile(cl, c(0.1, 0.9))
         row <- tibble(name = nm, unit = tru$unit, window = cf$window,
                       prior = if (is.null(cf$prior)) "prod" else cf$prior,
+                      truth_set = if (is.null(cf$truth_set)) "main" else cf$truth_set,
                       gen_nc = cf$gen_nc, method = cf$method,
                       rep = cf$rep, max_rhat = max(rh), worst = names(which.max(rh)),
                       pass = max(rh) < 1.05,

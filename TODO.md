@@ -66,11 +66,18 @@ match where a thread exists. This file is the actionable layer. -->
       `UNITSIM_MODE=merge Rscript --vanilla _data/unitsim/unitsim-run-5.R`,
       then `_scripts/unitsim-read.R` (now keyed by prior; adds the paired
       truth-centred - production contrast).
-- [ ] **Second, less synchronous truth (Lucas 2026-10-23):** MMV048_PIB's truth
-      and schedules with only `b_shape` lowered, production prior only, all 8
-      cells. **Value to be chosen by Lucas** (finished study's truth was
-      20.10; the 14 units' posterior means run 5.86-20.10, mean 12.22,
-      median 11.40). Runs after 32426 (half-node budget).
+- [ ] **SLURM 32428 — low-synchrony truth, queued 2026-10-24** (Lucas:
+      `b_shape` 5.86, the lowest unit posterior mean, MMV048_PartB.2800):
+      the main truth with only `b_shape` changed (4.30 at gen 1024), same
+      schedules and noise seeds, production prior, all 8 cells, 60 reps.
+      Tokens end `-bslow`; list `_data/unitsim/study/tasks-bslow.txt`;
+      frozen `_data/unitsim/unitsim-run-6.R` (md5 5fa213d4…). Waits on smoke
+      job 32427 (`afterok`; 20 iterations of one `-bslow` chain, after
+      32426), so it starts only if the smoke chain is written. Checks
+      (`_data/unitsim-check-2026-10-24.txt`): only `b_shape` differs from the
+      main truth. ~22 h. Merge with `_data/unitsim/unitsim-run-6.R`; the
+      reader adds a bslow - main bias contrast. If 32428 never starts, read
+      `_data/unitsim/smoke6/logs/smoke-32427.out`.
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`
