@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Single-Unit Bias Simulations</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1c2027; --muted: #5a6371; --rule: #d8dde4;
+    --panel: #f4f6f9; --accent: #2d5b9b;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 2px; }
+  h2 { font-size: 16px; margin: 24px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--rule); }
+  p, li { margin: 4px 0; max-width: 76ch; }
+  ul { padding-left: 20px; }
+  .sub, .cap { color: var(--muted); }
+  .sub { margin: 0 0 14px; }
+  .cap { font-size: 13px; margin: 4px 0 6px; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 14px; margin: 4px 0 8px; }
+  th, td { padding: 4px 10px; border-bottom: 1px solid var(--rule); text-align: right; white-space: nowrap; }
+  th { background: var(--panel); font-weight: 600; }
+  td:nth-child(-n+3), th:nth-child(-n+3) { text-align: left; }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; background: var(--panel); padding: 0 3px; border-radius: 3px; }
+  .src { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+<h1>Single-unit simulations of <code>cycle_length</code> bias</h1>
+<p class="sub">plasmofit · SLURM 32423, 32426, 32428 · read 2026-10-23 and 2026-10-26</p>
+
+<h2>Design</h2>
+<ul>
+  <li><b>Unit:</b> MMV048_PIB.1800 alone: 6 series, one shared trajectory, no hierarchy.</li>
+  <li><b>Truth:</b> its posterior means from the real-data fit <code>np_wide_total0_nc384_t</code>: <code>cycle_length</code> 42.84 h, <code>b_shape</code> 20.10.</li>
+  <li><b>Schedules:</b> real times to 168 h (34 obs), or the same series extended to 192 h (46 obs).</li>
+  <li><b>Data generated at <code>n_c</code></b> 384 or 1024. At 1024, <code>b_shape</code> is lowered to keep the total stage spread at 168 h unchanged.</li>
+  <li><b>Fit:</b> <code>n_c</code> 384 always, with <code>b_shape</code> estimated or fixed at the truth. Production <code>cycle_length</code> prior: centred 48 h, sd 1.99 h; 3.8% of its mass lies below the truth.</li>
+  <li><b>Replicates and gate:</b> 60 replicates per cell, 4 chains, max R-hat &lt; 1.05. <b>1437 of 1440 fits pass.</b></li>
+</ul>
+<p><b>Extensions</b>, on the same noise draws:</p>
+<ul>
+  <li><b>(a) Prior arm:</b> the main datasets refitted with the prior centred at the truth (42.84 h), same width.</li>
+  <li><b>(b) Low-synchrony truth:</b> <code>b_shape</code> 5.86, the lowest unit, instead of 20.10. Everything else unchanged, production prior.</li>
+</ul>
+
+<h2>Bias</h2>
+<p class="cap">Cells: mean over passing fits (58–60 of 60) of the posterior mean of <code>cycle_length</code> minus the truth, in hours; positive = long; se 0.08–0.21 h. In brackets: the share of fits whose central 80% interval holds the truth (nominal 0.80). Columns are unpaired.</p>
+<div class="wrap"><table>
+<tr><th>Window</th><th>True <code>n_c</code></th><th><code>b_shape</code></th><th>Main, prior 48 h</th><th>(a) Prior at truth</th><th>(b) Low synchrony</th></tr>
+<tr><td>168 h</td><td>384</td><td>estimated</td><td>+4.28 (0.08)</td><td>+1.79 (0.62)</td><td>+3.59 (0.38)</td></tr>
+<tr><td>168 h</td><td>384</td><td>fixed</td><td>+2.16 (0.59)</td><td>+0.64 (0.80)</td><td>+2.67 (0.50)</td></tr>
+<tr><td>168 h</td><td>1024</td><td>estimated</td><td>+4.21 (0.12)</td><td>+1.52 (0.73)</td><td>+2.95 (0.62)</td></tr>
+<tr><td>168 h</td><td>1024</td><td>fixed</td><td>+3.76 (0.10)</td><td>+1.74 (0.42)</td><td>+2.63 (0.52)</td></tr>
+<tr><td>192 h</td><td>384</td><td>estimated</td><td>+2.29 (0.25)</td><td>+1.26 (0.53)</td><td>+2.30 (0.53)</td></tr>
+<tr><td>192 h</td><td>384</td><td>fixed</td><td>+0.65 (0.72)</td><td>+0.37 (0.85)</td><td>+1.02 (0.75)</td></tr>
+<tr><td>192 h</td><td>1024</td><td>estimated</td><td>+3.20 (0.17)</td><td>+1.70 (0.38)</td><td>+2.35 (0.61)</td></tr>
+<tr><td>192 h</td><td>1024</td><td>fixed</td><td>+2.38 (0.07)</td><td>+1.63 (0.15)</td><td>+1.54 (0.57)</td></tr>
+</table></div>
+
+<h2>Findings</h2>
+<p class="cap">Contrasts are paired: both fits use the same replicate's data (or the same noise draws) and both pass. Hours.</p>
+<ul>
+  <li><b>Biased long in every cell</b> (+0.4 to +4.3 h). At the real 168 h schedule with <code>b_shape</code> estimated, the posterior is essentially the prior: mean 47.3 h and sd 1.9 h, against the prior's 47.4 h and 2.0 h.</li>
+  <li><b>The prior's 48 h centre is the largest source.</b> Centring it at the truth shortens the estimate in every pair, by 1.0–2.7 h with <code>b_shape</code> estimated and 0.3–2.0 h with it fixed.</li>
+  <li><b>A long residual remains with the prior at the truth.</b> This comes from the likelihood and nuisances, not the prior:
+    <ul>
+      <li>+1.3 to +1.8 h with <code>b_shape</code> estimated;</li>
+      <li>+0.4 to +0.6 h with it fixed and <code>n_c</code> right;</li>
+      <li>+1.6 to +1.7 h with it fixed and a true <code>n_c</code> of 1024.</li>
+    </ul></li>
+  <li><b>Estimating <code>b_shape</code></b> adds +1.6 to +2.1 h under the production prior and +0.9 to +1.1 h with the prior at the truth, when <code>n_c</code> is right.</li>
+  <li><b>The longer window</b> shortens the estimate by 1.0–2.0 h under the production prior. With the prior at the truth this falls to −0.5 to +0.2 h, so the window effect is mostly the extra data resisting the prior.</li>
+  <li><b>Low synchrony</b> stays long (+1.0 to +3.6 h). Its posterior sds are 1.5–2.3 h, about the prior's, so these data inform <code>cycle_length</code> even less. The <code>b_shape</code> cost (+0.3 to +1.3 h) and the <code>n_c</code> effect (−0.6 to +0.5 h) are both smaller than at the main truth.</li>
+</ul>
+
+<h2>Limits</h2>
+<ul>
+  <li>One unit, 6 series, no hierarchy. In the full model, 13 trials share the <code>cycle_length</code> prior's centre, so the pull on any one trial differs.</li>
+  <li>A prior centred at the truth is a diagnostic only.</li>
+  <li>None of these numbers is a correction for the full-model 41.82 h.</li>
+</ul>
+
+<p class="src">Design and reading rule: <code>_scripts/unitsim.R</code> header. Reader: <code>_scripts/unitsim-read.R</code>. Outputs: <code>_data/unitsim-read-study-2026-10-23.txt</code> (main) and <code>_data/unitsim-read-study-2026-10-26.txt</code> (all three). Detail: <code>claude/findings.md</code>, “Single-unit study” and “Single-unit follow-ups”.</p>
+</main>
+</body>
+</html>
