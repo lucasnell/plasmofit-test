@@ -55,7 +55,7 @@ match where a thread exists. This file is the actionable layer. -->
       sd 1.9); extending to 192 h shortens it by 1.0-2.0 h; estimating
       `b_shape` costs +1.6 to +2.1 h at the right `n_c`; true `n_c` 1024
       adds +0.9 to +1.7 h.
-- [ ] **SLURM 32426 — prior arm, submitted 2026-10-23 16:36** (Lucas: prior
+- [x] **SLURM 32426 — prior arm, done; read 2026-10-26** (`findings.md`, "Single-unit follow-ups"). Submitted 2026-10-23 16:36 (Lucas: prior
       centred at the truth, all 8 cells, 60 reps): the same 480 datasets
       refitted with `cl_prior_center` = 42.844 h (`sd_logit_cl` 1). Tokens end
       `-ptruth`; list `_data/unitsim/study/tasks-prior.txt`; frozen script
@@ -66,7 +66,7 @@ match where a thread exists. This file is the actionable layer. -->
       `UNITSIM_MODE=merge Rscript --vanilla _data/unitsim/unitsim-run-5.R`,
       then `_scripts/unitsim-read.R` (now keyed by prior; adds the paired
       truth-centred - production contrast).
-- [ ] **SLURM 32428 — low-synchrony truth, queued 2026-10-24** (Lucas:
+- [x] **SLURM 32428 — low-synchrony truth, done; read 2026-10-26** (`findings.md`, "Single-unit follow-ups"). Queued 2026-10-24 (Lucas:
       `b_shape` 5.86, the lowest unit posterior mean, MMV048_PartB.2800):
       the main truth with only `b_shape` changed (4.30 at gen 1024), same
       schedules and noise seeds, production prior, all 8 cells, 60 reps.
@@ -78,6 +78,12 @@ match where a thread exists. This file is the actionable layer. -->
       main truth. ~22 h. Merge with `_data/unitsim/unitsim-run-6.R`; the
       reader adds a bslow - main bias contrast. If 32428 never starts, read
       `_data/unitsim/smoke6/logs/smoke-32427.out`.
+- [ ] **Next step with Lucas** after the 2026-10-26 read: the production
+      `cycle_length` prior's 48 h centre is the largest bias source in this
+      unit, and a long residual (+0.4 to +1.8 h) remains with the prior at
+      the truth. Open: what this implies for the real fit's
+      `cl_prior_center` (TODO item under "Hierarchy and model comparison"),
+      and whether to test it in the full model (on hold, needs his say-so).
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`

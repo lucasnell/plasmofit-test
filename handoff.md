@@ -2,6 +2,13 @@
 
 ## State of play right now — read this first
 
+**2026-10-26: single-unit follow-ups read** (`findings.md`, "Single-unit
+follow-ups"; `_data/unitsim-read-study-2026-10-26.txt`). Centring the
+`cycle_length` prior at the truth instead of 48 h shortens the estimate in
+every paired fit, by up to 2.7 h; a long bias of +0.4 to +1.8 h remains even
+then. A less synchronous truth (`b_shape` 5.86) is still biased long. Next
+step is Lucas's (`TODO.md`). No jobs running.
+
 **2026-10-23: single-unit study read** (`findings.md`, "Single-unit study,
 read 2026-10-23"): 477 of 480 pass; biased long everywhere; with MMV048_PIB's
 real 168 h schedule and `b_shape` estimated the `cycle_length` posterior is

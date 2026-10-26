@@ -3908,6 +3908,62 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Single-unit follow-ups, read 2026-10-26: the prior's 48 h centre is the largest piece; a long bias remains with the prior at the truth
+
+SLURM 32426 (prior arm) and 32428 (low-synchrony truth), all 3840 chains
+finished; merged with `_data/unitsim/unitsim-run-6.R`; read with
+`_scripts/unitsim-read.R`, output `_data/unitsim-read-study-2026-10-26.txt`
+(which repeats the main study's cells). Designs in the `unitsim.R` header:
+the prior arm refits the main study's 480 datasets with the `cycle_length`
+prior centred at the truth (42.84 h, same width); the low-synchrony arm
+keeps the main truth with only `b_shape` changed to 5.86 (4.30 at gen
+1024), production prior. All 48 cells readable; 1437 of 1440 fits pass.
+
+Cells: over passing fits (58-60 of 60). bias = posterior mean
+`cycle_length` minus the 42.84 h truth, hours, positive = long, mean (se
+0.08-0.21); cover80 as before (nominal 0.80). Unpaired across columns.
+
+| window | gen `n_c` | `b_shape` | main, prod prior | main, prior at truth | low synchrony, prod prior |
+|---|---|---|---|---|---|
+| 168 | 384 | estimated | +4.28 (cover 0.08) | +1.79 (0.62) | +3.59 (0.38) |
+| 168 | 384 | fixed | +2.16 (0.59) | +0.64 (0.80) | +2.67 (0.50) |
+| 168 | 1024 | estimated | +4.21 (0.12) | +1.52 (0.73) | +2.95 (0.62) |
+| 168 | 1024 | fixed | +3.76 (0.10) | +1.74 (0.42) | +2.63 (0.52) |
+| 192 | 384 | estimated | +2.29 (0.25) | +1.26 (0.53) | +2.30 (0.53) |
+| 192 | 384 | fixed | +0.65 (0.72) | +0.37 (0.85) | +1.02 (0.75) |
+| 192 | 1024 | estimated | +3.20 (0.17) | +1.70 (0.38) | +2.35 (0.61) |
+| 192 | 1024 | fixed | +2.38 (0.07) | +1.63 (0.15) | +1.54 (0.57) |
+
+**Prior location.** Paired on identical data, centring the prior at the
+truth instead of 48 h shortens the estimate in every pair (480 of 480 that
+both passed): by 2.5-2.7 h at the 168 h window with `b_shape` estimated,
+1.0-1.5 h at 192 h estimated, and 0.3-2.0 h with `b_shape` fixed. In this
+unit the production prior's centre is the largest single source of the
+bias.
+
+**What remains with the prior at the truth** is still long: +1.3 to +1.8 h
+with `b_shape` estimated, +0.4 to +0.6 h with `b_shape` fixed at the right
+`n_c`, +1.6 to +1.7 h with `b_shape` fixed when the true `n_c` is 1024.
+With the prior's centre at the truth, a posterior that learned nothing
+would sit at the truth, so this residual comes from the likelihood and the
+other parameters. Estimating `b_shape` costs +0.9 to +1.1 h of it at the
+right `n_c` (paired est - fix), ~0 when the true `n_c` is 1024; a true `n_c`
+of 1024 fitted at 384 adds +1.1 to +1.3 h with `b_shape` fixed (paired,
+same window). The window effect mostly disappears (192 - 168 h: −0.5 to
++0.2 h, against −1.0 to −2.0 under the production prior), so the earlier
+window effect was mostly the longer window resisting the prior.
+
+**Low synchrony** (`b_shape` 5.86 instead of 20.10, production prior): still
+long everywhere (+1.0 to +3.6 h); paired against the main truth (same
+noise), −1.3 to +0.5 h. The cost of estimating `b_shape` is smaller (+0.3
+to +1.3 h against +0.5 to +2.1 h) and a true `n_c` of 1024 matters less
+(−0.6 to +0.5 h against −0.1 to +1.7 h). Posterior sds are 1.5-2.3 h, near
+the prior's 1.99, so these data inform `cycle_length` even less.
+
+**Scope**, as for the main study: one unit, 6 series, no hierarchy; a prior
+centred at the truth is a diagnostic, not available for real data. These
+are not corrections for the full-model 41.82 h.
+
 ### Single-unit study, read 2026-10-23: for MMV048_PIB's schedule the `cycle_length` posterior is mostly the prior
 
 SLURM 32423 (2026-10-22/23, 22.9 h, all 1920 chains finished). Design and

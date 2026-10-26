@@ -1,5 +1,7 @@
 # plasmofit — malaria within-host dynamics — index
 
+**Single-unit simulation (2026-10-22 to 26):** in one unit the production `cycle_length` prior's 48 h centre is the largest source of the long bias; a long residual remains with the prior at the truth (`claude/findings.md`, "Single-unit follow-ups").
+
 **Status as of 2026-10-15 (body last revised 2026-10-13; see the workstream table for later results):** The age-structure question is **answered**, and
 the answer is that the data cannot separate initial synchrony from accumulated
 desynchronisation — they constrain only the total spread at the end of the

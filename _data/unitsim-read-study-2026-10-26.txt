@@ -1,0 +1,170 @@
+1440 merged fits in _data/unitsim/study/ 
+
+1. PER CELL. Cells: n = merged fits; pass = max R-hat < 1.05 (4 chains);
+marginal 1.05-1.15, severe >= 1.15; apart = failing fits with a chain's
+mean lp__ > 3 from the median of the other three. bias = posterior mean
+cycle_length - truth, hours, positive = long: mean and se (sd / sqrt(n))
+over PASSING fits, unpaired across cells. readable = >= 45 of 60 pass.
+cover80 = share of passing fits whose central 80% interval holds
+the truth. bs_log = est arm, mean log(posterior mean b_shape / truth).
+all_bias = mean over ALL fits, display only.
+
+ truth_set prior  key gen_nc method  n n_pass marginal severe n_apart mean_bias    se cover80 bs_log all_bias readable
+     bslow  prod w168    384    est 60     60        0      0       0     3.588 0.148   0.383 -0.189    3.588     TRUE
+     bslow  prod w168    384    fix 60     60        0      0       0     2.665 0.214   0.500     NA    2.665     TRUE
+     bslow  prod w168   1024    est 60     60        0      0       0     2.949 0.159   0.617 -0.003    2.949     TRUE
+     bslow  prod w168   1024    fix 60     60        0      0       0     2.629 0.202   0.517     NA    2.629     TRUE
+     bslow  prod w192    384    est 60     60        0      0       0     2.301 0.179   0.533 -0.234    2.301     TRUE
+     bslow  prod w192    384    fix 60     60        0      0       0     1.023 0.160   0.750     NA    1.023     TRUE
+     bslow  prod w192   1024    est 60     59        1      0       0     2.348 0.166   0.610 -0.070    2.356     TRUE
+     bslow  prod w192   1024    fix 60     60        0      0       0     1.536 0.167   0.567     NA    1.536     TRUE
+      main  prod w168    384    est 60     60        0      0       0     4.278 0.131   0.083 -0.606    4.278     TRUE
+      main  prod w168    384    fix 60     58        1      1       0     2.161 0.186   0.586     NA    2.169     TRUE
+      main  prod w168   1024    est 60     60        0      0       0     4.212 0.132   0.117 -0.085    4.212     TRUE
+      main  prod w168   1024    fix 60     60        0      0       0     3.758 0.169   0.100     NA    3.758     TRUE
+      main  prod w192    384    est 60     60        0      0       0     2.288 0.145   0.250 -0.563    2.288     TRUE
+      main  prod w192    384    fix 60     60        0      0       0     0.646 0.086   0.717     NA    0.646     TRUE
+      main  prod w192   1024    est 60     59        1      0       0     3.204 0.158   0.169 -0.125    3.170     TRUE
+      main  prod w192   1024    fix 60     60        0      0       0     2.379 0.130   0.067     NA    2.379     TRUE
+      main truth w168    384    est 60     60        0      0       0     1.792 0.127   0.617 -0.387    1.792     TRUE
+      main truth w168    384    fix 60     60        0      0       0     0.643 0.146   0.800     NA    0.643     TRUE
+      main truth w168   1024    est 60     60        0      0       0     1.519 0.144   0.733  0.155    1.519     TRUE
+      main truth w168   1024    fix 60     60        0      0       0     1.740 0.159   0.417     NA    1.740     TRUE
+      main truth w192    384    est 60     59        1      0       0     1.264 0.096   0.525 -0.424    1.269     TRUE
+      main truth w192    384    fix 60     60        0      0       0     0.367 0.083   0.850     NA    0.367     TRUE
+      main truth w192   1024    est 60     60        0      0       0     1.696 0.112   0.383  0.077    1.696     TRUE
+      main truth w192   1024    fix 60     60        0      0       0     1.632 0.099   0.150     NA    1.632     TRUE
+
+Production prior on cycle_length (Monte Carlo, 1e6 draws): mean 47.43 h, sd 1.99 h; P(below the truth 42.84 h) = 0.038
+Posterior, per cell over passing fits: median of posterior means and mean of posterior sds (h).
+
+ truth_set prior  key gen_nc method median_cl_mean mean_cl_sd
+     bslow  prod w168    384    est          46.53       2.12
+     bslow  prod w168    384    fix          45.82       1.92
+     bslow  prod w168   1024    est          45.84       2.33
+     bslow  prod w168   1024    fix          45.45       1.97
+     bslow  prod w192    384    est          45.39       1.94
+     bslow  prod w192    384    fix          43.97       1.51
+     bslow  prod w192   1024    est          45.29       2.16
+     bslow  prod w192   1024    fix          44.23       1.65
+      main  prod w168    384    est          47.34       1.85
+      main  prod w168    384    fix          45.07       1.75
+      main  prod w168   1024    est          47.28       1.90
+      main  prod w168   1024    fix          46.82       1.72
+      main  prod w192    384    est          45.17       1.50
+      main  prod w192    384    fix          43.50       0.78
+      main  prod w192   1024    est          46.36       1.67
+      main  prod w192   1024    fix          45.12       1.25
+      main truth w168    384    est          44.59       1.67
+      main truth w168    384    fix          43.40       1.34
+      main truth w168   1024    est          44.39       1.84
+      main truth w168   1024    fix          44.73       1.62
+      main truth w192    384    est          44.11       1.04
+      main truth w192    384    fix          43.26       0.71
+      main truth w192   1024    est          44.53       1.23
+      main truth w192   1024    fix          44.41       0.95
+
+Passing against failing fits, display only. Cells: mean bias (hours) and
+count, by cell.
+
+ truth_set prior  key gen_nc method n_pass_TRUE n_pass_FALSE mean_bias_pass_TRUE mean_bias_pass_FALSE
+     bslow  prod w168    384    est          60           NA               3.588                   NA
+     bslow  prod w168    384    fix          60           NA               2.665                   NA
+     bslow  prod w168   1024    est          60           NA               2.949                   NA
+     bslow  prod w168   1024    fix          60           NA               2.629                   NA
+     bslow  prod w192    384    est          60           NA               2.301                   NA
+     bslow  prod w192    384    fix          60           NA               1.023                   NA
+     bslow  prod w192   1024    est          59            1               2.348                2.810
+     bslow  prod w192   1024    fix          60           NA               1.536                   NA
+      main  prod w168    384    est          60           NA               4.278                   NA
+      main  prod w168    384    fix          58            2               2.161                2.416
+      main  prod w168   1024    est          60           NA               4.212                   NA
+      main  prod w168   1024    fix          60           NA               3.758                   NA
+      main  prod w192    384    est          60           NA               2.288                   NA
+      main  prod w192    384    fix          60           NA               0.646                   NA
+      main  prod w192   1024    est          59            1               3.204                1.140
+      main  prod w192   1024    fix          60           NA               2.379                   NA
+      main truth w168    384    est          60           NA               1.792                   NA
+      main truth w168    384    fix          60           NA               0.643                   NA
+      main truth w168   1024    est          60           NA               1.519                   NA
+      main truth w168   1024    fix          60           NA               1.740                   NA
+      main truth w192    384    est          59            1               1.264                1.537
+      main truth w192    384    fix          60           NA               0.367                   NA
+      main truth w192   1024    est          60           NA               1.696                   NA
+      main truth w192   1024    fix          60           NA               1.632                   NA
+
+2. PAIRED CONTRASTS. Cells: per replicate, difference of posterior mean
+cycle_length (hours) between two fits of IDENTICAL noise draws, both
+passing; mean, se, range over pairs, and how many are negative.
+w192 - w168: same truth and the same noise on the 34 shared
+observations; the effect of extending the window to 192 h.
+est - fix: same data, b_shape estimated minus fixed at truth (cost of
+estimating it). gen 1024 - 384: same noise, different noiseless
+trajectories (partially paired).
+
+w192 - w168
+ truth_set prior gen_nc method pairs   mean    se     lo    hi negative
+     bslow  prod    384    est    60 -1.287 0.174 -4.445 1.148       50
+     bslow  prod    384    fix    60 -1.642 0.164 -4.283 1.716       53
+     bslow  prod   1024    est    59 -0.599 0.141 -3.327 1.865       40
+     bslow  prod   1024    fix    60 -1.093 0.140 -3.163 1.429       51
+      main  prod    384    est    60 -1.989 0.148 -5.010 0.974       56
+      main  prod    384    fix    58 -1.512 0.152 -4.869 1.214       54
+      main  prod   1024    est    59 -1.034 0.157 -4.331 2.144       48
+      main  prod   1024    fix    60 -1.379 0.143 -3.508 1.751       54
+      main truth    384    est    59 -0.529 0.117 -2.361 2.693       47
+      main truth    384    fix    60 -0.276 0.113 -2.325 1.966       36
+      main truth   1024    est    60  0.177 0.138 -1.899 4.117       27
+      main truth   1024    fix    60 -0.108 0.132 -2.225 3.660       35
+
+est - fix
+ truth_set prior  key gen_nc pairs   mean    se     lo    hi negative
+     bslow  prod w168    384    60  0.923 0.095 -0.191 2.841        5
+     bslow  prod w168   1024    60  0.320 0.085 -1.232 1.507       19
+     bslow  prod w192    384    60  1.277 0.116 -0.508 3.616        8
+     bslow  prod w192   1024    59  0.786 0.112 -1.195 2.141       11
+      main  prod w168    384    58  2.080 0.105  0.277 3.554        0
+      main  prod w168   1024    60  0.454 0.103 -1.662 2.285       19
+      main  prod w192    384    60  1.642 0.126  0.103 4.008        0
+      main  prod w192   1024    59  0.815 0.123 -1.019 3.397       12
+      main truth w168    384    60  1.149 0.082  0.102 2.968        0
+      main truth w168   1024    60 -0.221 0.084 -1.734 1.393       39
+      main truth w192    384    59  0.903 0.072  0.010 2.419        0
+      main truth w192   1024    60  0.064 0.079 -0.993 2.041       33
+
+gen 1024 - 384 (difference of bias, since the truths match)
+ truth_set prior  key method pairs   mean    se     lo    hi negative
+     bslow  prod w168    est    60 -0.639 0.062 -1.793 0.755       56
+     bslow  prod w168    fix    60 -0.036 0.067 -1.316 1.612       28
+     bslow  prod w192    est    59  0.059 0.082 -1.569 1.363       32
+     bslow  prod w192    fix    60  0.513 0.097 -1.534 2.054       14
+      main  prod w168    est    60 -0.066 0.024 -0.518 0.648       46
+      main  prod w168    fix    58  1.560 0.071  0.466 2.967        0
+      main  prod w192    est    59  0.890 0.039  0.379 1.539        0
+      main  prod w192    fix    60  1.734 0.057  0.995 2.788        0
+      main truth w168    est    60 -0.273 0.029 -1.314 0.043       57
+      main truth w168    fix    60  1.096 0.053 -0.351 1.986        2
+      main truth w192    est    59  0.430 0.028  0.040 0.992        0
+      main truth w192    fix    60  1.265 0.025  0.831 1.781        0
+
+truth-centred - production prior (identical data; the prior's location effect)
+ truth_set  key gen_nc method pairs   mean    se     lo     hi negative
+      main w168    384    est    60 -2.486 0.092 -4.124 -0.997       60
+      main w168    384    fix    58 -1.492 0.109 -4.096 -0.428       58
+      main w168   1024    est    60 -2.693 0.099 -4.829 -1.135       60
+      main w168   1024    fix    60 -2.018 0.082 -3.567 -0.648       60
+      main w192    384    est    59 -1.026 0.072 -2.736 -0.201       59
+      main w192    384    fix    60 -0.279 0.013 -0.633 -0.124       60
+      main w192   1024    est    59 -1.492 0.074 -3.070 -0.413       59
+      main w192   1024    fix    60 -0.747 0.047 -1.612 -0.181       60
+
+bslow - main truth, difference of bias (same noise, different noiseless trajectory)
+ prior  key gen_nc method pairs   mean    se     lo    hi negative
+  prod w168    384    est    60 -0.690 0.095 -2.955 0.644       53
+  prod w168    384    fix    58  0.452 0.105 -1.524 2.129       16
+  prod w168   1024    est    60 -1.262 0.095 -3.369 0.033       59
+  prod w168   1024    fix    60 -1.129 0.089 -2.895 0.354       58
+  prod w192    384    est    60  0.012 0.090 -1.332 1.632       31
+  prod w192    384    fix    60  0.378 0.092 -1.200 2.305       19
+  prod w192   1024    est    58 -0.817 0.112 -2.900 1.041       49
+  prod w192   1024    fix    60 -0.843 0.104 -3.374 0.975       51
