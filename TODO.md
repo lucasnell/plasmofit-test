@@ -78,6 +78,8 @@ match where a thread exists. This file is the actionable layer. -->
       main truth. ~22 h. Merge with `_data/unitsim/unitsim-run-6.R`; the
       reader adds a bslow - main bias contrast. If 32428 never starts, read
       `_data/unitsim/smoke6/logs/smoke-32427.out`.
+- [x] **2026-10-26 — concise report** `reports/unitsim-2026-10-26.html`, published
+      privately at https://claude.ai/artifact/AVjgDY5ULD5nmaYVRsb2Fm.
 - [ ] **Next step with Lucas** after the 2026-10-26 read: the production
       `cycle_length` prior's 48 h centre is the largest bias source in this
       unit, and a long residual (+0.4 to +1.8 h) remains with the prior at

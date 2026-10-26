@@ -1,10 +1,7 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Single-Unit Bias Simulations</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <style>
+  /* One reading column: design, one bias table, findings. Light theme only, by request. */
   :root {
     --bg: #ffffff; --fg: #1c2027; --muted: #5a6371; --rule: #d8dde4;
     --panel: #f4f6f9; --accent: #2d5b9b;
@@ -13,8 +10,10 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--fg);
          font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  main { max-width: 820px; margin: 0 auto; padding: 24px 16px 48px; }
-  h1 { font-size: 22px; margin: 0 0 2px; }
+  main { max-width: 820px; margin: 0 auto; padding-block: 24px 48px;
+         padding-left: max(16px, env(safe-area-inset-left, 0px));
+         padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { font-size: 22px; margin: 0 0 2px; text-wrap: balance; }
   h2 { font-size: 16px; margin: 24px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--rule); }
   p, li { margin: 4px 0; max-width: 76ch; }
   ul { padding-left: 20px; }
@@ -22,15 +21,13 @@
   .sub { margin: 0 0 14px; }
   .cap { font-size: 13px; margin: 4px 0 6px; }
   .wrap { overflow-x: auto; }
-  table { border-collapse: collapse; font-size: 14px; margin: 4px 0 8px; }
+  table { border-collapse: collapse; font-size: 14px; margin: 4px 0 8px; font-variant-numeric: tabular-nums; }
   th, td { padding: 4px 10px; border-bottom: 1px solid var(--rule); text-align: right; white-space: nowrap; }
   th { background: var(--panel); font-weight: 600; }
   td:nth-child(-n+3), th:nth-child(-n+3) { text-align: left; }
   code { font: 13px ui-monospace, Menlo, Consolas, monospace; background: var(--panel); padding: 0 3px; border-radius: 3px; }
   .src { font-size: 13px; color: var(--muted); }
 </style>
-</head>
-<body>
 <main>
 <h1>Single-unit simulations of <code>cycle_length</code> bias</h1>
 <p class="sub">plasmofit · SLURM 32423, 32426, 32428 · read 2026-10-23 and 2026-10-26</p>
@@ -89,5 +86,3 @@
 
 <p class="src">Design and reading rule: <code>_scripts/unitsim.R</code> header. Reader: <code>_scripts/unitsim-read.R</code>. Outputs: <code>_data/unitsim-read-study-2026-10-23.txt</code> (main) and <code>_data/unitsim-read-study-2026-10-26.txt</code> (all three). Detail: <code>claude/findings.md</code>, “Single-unit study” and “Single-unit follow-ups”.</p>
 </main>
-</body>
-</html>
