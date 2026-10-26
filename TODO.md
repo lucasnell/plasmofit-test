@@ -86,6 +86,28 @@ match where a thread exists. This file is the actionable layer. -->
       the truth. Open: what this implies for the real fit's
       `cl_prior_center` (TODO item under "Hierarchy and model comparison"),
       and whether to test it in the full model (on hold, needs his say-so).
+- [ ] **SLURM 32432 — `b_shape` not mapped across gen `n_c`, running**
+      (submitted 2026-10-26 15:42, started 15:43; Lucas: the main study
+      without the gen 1024 `b_shape` adjustment). Main truth, production
+      prior, but at gen `n_c` 1024 `b_shape` stays at 20.10 instead of the
+      mapped 9.54, so only the desynchronisation rate differs between gen
+      384 and 1024. Gen 384 cells would repeat the main study's fits exactly,
+      so only the four gen 1024 cells run: 240 fits, 960 chains, ~11 h
+      (half of 32428's 20.5 h). Tokens end `-bconst`; list
+      `_data/unitsim/study/tasks-bconst.txt`; frozen
+      `_data/unitsim/unitsim-run-7.R` (md5 321638d4…); smoke job 32431
+      passed. Checks (`_data/unitsim-check-2026-10-26.txt`): against main gen
+      1024 only `b_shape` differs; against main gen 384 the truth is
+      identical and only `y` differs. Two of the 16 workers span L3 groups
+      (cpuset 5-68), so they may run slower. When it ends: `UNITSIM_MODE=merge
+      Rscript --vanilla _data/unitsim/unitsim-run-7.R`, then
+      `_scripts/unitsim-read.R` into `_data/unitsim-read-study-<date>.txt`;
+      the reader adds bconst gen 1024 − main gen 384 and bconst − main gen
+      1024 differences of bias.
+- [ ] **Next single-unit extension, to plan with Lucas: uninformative
+      `cycle_length` prior.** Design questions are in `handoff.md`
+      (2026-10-26); not built. The half-node budget is in use by 32432
+      until ~03:00 2026-10-27.
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`

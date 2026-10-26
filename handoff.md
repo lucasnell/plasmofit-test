@@ -2,12 +2,36 @@
 
 ## State of play right now — read this first
 
+**2026-10-26 (afternoon): SLURM 32432 running** — the single-unit main
+study's four gen `n_c` 1024 cells refitted with `b_shape` NOT mapped (20.10
+instead of 9.54), so gen 384 and 1024 share initial synchrony and differ only
+in desynchronisation rate. The true total stage spread at 168 h is then
+0.0995 cycles (sd) at gen 1024 against 0.1276 at 384 (formula in the
+`_scripts/unitsim.R` header). 240 fits, ~11 h; details and how to read it in
+`TODO.md`.
+
+**Uninformative `cycle_length` prior — planning, nothing built.** The
+package's prior is logit-normal on `logit((cl - 35) / 15)`; there is no flat
+option. Points raised with Lucas 2026-10-26:
+- mean 0, `sd_logit_cl` 1.7 is within 1.20x of flat over 35.5-49.5 h with
+  no package change; an exact uniform needs a Stan flag and a reinstall,
+  which must wait for 32432 (`_scripts/unitsim-flatprior-shapes.R`, `_data/unitsim-read-flatprior-shapes-2026-10-26.txt`).
+- With a flat prior the bounds [35, 50] h are the prior. Its mean, 42.5 h,
+  sits 0.34 h below the truth (42.844), so a fit that learns nothing reads as
+  nearly unbiased; posterior sd against the prior's 4.33 h has to be read
+  alongside bias.
+- The truth-centred arm's posteriors sit at 43.3-44.7 h (medians of
+  posterior means), so the likelihood pulls long; under a flat prior the
+  50 h bound may truncate it. Mass near the bound needs recording.
+- MMV048_PIB's real-data profile had two peaks (38.5, 43.0 h); a flat
+  prior may expose the same in simulated data, as gate failures.
+
 **2026-10-26: single-unit follow-ups read** (`findings.md`, "Single-unit
 follow-ups"; `_data/unitsim-read-study-2026-10-26.txt`). Centring the
 `cycle_length` prior at the truth instead of 48 h shortens the estimate in
 every paired fit, by up to 2.7 h; a long bias of +0.4 to +1.8 h remains even
 then. A less synchronous truth (`b_shape` 5.86) is still biased long. Next
-step is Lucas's (`TODO.md`). No jobs running. Concise report:
+step is Lucas's (`TODO.md`). Concise report:
 `reports/unitsim-2026-10-26.html`, published privately at
 https://claude.ai/artifact/AVjgDY5ULD5nmaYVRsb2Fm.
 

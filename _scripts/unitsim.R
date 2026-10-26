@@ -118,6 +118,23 @@
 #   `UNITSIM_TASKS=bslow` lists its 1920. Reading rule as above per cell,
 #   plus bslow - main bias at each (window, gen_nc, method), same noise.
 #
+# b_shape NOT MAPPED ACROSS gen n_c, added 2026-10-26 (Lucas) before any of
+#   its fits ran: the main truth, but at gen n_c 1024 b_shape stays at the
+#   unit's posterior mean (20.10) instead of being lowered to 9.54 to hold
+#   the total stage spread at 168 h. Initial synchrony is then the same at
+#   both gen n_c and only the desynchronisation rate differs, so the true
+#   total spread at 1024 is SMALLER than at 384. At gen 384 the mapping is
+#   the identity, so those cells would be the main study's fits again (same
+#   data, seed, and settings); only the four gen 1024 cells are fitted
+#   (2 windows x 2 methods x 60 reps = 240 fits). Production prior, same
+#   schedules and noise seeds. "fix" fixes b_shape at 20.10. Tokens carry
+#   "-bconst" after the rep; `UNITSIM_TASKS=bconst` lists its 960 chains.
+#   Reading rule as above per cell, plus two paired differences of bias,
+#   same noise, at each (window, method):
+#     bconst gen 1024 - main gen 384: same b_shape, only gen n_c differs;
+#     bconst gen 1024 - main gen 1024: same gen n_c, only b_shape differs
+#       (the effect of the mapping).
+#
 # LAYOUT: pinned through _scripts/simstudy-pinned.sh. A benchmark of two
 #   chains per L3 group (2 physical cores each) against one (4 cores) runs
 #   first (2026-10-22; Lucas decides the layout from its numbers), in
@@ -135,7 +152,8 @@
 #   check  print the two schedules and the truth; for gen 384 and 1024, rep 1,
 #          check w168's data against simstudy.R's, w192's shared observations
 #          against w168's, and the split's log_prob invariance.
-#   tasks  print the study's 1920 chain tokens, rep-major.
+#   tasks  print the study's 1920 chain tokens, rep-major (UNITSIM_TASKS =
+#          main, prior, bslow, or bconst selects the arm).
 #   UNITSIM_ITER overrides iterations in chain mode (smoke test; "smoke-").
 #   UNITSIM_DIR overrides the output directory (default _data/unitsim/study/).
 #
@@ -191,11 +209,12 @@ fit_path <- function(nm) sprintf("%sfit-%s.rds", PFX, nm)
 sum_path <- function(nm) sprintf("%ssum-%s.rds", PFX, nm)
 
 parse_fit <- function(nm) {
-    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-bslow)?(-ptruth)?$", nm))[[1]]
+    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-bslow|-bconst)?(-ptruth)?$", nm))[[1]]
     if (length(m) != 7L) stop("bad fit name: ", nm)
+    if (m[6] == "-bconst" && m[3] != "1024") stop("bconst is fitted at gen 1024 only: ", nm)
     list(window = as.integer(m[2]), unit = UNIT, gen_nc = as.integer(m[3]),
          method = m[4], rep = as.integer(m[5]),
-         truth_set = if (nzchar(m[6])) "bslow" else "main",
+         truth_set = if (nzchar(m[6])) sub("^-", "", m[6]) else "main",
          prior = if (nzchar(m[7])) "truth" else "prod", name = nm)
 }
 
@@ -282,11 +301,12 @@ build_unit <- function(window, split = "alt", ...) {
 B_LOW <- T_FULL$b_shape[UNITS == "MMV048_PartB.2800"]
 stopifnot(length(B_LOW) == 1L, B_LOW == min(T_FULL$b_shape))
 
-unit_truth <- function(u, gen_nc, b384 = T_FULL$b_shape[u]) {
+## map = FALSE keeps b_shape at b384 whatever gen_nc is (the bconst truth).
+unit_truth <- function(u, gen_nc, b384 = T_FULL$b_shape[u], map = TRUE) {
     tr <- unique(d0$grp_cl[d0$grp_init == u]); stopifnot(length(tr) == 1L)
     df <- unit_rows(u)
     k_last <- max(df$time) / T_FULL$cycle_length[tr]
-    b <- b_from_var(var_init(b384) + k_last * (1 / FIT_NC - 1 / gen_nc))
+    b <- if (map) b_from_var(var_init(b384) + k_last * (1 / FIT_NC - 1 / gen_nc)) else b384
     stopifnot(b > 2, b < d0$max_shape)
     list(unit = UNITS[u], trial = TRIALS[tr], b_shape = b, b_shape_384 = b384,
          k_last = k_last, b_offset = T_FULL$b_offset[u],
@@ -297,8 +317,10 @@ unit_truth <- function(u, gen_nc, b384 = T_FULL$b_shape[u]) {
 
 make_fit_inputs <- function(nm, split = "alt") {
     cf <- parse_fit(nm)
-    truth <- if (cf$truth_set == "bslow") unit_truth(cf$unit, cf$gen_nc, B_LOW)
-             else unit_truth(cf$unit, cf$gen_nc)
+    truth <- switch(cf$truth_set,
+                    bslow = unit_truth(cf$unit, cf$gen_nc, B_LOW),
+                    bconst = unit_truth(cf$unit, cf$gen_nc, map = FALSE),
+                    main = unit_truth(cf$unit, cf$gen_nc))
     args <- list(window = cf$window, split = split)
     if (cf$method == "fix") args$b_shape <- truth$b_shape
     if (cf$prior == "truth") args$cl_prior_center <- truth$cycle_length
@@ -404,6 +426,25 @@ if (MODE == "check") {
                     paste(dt, collapse = ", "), lo$truth$b_shape, mn$truth$b_shape, lo$d$b_shape_data))
         stopifnot(setequal(dt, c("b_shape", "b_shape_384")), lo$d$b_shape_data == lo$truth$b_shape)
     }
+    ## b_shape not mapped: gen 1024 with gen 384's b_shape. Against main gen
+    ## 1024 only b_shape differs (same noise, same trajectory otherwise); against
+    ## main gen 384 the truth's parameters match and only gen n_c differs.
+    for (w in c(168L, 192L)) for (mth in c("est", "fix")) {
+        bc <- make_fit_inputs(sprintf("w%d-g1024-%s-rep1-bconst", w, mth))
+        m1 <- make_fit_inputs(sprintf("w%d-g1024-%s-rep1", w, mth))
+        m3 <- make_fit_inputs(sprintf("w%d-g384-%s-rep1", w, mth))
+        dt1 <- names(m1$truth)[!vapply(names(m1$truth), \(n) identical(m1$truth[[n]], bc$truth[[n]]), logical(1))]
+        dt3 <- names(m3$truth)[!vapply(names(m3$truth), \(n) isTRUE(all.equal(m3$truth[[n]], bc$truth[[n]], tolerance = 1e-12)), logical(1))]
+        nd3 <- names(m3$d)[!vapply(names(m3$d), \(n) isTRUE(all.equal(m3$d[[n]], bc$d[[n]], tolerance = 1e-12)), logical(1))]
+        cat(sprintf("\nbconst w%d %s rep 1: b_shape %.3f (main gen 1024 %.3f, main gen 384 %.3f); truth fields differing from main gen 1024: %s; from main gen 384: %s; fit-data fields differing from main gen 384: %s; max |log10(y+1)| diff vs gen 384 %.3f\n",
+                    w, mth, bc$truth$b_shape, m1$truth$b_shape, m3$truth$b_shape,
+                    paste(dt1, collapse = ", "), if (length(dt3)) paste(dt3, collapse = ", ") else "none",
+                    paste(nd3, collapse = ", "),
+                    max(abs(log10(bc$d$y + 1) - log10(m3$d$y + 1)))))
+        stopifnot(setequal(dt1, "b_shape"), length(dt3) == 0L, identical(nd3, "y"),
+                  identical(bc$pos, m3$pos),
+                  mth == "est" || bc$d$b_shape_data == bc$truth$b_shape)
+    }
     quit(save = "no")
 }
 
@@ -411,9 +452,10 @@ if (MODE == "tasks") {
     ## rep-major, chains innermost
     nms <- STUDY$name
     which_tasks <- Sys.getenv("UNITSIM_TASKS", "main")
-    stopifnot(which_tasks %in% c("main", "prior", "bslow"))
+    stopifnot(which_tasks %in% c("main", "prior", "bslow", "bconst"))
     if (which_tasks == "prior") nms <- paste0(nms, "-ptruth")
     if (which_tasks == "bslow") nms <- paste0(nms, "-bslow")
+    if (which_tasks == "bconst") nms <- paste0(nms[STUDY$gen_nc == 1024L], "-bconst")
     cat(paste0(rep(nms, each = N_CHAINS), "-c", seq_len(N_CHAINS)), sep = "\n")
     quit(save = "no")
 }

@@ -109,6 +109,17 @@ if (any(xp$truth_set == "bslow")) {
     cat("\nbslow - main truth, difference of bias (same noise, different noiseless trajectory)\n")
     print(as.data.frame(t_diff), row.names = FALSE)
 }
+if (any(xp$truth_set == "bconst")) {
+    ## bconst exists at gen 1024 only; its gen 384 counterpart is the main study's.
+    bc <- filter(xp, truth_set == "bconst", gen_nc == 1024L)
+    c_diff <- function(ref) inner_join(bc, ref, by = c("prior", "key", "method", "rep"),
+                                       suffix = c("_c", "_m")) |>
+        mutate(diff = bias_c - bias_m) |> group_by(prior, key, method) |> pair_sum()
+    cat("\nbconst gen 1024 - main gen 384, difference of bias (same b_shape and noise; only gen n_c differs)\n")
+    print(as.data.frame(c_diff(filter(xp, truth_set == "main", gen_nc == 384L))), row.names = FALSE)
+    cat("\nbconst - main at gen 1024, difference of bias (same gen n_c and noise; b_shape 20.10 against the mapped 9.54)\n")
+    print(as.data.frame(c_diff(filter(xp, truth_set == "main", gen_nc == 1024L))), row.names = FALSE)
+}
 
 ## ---- 3. Per fit and per chain (probes; or to inspect) ------------------------
 if (nrow(x) <= 24L || nzchar(Sys.getenv("UNITSIM_DETAIL"))) {

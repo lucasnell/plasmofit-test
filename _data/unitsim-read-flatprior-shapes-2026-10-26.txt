@@ -1,0 +1,8 @@
+sd_logit_cl 1.0, mean 0: density over [35.5, 49.5] h max/min 37.36; prior mean 42.50 h, sd 3.13 h; P(within 1 h of a bound) 0.008
+sd_logit_cl 1.5, mean 0: density over [35.5, 49.5] h max/min 1.63; prior mean 42.50 h, sd 4.06 h; P(within 1 h of a bound) 0.079
+sd_logit_cl 1.6, mean 0: density over [35.5, 49.5] h max/min 1.29; prior mean 42.50 h, sd 4.21 h; P(within 1 h of a bound) 0.099
+sd_logit_cl 1.7, mean 0: density over [35.5, 49.5] h max/min 1.20; prior mean 42.50 h, sd 4.35 h; P(within 1 h of a bound) 0.121
+sd_logit_cl 1.8, mean 0: density over [35.5, 49.5] h max/min 1.37; prior mean 42.50 h, sd 4.48 h; P(within 1 h of a bound) 0.143
+sd_logit_cl 2.0, mean 0: density over [35.5, 49.5] h max/min 1.88; prior mean 42.50 h, sd 4.71 h; P(within 1 h of a bound) 0.187
+sd_logit_cl 3.0, mean 0: density over [35.5, 49.5] h max/min 4.13; prior mean 42.50 h, sd 5.52 h; P(within 1 h of a bound) 0.379
+uniform [35, 50]: mean 42.50, sd 4.33 h, P(within 1 h of a bound) 0.133
