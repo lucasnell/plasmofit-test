@@ -1,34 +1,41 @@
 # plasmofit — malaria within-host dynamics — index
 
-**Single-unit simulation (2026-10-22 to 26):** in one unit the production `cycle_length` prior's 48 h centre is the largest source of the long bias; a long residual remains with the prior at the truth (`claude/findings.md`, "Single-unit follow-ups").
+**Status as of 2026-10-26.** No jobs running; no `cycle_length` number is final.
 
-**Status as of 2026-10-15 (body last revised 2026-10-13; see the workstream table for later results):** The age-structure question is **answered**, and
-the answer is that the data cannot separate initial synchrony from accumulated
-desynchronisation — they constrain only the total spread at the end of the
-window. That closes the IPM question (do not build it), explains why the decay
-law was not learnable, and leaves `cycle_length` **stable at 40.93–41.15 h once
-`n_c` >= 384**. The first converged production fit with `b_shape` pinned gives
-**41.20 h** (13 trials, `n_c` = 192, SLURM 30525), but at 5.8% divergences and
-with **no second rung**: entry 40 (`n_c` = 384) failed again on its reseed
-(SLURM 30829, 2026-10-10, max R-hat 7.74, all four chains at different `lp__`
-levels). The ladder is still open and no headline number is final. **SLURM
-30830 is running**: the tuned retry of that rung (entry 42) and a `b_shape`
-ladder at `n_c` = 384 (entries 43–48), since the 400 pin was chosen at
-`n_c` = 96 and may not carry. **First read 2026-10-13:** at `n_c` = 384 only
-`b_shape` pinned at 15 and `b_shape` free converge; every pin from 50 up fails
-like 400 did. Free `b_shape` is 12.2, pin 15 ties it on elpd, and
-`cycle_length` is 41.34 h and 41.82 h respectively (means over 13 trials).
-The tuned high pins (42, 49–53) were cancelled as projected to overrun.
-**Runtime:** a benchmark found production fits run ~5x slower per gradient
-than they need to, because chains share L3 caches and hyperthreads. The pinned
-one-chain-per-L3-group driver refit entry 43 in 3.2 h against 38.5 h (12x),
-but that refit fails the gate: a second region ~3 h lower for MMV048_PIB,
-which the original run never visited, so the pin-15 result is less secure
-than it looked.
+**Age structure: answered.** The data constrain only the total stage spread at
+the end of the window, not its split between initial synchrony and accumulated
+desynchronisation. That closes the IPM question (do not build it) and explains
+why `b_shape` is unidentified. The convolution forward map was added and
+removed (slower, less accurate).
 
-The forward-map question is also closed: the convolution was added to the
-package and removed again, slower and less accurate than the series it would
-have replaced. Nothing in the package changed today.
+**Real-data cycle length, current candidates** (means over 13 trials):
+- ML profile, no priors: stable at **40.93–41.15 h once `n_c` >= 384**.
+- `n_c` 192, `b_shape` pinned at 400: **41.20 h** (SLURM 30525), 5.8% divergences.
+- `n_c` 384: only `b_shape` pinned at 15 (**41.34 h**, passes the gate in 1 of
+  5 runs) and `b_shape` estimated (**41.82 h**, 2 of 4 runs) converge; every pin
+  from 50 up fails. MMV048_PIB has two likelihood peaks (38.5 and 43.0 h) at
+  pin 15.
+
+**Bias simulations.**
+- First study (2026-10-15 to 20): 9 of 48 cells readable; fitting `n_c` 384
+  instead of 192 shortens `cycle_length` by 0.55 h on average (12 of 12 paired
+  replicates). `reports/simstudy-2026-10-21.html`.
+- Single-unit studies (2026-10-22 to 26; MMV048_PIB alone, 1440 fits): biased
+  long in every cell (+0.4 to +4.3 h). The production `cycle_length` prior's
+  48 h centre is the largest source; with the prior centred at the truth a
+  long residual of +0.4 to +1.8 h remains, more when `b_shape` is estimated or
+  the true `n_c` is 1024. One unit without the hierarchy, so not a correction
+  for the full model. `reports/unitsim-2026-10-26.html`; `claude/findings.md`,
+  "Single-unit follow-ups".
+- Full-model second study (`_scripts/simstudy2.R`): built, **on hold until
+  Lucas says to run it**.
+
+**Runtime.** Always the pinned layout: one chain per L3 cache group (12x
+faster for the production fit; two chains per group cut throughput 27%).
+
+**Open decisions** (`TODO.md`): where to centre the `cycle_length` prior
+(`cl_prior_center`), which cycle-length number to report and with what
+qualifications, and whether to run the full-model study.
 
 ## The question
 
