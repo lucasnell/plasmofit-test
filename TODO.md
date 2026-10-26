@@ -387,7 +387,10 @@ match where a thread exists. This file is the actionable layer. -->
       **New evidence 2026-10-26** (`findings.md`, "Single-unit follow-ups"):
       in MMV048_PIB alone, centring the prior at the truth instead of 48 h
       shortens the estimate by 1.0-2.7 h with `b_shape` estimated. Any new
-      centre must be justified without the simulations' truth.
+      centre must be justified without the simulations' truth. That
+      contrast also widened the prior from 1.99 to 3.12 h sd in hours
+      (same `sd_logit_cl`), so it is centre and width together (findings
+      correction, 2026-10-26).
 
 ### Done
 

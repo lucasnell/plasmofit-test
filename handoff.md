@@ -26,6 +26,13 @@ option. Points raised with Lucas 2026-10-26:
 - MMV048_PIB's real-data profile had two peaks (38.5, 43.0 h); a flat
   prior may expose the same in simulated data, as gate failures.
 
+Lucas then asked about a weakly informative prior instead. Raised: the prior
+arm (32426) changed width in hours as well as centre (1.99 to 3.12 h sd at
+the same `sd_logit_cl`; `findings.md` correction); a logit-normal centred at
+48 h cannot be wider than ~3 h without piling mass on the 50 h bound
+(`sd_logit_cl` 1.5: sd 3.01 h, 30% above 49 h); proposed separating centre
+and width in hours as a small grid. Awaiting his choices.
+
 **2026-10-26: single-unit follow-ups read** (`findings.md`, "Single-unit
 follow-ups"; `_data/unitsim-read-study-2026-10-26.txt`). Centring the
 `cycle_length` prior at the truth instead of 48 h shortens the estimate in

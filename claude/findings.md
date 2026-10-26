@@ -3915,7 +3915,7 @@ finished; merged with `_data/unitsim/unitsim-run-6.R`; read with
 `_scripts/unitsim-read.R`, output `_data/unitsim-read-study-2026-10-26.txt`
 (which repeats the main study's cells). Designs in the `unitsim.R` header:
 the prior arm refits the main study's 480 datasets with the `cycle_length`
-prior centred at the truth (42.84 h, same width); the low-synchrony arm
+prior centred at the truth (42.84 h, same `sd_logit_cl` 1; NOT the same width in hours, see the correction below); the low-synchrony arm
 keeps the main truth with only `b_shape` changed to 5.86 (4.30 at gen
 1024), production prior. All 48 cells readable; 1437 of 1440 fits pass.
 
@@ -3940,6 +3940,16 @@ both passed): by 2.5-2.7 h at the 168 h window with `b_shape` estimated,
 1.0-1.5 h at 192 h estimated, and 0.3-2.0 h with `b_shape` fixed. In this
 unit the production prior's centre is the largest single source of the
 bias.
+
+*Correction, 2026-10-26: this contrast moves the prior's width as well as
+its centre.* The same `sd_logit_cl` is a different width in hours because
+the logit map is steep near the 50 h bound: prior sd 1.99 h centred at 48 h,
+3.12 h centred at 42.84 h (`_scripts/unitsim-flatprior-shapes.R`,
+`_data/unitsim-read-flatprior-shapes-2026-10-26.txt`). The shift above is
+the effect of centre and width together; "the prior's centre" should read
+"the production prior". The residual paragraph is unaffected: a prior
+centred at the truth leaves a no-information posterior at the truth
+whatever its width.
 
 **What remains with the prior at the truth** is still long: +1.3 to +1.8 h
 with `b_shape` estimated, +0.4 to +0.6 h with `b_shape` fixed at the right
