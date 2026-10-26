@@ -1,4 +1,4 @@
-# Handoff — 2026-10-21
+# Handoff — 2026-10-26
 
 ## State of play right now — read this first
 
@@ -7,16 +7,17 @@ follow-ups"; `_data/unitsim-read-study-2026-10-26.txt`). Centring the
 `cycle_length` prior at the truth instead of 48 h shortens the estimate in
 every paired fit, by up to 2.7 h; a long bias of +0.4 to +1.8 h remains even
 then. A less synchronous truth (`b_shape` 5.86) is still biased long. Next
-step is Lucas's (`TODO.md`). No jobs running.
+step is Lucas's (`TODO.md`). No jobs running. Concise report:
+`reports/unitsim-2026-10-26.html`, published privately at
+https://claude.ai/artifact/AVjgDY5ULD5nmaYVRsb2Fm.
 
 **2026-10-23: single-unit study read** (`findings.md`, "Single-unit study,
 read 2026-10-23"): 477 of 480 pass; biased long everywhere; with MMV048_PIB's
 real 168 h schedule and `b_shape` estimated the `cycle_length` posterior is
-close to the prior (centred 48 h). Prior arm (prior centred at the truth) running as **SLURM 32426**;
-the low-synchrony truth (`b_shape` 5.86) queued as **SLURM 32428** behind
-smoke job 32427 (`TODO.md`).
+close to the prior (centred 48 h). The prior arm (SLURM 32426) and the
+low-synchrony truth (SLURM 32428) followed; read 2026-10-26, above.
 
-**2026-10-22: single-unit study designed; layout benchmark running.** Design
+**2026-10-22: single-unit study designed; layout benchmark read.** Design
 and reading rule in the `_scripts/unitsim.R` header: one unit (MMV048_PIB.1800),
 one truth, its real schedule ending at 168 h against the same series extended
 to 192 h, gen `n_c` 384/1024, `b_shape` estimated (production length) or fixed

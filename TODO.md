@@ -362,6 +362,10 @@ match where a thread exists. This file is the actionable layer. -->
 - [ ] **`cl_prior_center`** — decide whether the default moves off 48 h. Now
       entangled with `n_c`: the data pull downward at higher `n_c`, so a prior
       centred at 48 is further off than it looked.
+      **New evidence 2026-10-26** (`findings.md`, "Single-unit follow-ups"):
+      in MMV048_PIB alone, centring the prior at the truth instead of 48 h
+      shortens the estimate by 1.0-2.7 h with `b_shape` estimated. Any new
+      centre must be justified without the simulations' truth.
 
 ### Done
 
