@@ -112,11 +112,11 @@ match where a thread exists. This file is the actionable layer. -->
       1024 differences of bias.
 - [x] **2026-10-27 — diagnostics of the less-biased fits** (Lucas's question;
       `findings.md`, "Single-unit: can the data pick out"): none flags
-      them reliably. `_scripts/unitsim-diag.R` `compute` then `read` can be
-      rerun to add the `-pwide` fits when 32435 is merged.
-- [ ] **Republish `reports/unitsim-2026-10-26.html`** with the corrected
-      pass count (1675 of 1680, not 1677): local file fixed, awaiting
-      Lucas's go-ahead.
+      them reliably. Not to be rerun for the `-pwide` fits (Lucas,
+      2026-10-27).
+- [x] **Report republished 2026-10-27 (version 6)** with the corrected pass
+      count and a diagnostics section (Lucas). He does not want the
+      diagnostics rerun on the `-pwide` fits.
 - [ ] **SLURM 32435 — wider production prior, running** (submitted and
       started 2026-10-27 09:44; ~21 h). Lucas chose (2026-10-27), instead of
       a flat prior: one weakly informative arm, centred at 48 h (the

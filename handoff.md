@@ -10,8 +10,9 @@ Barely: sampler diagnostics do not separate them; PSIS-LOO leans toward
 but per replicate rarely clearly, and wrongly at the low-synchrony truth;
 the Bayes factor mildly prefers the 48 h prior at the real schedule with
 `b_shape` estimated. Pass counts corrected: 1675 of 1680 (findings said
-1437 of 1440 for three arms; it is 1435). The report's local file is
-corrected; republishing awaits Lucas.
+1437 of 1440 for three arms; it is 1435). Report republished (version 6)
+with the correction and a diagnostics section; Lucas does not want the
+diagnostics rerun on the wide-prior fits.
 
 **2026-10-27: SLURM 32435 running** (wider production prior: centre 48 h,
 `sd_logit_cl` 1.49 = 2.99 h sd; all 8 cells; ~21 h, ends ~07:00

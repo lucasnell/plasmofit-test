@@ -30,7 +30,7 @@
 </style>
 <main>
 <h1>Single-unit simulations of <code>cycle_length</code> bias</h1>
-<p class="sub">plasmofit · SLURM 32423, 32426, 32428, 32432 · read 2026-10-23, 2026-10-26, and 2026-10-27 · corrected 2026-10-27: arm (a) changed the prior's width as well as its centre</p>
+<p class="sub">plasmofit · SLURM 32423, 32426, 32428, 32432 · read 2026-10-23, 2026-10-26, and 2026-10-27 · corrected 2026-10-27: arm (a) changed the prior's width as well as its centre; 1675 (not 1677) of 1680 fits pass</p>
 
 <h2>Design</h2>
 <ul>
@@ -84,6 +84,25 @@
     </ul></li>
 </ul>
 
+<h2>Can the data pick out the less-biased fits?</h2>
+<p class="cap">Exploratory; no reading rule fixed in advance. Paired on identical data, both fits passing. Fixed <code>b_shape</code> and the truth-centred prior are the less-biased fits. elpd = PSIS-LOO expected log predictive density, summed over the unit's 34 or 46 observations; higher = predicts held-out observations better. “Clearly” = beyond 2 se of that pair's own pointwise difference. log BF = log Bayes factor (marginal likelihood ratio); under 1 is a factor under 2.7.</p>
+<ul>
+  <li><b>Sampler diagnostics: no.</b> Divergences 0.07–0.38% and no iteration at the treedepth cap in every cell. Fixed fits take fewer leapfrog steps (65–87 against 75–102 per iteration) because they have one parameter fewer, not because they are right.</li>
+  <li><b>Fixed at truth vs estimated, elpd:</b> leans toward fixed on average but rarely decides a replicate.
+    <ul>
+      <li>Main truth, production prior: mean gain +0.05 to +1.20; fixed predicts better in 36–48 of 58–60 pairs, clearly in 8–13. Per-pair se 0.5–1.6.</li>
+      <li>Low-synchrony truth: points the wrong way. Fixed is less biased in 40–54 of 60 pairs, but the mean gain is −0.01 to −0.34.</li>
+      <li>The size of the elpd gain does not track the size of the bias difference (correlations −0.48 to +0.66, no consistent sign).</li>
+      <li>Savage–Dickey log BF, fixed : estimated, production prior: −0.21 to +0.32 in cell means (low synchrony at true <code>n_c</code> 1024: +0.62, +0.79).</li>
+    </ul></li>
+  <li><b>Truth-centred vs production prior:</b>
+    <ul>
+      <li>elpd favours the truth-centred prior in 51–59 of 60 pairs (mean +0.24 to +0.96), clearly in only 0–12.</li>
+      <li>log BF, truth-centred : production, is <b>negative at the real 168 h schedule with <code>b_shape</code> estimated</b> (−0.23, −0.14; positive in 18 of 60). The data mildly prefer the 48 h prior that gives 2.5–2.7 h more bias. Either the likelihood peaking long or the truth-centred prior being wider in hours could cause this; the design cannot separate them. Elsewhere −0.03 to +1.34.</li>
+    </ul></li>
+  <li><b>Overall:</b> even with the truth among the candidates, these measures lean toward the less-biased fit over 60 replicates, rarely decide one dataset, and twice lean the other way. None would flag a single fit as less biased.</li>
+</ul>
+
 <h2>Limits</h2>
 <ul>
   <li>One unit, 6 series, no hierarchy. In the full model, 13 trials share the <code>cycle_length</code> prior's centre, so the pull on any one trial differs.</li>
@@ -91,5 +110,5 @@
   <li>None of these numbers is a correction for the full-model 41.82 h.</li>
 </ul>
 
-<p class="src">Design and reading rule: <code>_scripts/unitsim.R</code> header. Reader: <code>_scripts/unitsim-read.R</code>. Outputs: <code>_data/unitsim-read-study-2026-10-23.txt</code> (main) and <code>_data/unitsim-read-study-2026-10-26.txt</code> (main, (a), (b)), <code>_data/unitsim-read-study-2026-10-27.txt</code> (adds (c)). Prior widths in hours: <code>_scripts/unitsim-flatprior-shapes.R</code>, <code>_data/unitsim-read-flatprior-shapes-2026-10-26.txt</code>. Detail: <code>claude/findings.md</code>, “Single-unit study”, “Single-unit follow-ups”, and “Single-unit, <code>b_shape</code> not mapped”.</p>
+<p class="src">Design and reading rule: <code>_scripts/unitsim.R</code> header. Reader: <code>_scripts/unitsim-read.R</code>. Outputs: <code>_data/unitsim-read-study-2026-10-23.txt</code> (main) and <code>_data/unitsim-read-study-2026-10-26.txt</code> (main, (a), (b)), <code>_data/unitsim-read-study-2026-10-27.txt</code> (adds (c)). Prior widths in hours: <code>_scripts/unitsim-flatprior-shapes.R</code>, <code>_data/unitsim-read-flatprior-shapes-2026-10-26.txt</code>. Diagnostics: <code>_scripts/unitsim-diag.R</code>, <code>_data/unitsim-read-diag-2026-10-27.txt</code>. Detail: <code>claude/findings.md</code>, “Single-unit study”, “Single-unit follow-ups”, “Single-unit, <code>b_shape</code> not mapped”, and “Single-unit: can the data pick out the less-biased fits?”.</p>
 </main>
