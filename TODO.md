@@ -117,6 +117,13 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] **Report republished 2026-10-27 (version 6)** with the corrected pass
       count and a diagnostics section (Lucas). He does not want the
       diagnostics rerun on the `-pwide` fits.
+- [ ] **Planned, not built (Lucas 2026-10-27): single-unit study with
+      `b_shape` always fixed** — pin at truth / high / low crossed with fit
+      `n_c` true / high / low against the generating 384. Open design
+      choices are in `handoff.md` (2026-10-27, "Fixed-pin grid"); planning
+      numbers in `_data/unitsim-read-pinplan-2026-10-27.txt`
+      (`_scripts/unitsim-pinplan.R`). Needs a fit-`n_c` timing probe after
+      32435 ends.
 - [ ] **SLURM 32435 — wider production prior, running** (submitted and
       started 2026-10-27 09:44; ~21 h). Lucas chose (2026-10-27), instead of
       a flat prior: one weakly informative arm, centred at 48 h (the

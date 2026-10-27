@@ -2,6 +2,17 @@
 
 ## State of play right now — read this first
 
+**2026-10-27: fixed-pin grid, planning only (Lucas: "don't do this; let's
+plan").** `b_shape` always fixed: truth / high / low, crossed with fit
+`n_c` true / high / low, generating `n_c` 384 on the main study's datasets.
+Planning numbers (`_scripts/unitsim-pinplan.R`,
+`_data/unitsim-read-pinplan-2026-10-27.txt`): no pin lets a fit at `n_c`
+192 reproduce the truth's total stage spread at 168 h (its accumulated
+spread alone exceeds it); 256 needs `b_shape` ~130, 288 ~46, 512 ~14, 768
+~10.7. Fixed fits at 384 take 0.23 h per chain (median); cost at higher fit
+`n_c` is unmeasured. Open: levels of `b_shape` and fit `n_c`, whether to add
+the spread-matched pin, prior, windows, replicates.
+
 **2026-10-27 (afternoon): can the data pick out the less-biased fits?**
 (Lucas's question; `findings.md`, "Single-unit: can the data pick out";
 `_scripts/unitsim-diag.R`, `_data/unitsim-read-diag-2026-10-27.txt`.)

@@ -1,0 +1,25 @@
+1. Spread-matched b_shape by fit n_c (truth: gen n_c 384, b_shape 20.10)
+
+ fit_nc  sd_total_168  b_match_168  b_match_192
+    192        0.1276           NA           NA
+    256        0.1276       129.33       535.00
+    288        0.1276        46.41        56.88
+    320        0.1276        30.55        32.97
+    384        0.1276        20.10        20.10
+    512        0.1276        14.00        13.41
+    768        0.1276        10.69        10.00
+   1024        0.1276         9.54         8.85
+
+Initial spread sd (cycles) of candidate pins; sd of the truth's total spread at 168 h = 0.1276
+
+ b_shape    5.86  initial sd 0.1402  total sd at 168 h, fit n_c 384: 0.1728
+ b_shape   10.05  initial sd 0.1089  total sd at 168 h, fit n_c 384: 0.1485
+ b_shape   15.00  initial sd 0.0898  total sd at 168 h, fit n_c 384: 0.1352
+ b_shape   20.10  initial sd 0.0779  total sd at 168 h, fit n_c 384: 0.1276
+ b_shape   40.20  initial sd 0.0554  total sd at 168 h, fit n_c 384: 0.1153
+ b_shape   80.40  initial sd 0.0393  total sd at 168 h, fit n_c 384: 0.1084
+ b_shape  400.00  initial sd 0.0177  total sd at 168 h, fit n_c 384: 0.1026
+
+2. Hours per chain, main study's fixed fits (fit n_c 384, 2000 + 2000 iterations)
+
+ 240 fits, 960 chains: hours per chain median 0.233, 90% 0.307, max 0.526; ms per gradient median 2.68
