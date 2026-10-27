@@ -3908,6 +3908,73 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Single-unit: can the data pick out the less-biased fits? 2026-10-27, exploratory: barely, and not reliably
+
+Lucas's question: do the less-biased fits (`b_shape` fixed at the truth;
+`cycle_length` prior centred at the truth) show diagnostics that would mark
+them as better models? No reading rule was fixed in advance. Script
+`_scripts/unitsim-diag.R` (log_lik recomputed from the saved draws with
+`rstan::gqs`, checked against an independent R computation to 3e-12:
+`_data/unitsim-check-diag-2026-10-27.txt`); output
+`_data/unitsim-read-diag-2026-10-27.txt`. All 1680 fits of the main study
+and arms (a)-(c); comparisons are paired on identical data, both fits
+passing. Pareto k > 0.7 in 105 fits, 1-7 per cell of 60, almost all
+<= 1.0 (one observation each), so it does not drive the comparisons.
+
+**Sampler diagnostics do not separate them.** Divergences 0.07-0.38% and
+no iteration at the treedepth cap in every cell; per-chain `lp__` means
+within 0.4 on average. Fixed fits take fewer leapfrog steps (64-87 against 75-102
+per iteration), which follows from one parameter fewer, not from being
+right. `lp__` itself is not comparable between models with different
+parameters or priors.
+
+**Fixed at truth − estimated, PSIS-LOO.** Cells: d_elpd = elpd_loo(fix) −
+elpd_loo(est), log predictive density summed over the unit's 34 or 46
+observations, positive = fix predicts better; mean over pairs; "favours" =
+pairs with d_elpd > 0; "clear" = pairs beyond 2 se of their own pointwise
+difference (for, against); "less biased" = pairs where fix has smaller
+|bias|. Main truth, production prior:
+
+| window | gen `n_c` | pairs | less biased | d_elpd | favours | clear (for / against) |
+|---|---|---|---|---|---|---|
+| 168 | 384 | 58 | 58 | +0.28 | 36 | 10 / 2 |
+| 168 | 1024 | 60 | 41 | +0.05 | 36 | 8 / 1 |
+| 192 | 384 | 60 | 59 | +1.20 | 48 | 13 / 0 |
+| 192 | 1024 | 59 | 47 | +0.17 | 39 | 12 / 0 |
+
+- On average elpd leans toward fixing at the truth, but per replicate the
+  difference is under ~1 unit, against a per-pair se of 0.5-1.6, and is
+  clear in 8-13 of 60. One real dataset would rarely settle it.
+- **At the low-synchrony truth it points the wrong way**: fix is less
+  biased in 40-54 of 60 pairs per cell, but mean d_elpd is −0.01 to −0.34
+  and favours fix in only 20-33.
+- The size of the elpd difference does not track the size of the bias
+  difference: correlations over pairs run −0.48 to +0.66 with no
+  consistent sign.
+- Savage-Dickey log Bayes factor, fixed at truth : estimated, cell means:
+  −0.21 to +0.32 under the production prior (main truth, and low synchrony
+  at gen 384); +0.62 and +0.79 for low synchrony at gen 1024; +0.27 to
+  +1.29 with the prior at the truth; +1.3 to +1.6 for the unmapped arm. Under 1 log unit is a
+  factor under 2.7, not worth more than a mention by the usual scale.
+
+**Truth-centred − production prior.** elpd favours the truth-centred prior
+in 51-59 of 60 pairs per cell (mean +0.24 to +0.96) but clearly in 0-12.
+The log Bayes factor, truth-centred : production (importance-weighted from
+the production posterior; the reverse estimate agrees to within 0.03 in
+cell means), is **negative at the real 168 h schedule with `b_shape`
+estimated**: −0.23 and −0.14, positive in 18 of 60. There the marginal
+likelihood mildly prefers the 48 h prior that gives 2.5-2.7 h more bias. Two
+reasons, neither separable here: the likelihood itself peaks long (the
+residual bias with the prior at the truth), and the truth-centred prior is
+wider in hours (3.12 against 1.99 h sd), which a Bayes factor penalises
+when the data are weak. Elsewhere −0.03 to +1.34.
+
+**Reading.** With the truth among the candidates, which real data never
+offer, the standard model-comparison measures lean toward the less-biased
+fit on average over 60 replicates, are rarely decisive in one, and in two
+places lean the other way. Nothing here would let a single fit be flagged
+as less biased.
+
 ### Single-unit, `b_shape` not mapped across gen `n_c`, read 2026-10-27: a slower true desynchronisation biases long, and the bias grows with the window
 
 SLURM 32432 (submitted 2026-10-26 15:42, 12.2 h), 960 chains; merged with
@@ -3974,7 +4041,7 @@ finished; merged with `_data/unitsim/unitsim-run-6.R`; read with
 the prior arm refits the main study's 480 datasets with the `cycle_length`
 prior centred at the truth (42.84 h, same `sd_logit_cl` 1; NOT the same width in hours, see the correction below); the low-synchrony arm
 keeps the main truth with only `b_shape` changed to 5.86 (4.30 at gen
-1024), production prior. All 48 cells readable; 1437 of 1440 fits pass.
+1024), production prior. All 48 cells readable; 1435 of 1440 fits pass (corrected 2026-10-27 from 1437: main 477, prior arm 479, low synchrony 479).
 
 Cells: over passing fits (58-60 of 60). bias = posterior mean
 `cycle_length` minus the 42.84 h truth, hours, positive = long, mean (se

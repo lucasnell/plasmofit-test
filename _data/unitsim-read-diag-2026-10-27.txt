@@ -1,0 +1,112 @@
+1680 fits with diagnostics; 1675 passing. Exploratory: no reading rule fixed in advance.
+Pareto k > 0.7 in 105 of 1680 fits (max k over all fits 3.90).
+
+1. SAMPLER DIAGNOSTICS BY ARM. Cells: mean over passing fits of % divergent
+post-warmup iterations, % at max treedepth (12), leapfrog steps per iteration,
+lp__ spread across the 4 chain means, and posterior sd of cycle_length (h);
+mean bias (h) for reference. Unpaired. lp__ is not comparable between est
+and fix (different parameters) or between priors (different densities).
+
+ truth_set prior window gen_nc method  n div_pct td_cap_pct lf_iter lp_spread cl_sd  bias
+    bconst  prod    168   1024    est 60   0.317          0  94.115     0.291 1.754 4.276
+    bconst  prod    168   1024    fix 60   0.283          0  81.963     0.207 1.581 3.146
+    bconst  prod    192   1024    est 60   0.345          0  97.851     0.303 1.500 4.379
+    bconst  prod    192   1024    fix 60   0.290          0  76.864     0.228 1.093 2.997
+     bslow  prod    168    384    est 60   0.121          0  84.061     0.325 2.123 3.588
+     bslow  prod    168    384    fix 60   0.162          0  73.818     0.211 1.916 2.665
+     bslow  prod    168   1024    est 60   0.066          0  79.759     0.374 2.328 2.949
+     bslow  prod    168   1024    fix 60   0.086          0  68.286     0.204 1.970 2.629
+     bslow  prod    192    384    est 60   0.110          0  84.360     0.394 1.936 2.301
+     bslow  prod    192    384    fix 60   0.223          0  70.399     0.205 1.505 1.023
+     bslow  prod    192   1024    est 59   0.081          0  75.279     0.377 2.163 2.348
+     bslow  prod    192   1024    fix 60   0.123          0  64.688     0.222 1.648 1.536
+      main  prod    168    384    est 60   0.371          0  90.165     0.265 1.855 4.278
+      main  prod    168    384    fix 58   0.321          0  86.706     0.226 1.750 2.161
+      main  prod    168   1024    est 60   0.323          0  88.661     0.300 1.898 4.212
+      main  prod    168   1024    fix 60   0.325          0  76.579     0.172 1.719 3.758
+      main  prod    192    384    est 60   0.160          0 102.102     0.320 1.497 2.288
+      main  prod    192    384    fix 60   0.328          0  74.395     0.192 0.784 0.646
+      main  prod    192   1024    est 59   0.206          0  95.187     0.310 1.674 3.204
+      main  prod    192   1024    fix 60   0.190          0  75.786     0.190 1.251 2.379
+      main truth    168    384    est 60   0.310          0  86.298     0.277 1.670 1.792
+      main truth    168    384    fix 60   0.382          0  77.367     0.190 1.339 0.643
+      main truth    168   1024    est 60   0.302          0  91.757     0.321 1.837 1.519
+      main truth    168   1024    fix 60   0.232          0  72.135     0.220 1.620 1.740
+      main truth    192    384    est 59   0.153          0  85.405     0.305 1.040 1.264
+      main truth    192    384    fix 60   0.379          0  73.445     0.189 0.707 0.367
+      main truth    192   1024    est 60   0.172          0  88.049     0.310 1.231 1.696
+      main truth    192   1024    fix 60   0.185          0  68.233     0.198 0.946 1.632
+
+2. FIX - EST (b_shape fixed at the truth minus estimated), identical data,
+both passing. less_biased = pairs where |bias| is smaller for fix. d_elpd =
+elpd_loo(fix) - elpd_loo(est), log predictive density units summed over the
+unit's observations, positive = fix predicts better: mean and se over pairs;
+favours = pairs with d_elpd > 0; clear / clear_against = pairs beyond +-2 se
+of their own pointwise difference (pair_se_med = median of that se); agree =
+pairs where the sign of d_elpd picks the less-biased fit; cor = correlation
+over pairs of d_elpd with the difference in |bias| (negative = elpd tracks bias).
+
+ truth_set prior window gen_nc pairs less_biased d_elpd_mean d_elpd_se favours clear clear_against pair_se_med agree cor_elpd_absbias
+    bconst  prod    168   1024    60          58       0.863     0.106      52    14             0       0.807    50           -0.159
+    bconst  prod    192   1024    60          57       0.977     0.120      51    16             0       0.939    52            0.061
+     bslow  prod    168    384    60          54      -0.285     0.103      20     6            13       0.435    16            0.492
+     bslow  prod    168   1024    60          40      -0.009     0.073      24    11             8       0.252    18            0.199
+     bslow  prod    192    384    60          49      -0.340     0.170      33     6             8       0.737    24            0.515
+     bslow  prod    192   1024    59          46      -0.151     0.091      21     7            11       0.409    20            0.184
+      main  prod    168    384    58          58       0.277     0.203      36    10             2       1.239    36            0.211
+      main  prod    168   1024    60          41       0.050     0.074      36     8             1       0.537    31            0.047
+      main  prod    192    384    60          59       1.202     0.176      48    13             0       1.573    47            0.188
+      main  prod    192   1024    59          47       0.174     0.109      39    12             0       0.734    41            0.143
+      main truth    168    384    60          56       0.384     0.115      45     6             1       0.881    41            0.662
+      main truth    168   1024    60          23       0.001     0.079      36     6             2       0.389    35           -0.478
+      main truth    192    384    59          56       0.466     0.141      45     8             0       1.109    42            0.461
+      main truth    192   1024    60          27       0.003     0.086      39     8             0       0.526    30           -0.221
+
+   Savage-Dickey log BF, fixed at truth : estimated, from each passing est
+fit (positive = the data favour fixing at the truth). Cells: mean, se, and
+count > 0 over fits; post_above = mean share of posterior b_shape draws above
+the truth. Kernel density on log b_shape, default bandwidth.
+
+ truth_set prior window gen_nc  n logbf_mean logbf_se positive post_above
+    bconst  prod    168   1024 60      1.561    0.091       59      0.177
+    bconst  prod    192   1024 60      1.327    0.112       54      0.155
+     bslow  prod    168    384 60      0.061    0.046       37      0.249
+     bslow  prod    168   1024 60      0.786    0.022       60      0.412
+     bslow  prod    192    384 60     -0.214    0.086       29      0.234
+     bslow  prod    192   1024 59      0.621    0.038       58      0.349
+      main  prod    168    384 60      0.211    0.169       37      0.050
+      main  prod    168   1024 60      0.202    0.052       48      0.351
+      main  prod    192    384 60      0.315    0.211       37      0.080
+      main  prod    192   1024 59     -0.026    0.079       39      0.328
+      main truth    168    384 60      1.288    0.111       54      0.128
+      main truth    168   1024 60      0.308    0.041       49      0.595
+      main truth    192    384 59      0.978    0.162       43      0.117
+      main truth    192   1024 60      0.266    0.049       48      0.516
+
+3. TRUTH-CENTRED - PRODUCTION PRIOR, identical data, both passing. Columns
+as in 2, with 'truth-centred' in place of 'fix'.
+
+ truth_set method window gen_nc pairs less_biased d_elpd_mean d_elpd_se favours clear clear_against pair_se_med agree cor_elpd_absbias
+      main    est    168    384    60          60       0.801     0.092      52    12             0       0.688    52            0.172
+      main    est    168   1024    60          59       0.670     0.095      52     5             0       0.725    51            0.347
+      main    est    192    384    59          58       0.961     0.056      59    11             0       0.617    58           -0.580
+      main    est    192   1024    59          59       0.813     0.065      55     7             0       0.762    55            0.193
+      main    fix    168    384    58          52       0.902     0.071      57     8             0       0.750    51           -0.306
+      main    fix    168   1024    60          58       0.621     0.085      51     1             0       0.844    49            0.231
+      main    fix    192    384    60          50       0.244     0.025      57     0             0       0.365    49           -0.393
+      main    fix    192   1024    60          58       0.662     0.045      59     0             0       0.596    57           -0.544
+
+   log BF, truth-centred : production prior (positive = the data favour the
+truth-centred prior), importance-weighted from the production posterior;
+check = the same from the truth-centred posterior. Cells: mean, se, count > 0,
+and the largest |difference| between the two estimates.
+
+ truth_set method window gen_nc pairs logbf_mean logbf_se positive check_mean max_abs_diff
+      main    est    168    384    60     -0.233    0.088       18     -0.221        0.377
+      main    est    168   1024    60     -0.144    0.089       18     -0.123        0.380
+      main    est    192    384    59      0.668    0.067       51      0.670        0.458
+      main    est    192   1024    59      0.237    0.085       37      0.241        0.601
+      main    fix    168    384    58      0.831    0.092       50      0.836        0.154
+      main    fix    168   1024    60     -0.032    0.109       26     -0.028        0.445
+      main    fix    192    384    60      1.336    0.041       60      1.337        0.059
+      main    fix    192   1024    60      0.547    0.065       54      0.541        0.093

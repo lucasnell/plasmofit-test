@@ -2,6 +2,17 @@
 
 ## State of play right now — read this first
 
+**2026-10-27 (afternoon): can the data pick out the less-biased fits?**
+(Lucas's question; `findings.md`, "Single-unit: can the data pick out";
+`_scripts/unitsim-diag.R`, `_data/unitsim-read-diag-2026-10-27.txt`.)
+Barely: sampler diagnostics do not separate them; PSIS-LOO leans toward
+`b_shape` fixed at the truth and toward the truth-centred prior on average,
+but per replicate rarely clearly, and wrongly at the low-synchrony truth;
+the Bayes factor mildly prefers the 48 h prior at the real schedule with
+`b_shape` estimated. Pass counts corrected: 1675 of 1680 (findings said
+1437 of 1440 for three arms; it is 1435). The report's local file is
+corrected; republishing awaits Lucas.
+
 **2026-10-27: SLURM 32435 running** (wider production prior: centre 48 h,
 `sd_logit_cl` 1.49 = 2.99 h sd; all 8 cells; ~21 h, ends ~07:00
 2026-10-28). Lucas chose one weakly informative arm over a flat prior: 48 h

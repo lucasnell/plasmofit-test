@@ -1,0 +1,1 @@
+w168-g384-est-rep1 draw 1: sum log_lik gqs -11.827186, R -11.827186; max |pointwise diff| 3.08e-12 over 34 obs
