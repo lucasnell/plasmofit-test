@@ -30,7 +30,7 @@
 </style>
 <main>
 <h1>Single-unit simulations of <code>cycle_length</code> bias</h1>
-<p class="sub">plasmofit · SLURM 32423, 32426, 32428 · read 2026-10-23 and 2026-10-26</p>
+<p class="sub">plasmofit · SLURM 32423, 32426, 32428 · read 2026-10-23 and 2026-10-26 · corrected 2026-10-27: arm (a) changed the prior's width as well as its centre</p>
 
 <h2>Design</h2>
 <ul>
@@ -43,14 +43,14 @@
 </ul>
 <p><b>Extensions</b>, on the same noise draws:</p>
 <ul>
-  <li><b>(a) Prior arm:</b> the main datasets refitted with the prior centred at the truth (42.84 h), same width.</li>
+  <li><b>(a) Prior arm:</b> the main datasets refitted with the prior centred at the truth (42.84 h). Same <code>sd_logit_cl</code> (1), but that is 3.12 h sd in hours here against 1.99 h at 48 h, so the prior is also wider.</li>
   <li><b>(b) Low-synchrony truth:</b> <code>b_shape</code> 5.86, the lowest unit, instead of 20.10. Everything else unchanged, production prior.</li>
 </ul>
 
 <h2>Bias</h2>
 <p class="cap">Cells: mean over passing fits (58–60 of 60) of the posterior mean of <code>cycle_length</code> minus the truth, in hours; positive = long; se 0.08–0.21 h. In brackets: the share of fits whose central 80% interval holds the truth (nominal 0.80). Columns are unpaired.</p>
 <div class="wrap"><table>
-<tr><th>Window</th><th>True <code>n_c</code></th><th><code>b_shape</code></th><th>Main, prior 48 h</th><th>(a) Prior at truth</th><th>(b) Low synchrony</th></tr>
+<tr><th>Window</th><th>True <code>n_c</code></th><th><code>b_shape</code></th><th>Main, prior 48 h</th><th>(a) Prior at truth, 3.12 h sd</th><th>(b) Low synchrony</th></tr>
 <tr><td>168 h</td><td>384</td><td>estimated</td><td>+4.28 (0.08)</td><td>+1.79 (0.62)</td><td>+3.59 (0.38)</td></tr>
 <tr><td>168 h</td><td>384</td><td>fixed</td><td>+2.16 (0.59)</td><td>+0.64 (0.80)</td><td>+2.67 (0.50)</td></tr>
 <tr><td>168 h</td><td>1024</td><td>estimated</td><td>+4.21 (0.12)</td><td>+1.52 (0.73)</td><td>+2.95 (0.62)</td></tr>
@@ -65,7 +65,7 @@
 <p class="cap">Contrasts are paired: both fits use the same replicate's data (or the same noise draws) and both pass. Hours.</p>
 <ul>
   <li><b>Biased long in every cell</b> (+0.4 to +4.3 h). At the real 168 h schedule with <code>b_shape</code> estimated, the posterior is essentially the prior: mean 47.3 h and sd 1.9 h, against the prior's 47.4 h and 2.0 h.</li>
-  <li><b>The prior's 48 h centre is the largest source.</b> Centring it at the truth shortens the estimate in every pair, by 1.0–2.7 h with <code>b_shape</code> estimated and 0.3–2.0 h with it fixed.</li>
+  <li><b>The production prior is the largest source.</b> Moving it to the truth shortens the estimate in every pair, by 1.0–2.7 h with <code>b_shape</code> estimated and 0.3–2.0 h with it fixed. This moves the centre (48 → 42.84 h) and the width in hours (1.99 → 3.12 h sd) together, so it does not separate the two.</li>
   <li><b>A long residual remains with the prior at the truth.</b> This comes from the likelihood and nuisances, not the prior:
     <ul>
       <li>+1.3 to +1.8 h with <code>b_shape</code> estimated;</li>
@@ -84,5 +84,5 @@
   <li>None of these numbers is a correction for the full-model 41.82 h.</li>
 </ul>
 
-<p class="src">Design and reading rule: <code>_scripts/unitsim.R</code> header. Reader: <code>_scripts/unitsim-read.R</code>. Outputs: <code>_data/unitsim-read-study-2026-10-23.txt</code> (main) and <code>_data/unitsim-read-study-2026-10-26.txt</code> (all three). Detail: <code>claude/findings.md</code>, “Single-unit study” and “Single-unit follow-ups”.</p>
+<p class="src">Design and reading rule: <code>_scripts/unitsim.R</code> header. Reader: <code>_scripts/unitsim-read.R</code>. Outputs: <code>_data/unitsim-read-study-2026-10-23.txt</code> (main) and <code>_data/unitsim-read-study-2026-10-26.txt</code> (all three). Prior widths in hours: <code>_scripts/unitsim-flatprior-shapes.R</code>, <code>_data/unitsim-read-flatprior-shapes-2026-10-26.txt</code>. Detail: <code>claude/findings.md</code>, “Single-unit study” and “Single-unit follow-ups”.</p>
 </main>

@@ -56,6 +56,11 @@ print(as.data.frame(cells), row.names = FALSE)
 set.seed(1); pr <- 35 + 15 * plogis(rnorm(1e6, 1.87, 1))
 cat(sprintf("\nProduction prior on cycle_length (Monte Carlo, 1e6 draws): mean %.2f h, sd %.2f h; P(below the truth %.2f h) = %.3f\n",
             mean(pr), sd(pr), unique(x$true_cl)[1], mean(pr < unique(x$true_cl)[1])))
+if (any(x$prior == "wide")) {
+    set.seed(1); pw <- 35 + 15 * plogis(rnorm(1e6, 1.87, 1.49))
+    cat(sprintf("Wide prior (sd_logit_cl 1.49, same centre): mean %.2f h, sd %.2f h; P(below the truth) = %.3f\n",
+                mean(pw), sd(pw), mean(pw < unique(x$true_cl)[1])))
+}
 cat("Posterior, per cell over passing fits: median of posterior means and mean of posterior sds (h).\n\n")
 x |> filter(pass) |> group_by(truth_set, prior, key, gen_nc, method) |>
     summarise(median_cl_mean = round(median(cl_mean), 2), mean_cl_sd = round(mean(cl_sd), 2),
@@ -95,11 +100,14 @@ g_diff <- inner_join(filter(xp, gen_nc == 1024L), filter(xp, gen_nc == 384L),
     mutate(diff = bias_h - bias_l) |> group_by(truth_set, prior, key, method) |> pair_sum()
 cat("\ngen 1024 - 384 (difference of bias, since the truths match)\n")
 print(as.data.frame(g_diff), row.names = FALSE)
-if (any(xp$prior == "truth")) {
-    p_diff <- inner_join(filter(xp, prior == "truth"), filter(xp, prior == "prod"),
+P_LABEL <- c(truth = paste("truth-centred - production prior (identical data; centre 48 -> 42.84 h",
+                            "AND width 1.99 -> 3.12 h sd, same sd_logit_cl)"),
+             wide = "wide - production prior (identical data and 48 h centre; width 1.99 -> 2.99 h sd)")
+for (pr_arm in intersect(names(P_LABEL), unique(xp$prior))) {
+    p_diff <- inner_join(filter(xp, prior == pr_arm), filter(xp, prior == "prod"),
                          by = c("truth_set", "key", "gen_nc", "method", "rep"), suffix = c("_t", "_p")) |>
         mutate(diff = cl_mean_t - cl_mean_p) |> group_by(truth_set, key, gen_nc, method) |> pair_sum()
-    cat("\ntruth-centred - production prior (identical data; the prior's location effect)\n")
+    cat("\n", P_LABEL[[pr_arm]], "\n", sep = "")
     print(as.data.frame(p_diff), row.names = FALSE)
 }
 if (any(xp$truth_set == "bslow")) {

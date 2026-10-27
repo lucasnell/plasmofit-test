@@ -135,6 +135,19 @@
 #     bconst gen 1024 - main gen 1024: same gen n_c, only b_shape differs
 #       (the effect of the mapping).
 #
+# WIDER PRODUCTION PRIOR, added 2026-10-27 (Lucas) before any of its fits
+#   ran: a weakly informative cycle_length prior, still centred at 48 h (the
+#   literature value; Lucas), widened to sd_logit_cl 1.49, which is 2.99 h sd
+#   in hours (Lucas: cap the width at 3 h, since a logit-normal centred at
+#   48 h piles mass on the 50 h bound beyond that; 30% above 49 h here).
+#   Production's sd_logit_cl 1 is 1.99 h. Main truth, all 8 cells, 60 reps,
+#   the main study's 480 datasets. Tokens end "-pwide";
+#   `UNITSIM_TASKS=pwide` lists its 1920. Reading rule as above per cell,
+#   plus the paired contrast wide - production prior at each (window,
+#   gen_nc, method): identical data and centre, so the prior's WIDTH effect.
+#   (The truth-centred arm moved centre and width together: same
+#   sd_logit_cl is 3.12 h sd at 42.84 h; _scripts/unitsim-flatprior-shapes.R.)
+#
 # LAYOUT: pinned through _scripts/simstudy-pinned.sh. A benchmark of two
 #   chains per L3 group (2 physical cores each) against one (4 cores) runs
 #   first (2026-10-22; Lucas decides the layout from its numbers), in
@@ -153,7 +166,7 @@
 #          check w168's data against simstudy.R's, w192's shared observations
 #          against w168's, and the split's log_prob invariance.
 #   tasks  print the study's 1920 chain tokens, rep-major (UNITSIM_TASKS =
-#          main, prior, bslow, or bconst selects the arm).
+#          main, prior, bslow, bconst, or pwide selects the arm).
 #   UNITSIM_ITER overrides iterations in chain mode (smoke test; "smoke-").
 #   UNITSIM_DIR overrides the output directory (default _data/unitsim/study/).
 #
@@ -197,6 +210,7 @@ STUDY <- expand.grid(window = c(168L, 192L), gen_nc = c(384L, 1024L),
                      stringsAsFactors = FALSE)
 STUDY$name <- with(STUDY, sprintf("w%d-g%d-%s-rep%d", window, gen_nc, method, rep))
 TRUTH <- "np_wide_total0_nc384_t"
+SD_LOGIT_WIDE <- 1.49     # 2.99 h sd in hours at the production 48 h centre
 
 MODE <- Sys.getenv("UNITSIM_MODE", "chain")
 iter_env <- Sys.getenv("UNITSIM_ITER", "")
@@ -209,13 +223,13 @@ fit_path <- function(nm) sprintf("%sfit-%s.rds", PFX, nm)
 sum_path <- function(nm) sprintf("%ssum-%s.rds", PFX, nm)
 
 parse_fit <- function(nm) {
-    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-bslow|-bconst)?(-ptruth)?$", nm))[[1]]
+    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-bslow|-bconst)?(-ptruth|-pwide)?$", nm))[[1]]
     if (length(m) != 7L) stop("bad fit name: ", nm)
     if (m[6] == "-bconst" && m[3] != "1024") stop("bconst is fitted at gen 1024 only: ", nm)
     list(window = as.integer(m[2]), unit = UNIT, gen_nc = as.integer(m[3]),
          method = m[4], rep = as.integer(m[5]),
          truth_set = if (nzchar(m[6])) sub("^-", "", m[6]) else "main",
-         prior = if (nzchar(m[7])) "truth" else "prod", name = nm)
+         prior = if (nzchar(m[7])) sub("^-p", "", m[7]) else "prod", name = nm)
 }
 
 
@@ -324,6 +338,7 @@ make_fit_inputs <- function(nm, split = "alt") {
     args <- list(window = cf$window, split = split)
     if (cf$method == "fix") args$b_shape <- truth$b_shape
     if (cf$prior == "truth") args$cl_prior_center <- truth$cycle_length
+    if (cf$prior == "wide") args$sd_logit_cl <- SD_LOGIT_WIDE
     d <- do.call(build_unit, args)
     stopifnot(d$n_grp_init == 1L, d$n_c == FIT_NC,
               d$b_shape_fixed == as.integer(cf$method == "fix"))
@@ -418,6 +433,18 @@ if (MODE == "check") {
                     paste(nd, collapse = ", "), a$d$mean_logit_cl, pa$d$mean_logit_cl,
                     35 + 15 * plogis(pa$d$mean_logit_cl)))
         stopifnot(identical(nd, "mean_logit_cl"))
+        ## Wide arm: identical data, only sd_logit_cl differs; centre stays 48 h.
+        for (mth in c("est", "fix")) {
+            base <- if (mth == "est") a else make_fit_inputs(sprintf("w168-g%d-fix-rep1", g))
+            pw <- make_fit_inputs(sprintf("w168-g%d-%s-rep1-pwide", g, mth))
+            nw <- names(base$d)[!vapply(names(base$d), \(n) isTRUE(all.equal(base$d[[n]], pw$d[[n]])), logical(1))]
+            set.seed(1); dr <- 35 + 15 * plogis(rnorm(1e6, pw$d$mean_logit_cl, pw$d$sd_logit_cl))
+            cat(sprintf("  wide arm (%s): same y %s; fields differing from production: %s; sd_logit_cl %.2f -> %.2f; prior centre %.3f h, sd in hours %.3f\n",
+                        mth, identical(pw$d$y, base$d$y), paste(nw, collapse = ", "),
+                        base$d$sd_logit_cl, pw$d$sd_logit_cl,
+                        35 + 15 * plogis(pw$d$mean_logit_cl), sd(dr)))
+            stopifnot(identical(pw$d$y, base$d$y), identical(nw, "sd_logit_cl"), sd(dr) <= 3)
+        }
         ## Low-synchrony truth: only b_shape differs from the main truth.
         lo <- make_fit_inputs(sprintf("w168-g%d-fix-rep1-bslow", g))
         mn <- make_fit_inputs(sprintf("w168-g%d-fix-rep1", g))
@@ -452,8 +479,9 @@ if (MODE == "tasks") {
     ## rep-major, chains innermost
     nms <- STUDY$name
     which_tasks <- Sys.getenv("UNITSIM_TASKS", "main")
-    stopifnot(which_tasks %in% c("main", "prior", "bslow", "bconst"))
+    stopifnot(which_tasks %in% c("main", "prior", "bslow", "bconst", "pwide"))
     if (which_tasks == "prior") nms <- paste0(nms, "-ptruth")
+    if (which_tasks == "pwide") nms <- paste0(nms, "-pwide")
     if (which_tasks == "bslow") nms <- paste0(nms, "-bslow")
     if (which_tasks == "bconst") nms <- paste0(nms[STUDY$gen_nc == 1024L], "-bconst")
     cat(paste0(rep(nms, each = N_CHAINS), "-c", seq_len(N_CHAINS)), sep = "\n")

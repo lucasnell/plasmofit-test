@@ -1,8 +1,18 @@
-# Handoff — 2026-10-26
+# Handoff — 2026-10-27
 
 ## State of play right now — read this first
 
-**2026-10-26 (afternoon): SLURM 32432 running** — the single-unit main
+**2026-10-27: SLURM 32435 running** (wider production prior: centre 48 h,
+`sd_logit_cl` 1.49 = 2.99 h sd; all 8 cells; ~21 h, ends ~07:00
+2026-10-28). Lucas chose one weakly informative arm over a flat prior: 48 h
+as the literature value, width capped at 3 h because a logit-normal centred
+at 48 h piles mass on the 50 h bound beyond that. How to read it: `TODO.md`.
+**32432 read** (`findings.md`, "Single-unit, `b_shape` not mapped"). The
+report `reports/unitsim-2026-10-26.html` was corrected (the truth-centred
+prior arm also widened the prior, 1.99 to 3.12 h sd) and republished as
+version 2 at the same private link.
+
+**2026-10-26 (afternoon): SLURM 32432 submitted** — the single-unit main
 study's four gen `n_c` 1024 cells refitted with `b_shape` NOT mapped (20.10
 instead of 9.54), so gen 384 and 1024 share initial synchrony and differ only
 in desynchronisation rate. The true total stage spread at 168 h is then
@@ -31,7 +41,7 @@ arm (32426) changed width in hours as well as centre (1.99 to 3.12 h sd at
 the same `sd_logit_cl`; `findings.md` correction); a logit-normal centred at
 48 h cannot be wider than ~3 h without piling mass on the 50 h bound
 (`sd_logit_cl` 1.5: sd 3.01 h, 30% above 49 h); proposed separating centre
-and width in hours as a small grid. Awaiting his choices.
+and width in hours as a small grid. He chose one arm (2026-10-27, above).
 
 **2026-10-26: single-unit follow-ups read** (`findings.md`, "Single-unit
 follow-ups"; `_data/unitsim-read-study-2026-10-26.txt`). Centring the

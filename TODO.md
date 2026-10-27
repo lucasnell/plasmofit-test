@@ -86,7 +86,13 @@ match where a thread exists. This file is the actionable layer. -->
       the truth. Open: what this implies for the real fit's
       `cl_prior_center` (TODO item under "Hierarchy and model comparison"),
       and whether to test it in the full model (on hold, needs his say-so).
-- [ ] **SLURM 32432 — `b_shape` not mapped across gen `n_c`, running**
+- [x] **SLURM 32432 — read 2026-10-27** (`findings.md`, "Single-unit,
+      `b_shape` not mapped"; `_data/unitsim-read-study-2026-10-27.txt`):
+      240 of 240 pass; with only the true `n_c` changed (1024, slower
+      desynchronisation than the fit's 384) the bias rises by +2.1 to +2.4 h
+      at the 192 h window; the longer window no longer shortens the
+      estimate. Record of the run follows.
+- [x] **SLURM 32432 — `b_shape` not mapped across gen `n_c`**
       (submitted 2026-10-26 15:42, started 15:43; Lucas: the main study
       without the gen 1024 `b_shape` adjustment). Main truth, production
       prior, but at gen `n_c` 1024 `b_shape` stays at 20.10 instead of the
@@ -104,10 +110,19 @@ match where a thread exists. This file is the actionable layer. -->
       `_scripts/unitsim-read.R` into `_data/unitsim-read-study-<date>.txt`;
       the reader adds bconst gen 1024 − main gen 384 and bconst − main gen
       1024 differences of bias.
-- [ ] **Next single-unit extension, to plan with Lucas: uninformative
-      `cycle_length` prior.** Design questions are in `handoff.md`
-      (2026-10-26); not built. The half-node budget is in use by 32432
-      until ~03:00 2026-10-27.
+- [ ] **SLURM 32435 — wider production prior, running** (submitted and
+      started 2026-10-27 09:44; ~21 h). Lucas chose (2026-10-27), instead of
+      a flat prior: one weakly informative arm, centred at 48 h (the
+      literature value), width capped at 3 h sd in hours: `sd_logit_cl`
+      1.49 = 2.99 h, against production's 1.99 h; main truth, all 8 cells,
+      60 reps, the main study's datasets. Centre unchanged, so the paired
+      wide - production contrast isolates the prior's WIDTH. Tokens end
+      `-pwide`; list `_data/unitsim/study/tasks-pwide.txt`; frozen
+      `_data/unitsim/unitsim-run-8.R` (md5 eca9ac2a…); smoke job 32434
+      passed. Checks (`_data/unitsim-check-2026-10-27.txt`): same `y`, only
+      `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
+      --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
+      (adds wide - production prior).
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`

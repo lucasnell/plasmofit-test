@@ -3908,6 +3908,63 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Single-unit, `b_shape` not mapped across gen `n_c`, read 2026-10-27: a slower true desynchronisation biases long, and the bias grows with the window
+
+SLURM 32432 (submitted 2026-10-26 15:42, 12.2 h), 960 chains; merged with
+`_data/unitsim/unitsim-run-7.R`; read with `_scripts/unitsim-read.R`, output
+`_data/unitsim-read-study-2026-10-27.txt`. Design in the `unitsim.R` header
+("b_shape NOT MAPPED"): the main truth, production prior, but at gen `n_c`
+1024 `b_shape` stays at 20.10 instead of the mapped 9.54. Both gen `n_c` then
+start equally synchronous and gen 1024 desynchronises more slowly; true total
+stage spread at 168 h is 0.0995 cycles (sd) against 0.1276 at gen 384. Only
+the four gen 1024 cells were fitted (gen 384 would repeat the main study).
+**240 of 240 pass.** The fit is `n_c` 384, so its desynchronisation rate is
+too fast for these data.
+
+Cells: over passing fits (60 of 60 each). bias = posterior mean
+`cycle_length` minus the 42.84 h truth, hours, positive = long, mean (se
+0.11-0.16); cover80 in brackets (nominal 0.80). Unpaired across columns; the
+main-study columns are repeated from `_data/unitsim-read-study-2026-10-23.txt`.
+
+| window | `b_shape` | not mapped, gen 1024 | main, gen 1024 (mapped 9.54) | main, gen 384 |
+|---|---|---|---|---|
+| 168 | estimated | +4.28 (0.02) | +4.21 (0.12) | +4.28 (0.08) |
+| 168 | fixed | +3.15 (0.15) | +3.76 (0.10) | +2.16 (0.59) |
+| 192 | estimated | +4.38 (0.00) | +3.20 (0.17) | +2.29 (0.25) |
+| 192 | fixed | +3.00 (0.03) | +2.38 (0.07) | +0.65 (0.72) |
+
+Paired differences of bias, same noise draws, both fits passing (58-60
+pairs). Mean (se), hours:
+
+| window | `b_shape` | not mapped gen 1024 − main gen 384 (only true `n_c` differs) | not mapped − main, gen 1024 (only true `b_shape` differs) |
+|---|---|---|---|
+| 168 | estimated | −0.00 (0.04) | +0.07 (0.05) |
+| 168 | fixed | +1.00 (0.06) | −0.61 (0.07) |
+| 192 | estimated | +2.09 (0.07) | +1.21 (0.07) |
+| 192 | fixed | +2.35 (0.04) | +0.62 (0.04) |
+
+- **A truth that desynchronises more slowly than the fitted `n_c` biases
+  `cycle_length` long, and more so with the longer window.** With only the
+  true `n_c` changed, the bias rises by +2.1 to +2.4 h at the 192 h window;
+  at 168 h it rises by +1.0 h with `b_shape` fixed and not at all with it
+  estimated.
+- **The longer window no longer helps.** w192 − w168 (paired, identical
+  noise on the shared observations): +0.10 (se 0.11) estimated, −0.15
+  (0.12) fixed, against −1.0 to −2.0 h in the main study.
+- **With `b_shape` estimated the posterior is the prior at either window**:
+  medians of posterior means 47.37 and 47.34 h against the prior's mean of
+  47.43 h; posterior sds 1.75 and 1.50 h against 1.99.
+- **Posterior `b_shape`** (estimated arm) averages log(posterior mean /
+  20.10) = −0.30 to −0.34, against −0.56 to −0.61 in the main gen 384 cells
+  (unpaired): higher, consistent with the fit adding initial synchrony to
+  offset its too-fast desynchronisation, but still below the truth under
+  the lognormal(2, 0.5) prior.
+- Fixing `b_shape` at the true 20.10 does not remove a nuisance here: with
+  the fitted `n_c` wrong, 20.10 is not the best-fitting value. est − fix is
+  +1.13 (0.09) h at 168 and +1.38 (0.09) h at 192.
+
+Scope as before: one unit, no hierarchy; production prior only.
+
 ### Single-unit follow-ups, read 2026-10-26: the prior's 48 h centre is the largest piece; a long bias remains with the prior at the truth
 
 SLURM 32426 (prior arm) and 32428 (low-synchrony truth), all 3840 chains
