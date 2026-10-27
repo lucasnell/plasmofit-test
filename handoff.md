@@ -9,8 +9,9 @@ as the literature value, width capped at 3 h because a logit-normal centred
 at 48 h piles mass on the 50 h bound beyond that. How to read it: `TODO.md`.
 **32432 read** (`findings.md`, "Single-unit, `b_shape` not mapped"). The
 report `reports/unitsim-2026-10-26.html` was corrected (the truth-centred
-prior arm also widened the prior, 1.99 to 3.12 h sd) and republished as
-version 2 at the same private link.
+prior arm also widened the prior, 1.99 to 3.12 h sd), extended with the
+unmapped-`b_shape` arm as (c), and republished (version 4) at the same
+private link.
 
 **2026-10-26 (afternoon): SLURM 32432 submitted** — the single-unit main
 study's four gen `n_c` 1024 cells refitted with `b_shape` NOT mapped (20.10
