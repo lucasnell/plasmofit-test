@@ -117,13 +117,21 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] **Report republished 2026-10-27 (version 6)** with the corrected pass
       count and a diagnostics section (Lucas). He does not want the
       diagnostics rerun on the `-pwide` fits.
-- [ ] **Planned, not built (Lucas 2026-10-27): single-unit study with
-      `b_shape` always fixed** — pin at truth / high / low crossed with fit
-      `n_c` true / high / low against the generating 384. Open design
-      choices are in `handoff.md` (2026-10-27, "Fixed-pin grid"); planning
-      numbers in `_data/unitsim-read-pinplan-2026-10-27.txt`
-      (`_scripts/unitsim-pinplan.R`). Needs a fit-`n_c` timing probe after
-      32435 ends.
+- [ ] **Fixed-pin grid — built and checked, NOT run (Lucas 2026-10-27).**
+      Goal (Lucas): fit a range of fixed (`b_shape`, `n_c`), pick the best
+      by a model-comparison measure, and see whether it is the least
+      biased. Design and reading rule in the `_scripts/unitsim.R` header,
+      "FIXED-PIN GRID": pins truth / x2 / half / spread-matched x fit `n_c`
+      288 / 384 / 512 x both windows, gen 384, the main study's datasets;
+      20 new cells, 1200 fits, 4800 chains (`UNITSIM_TASKS=pins`). Selection
+      by highest elpd_loo is the primary read
+      (`_scripts/unitsim-pins-read.R`, tested on relabelled fits; elpd from
+      `_scripts/unitsim-diag.R` compute with `UNITSIM_DIAG_MATCH`). Checks
+      `_data/unitsim-check-pins-2026-10-27.txt`: identical data to the main
+      fix fits, pins as designed, Stan accepts `n_c` 288 and 512. Still
+      open: the prior (after the 32435 read; `UNITSIM_PIN_PRIOR`), then a
+      pinned timing probe of fit `n_c` 512 and 288 (after 32435 frees the
+      budget), then freeze, smoke, and submit on Lucas's say-so.
 - [ ] **SLURM 32435 — wider production prior, running** (submitted and
       started 2026-10-27 09:44; ~21 h). Lucas chose (2026-10-27), instead of
       a flat prior: one weakly informative arm, centred at 48 h (the

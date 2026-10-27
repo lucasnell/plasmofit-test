@@ -2,8 +2,14 @@
 
 ## State of play right now — read this first
 
-**2026-10-27: fixed-pin grid, planning only (Lucas: "don't do this; let's
-plan").** `b_shape` always fixed: truth / high / low, crossed with fit
+**2026-10-27: fixed-pin grid built and checked, not run.** Lucas's choices:
+pins x2 / half / truth plus the spread-matched pin; fit `n_c` 288 / 512;
+both windows; prior after the 32435 read; diagnostics in the reading rule.
+His goal: choose among fixed (`b_shape`, `n_c`) fits by a model-comparison
+measure and see whether the choice is the least biased; selection by
+elpd_loo is now the primary read. Status in `TODO.md`. Original planning
+note follows.
+**Fixed-pin grid, planning (Lucas: "don't do this; let's plan").** `b_shape` always fixed: truth / high / low, crossed with fit
 `n_c` true / high / low, generating `n_c` 384 on the main study's datasets.
 Planning numbers (`_scripts/unitsim-pinplan.R`,
 `_data/unitsim-read-pinplan-2026-10-27.txt`): no pin lets a fit at `n_c`

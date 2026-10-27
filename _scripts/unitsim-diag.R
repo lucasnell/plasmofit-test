@@ -33,7 +33,7 @@
 ##   check    log_lik from gqs against an independent R computation of one
 ##            draw (generate_starts + mat_exp_series, as unitsim.R simulates).
 ##   compute  one diag-<fit>.rds per merged study fit in _data/unitsim/study/
-##            (skips existing).
+##            (skips existing; UNITSIM_DIAG_MATCH, a regex, restricts it).
 ##   read     the paired tables; write to _data/unitsim-read-diag-<date>.txt.
 ##
 ##   cd /home2/lan68/plasmofit/plasmofit-test
@@ -83,6 +83,10 @@ if (MODE == "compute") {
     sums <- Sys.glob(paste0(DIR, "sum-*.rds"))
     nms <- sub("^.*sum-(.*)\\.rds$", "\\1", sums)
     nms <- nms[!grepl("-pwide$", nms) | file.exists(sprintf("%sfit-%s.rds", DIR, nms))]
+    ## UNITSIM_DIAG_MATCH (regex) restricts compute to matching fits, e.g. the
+    ## fixed-pin grid (added 2026-10-27).
+    mt <- Sys.getenv("UNITSIM_DIAG_MATCH", "")
+    if (nzchar(mt)) nms <- nms[grepl(mt, nms)]
     n_done <- 0L
     for (nm in nms) {
         if (file.exists(diag_path(nm))) next
@@ -116,6 +120,9 @@ if (MODE != "read") stop("unknown UNITSIM_DIAG: ", MODE)
 s <- bind_rows(lapply(Sys.glob(paste0(DIR, "sum-*.rds")), readRDS)) |>
     mutate(prior = coalesce(prior, "prod"), truth_set = coalesce(truth_set, "main"),
            lf_iter = vapply(per_chain, \(p) mean(p$leapfrog_per_iter), numeric(1)))
+## The fixed-pin grid is read by _scripts/unitsim-pins-read.R.
+if ("fit_nc" %in% names(s)) s <- filter(s, coalesce(fit_nc, 384L) == 384L)
+if ("pin" %in% names(s)) s <- filter(s, coalesce(pin, "truth") == "truth")
 dg <- lapply(Sys.glob(paste0(DIR, "diag-*.rds")), readRDS)
 names(dg) <- vapply(dg, `[[`, character(1), "name")
 s <- filter(s, name %in% names(dg)) |>

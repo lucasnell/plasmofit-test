@@ -20,6 +20,10 @@ if (!"prior" %in% names(x)) x$prior <- NA_character_
 x$prior[is.na(x$prior)] <- "prod"      # main-study summaries predate the prior arm
 if (!"truth_set" %in% names(x)) x$truth_set <- NA_character_
 x$truth_set[is.na(x$truth_set)] <- "main"
+## The fixed-pin grid has its own reader (_scripts/unitsim-pins-read.R).
+if (!"fit_nc" %in% names(x)) x$fit_nc <- NA_integer_
+if (!"pin" %in% names(x)) x$pin <- NA_character_
+x <- filter(x, coalesce(fit_nc, 384L) == 384L, coalesce(pin, "truth") == "truth")
 x <- x |>
     mutate(key = if_else(is.na(window), unit, paste0("w", window)),
            rhat_bin = case_when(pass ~ "pass", max_rhat < 1.15 ~ "marginal", TRUE ~ "severe"),

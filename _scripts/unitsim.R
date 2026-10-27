@@ -148,6 +148,55 @@
 #   (The truth-centred arm moved centre and width together: same
 #   sd_logit_cl is 3.12 h sd at 42.84 h; _scripts/unitsim-flatprior-shapes.R.)
 #
+# FIXED-PIN GRID, designed 2026-10-27 with Lucas before any of its fits ran
+#   (prior to be chosen after the wide-prior arm is read; a timing probe of
+#   fit n_c 512 runs first). b_shape always fixed; gen n_c 384, main truth,
+#   the main study's datasets (y identical to the main fix fits, so every
+#   cell is paired on data). Crossed:
+#     pin     truth (20.10), x2 (40.20), half (10.05), and match: the
+#             b_shape that makes the fit's total stage-age variance at the
+#             unit's real last observation (168 h) equal the truth's,
+#             var_init(b') + k / fit_nc = var_init(b) + k / 384, k = 168 /
+#             true cycle_length (46.41 at fit n_c 288, 14.00 at 512; at 384
+#             it is the truth, so not repeated). 168 h at both windows, as
+#             the gen 1024 mapping above.
+#     fit_nc  288, 384, 512 (generating 384).
+#     window  168, 192.
+#   = 3 x 3 x 2 = 18 cells plus match at 288 and 512 x 2 windows = 22;
+#   the two (truth, 384) cells are the main study's fix arm, so 20 new cells
+#   x 60 reps = 1200 fits, 4800 chains. Settings as the fix arm (2000 +
+#   2000). Tokens: main fix name + "-pin<x2|half|match>" and/or
+#   "-f<288|512>", then the prior suffix if any: e.g.
+#   w168-g384-fix-rep3-pinx2-f512. `UNITSIM_TASKS=pins` lists the 4800,
+#   with UNITSIM_PIN_PRIOR = prod (default), truth, or wide for the suffix.
+#   PURPOSE (Lucas, 2026-10-27): can fitting a range of fixed (b_shape,
+#   n_c) and choosing the best by a model-comparison measure find the
+#   least-biased model? The cells are the candidate set a real analysis
+#   would fit. Caveats fixed now: the set contains the truth (pin truth,
+#   fit 384), which no real grid would, so this is a best case; the match
+#   pins are built from the true total spread, so they are decoys that fit
+#   the spread as well as the truth does, testing whether the data can tell
+#   the split between initial synchrony and desynchronisation.
+#   Reading rule (_scripts/unitsim-pins-read.R), fixed before any fit:
+#   gate and per cell as above (readable >= 45 of 60, no retries); per rep,
+#   bias of each cell minus the reference (truth pin, fit 384), identical
+#   data; per cell the fit's total-spread sd at 168 h minus the truth's
+#   (0.1276 cycles), against mean bias.
+#   SELECTION (primary). Per (window, rep), candidates = the 11 cells whose
+#   fit passes the gate (a failed fit is not a candidate, as in a real
+#   analysis). Selected = highest elpd_loo (PSIS-LOO, as
+#   _scripts/unitsim-diag.R). Report over reps: how often each cell is
+#   selected; how often the reference is; |bias| of the selected model
+#   against the reference's and against the minimum |bias| among the
+#   candidates (the oracle); the number of candidates within 2 se (of the
+#   pointwise difference) of the selected one, as a measure of how decisive
+#   the selection is; and the Spearman correlation over candidates of elpd
+#   with |bias| (mean over reps). Display only: the same with the posterior
+#   mean of the summed log-likelihood in place of elpd (an in-sample fit
+#   measure, as the real-data n_c profile). No Bayes factors: the
+#   candidates differ in n_c and pin with no estimated model nesting them,
+#   so marginal likelihoods would need bridge sampling.
+#
 # LAYOUT: pinned through _scripts/simstudy-pinned.sh. A benchmark of two
 #   chains per L3 group (2 physical cores each) against one (4 cores) runs
 #   first (2026-10-22; Lucas decides the layout from its numbers), in
@@ -166,7 +215,7 @@
 #          check w168's data against simstudy.R's, w192's shared observations
 #          against w168's, and the split's log_prob invariance.
 #   tasks  print the study's 1920 chain tokens, rep-major (UNITSIM_TASKS =
-#          main, prior, bslow, bconst, or pwide selects the arm).
+#          main, prior, bslow, bconst, pwide, or pins selects the arm).
 #   UNITSIM_ITER overrides iterations in chain mode (smoke test; "smoke-").
 #   UNITSIM_DIR overrides the output directory (default _data/unitsim/study/).
 #
@@ -223,13 +272,32 @@ fit_path <- function(nm) sprintf("%sfit-%s.rds", PFX, nm)
 sum_path <- function(nm) sprintf("%ssum-%s.rds", PFX, nm)
 
 parse_fit <- function(nm) {
-    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-bslow|-bconst)?(-ptruth|-pwide)?$", nm))[[1]]
-    if (length(m) != 7L) stop("bad fit name: ", nm)
+    m <- regmatches(nm, regexec("^w(168|192)-g([0-9]+)-(est|fix)-rep([0-9]+)(-bslow|-bconst)?(-pinx2|-pinhalf|-pinmatch)?(-f288|-f512)?(-ptruth|-pwide)?$", nm))[[1]]
+    if (length(m) != 9L) stop("bad fit name: ", nm)
     if (m[6] == "-bconst" && m[3] != "1024") stop("bconst is fitted at gen 1024 only: ", nm)
+    pin <- if (nzchar(m[7])) sub("^-pin", "", m[7]) else "truth"
+    fit_nc <- if (nzchar(m[8])) as.integer(sub("^-f", "", m[8])) else FIT_NC
+    if ((pin != "truth" || fit_nc != FIT_NC) &&
+        (m[4] != "fix" || m[3] != "384" || nzchar(m[6])))
+        stop("pins and fit n_c other than 384 are for main-truth gen 384 fix fits only: ", nm)
+    if (pin == "match" && fit_nc == FIT_NC) stop("match at fit n_c 384 is the truth pin: ", nm)
     list(window = as.integer(m[2]), unit = UNIT, gen_nc = as.integer(m[3]),
          method = m[4], rep = as.integer(m[5]),
          truth_set = if (nzchar(m[6])) sub("^-", "", m[6]) else "main",
-         prior = if (nzchar(m[7])) sub("^-p", "", m[7]) else "prod", name = nm)
+         pin = pin, fit_nc = fit_nc,
+         ## the main-study fit with the same data (pin and fit n_c removed)
+         ref_name = sub("-f(288|512)", "", sub("-pin(x2|half|match)", "", nm)),
+         prior = if (nzchar(m[9])) sub("^-p", "", m[9]) else "prod", name = nm)
+}
+
+## The fixed-pin grid's b_shape for a pin level at a fit n_c (main truth).
+pin_value <- function(pin, truth, fit_nc) {
+    b <- switch(pin, truth = truth$b_shape, x2 = 2 * truth$b_shape,
+                half = truth$b_shape / 2,
+                match = b_from_var(var_init(truth$b_shape) +
+                                   truth$k_last * (1 / FIT_NC - 1 / fit_nc)))
+    stopifnot(is.finite(b), b > 2, b < d0$max_shape)
+    b
 }
 
 
@@ -331,6 +399,21 @@ unit_truth <- function(u, gen_nc, b384 = T_FULL$b_shape[u], map = TRUE) {
 
 make_fit_inputs <- function(nm, split = "alt") {
     cf <- parse_fit(nm)
+    if (cf$pin != "truth" || cf$fit_nc != FIT_NC) {
+        ## Fixed-pin grid: the reference fit's data exactly, refitted with
+        ## another pin and/or fit n_c.
+        base <- make_fit_inputs(cf$ref_name, split)
+        b_pin <- pin_value(cf$pin, base$truth, cf$fit_nc)
+        args <- list(window = cf$window, split = split, n_c = cf$fit_nc, b_shape = b_pin)
+        if (cf$prior == "truth") args$cl_prior_center <- base$truth$cycle_length
+        if (cf$prior == "wide") args$sd_logit_cl <- SD_LOGIT_WIDE
+        d <- do.call(build_unit, args)
+        stopifnot(d$n_c == cf$fit_nc, d$b_shape_fixed == 1L,
+                  identical(d$ts, base$d$ts), identical(d$n_obs, base$d$n_obs))
+        d$y <- base$d$y
+        return(list(cf = cf, truth = base$truth, d = d, y_hat = base$y_hat,
+                    pos = base$pos, key = base$key))
+    }
     truth <- switch(cf$truth_set,
                     bslow = unit_truth(cf$unit, cf$gen_nc, B_LOW),
                     bconst = unit_truth(cf$unit, cf$gen_nc, map = FALSE),
@@ -472,6 +555,32 @@ if (MODE == "check") {
                   identical(bc$pos, m3$pos),
                   mth == "est" || bc$d$b_shape_data == bc$truth$b_shape)
     }
+    ## Fixed-pin grid: identical data to the main fix fit; pin and fit n_c as
+    ## designed; Stan accepts the data at each fit n_c.
+    cat("\nFixed-pin grid, rep 1: pin values, and fields differing from the main fix fit\n")
+    for (w in c(168L, 192L)) {
+        ref <- make_fit_inputs(sprintf("w%d-g384-fix-rep1", w))
+        for (sfx in c("-pinx2", "-pinhalf", "-f288", "-pinx2-f288", "-pinhalf-f288",
+                      "-pinmatch-f288", "-f512", "-pinx2-f512", "-pinhalf-f512",
+                      "-pinmatch-f512")) {
+            x <- make_fit_inputs(sprintf("w%d-g384-fix-rep1%s", w, sfx))
+            nd <- names(ref$d)[!vapply(names(ref$d), \(n) isTRUE(all.equal(ref$d[[n]], x$d[[n]])), logical(1))]
+            tot <- sqrt(var_init(x$d$b_shape_data[1]) + x$truth$k_last / x$d$n_c)
+            cat(sprintf("  w%d %-14s n_c %4d  b_shape %6.2f  total sd at 168 h %.4f (truth %.4f)  differs: %s\n",
+                        w, sfx, x$d$n_c, x$d$b_shape_data[1], tot,
+                        sqrt(var_init(x$truth$b_shape) + x$truth$k_last / 384),
+                        paste(nd, collapse = ", ")))
+            stopifnot(identical(x$d$y, ref$d$y), identical(x$truth, ref$truth),
+                      !"y" %in% nd, x$d$n_c == x$cf$fit_nc,
+                      isTRUE(all.equal(x$d$b_shape_data[1], pin_value(x$cf$pin, x$truth, x$cf$fit_nc))))
+            if (x$cf$pin == "match")
+                stopifnot(abs(tot - sqrt(var_init(x$truth$b_shape) + x$truth$k_last / 384)) < 1e-12)
+            if (w == 192L && x$cf$pin == "truth")
+                invisible(rstan::sampling(mod, data = x$d, chains = 1, iter = 1, refresh = 0,
+                                          seed = 1, algorithm = "Fixed_param"))
+        }
+    }
+    cat("  Stan accepted the data at fit n_c 288 and 512\n")
     quit(save = "no")
 }
 
@@ -479,11 +588,23 @@ if (MODE == "tasks") {
     ## rep-major, chains innermost
     nms <- STUDY$name
     which_tasks <- Sys.getenv("UNITSIM_TASKS", "main")
-    stopifnot(which_tasks %in% c("main", "prior", "bslow", "bconst", "pwide"))
+    stopifnot(which_tasks %in% c("main", "prior", "bslow", "bconst", "pwide", "pins"))
     if (which_tasks == "prior") nms <- paste0(nms, "-ptruth")
     if (which_tasks == "pwide") nms <- paste0(nms, "-pwide")
     if (which_tasks == "bslow") nms <- paste0(nms, "-bslow")
     if (which_tasks == "bconst") nms <- paste0(nms[STUDY$gen_nc == 1024L], "-bconst")
+    if (which_tasks == "pins") {
+        g <- expand.grid(pin = c("truth", "x2", "half", "match"), f = c(288L, 384L, 512L),
+                         stringsAsFactors = FALSE) |>
+            filter(!(f == FIT_NC & pin %in% c("truth", "match")))
+        sfx <- paste0(ifelse(g$pin == "truth", "", paste0("-pin", g$pin)),
+                      ifelse(g$f == FIT_NC, "", paste0("-f", g$f)))
+        base <- STUDY$name[STUDY$gen_nc == 384L & STUDY$method == "fix"]
+        nms <- as.vector(t(outer(base, sfx, paste0)))
+        pp <- Sys.getenv("UNITSIM_PIN_PRIOR", "prod")
+        stopifnot(pp %in% c("prod", "truth", "wide"))
+        if (pp != "prod") nms <- paste0(nms, "-p", pp)
+    }
     cat(paste0(rep(nms, each = N_CHAINS), "-c", seq_len(N_CHAINS)), sep = "\n")
     quit(save = "no")
 }
@@ -527,7 +648,7 @@ if (MODE == "merge") {
                                     pt$seed == SEED_FIT)
         stopifnot(identical(vapply(parts, `[[`, integer(1), "chain"), seq_len(N_CHAINS)))
         f <- rstan::sflist2stanfit(lapply(parts, `[[`, "fit"))
-        tru <- parts[[1]]$truth; cf <- parts[[1]]$cf
+        tru <- parts[[1]]$truth; cf <- parts[[1]]$cf; parts_d <- parts[[1]]$d
         n_draws <- parts[[1]]$iter - parts[[1]]$warmup
         el <- do.call(rbind, lapply(parts, \(p) rstan::get_elapsed_time(p$fit)))
         rm(parts)
@@ -547,6 +668,9 @@ if (MODE == "merge") {
                       prior = if (is.null(cf$prior)) "prod" else cf$prior,
                       truth_set = if (is.null(cf$truth_set)) "main" else cf$truth_set,
                       gen_nc = cf$gen_nc, method = cf$method,
+                      fit_nc = parts_d$n_c,
+                      pin = if (is.null(cf$pin)) "truth" else cf$pin,
+                      b_pin = if (parts_d$b_shape_fixed == 1L) parts_d$b_shape_data[1] else NA_real_,
                       rep = cf$rep, max_rhat = max(rh), worst = names(which.max(rh)),
                       pass = max(rh) < 1.05,
                       true_cl = tru$cycle_length, cl_mean = mean(cl), cl_sd = sd(cl),
