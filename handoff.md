@@ -5,8 +5,9 @@
 **2026-10-28: SLURM 32435 read** (`findings.md`, "Single-unit wider
 production prior"): 477 of 480 pass; the wider prior moves the estimate by
 +0.04 to −0.41 h, so the prior's centre, not its width, carried the
-truth-centred arm's shift. No jobs running. Next: Lucas picks the fixed-pin
-grid's prior; then the timing probe (`TODO.md`).
+truth-centred arm's shift. Lucas then chose the truth-centred prior for the
+fixed-pin grid; timing probe SLURM 32437 submitted (`TODO.md`). Report
+republished (version 7) with the wider prior as extension (d).
 
 **2026-10-27: fixed-pin grid built and checked, not run.** Lucas's choices:
 pins x2 / half / truth plus the spread-matched pin; fit `n_c` 288 / 512;

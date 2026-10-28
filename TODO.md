@@ -128,10 +128,17 @@ match where a thread exists. This file is the actionable layer. -->
       (`_scripts/unitsim-pins-read.R`, tested on relabelled fits; elpd from
       `_scripts/unitsim-diag.R` compute with `UNITSIM_DIAG_MATCH`). Checks
       `_data/unitsim-check-pins-2026-10-27.txt`: identical data to the main
-      fix fits, pins as designed, Stan accepts `n_c` 288 and 512. Still
-      open: the prior (after the 32435 read; `UNITSIM_PIN_PRIOR`), then a
-      pinned timing probe of fit `n_c` 512 and 288 (after 32435 frees the
-      budget), then freeze, smoke, and submit on Lucas's say-so.
+      fix fits, pins as designed, Stan accepts `n_c` 288 and 512. **Prior:
+      truth-centred** (Lucas 2026-10-28; `UNITSIM_PIN_PRIOR=truth`; checks
+      `_data/unitsim-check-pins-2026-10-28.txt`). Frozen
+      `_data/unitsim/unitsim-run-9.R` (md5 24049ecf…). **Timing probe SLURM
+      32437 submitted 2026-10-28** (Lucas: yes): 4 chains each of
+      `w192-g384-fix-rep1-f512-ptruth` and `-f288-ptruth`, full fixed
+      length, pinned, 64 CPUs, into `_data/unitsim/probe-pins/` (not part of
+      the study). When it ends: `UNITSIM_DIR=_data/unitsim/probe-pins
+      UNITSIM_MODE=merge Rscript --vanilla _data/unitsim/unitsim-run-9.R`,
+      then per-chain hours from the `sum-*.rds` files' `per_chain`; cost the
+      grid (1200 fits) from them. Submit the grid only on Lucas's say-so.
 - [x] **SLURM 32435 — read 2026-10-28** (`findings.md`, "Single-unit wider
       production prior"; `_data/unitsim-read-study-2026-10-28.txt`): 477 of
       480 pass; widening 1.99 → 2.99 h moves the estimate +0.04 to −0.41 h,

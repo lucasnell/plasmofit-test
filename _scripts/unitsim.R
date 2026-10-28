@@ -149,8 +149,11 @@
 #   sd_logit_cl is 3.12 h sd at 42.84 h; _scripts/unitsim-flatprior-shapes.R.)
 #
 # FIXED-PIN GRID, designed 2026-10-27 with Lucas before any of its fits ran
-#   (prior to be chosen after the wide-prior arm is read; a timing probe of
-#   fit n_c 512 runs first). b_shape always fixed; gen n_c 384, main truth,
+#   (prior: centred at the truth, Lucas 2026-10-28 after the wide-prior
+#   read, so the prior's pull does not compress the candidates' bias
+#   differences; tokens end -ptruth, references are the prior arm's fix
+#   fits; a timing probe of fit n_c 288 and 512 runs first). b_shape always
+#   fixed; gen n_c 384, main truth,
 #   the main study's datasets (y identical to the main fix fits, so every
 #   cell is paired on data). Crossed:
 #     pin     truth (20.10), x2 (40.20), half (10.05), and match: the
@@ -579,6 +582,17 @@ if (MODE == "check") {
                 invisible(rstan::sampling(mod, data = x$d, chains = 1, iter = 1, refresh = 0,
                                           seed = 1, algorithm = "Fixed_param"))
         }
+        ## The chosen prior (truth-centred): same data, only the prior differs
+        ## from the production-prior pin fit.
+        pt <- make_fit_inputs(sprintf("w%d-g384-fix-rep1-pinmatch-f512-ptruth", w))
+        pp <- make_fit_inputs(sprintf("w%d-g384-fix-rep1-pinmatch-f512", w))
+        rt <- make_fit_inputs(sprintf("w%d-g384-fix-rep1-ptruth", w))
+        nd <- names(pp$d)[!vapply(names(pp$d), \(n) isTRUE(all.equal(pp$d[[n]], pt$d[[n]])), logical(1))]
+        cat(sprintf("  w%d -pinmatch-f512-ptruth: fields differing from production prior: %s; mean_logit_cl %.4f = prior arm's %.4f; y identical to the prior arm's fix fit: %s\n",
+                    w, paste(nd, collapse = ", "), pt$d$mean_logit_cl, rt$d$mean_logit_cl,
+                    identical(pt$d$y, rt$d$y)))
+        stopifnot(identical(nd, "mean_logit_cl"), pt$d$mean_logit_cl == rt$d$mean_logit_cl,
+                  identical(pt$d$y, rt$d$y))
     }
     cat("  Stan accepted the data at fit n_c 288 and 512\n")
     quit(save = "no")
