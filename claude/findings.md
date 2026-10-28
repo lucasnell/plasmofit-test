@@ -4111,7 +4111,10 @@ the logit map is steep near the 50 h bound: prior sd 1.99 h centred at 48 h,
 the effect of centre and width together; "the prior's centre" should read
 "the production prior". The residual paragraph is unaffected: a prior
 centred at the truth leaves a no-information posterior at the truth
-whatever its width.
+whatever its width. *Resolved 2026-10-28:* widening the production prior
+by a similar amount (1.99 to 2.99 h) moves the estimate by only +0.04 to
+−0.41 h ("Single-unit wider production prior"), so the shift here is mostly
+the centre.
 
 **What remains with the prior at the truth** is still long: +1.3 to +1.8 h
 with `b_shape` estimated, +0.4 to +0.6 h with `b_shape` fixed at the right

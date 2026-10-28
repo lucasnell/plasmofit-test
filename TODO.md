@@ -431,7 +431,8 @@ match where a thread exists. This file is the actionable layer. -->
       centre must be justified without the simulations' truth. That
       contrast also widened the prior from 1.99 to 3.12 h sd in hours
       (same `sd_logit_cl`), so it is centre and width together (findings
-      correction, 2026-10-26).
+      correction, 2026-10-26). Resolved 2026-10-28: widening alone moves it
+      +0.04 to −0.41 h, so the shift is mostly the centre.
 
 ### Done
 
