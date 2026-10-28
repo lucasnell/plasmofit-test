@@ -3908,6 +3908,44 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Single-unit wider production prior, read 2026-10-28: width matters little; the truth-centred arm's shift was mostly its centre
+
+SLURM 32435 (submitted 2026-10-27 09:44, 23.8 h), 1920 chains; merged with
+`_data/unitsim/unitsim-run-8.R`; read with `_scripts/unitsim-read.R`, output
+`_data/unitsim-read-study-2026-10-28.txt`. Design in the `unitsim.R` header
+("WIDER PRODUCTION PRIOR"): the main study's 480 datasets refitted with the
+`cycle_length` prior still centred at 48 h, `sd_logit_cl` 1.49 instead of 1,
+i.e. 2.99 h sd in hours instead of 1.99 (Lucas's 3 h cap). **477 of 480
+pass**; the 3 failures are fixed-`b_shape` fits at true `n_c` 384, all
+marginal (max R-hat 1.06-1.13).
+
+Cells: bias = posterior mean `cycle_length` minus the 42.84 h truth, hours,
+mean over passing fits (57-60); "wide − prod" = paired difference of
+posterior means on identical data, both passing, mean (se) over pairs,
+negative = the wider prior gives a shorter estimate.
+
+| window | true `n_c` | `b_shape` | bias, production | bias, wide | wide − prod |
+|---|---|---|---|---|---|
+| 168 | 384 | estimated | +4.28 | +4.31 | +0.04 (0.05) |
+| 168 | 384 | fixed | +2.16 | +1.68 | −0.41 (0.04) |
+| 168 | 1024 | estimated | +4.21 | +4.10 | −0.11 (0.06) |
+| 168 | 1024 | fixed | +3.76 | +3.55 | −0.21 (0.05) |
+| 192 | 384 | estimated | +2.29 | +2.09 | −0.20 (0.02) |
+| 192 | 384 | fixed | +0.65 | +0.49 | −0.14 (0.01) |
+| 192 | 1024 | estimated | +3.20 | +3.00 | −0.17 (0.03) |
+| 192 | 1024 | fixed | +2.38 | +2.18 | −0.20 (0.01) |
+
+- **Widening the prior by half moves the estimate by +0.04 to −0.41 h.**
+  The truth-centred arm (centre 48 → 42.84 h, width 1.99 → 3.12 h) moved
+  it by −0.28 to −2.69 h. Its width change was about the one tested here,
+  so most of its shift was the centre. This is approximate: the width
+  effect was measured at a 48 h centre, not at 42.84 h.
+- At the real 168 h schedule with `b_shape` estimated the posterior is
+  still close to the prior: median of posterior means 47.52 h against the
+  wide prior's mean of 46.93 h; posterior sd 2.09 h against 3.00. The data
+  narrow the wider prior more than they narrowed production's (1.85
+  against 1.99), and pull it long.
+
 ### Single-unit: can the data pick out the less-biased fits? 2026-10-27, exploratory: barely, and not reliably
 
 Lucas's question: do the less-biased fits (`b_shape` fixed at the truth;

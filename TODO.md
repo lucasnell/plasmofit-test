@@ -132,7 +132,11 @@ match where a thread exists. This file is the actionable layer. -->
       open: the prior (after the 32435 read; `UNITSIM_PIN_PRIOR`), then a
       pinned timing probe of fit `n_c` 512 and 288 (after 32435 frees the
       budget), then freeze, smoke, and submit on Lucas's say-so.
-- [ ] **SLURM 32435 — wider production prior, running** (submitted and
+- [x] **SLURM 32435 — read 2026-10-28** (`findings.md`, "Single-unit wider
+      production prior"; `_data/unitsim-read-study-2026-10-28.txt`): 477 of
+      480 pass; widening 1.99 → 2.99 h moves the estimate +0.04 to −0.41 h,
+      so the truth-centred arm's shift was mostly its centre. Record follows.
+- [x] **SLURM 32435 — wider production prior** (submitted and
       started 2026-10-27 09:44; ~21 h). Lucas chose (2026-10-27), instead of
       a flat prior: one weakly informative arm, centred at 48 h (the
       literature value), width capped at 3 h sd in hours: `sd_logit_cl`
