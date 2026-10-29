@@ -2,9 +2,12 @@
 
 ## State of play right now — read this first
 
-**2026-10-29: timing probe 32437 read** (`TODO.md`): the fixed-pin grid
-costs ~2.7 days at half the node. Awaiting Lucas's go-ahead to submit. No
-jobs running.
+**2026-10-29: fixed-pin grid running as SLURM 32439** (75% of the node,
+Lucas, this grid only; ~43 h; `TODO.md`). Before it, the total-spread
+formula was checked against the model (`findings.md`, "The total-spread
+formula"): exact per lineage; the population's spread departs from it with
+phase, but matched pairs agree at 168 h. Probe 32437: ~2.7 days at half
+the node, hence the 75%.
 
 **2026-10-28: SLURM 32435 read** (`findings.md`, "Single-unit wider
 production prior"): 477 of 480 pass; the wider prior moves the estimate by

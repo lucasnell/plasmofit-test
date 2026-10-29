@@ -80,7 +80,10 @@ claude/references.md, not as authorship. -->
   | 40 | 32G | 3 | 15 | **3** |
 
   *A temporary 75% exception for the simulation study (2026-10-15) ended
-  with the study on 2026-10-20; the half-node rule applies to everything.*
+  with the study on 2026-10-20. **A second temporary 75% exception (192
+  CPUs, 773,505 MB) applies to the single-unit fixed-pin grid only**
+  (Lucas, 2026-10-29; SLURM job in `TODO.md`), and ends when the grid's
+  job ends; the half-node rule applies to everything else.*
 
   No script in `_scripts/` currently needs a throttle — the largest array is
   `wockner-schedule-sim-batch.sh` at 16 tasks × 4 CPUs × 16G = 64 CPUs and

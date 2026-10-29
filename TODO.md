@@ -117,7 +117,21 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] **Report republished 2026-10-27 (version 6)** with the corrected pass
       count and a diagnostics section (Lucas). He does not want the
       diagnostics rerun on the `-pwide` fits.
-- [ ] **Fixed-pin grid — built and checked, NOT run (Lucas 2026-10-27).**
+- [ ] **SLURM 32439 — fixed-pin grid, running** (submitted and started
+      2026-10-29 11:12 after smoke job 32438 passed; Lucas: go, at 75% of
+      the node for this grid only, recorded in `CLAUDE.md`): 192 CPUs, 72G,
+      24 pinned workers, 4800 chains from `_data/unitsim/study/tasks-pins.txt`,
+      frozen `_data/unitsim/unitsim-run-9.R`, truth-centred prior; ~43 h
+      from the probe. When it ends: `UNITSIM_MODE=merge Rscript --vanilla
+      _data/unitsim/unitsim-run-9.R`; `UNITSIM_DIAG=compute
+      UNITSIM_DIAG_MATCH='-pin|-f(288|512)|-fix-rep[0-9]+-ptruth$' Rscript
+      --vanilla _scripts/unitsim-diag.R` (the reference fits' diag files
+      exist already; pattern also matches them, they are skipped);
+      `UNITSIM_PIN_PRIOR=truth Rscript --vanilla _scripts/unitsim-pins-read.R
+      > _data/unitsim-read-pins-<date>.txt`. The 75% allowance ends with it.
+      Spread formula checked first (`findings.md`, "The total-spread
+      formula"): matched pairs agree at 168 h in the model's own population.
+- [ ] **Fixed-pin grid — built and checked (Lucas 2026-10-27).**
       Goal (Lucas): fit a range of fixed (`b_shape`, `n_c`), pick the best
       by a model-comparison measure, and see whether it is the least
       biased. Design and reading rule in the `_scripts/unitsim.R` header,

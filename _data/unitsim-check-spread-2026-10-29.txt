@@ -1,0 +1,39 @@
+Stage-position spread (sd, cycles) by time. formula_sd = sqrt(1/(4(2b+1)) + (t/cl)/n_c);
+model_sd = wrapped-normal sd of the model's own stage distribution (circulating +
+sequestered) at the truth's R 13.87; model_sd_R1 = the same with R = 1 (no
+multiplication, so every lineage counts once: what the formula describes);
+model_minus_formula = model_sd - formula_sd; model_minus_reference = model_sd
+minus the reference's (b_shape 20.10,
+n_c 384) at the same time. The b_shape matching targets equal spread at 168 h.
+
+              label b_shape  n_c t_h formula_sd model_sd_R1 model_sd model_minus_formula model_minus_reference
+          reference  20.098  384   0     0.0779      0.0780   0.0780              0.0001                0.0000
+          reference  20.098  384  72     0.1022      0.1023   0.0773             -0.0249                0.0000
+          reference  20.098  384 120     0.1156      0.1157   0.0882             -0.0274                0.0000
+          reference  20.098  384 168     0.1276      0.1277   0.1147             -0.0129                0.0000
+          reference  20.098  384 192     0.1332      0.1333   0.1892              0.0560                0.0000
+   gen-1024 mapping   9.540 1024   0     0.1116      0.1122   0.1122              0.0006                0.0342
+   gen-1024 mapping   9.540 1024  72     0.1187      0.1193   0.0926             -0.0261                0.0153
+   gen-1024 mapping   9.540 1024 120     0.1232      0.1238   0.0959             -0.0273                0.0077
+   gen-1024 mapping   9.540 1024 168     0.1276      0.1281   0.1171             -0.0105                0.0024
+   gen-1024 mapping   9.540 1024 192     0.1297      0.1303   0.1957              0.0660                0.0065
+ match pin, fit 288  46.410  288   0     0.0516      0.0516   0.0516              0.0000               -0.0264
+ match pin, fit 288  46.410  288  72     0.0922      0.0922   0.0715             -0.0207               -0.0058
+ match pin, fit 288  46.410  288 120     0.1113      0.1113   0.0855             -0.0258               -0.0027
+ match pin, fit 288  46.410  288 168     0.1276      0.1276   0.1147             -0.0129                0.0000
+ match pin, fit 288  46.410  288 192     0.1350      0.1350   0.1920              0.0570                0.0028
+ match pin, fit 512  14.000  512   0     0.0928      0.0931   0.0931              0.0003                0.0151
+ match pin, fit 512  14.000  512  72     0.1091      0.1093   0.0823             -0.0268                0.0049
+ match pin, fit 512  14.000  512 120     0.1187      0.1189   0.0906             -0.0281                0.0024
+ match pin, fit 512  14.000  512 168     0.1276      0.1278   0.1151             -0.0125                0.0004
+ match pin, fit 512  14.000  512 192     0.1318      0.1320   0.1888              0.0569               -0.0005
+ truth pin, fit 288  20.098  288   0     0.0779      0.0780   0.0780              0.0001                0.0000
+ truth pin, fit 288  20.098  288  72     0.1091      0.1092   0.0817             -0.0274                0.0044
+ truth pin, fit 288  20.098  288 120     0.1257      0.1257   0.0949             -0.0307                0.0067
+ truth pin, fit 288  20.098  288 168     0.1403      0.1404   0.1234             -0.0169                0.0087
+ truth pin, fit 288  20.098  288 192     0.1471      0.1471   0.2040              0.0569                0.0148
+ truth pin, fit 512  20.098  512   0     0.0779      0.0780   0.0780              0.0001                0.0000
+ truth pin, fit 512  20.098  512  72     0.0967      0.0968   0.0738             -0.0229               -0.0035
+ truth pin, fit 512  20.098  512 120     0.1074      0.1075   0.0828             -0.0246               -0.0055
+ truth pin, fit 512  20.098  512 168     0.1172      0.1172   0.1074             -0.0098               -0.0073
+ truth pin, fit 512  20.098  512 192     0.1217      0.1218   0.1698              0.0481               -0.0194

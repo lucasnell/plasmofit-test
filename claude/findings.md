@@ -3908,6 +3908,36 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### The total-spread formula behind the `b_shape` mappings, checked 2026-10-29: exact per lineage; matched pairs agree in the model's own population at 168 h
+
+The mappings (gen 1024 truth; the fixed-pin grid's spread-matched pins)
+solve var_init(b') + k / n_c' = var_init(b) + k / n_c at t = 168 h, with
+var_init(b) = 1 / (4 (2b + 1)) (variance of a Beta(b, b) start) and k = t /
+cycle_length (Poisson progress through n_c compartments adds variance k /
+n_c in cycles^2). Checked against the model's own stage distribution
+(`_scripts/unitsim-spread-check.R`, `_data/unitsim-check-spread-2026-10-29.txt`):
+state(t) = expm(A t) y0 from the package's `build_A` and `generate_starts`
+at the main truth, circulating + sequestered per stage, spread as a
+wrapped-normal sd in cycles.
+
+- **Per lineage (R = 1) the formula is exact** to 0.0007 sd at every time
+  and pair.
+- **The population (R 13.87) departs from it by −0.031 to +0.066 sd**, and
+  not monotonically in time: the R-fold multiplication at the cycle end
+  weights lineages that have passed it, so the population's spread depends
+  on where the cohort sits relative to that point (it falls below the
+  start at 72 h for the reference and jumps at 192 h).
+- **The matched pairs still agree in that population spread at 168 h**:
+  differences from the reference (`b_shape` 20.10, `n_c` 384) of +0.0024
+  (gen 1024 mapping, 9.54), +0.0004 (match pin at 512, 14.00), and 0.0000
+  (match pin at 288, 46.41), against +0.0087 and −0.0073 for the truth pin
+  unmatched at 288 and 512. Away from 168 h they diverge: up to 0.034 at
+  t = 0 (by construction), 0.015 at 72 h, 0.0065 at 192 h.
+
+So the mappings do what they claim at 168 h in the model's own terms, but
+"total spread" of the population is phase-dependent and the formula's
+absolute values describe lineages, not the population.
+
 ### Single-unit wider production prior, read 2026-10-28: width matters little; the truth-centred arm's shift was mostly its centre
 
 SLURM 32435 (submitted 2026-10-27 09:44, 23.8 h), 1920 chains; merged with
