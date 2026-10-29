@@ -1,0 +1,4 @@
+Reference (truth-centred prior, fixed b_shape, fit n_c 384, 240 fits): hours per chain median 0.215, 90% 0.283; ms per gradient median 2.65; leapfrog per iteration median 67
+Same dataset as the probe (w192 rep 1, fit 384): hours per chain 0.219, 0.228, 0.216, 0.204; ms/grad 2.98, 3, 3.02, 2.98; max R-hat 1.003; cl_mean 43.62
+w192-g384-fix-rep1-f288-ptruth: fit n_c 288, max R-hat 1.007 PASS, cl_mean 44.45, div 0.43%; hours per chain 0.109, 0.115, 0.105, 0.097; ms/grad 1.31, 1.31, 1.34, 1.36; leapfrog/iter 77, 79, 51, 52
+w192-g384-fix-rep1-f512-ptruth: fit n_c 512, max R-hat 1.002 PASS, cl_mean 42.85, div 0.20%; hours per chain 0.313, 0.272, 0.317, 0.357; ms/grad 3.8, 3.8, 3.73, 3.73; leapfrog/iter 65, 45, 74, 76

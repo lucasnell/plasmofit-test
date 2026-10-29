@@ -1,6 +1,6 @@
 # plasmofit — malaria within-host dynamics — index
 
-**Status as of 2026-10-28.** SLURM 32437 running (timing probe for the fixed-pin grid, truth-centred prior). Single-unit wider-prior arm (32435) read; the grid is built, checked, and frozen, not submitted (`TODO.md`). No `cycle_length` number is final.
+**Status as of 2026-10-29.** No jobs running; the fixed-pin grid's timing probe (32437) read, ~2.7 days to run, awaiting Lucas's go-ahead. Single-unit wider-prior arm (32435) read; the grid is built, checked, and frozen, not submitted (`TODO.md`). No `cycle_length` number is final.
 
 **Age structure: answered.** The data constrain only the total stage spread at
 the end of the window, not its split between initial synchrony and accumulated

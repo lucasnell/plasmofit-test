@@ -2,6 +2,10 @@
 
 ## State of play right now — read this first
 
+**2026-10-29: timing probe 32437 read** (`TODO.md`): the fixed-pin grid
+costs ~2.7 days at half the node. Awaiting Lucas's go-ahead to submit. No
+jobs running.
+
 **2026-10-28: SLURM 32435 read** (`findings.md`, "Single-unit wider
 production prior"): 477 of 480 pass; the wider prior moves the estimate by
 +0.04 to −0.41 h, so the prior's centre, not its width, carried the

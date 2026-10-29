@@ -139,6 +139,12 @@ match where a thread exists. This file is the actionable layer. -->
       UNITSIM_MODE=merge Rscript --vanilla _data/unitsim/unitsim-run-9.R`,
       then per-chain hours from the `sum-*.rds` files' `per_chain`; cost the
       grid (1200 fits) from them. Submit the grid only on Lucas's say-so.
+      **Probe read 2026-10-29** (`_data/unitsim-read-pinprobe-2026-10-29.txt`):
+      both fits pass; hours per chain 0.10-0.12 at fit `n_c` 288 and
+      0.27-0.36 at 512, against 0.20-0.23 at 384 on the same dataset (median
+      0.215 over the 240 truth-prior fixed fits). Grid estimate: 960 chains at
+      384 x 0.215 + 1920 at 288 x 0.107 + 1920 at 512 x 0.315 = ~1020 chain
+      hours, ~64 h (~2.7 days) on 16 pinned workers at half the node.
 - [x] **SLURM 32435 — read 2026-10-28** (`findings.md`, "Single-unit wider
       production prior"; `_data/unitsim-read-study-2026-10-28.txt`): 477 of
       480 pass; widening 1.99 → 2.99 h moves the estimate +0.04 to −0.41 h,
