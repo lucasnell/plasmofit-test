@@ -1,6 +1,6 @@
 # plasmofit — malaria within-host dynamics — index
 
-**Status as of 2026-10-29.** SLURM 32439 running: the single-unit fixed-pin grid (b_shape pins x fit n_c, truth-centred prior), at 75% of the node by Lucas's exception, ~43 h (`TODO.md`). Single-unit wider-prior arm (32435) read; the grid is built, checked, and frozen, not submitted (`TODO.md`). No `cycle_length` number is final.
+**Status as of 2026-11-02.** No jobs running. The single-unit fixed-pin grid is read: bias follows the stage-spread mismatch, and elpd cannot pick the less-biased fixed (`b_shape`, `n_c`) model (`findings.md`). Single-unit wider-prior arm (32435) read; the grid is built, checked, and frozen, not submitted (`TODO.md`). No `cycle_length` number is final.
 
 **Age structure: answered.** The data constrain only the total stage spread at
 the end of the window, not its split between initial synchrony and accumulated

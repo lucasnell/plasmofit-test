@@ -2,17 +2,13 @@
 
 ## State of play right now — read this first
 
-**2026-11-02: fixed-pin grid (SLURM 32439) finished 2026-10-31 21:08 and is
-merged** (1193 of 1200 pass). Per-cell read without selection:
-`_data/unitsim-read-pins-partial-2026-11-02.txt`: bias tracks the fit's
-spread mismatch at 168 h (too much spread long, too little short); the
-spread-matched pins at fit `n_c` 288 are less biased than the true model.
-elpd for the 1200 fits was still computing when Lucas left
-(`_data/unitsim/study/logs/diag-pins-2026-11-02.log` ends `PIPELINE_DONE`
-when complete; rerun `UNITSIM_DIAG=compute UNITSIM_DIAG_MATCH='-pin|-f(288|512)'
-Rscript --vanilla _scripts/unitsim-diag.R` if it did not). Then the full
-read: `UNITSIM_PIN_PRIOR=truth Rscript --vanilla _scripts/unitsim-pins-read.R
-> _data/unitsim-read-pins-<date>.txt`. 75% allowance ended (`CLAUDE.md`).
+**2026-11-02: fixed-pin grid read** (`findings.md`, "Single-unit fixed-pin
+grid"; `_data/unitsim-read-pins-2026-11-02.txt`). 1193 of 1200 pass. Bias
+follows the fit's spread mismatch at 168 h; the least-biased cell is the
+spread-matched pin at fit `n_c` 288, not the true model. Choosing among the
+11 fixed (`b_shape`, `n_c`) fits by elpd_loo gives the |bias| of a random
+pick; nearly every candidate is within 2 se of the best. No jobs running;
+the 75% allowance has ended. Next step is Lucas's.
 
 **2026-10-29: fixed-pin grid running as SLURM 32439** (75% of the node,
 Lucas, this grid only; ~43 h; `TODO.md`). Before it, the total-spread

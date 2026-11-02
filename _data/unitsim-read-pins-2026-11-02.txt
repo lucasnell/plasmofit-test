@@ -1,0 +1,99 @@
+1320 fixed-b_shape fits (gen n_c 384, main truth, prior truth ) in _data/unitsim/study/ 
+
+1. PER CELL. n = merged fits; pass = max R-hat < 1.05; readable = >= 45 of 60 pass.
+bias = posterior mean cycle_length - truth (h), positive = long: mean and se over
+passing fits; cover80 = share of passing fits whose 80% interval holds the truth.
+spread_sd = the fit's total stage-spread sd at 168 h (cycles) from its pin and fit
+n_c; spread_diff = minus the truth's 0.1276. d_ref = paired bias minus the
+reference's (pin truth, fit 384), identical data, both passing: mean, se, pairs.
+
+ window fit_nc   pin b_shape  n n_pass mean_bias     se cover80   d_ref d_ref_se pairs spread_sd spread_diff readable
+    168    288  half 10.0491 60     59    2.8925 0.1212  0.0678  2.2276   0.0596    59    0.1596      0.0320     TRUE
+    168    288 match 46.4099 60     60    0.2798 0.1444  0.8500 -0.3634   0.0178    60    0.1276      0.0000     TRUE
+    168    288 truth 20.0981 60     60    1.3793 0.1433  0.7167  0.7360   0.0193    60    0.1403      0.0127     TRUE
+    168    288    x2 40.1963 60     60    0.4178 0.1441  0.8500 -0.2255   0.0144    60    0.1292      0.0016     TRUE
+    168    384  half 10.0491 60     58    2.4675 0.1386  0.2069  1.8060   0.0508    58    0.1485      0.0209     TRUE
+    168    384 truth 20.0980 60     60    0.6433 0.1457  0.8000  0.0000   0.0000    60    0.1276      0.0000     TRUE
+    168    384    x2 40.1963 60     60   -0.3601 0.1465  0.7667 -1.0034   0.0339    60    0.1153     -0.0123     TRUE
+    168    512  half 10.0491 60     60    1.9972 0.1401  0.3500  1.3539   0.0397    60    0.1397      0.0121     TRUE
+    168    512 match 13.9988 60     60    0.9342 0.1480  0.7833  0.2909   0.0158    60    0.1276      0.0000     TRUE
+    168    512 truth 20.0981 60     60    0.0459 0.1511  0.8167 -0.5974   0.0198    60    0.1172     -0.0104     TRUE
+    168    512    x2 40.1963 60     59   -0.9178 0.1479  0.6271 -1.5743   0.0514    59    0.1036     -0.0240     TRUE
+    192    288  half 10.0491 60     60    2.1825 0.0976  0.0333  1.8153   0.0360    60    0.1596      0.0320     TRUE
+    192    288 match 46.4099 60     60    0.2703 0.0852  0.8833 -0.0968   0.0064    60    0.1276      0.0000     TRUE
+    192    288 truth 20.0981 60     60    1.0015 0.0895  0.5333  0.6343   0.0174    60    0.1403      0.0127     TRUE
+    192    288    x2 40.1963 60     60    0.3662 0.0860  0.8333 -0.0009   0.0066    60    0.1292      0.0016     TRUE
+    192    384  half 10.0491 60     60    1.6118 0.0883  0.0667  1.2447   0.0256    60    0.1485      0.0209     TRUE
+    192    384 truth 20.0980 60     60    0.3671 0.0828  0.8500  0.0000   0.0000    60    0.1276      0.0000     TRUE
+    192    384    x2 40.1963 60     60   -0.4133 0.0791  0.7500 -0.7804   0.0152    60    0.1153     -0.0123     TRUE
+    192    512  half 10.0491 60     59    1.1684 0.0820  0.2542  0.7992   0.0168    59    0.1397      0.0121     TRUE
+    192    512 match 13.9988 60     60    0.4520 0.0802  0.8000  0.0849   0.0060    60    0.1276      0.0000     TRUE
+    192    512 truth 20.0981 60     59   -0.2198 0.0797  0.7966 -0.5823   0.0158    59    0.1172     -0.0104     TRUE
+    192    512    x2 40.1963 60     59   -1.1309 0.0699  0.1695 -1.4939   0.0331    59    0.1036     -0.0240     TRUE
+
+2. SELECTION. elpd available for 1320 of 1320 fits.
+Per (window, rep), candidates = the passing fits of that dataset (n_cand).
+selected = highest elpd_loo; oracle = smallest |bias| among candidates;
+n_close = candidates within 2 se (pointwise difference) of the selected,
+including it (1 = decisive); rho = Spearman correlation over candidates of
+elpd with |bias| (negative = higher elpd goes with less bias). rand_absbias
+(display only, added after the read): mean |bias| over the candidates, i.e. the
+expected |bias| of picking one at random.
+
+Summary per window (means over reps):
+ window reps n_cand ref_selected oracle_selected sel_absbias ref_absbias oracle_absbias rand_absbias n_close    rho
+    168   60 10.933            3              10       1.427       0.998          0.293        1.444  10.500 -0.231
+    192   60 10.950            1               2       1.025       0.573          0.112        0.960  10.733 -0.217
+
+How often each cell is selected (by elpd) and is the oracle, per window:
+ window       cell selected oracle
+    168 truth-f288        8      8
+    168    x2-f512        8     12
+    168  half-f384        7      0
+    168    x2-f384        7      9
+    168 match-f512        6      5
+    168 truth-f512        6      7
+    168  half-f288        5      1
+    168 match-f288        4      9
+    168    x2-f288        4      4
+    168 truth-f384        3      4
+    168  half-f512        2      1
+    192  half-f384        9      2
+    192    x2-f384        9     13
+    192 match-f512        8      4
+    192    x2-f512        8      4
+    192 truth-f288        6      3
+    192    x2-f288        6      3
+    192 truth-f512        5     17
+    192  half-f288        3      0
+    192  half-f512        3      0
+    192 match-f288        2     10
+    192 truth-f384        1      4
+
+Display only: the same selection by posterior mean summed log-likelihood (in-sample).
+ window reps ref_selected sel_absbias    rho
+    168   60            1       1.276 -0.353
+    192   60            4       0.932 -0.289
+ window       cell selected
+    168    x2-f384       11
+    168    x2-f512        9
+    168 match-f288        8
+    168  half-f384        7
+    168    x2-f288        7
+    168 truth-f288        6
+    168 match-f512        4
+    168 truth-f512        4
+    168  half-f288        2
+    168  half-f512        1
+    168 truth-f384        1
+    192 truth-f288        9
+    192    x2-f384        8
+    192 match-f512        7
+    192 truth-f512        7
+    192    x2-f512        7
+    192  half-f384        6
+    192 match-f288        5
+    192 truth-f384        4
+    192    x2-f288        3
+    192  half-f288        2
+    192  half-f512        2

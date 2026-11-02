@@ -72,7 +72,9 @@ cat("Per (window, rep), candidates = the passing fits of that dataset (n_cand).\
     "selected = highest elpd_loo; oracle = smallest |bias| among candidates;\n",
     "n_close = candidates within 2 se (pointwise difference) of the selected,\n",
     "including it (1 = decisive); rho = Spearman correlation over candidates of\n",
-    "elpd with |bias| (negative = higher elpd goes with less bias).\n\n", sep = "")
+    "elpd with |bias| (negative = higher elpd goes with less bias). rand_absbias\n",
+    "(display only, added after the read): mean |bias| over the candidates, i.e. the\n",
+    "expected |bias| of picking one at random.\n\n", sep = "")
 sel <- xs |> group_by(window, rep) |> group_modify(\(g, k) {
     i <- which.max(g$elpd); best <- g$name[i]
     se_d <- vapply(g$name, \(nm) if (nm == best) 0 else
@@ -82,6 +84,7 @@ sel <- xs |> group_by(window, rep) |> group_modify(\(g, k) {
            ref_in = any(g$cell == "truth-f384"),
            ref_absbias = if (any(g$cell == "truth-f384")) g$absbias[g$cell == "truth-f384"] else NA_real_,
            oracle = g$cell[which.min(g$absbias)], oracle_absbias = min(g$absbias),
+           rand_absbias = mean(g$absbias),
            n_close = sum(g$elpd >= g$elpd[i] - 2 * se_d),
            rho = suppressWarnings(cor(g$elpd, g$absbias, method = "spearman")),
            sel_ll = g$cell[which.max(g$ll_mean)],
@@ -94,7 +97,8 @@ sel |> group_by(window) |>
     summarise(reps = n(), n_cand = mean(n_cand), ref_selected = sum(selected == "truth-f384"),
               oracle_selected = sum(selected == oracle),
               sel_absbias = mean(sel_absbias), ref_absbias = mean(ref_absbias, na.rm = TRUE),
-              oracle_absbias = mean(oracle_absbias), n_close = mean(n_close),
+              oracle_absbias = mean(oracle_absbias), rand_absbias = mean(rand_absbias),
+              n_close = mean(n_close),
               rho = mean(rho, na.rm = TRUE), .groups = "drop") |>
     mutate(across(where(is.double), \(v) round(v, 3))) |> as.data.frame() |> print(row.names = FALSE)
 

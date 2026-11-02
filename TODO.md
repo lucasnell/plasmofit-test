@@ -117,7 +117,11 @@ match where a thread exists. This file is the actionable layer. -->
 - [x] **Report republished 2026-10-27 (version 6)** with the corrected pass
       count and a diagnostics section (Lucas). He does not want the
       diagnostics rerun on the `-pwide` fits.
-- [ ] **SLURM 32439 — fixed-pin grid, running** (submitted and started
+- [x] **SLURM 32439 — read 2026-11-02** (`findings.md`, "Single-unit
+      fixed-pin grid"; `_data/unitsim-read-pins-2026-11-02.txt`): 1193 of
+      1200 pass; bias follows the spread mismatch; elpd selection is no
+      better than a random pick. Record follows.
+- [x] **SLURM 32439 — fixed-pin grid** (submitted and started
       2026-10-29 11:12 after smoke job 32438 passed; Lucas: go, at 75% of
       the node for this grid only, recorded in `CLAUDE.md`): 192 CPUs, 72G,
       24 pinned workers, 4800 chains from `_data/unitsim/study/tasks-pins.txt`,

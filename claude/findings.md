@@ -3908,6 +3908,72 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Single-unit fixed-pin grid, read 2026-11-02: bias follows the spread mismatch, and choosing by elpd is no better than choosing at random
+
+SLURM 32439 (2026-10-29 11:12 to 10-31 21:08, 75% of the node by Lucas's
+exception), 4800 chains; merged with `_data/unitsim/unitsim-run-9.R`; elpd
+by `_scripts/unitsim-diag.R`; read with `_scripts/unitsim-pins-read.R`,
+output `_data/unitsim-read-pins-2026-11-02.txt`. Design and reading rule in
+the `unitsim.R` header ("FIXED-PIN GRID"): the main study's gen `n_c` 384
+datasets, `b_shape` always fixed (truth 20.10, x2, half, and the pin that
+matches the truth's total stage spread at 168 h), fit `n_c` 288 / 384 / 512,
+both windows, `cycle_length` prior centred at the truth; 11 candidate fits
+per dataset, the true model (truth pin, fit 384) being the prior arm's fixed
+fits. **1193 of 1200 new fits pass; every cell readable.**
+
+Cells: bias = posterior mean `cycle_length` minus the 42.84 h truth, hours,
+mean over passing fits (58-60 of 60), positive = long; spread mismatch =
+the fit's total stage-spread sd at 168 h from its pin and fit `n_c` minus the
+truth's 0.1276 cycles (formula; matched pairs checked against the model in
+"The total-spread formula").
+
+| fit `n_c` | pin | spread mismatch | bias, 168 h | bias, 192 h |
+|---|---|---|---|---|
+| 288 | half | +0.032 | +2.89 | +2.18 |
+| 288 | truth | +0.013 | +1.38 | +1.00 |
+| 288 | x2 | +0.002 | +0.42 | +0.37 |
+| 288 | match (46.41) | 0 | +0.28 | +0.27 |
+| 384 | half | +0.021 | +2.47 | +1.61 |
+| 384 | truth (true model) | 0 | +0.64 | +0.37 |
+| 384 | x2 | −0.012 | −0.36 | −0.41 |
+| 512 | half | +0.012 | +2.00 | +1.17 |
+| 512 | match (14.00) | 0 | +0.93 | +0.45 |
+| 512 | truth | −0.010 | +0.05 | −0.22 |
+| 512 | x2 | −0.024 | −0.92 | −1.13 |
+
+- **Bias follows the spread mismatch**: too much spread long, too little
+  short, across pins and fit `n_c`. At zero mismatch it still varies
+  (+0.27 to +0.93 h), so the split between initial and accumulated spread
+  matters a little too.
+- **The least-biased cell is not the true model**: the matched pin at fit
+  `n_c` 288 (+0.28, +0.27) beats it (+0.64, +0.37).
+
+**Selection.** Per (window, rep), candidates = passing fits (10.9 of 11 on
+average). Means over 60 reps; |bias| in hours:
+
+| window | true model selected | least-biased selected | |bias| of selected | |bias| of true model | |bias| of least biased | |bias|, random pick | candidates within 2 se of the best |
+|---|---|---|---|---|---|---|---|
+| 168 | 3 of 60 | 10 of 60 | 1.43 | 1.00 | 0.29 | 1.44 | 10.5 of 10.9 |
+| 192 | 1 of 60 | 2 of 60 | 1.03 | 0.57 | 0.11 | 0.96 | 10.7 of 11.0 |
+
+- **elpd_loo cannot tell these candidates apart**: in a typical dataset
+  every candidate is within 2 se of the best. The selected cell is spread
+  across all 11, the worst (`b_shape` half) included, and the true model is
+  picked less often than chance (1/11 = 5.5 of 60).
+- **Choosing by elpd gives the bias of a random pick** (1.43 against 1.44
+  h; 1.03 against 0.96), worse than the true model's.
+- The Spearman correlation over candidates between elpd and |bias| averages
+  −0.23 and −0.22: slightly in the right direction, too weak to act on.
+- In-sample log-likelihood (display only) is no better: |bias| of the
+  selected 1.28 and 0.93 h.
+- `rand_absbias` was added to the reader after the read, as display.
+
+**Reading.** In this unit the data cannot rank fixed (`b_shape`, `n_c`)
+pairs, even with the truth among them and the prior at the truth, while the
+choice moves `cycle_length` by up to ~4 h. The ranking that matters for bias
+is the total spread, which the data fix only loosely. Scope: one unit, 6
+series, no hierarchy.
+
 ### The total-spread formula behind the `b_shape` mappings, checked 2026-10-29: exact per lineage; matched pairs agree in the model's own population at 168 h
 
 The mappings (gen 1024 truth; the fixed-pin grid's spread-matched pins)
