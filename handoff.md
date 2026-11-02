@@ -2,6 +2,16 @@
 
 ## State of play right now — read this first
 
+**2026-11-02 (afternoon): trough-depth check built and read** (`findings.md`,
+"Trough-depth predictive check"; `_scripts/unitsim-trough.R`,
+`_data/unitsim-read-trough-2026-11-02.txt`). Across the 11 grid cells it
+reads the stage-spread mismatch almost perfectly (Spearman −0.99, −0.95) and
+the bias with it (−0.96, −1.00), far better than elpd's −0.23 — but mean p
+crosses 0.5 at a spread mismatch of +0.0097 cycles at the 168 h window, not
+0, and per dataset choosing the smallest |p − 0.5| is WORSE than a random
+pick (|bias| 1.73 against 1.44 h). It ran as a plain background process on
+the login node, not under SLURM, so it never appeared in `squeue`.
+
 **2026-11-02: external anchors, from the papers Lucas supplied**
 (`_data/new-info/`, gitignored; `findings.md`, "What the literature can and
 cannot anchor"). **Park et al. (2020) is the anchor for `n_c`**: single-cell

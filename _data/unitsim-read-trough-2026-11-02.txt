@@ -1,0 +1,74 @@
+1320 fits with a trough check; 1313 passing.
+p = P(T_rep >= T_obs) for T_range = peak-to-trough range of OLS-detrended
+log10(y + 1); p near 1 = the model oscillates too deeply (stage spread too
+narrow), p near 0 = too shallow, p near 0.5 = calibrated.
+
+1. PER CELL. Mean over passing fits of p, of |p - 0.5|, of the observed and
+replicate-mean peak-to-trough range (log10 units), and mean bias (h) for
+reference. Unpaired across cells.
+
+ window fit_nc   pin  n p_range   dev  p_sd T_obs T_rep   bias
+    168    288  half 59   0.349 0.151 0.233 2.381 2.243  2.893
+    168    288 match 60   0.572 0.072 0.583 2.372 2.454  0.280
+    168    288 truth 60   0.478 0.022 0.425 2.372 2.363  1.379
+    168    288    x2 60   0.560 0.060 0.563 2.372 2.443  0.418
+    168    384  half 58   0.414 0.086 0.333 2.378 2.307  2.467
+    168    384 truth 60   0.566 0.066 0.570 2.372 2.449  0.643
+    168    384    x2 60   0.650 0.150 0.710 2.372 2.535 -0.360
+    168    512  half 60   0.482 0.018 0.427 2.372 2.367  1.997
+    168    512 match 60   0.564 0.064 0.564 2.372 2.447  0.934
+    168    512 truth 60   0.626 0.126 0.671 2.372 2.512  0.046
+    168    512    x2 59   0.699 0.199 0.781 2.374 2.593 -0.918
+    192    288  half 60   0.304 0.196 0.245 2.383 2.199  2.182
+    192    288 match 60   0.542 0.042 0.583 2.383 2.426  0.270
+    192    288 truth 60   0.417 0.083 0.428 2.383 2.310  1.001
+    192    288    x2 60   0.526 0.026 0.565 2.383 2.411  0.366
+    192    384  half 60   0.349 0.151 0.335 2.383 2.246  1.612
+    192    384 truth 60   0.524 0.024 0.571 2.383 2.410  0.367
+    192    384    x2 60   0.640 0.140 0.688 2.383 2.525 -0.413
+    192    512  half 59   0.405 0.095 0.425 2.384 2.298  1.168
+    192    512 match 60   0.510 0.010 0.563 2.383 2.396  0.452
+    192    512 truth 59   0.595 0.095 0.656 2.385 2.484 -0.220
+    192    512    x2 59   0.680 0.180 0.718 2.392 2.575 -1.131
+
+1b. CELL LEVEL. Spearman over the 11 cells of a window, between the cell's
+mean p and its spread mismatch at 168 h (cycles, sd) and its mean bias (h);
+and the spread mismatch at which mean p crosses 0.5 by linear interpolation,
+which would be 0 for a calibrated check.
+
+ window n_cells rho_p_spread rho_p_bias spread_at_p_half
+    168      11      -0.9909    -0.9636           0.0097
+    192      11      -0.9450    -1.0000           0.0013
+
+2. SELECTION. Per (window, rep), candidates = that dataset's passing fits.
+trough = the candidate with the smallest |p - 0.5|; elpd = highest elpd_loo
+(_scripts/unitsim-diag.R), where available; oracle = smallest |bias|; random =
+mean |bias| over the candidates. |bias| in hours.
+
+ window reps n_cand trough  elpd true_model oracle random trough_beats_elpd   rho
+    168   60 10.933  1.727 1.427      0.998  0.293  1.444                20 0.108
+    192   60 10.950  1.124 1.025      0.573  0.112  0.960                26 0.166
+
+How often each cell is chosen by the trough check, per window:
+ window       cell selected
+    168  half-f288       14
+    168  half-f384        9
+    168    x2-f512        8
+    168    x2-f384        6
+    168 truth-f512        5
+    168 match-f288        4
+    168 truth-f288        4
+    168  half-f512        3
+    168 match-f512        3
+    168 truth-f384        2
+    168    x2-f288        2
+    192  half-f288       11
+    192    x2-f512       10
+    192  half-f384        8
+    192 truth-f512        7
+    192 match-f288        5
+    192 match-f512        5
+    192    x2-f384        5
+    192  half-f512        4
+    192    x2-f288        3
+    192 truth-f288        2

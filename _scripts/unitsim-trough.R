@@ -179,6 +179,27 @@ sp |> group_by(window, fit_nc, pin) |>
               bias = mean(bias), .groups = "drop") |>
     mutate(across(where(is.double), \(v) round(v, 3))) |> as.data.frame() |> print(row.names = FALSE)
 
+## Cell-level: is p a monotone read-out of the spread mismatch, and of bias?
+vi <- function(b) 1 / (4 * (2 * b + 1))
+B <- c(half = 10.0491, truth = 20.0981, x2 = 40.1963)
+k168 <- 168 / sp$true_cl[1]
+ref_sd <- sqrt(vi(B[["truth"]]) + k168 / 384)
+cells <- sp |> group_by(window, fit_nc, pin) |>
+    summarise(p = mean(p_range), bias = mean(bias), .groups = "drop") |>
+    mutate(spread_sd = if_else(pin == "match", ref_sd,
+                               sqrt(vi(unname(B[pin])) + k168 / fit_nc)),
+           spread_diff = spread_sd - ref_sd)
+cat("\n1b. CELL LEVEL. Spearman over the 11 cells of a window, between the cell's\n",
+    "mean p and its spread mismatch at 168 h (cycles, sd) and its mean bias (h);\n",
+    "and the spread mismatch at which mean p crosses 0.5 by linear interpolation,\n",
+    "which would be 0 for a calibrated check.\n\n", sep = "")
+cells |> group_by(window) |>
+    summarise(n_cells = n(), rho_p_spread = cor(p, spread_diff, method = "spearman"),
+              rho_p_bias = cor(p, bias, method = "spearman"),
+              spread_at_p_half = approx(p, spread_diff, xout = 0.5, ties = mean)$y,
+              .groups = "drop") |>
+    mutate(across(where(is.double), \(v) round(v, 4))) |> as.data.frame() |> print(row.names = FALSE)
+
 cat("\n2. SELECTION. Per (window, rep), candidates = that dataset's passing fits.\n",
     "trough = the candidate with the smallest |p - 0.5|; elpd = highest elpd_loo\n",
     "(_scripts/unitsim-diag.R), where available; oracle = smallest |bias|; random =\n",

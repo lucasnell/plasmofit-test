@@ -3908,6 +3908,62 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Trough-depth predictive check, 2026-11-02: it reads the stage-spread mismatch almost perfectly across cells, and still cannot pick a model for one dataset
+
+Lucas asked for a check targeted at the oscillation rather than the total
+predictive density. Built as `_scripts/unitsim-trough.R` and run on the 1320
+fixed-`b_shape`, truth-centred-prior fits of the fixed-pin grid (1313 pass);
+output `_data/unitsim-read-trough-2026-11-02.txt`. No refitting: each draw's
+mean trajectory is recovered from the model's own `log_lik` (a normal
+density, so it gives the distance to the trajectory, and the 4-6 observations
+sharing each time fix the sign), checked against a direct
+`generate_starts` + `mat_exp_series` trajectory to 5e-13
+(`_data/unitsim-check-trough-2026-11-02.txt`).
+
+Statistic, fixed before scoring: on log10(y + 1) over the unit's
+observations, remove an OLS line in time, take T = max − min of the
+residuals (peak-to-trough range); p = P(T_replicate >= T_observed) over
+draws. p near 1 means the model oscillates too deeply (stage spread too
+narrow), near 0 too shallow, 0.5 calibrated.
+
+**It measures the right thing.** Spearman over the 11 cells of a window
+between the cell's mean p and its total stage-spread mismatch at 168 h:
+**−0.99 (168 h window) and −0.95 (192 h)**; against the cell's mean
+`cycle_length` bias, **−0.96 and −1.00**. The ordering is physical: the
+widest-spread cell (`b_shape` half, fit `n_c` 288) has p 0.30-0.35, the
+narrowest (`b_shape` x2, fit 512) 0.68-0.70.
+
+**It is offset as a calibration criterion.** Mean p crosses 0.5 at a spread
+mismatch of **+0.0097 cycles at the 168 h window** and +0.0013 at 192 h, not
+at 0. At 168 h, therefore, "best calibrated" is a cell with too much spread,
+which is biased long: the two cells with mean |p − 0.5| smallest there are
+`truth`/fit 288 (0.022, bias +1.38 h) and `half`/fit 512 (0.018, +2.00 h),
+not the true model (0.066, +0.64 h).
+
+**Per dataset it is worse than a random pick.** Selecting the candidate with
+the smallest |p − 0.5| (means over 60 replicates, |bias| in hours):
+
+| window | trough check | elpd | true model | least biased | random pick | trough beats elpd |
+|---|---|---|---|---|---|---|
+| 168 | 1.73 | 1.43 | 1.00 | 0.29 | 1.44 | 20 of 60 |
+| 192 | 1.12 | 1.03 | 0.57 | 0.11 | 0.96 | 26 of 60 |
+
+The failure mode is visible in which cell gets chosen: `half`/fit 288, the
+most biased cell of all (+2.89, +2.18 h), is chosen most often (14 and 11 of
+60). Its p is both offset and noisy, so it lands near 0.5 by chance more
+often than better cells do. **Choosing on |p − 0.5| per dataset rewards a
+noisy statistic**, which is a general hazard of calibration-based selection,
+not a quirk of this check.
+
+**Reading.** The oscillation does carry the information: averaged over 60
+replicates the check orders the candidates by spread mismatch almost
+perfectly, which elpd never came close to doing (rank correlation with
+|bias| −0.23). But one dataset of 34-46 observations does not pin the
+statistic down well enough to choose, and the criterion needs a calibration
+offset estimated from somewhere else. For the real data this means a
+trough-depth check can say whether a fitted model oscillates too deeply or
+too shallowly ACROSS the 14 units, but not which `n_c` to use from one unit.
+
 ### What the literature can and cannot anchor, 2026-11-02: `n_c` has one external anchor, and it points above 384; `sd_iRBC` has none
 
 After the fixed-pin grid showed the data cannot rank fixed (`b_shape`, `n_c`)
