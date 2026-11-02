@@ -1,0 +1,6 @@
+Recovered mu (from log_lik) against a direct generate_starts + mat_exp_series
+trajectory, log10(y + 1) at the unit's distinct observation times.
+ draw 1  max |recovered - direct| 2.602e-13
+ draw 2  max |recovered - direct| 4.778e-13
+ draw 3  max |recovered - direct| 4.974e-13
+w192-g384-fix-rep1-ptruth: T_range observed 2.051, replicate mean 2.531, p 0.944; T_sd observed 0.558, replicate mean 0.618, p 0.825

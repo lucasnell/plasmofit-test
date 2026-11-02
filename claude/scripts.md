@@ -63,6 +63,7 @@ cycle-length hierarchy comparison and four for the schedule-bias simulation
 | `unitsim-spread-check.R` | cluster | checks the total-spread formula behind the `b_shape` mappings against the model's own stage distribution (`expm` of the package's `build_A`), per lineage (R = 1) and for the population |
 | `unitsim-external-anchors.R` | anywhere | the externally measurable quantities `n_c` and `b_shape` imply: CV of one parasite's cycle duration (1/sqrt(`n_c`)) and the width of the t = 0 age distribution, both ways |
 | `unitsim-nuisance-pilot.R` | cluster | exploratory pilot (6 datasets): do the other parameters differ across the fixed-pin candidates and track |bias| better than elpd? |
+| `unitsim-trough.R` | cluster | trough-depth posterior predictive check: recovers each draw's mean trajectory from `log_lik` (no re-run), compares the peak-to-trough range of OLS-detrended log10(y+1) with replicates, and selects by \|p - 0.5\| against elpd, the least-biased candidate, and a random pick. Modes `UNITSIM_TROUGH` = check / compute / read |
 | `unitsim-bench-read.R` | cluster | reads the 2026-10-22 layout benchmark (one vs two single-unit chains per L3 group): wall time, throughput per L3 group, paired per-chain time and ms per gradient |
 | `loadbalance-test.R` (`.sh`) | cluster | times `grad_log_prob` (no sampling): each full-model trajectory combo alone (hold-out), the full model on 1 and 4 threads, and Mefloquine's marginal cost per time point; bounds what threading over (combo, time) pairs could gain |
 
