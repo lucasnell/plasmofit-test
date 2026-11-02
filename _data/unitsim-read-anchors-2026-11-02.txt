@@ -1,0 +1,39 @@
+cycle_length 42.844 h (the single-unit truth).
+
+n_c -> implied CV of one parasite's cycle duration, and its sd in hours
+
+ n_c    96  CV  10.21%  sd  4.37 h
+ n_c   192  CV   7.22%  sd  3.09 h
+ n_c   288  CV   5.89%  sd  2.52 h
+ n_c   384  CV   5.10%  sd  2.19 h
+ n_c   512  CV   4.42%  sd  1.89 h
+ n_c   768  CV   3.61%  sd  1.55 h
+ n_c  1024  CV   3.12%  sd  1.34 h
+
+Inverse: the n_c implied by a given CV
+
+ CV  2.00%  n_c    2500
+ CV  3.00%  n_c    1111
+ CV  4.00%  n_c     625
+ CV  5.00%  n_c     400
+ CV  8.45%  n_c     140
+ CV 10.00%  n_c     100
+
+b_shape -> sd of the t = 0 age distribution, and the window holding 99%
+
+ b_shape   5.86  sd 0.140 cycles =  6.01 h   99% window 28.59 h
+ b_shape  10.05  sd 0.109 cycles =  4.66 h   99% window 22.95 h
+ b_shape  14.00  sd 0.093 cycles =  3.98 h   99% window 19.83 h
+ b_shape  20.10  sd 0.078 cycles =  3.34 h   99% window 16.81 h
+ b_shape  40.20  sd 0.055 cycles =  2.37 h   99% window 12.09 h
+ b_shape  46.41  sd 0.052 cycles =  2.21 h   99% window 11.28 h
+ b_shape  74.60  sd 0.041 cycles =  1.75 h   99% window  8.95 h
+ b_shape 400.00  sd 0.018 cycles =  0.76 h   99% window  3.89 h
+
+Inverse: the b_shape implied by a 99% bursting window of a given width
+
+ window   6.0 h  b_shape   167.7
+ window   9.0 h  b_shape    73.8
+ window  12.0 h  b_shape    40.9
+ window  17.0 h  b_shape    19.6
+ window  24.0 h  b_shape     9.0
