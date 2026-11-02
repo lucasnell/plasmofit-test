@@ -3970,7 +3970,7 @@ average). Means over 60 reps; |bias| in hours:
 
 **Reading.** In this unit the data cannot rank fixed (`b_shape`, `n_c`)
 pairs, even with the truth among them and the prior at the truth, while the
-choice moves `cycle_length` by up to ~4 h. The ranking that matters for bias
+choice moves mean bias across a 3.3-3.8 h range. The ranking that matters for bias
 is the total spread, which the data fix only loosely. Scope: one unit, 6
 series, no hierarchy.
 
