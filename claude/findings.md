@@ -3908,6 +3908,71 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### What the literature can and cannot anchor, 2026-11-02: `n_c` has one external anchor, and it points above 384; `sd_iRBC` has none
+
+After the fixed-pin grid showed the data cannot rank fixed (`b_shape`, `n_c`)
+pairs, Lucas supplied the papers (`_data/new-info/`, gitignored). Numbers and
+derivations: `_scripts/unitsim-external-anchors.R`,
+`_data/unitsim-read-anchors-2026-11-02.txt`; sources in `references.md`.
+
+**The two kinds of cycle-period variability, only one of which is `n_c`.**
+In the Erlang chain one parasite crosses `n_c` exponential compartments per
+cycle, so its cycle duration has CV = 1 / sqrt(`n_c`), redrawn independently
+each cycle, and the population spread grows as sqrt(cycles). The other kind
+is persistent: each parasite keeps its own period and the spread grows
+LINEARLY in cycles. **The model has no term for the persistent kind** — it
+can only absorb it into `b_shape` and `n_c`.
+
+| `n_c` | 96 | 192 | 288 | 384 | 512 | 768 | 1024 |
+|---|---|---|---|---|---|---|---|
+| implied CV of one cycle | 10.2% | 7.2% | 5.9% | 5.1% | 4.4% | 3.6% | 3.1% |
+| sd at `cycle_length` 42.844 h | 4.37 | 3.09 | 2.52 | 2.19 | 1.89 | 1.55 | 1.34 |
+
+**Smith et al. (2020) Table S6 is the persistent kind, so it is not an anchor
+for `n_c`.** Their supplement says they "assume each parasite has a constant
+natural IEC frequency" and do not model cycle-over-cycle variability. 3D7's
+CoV is 2.76% (2.76-4.20% over +/- 1 h on the mean period); read as
+1 / sqrt(`n_c`) that would say `n_c` 1313, and that reading is wrong. 3D7 is
+also the worst-fitting of their five strains (model error 1.16-1.59 against
+0.168-0.647).
+
+**Park et al. (2020) is the anchor.** Time-lapse microscopy of single
+3D7HT-GFP parasites, burst to burst, splitting the interval into founder
+(persistent, `sigma_i`) and sibling (per cycle, `sigma_k`) parts. Only
+`sigma_k` is what `n_c` represents:
+
+| Park et al., Table 1 | mean period | `sigma_k` (per cycle) | CV | implied `n_c` | `sigma_i` (persistent) |
+|---|---|---|---|---|---|
+| synchronized rep 1 | 54.0 h | 1.7 h | 3.15% | 1009 | 2.9 h |
+| synchronized rep 2 | 57.3 h | 2.7 h | 4.71% | 450 | 2.7 h |
+| unsynchronized rep 1 | 57.5 h | 5.0 h | 8.70% | 132 | 4.9 h |
+
+- **Both synchronized replicates put `n_c` above 384** (450 and 1009), the
+  current setting. The unsynchronized replicate (132) is the odd one, and its
+  founder groups are least clean.
+- **The persistent part is as large as the per-cycle part** (`sigma_i` 2.7-2.9
+  h against `sigma_k` 1.7-2.7 h in the synchronized replicates). This is
+  direct evidence for the component the 2026-10-08 decay-law test could not
+  detect in these data — not a reason to revisit the IPM decision
+  (`ipm-decision.md`), which rests on the profiles saturating, but it does
+  say the missing term is real rather than hypothetical.
+- Caveats: in vitro; mean periods 54-57 h under the microscope against
+  ~39-43 h expected, attributed to culture conditions after GFP burden and
+  photo-toxicity were ruled out (their Fig. S4); n = 3 replicates, no
+  interval given on `sigma_k`.
+
+**`b_shape` has no measurement yet.** What it implies is a window for the
+inoculum's ages: 20.10 implies 99% of the first wave bursting over 16.8 h,
+40.20 over 12.1 h, 400 over 3.9 h; Greischar & Childs's "synchronous"
+assumption of 9 h implies `b_shape` ~74. Nothing in these papers measures the
+QIMR-B inoculum's stage spread.
+
+**`sd_iRBC` has no anchor in the released data.** Wöckner et al. ran samples
+in duplicate or triplicate and **geometrically averaged them on the log10
+scale before release**, so the technical replicate spread is not recoverable
+from Supplementary Table 2. Getting it would mean asking QIMR-B for the
+per-replicate values.
+
 ### Single-unit fixed-pin grid, read 2026-11-02: bias follows the spread mismatch, and choosing by elpd is no better than choosing at random
 
 SLURM 32439 (2026-10-29 11:12 to 10-31 21:08, 75% of the node by Lucas's

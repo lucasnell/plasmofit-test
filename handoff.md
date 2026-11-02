@@ -2,6 +2,17 @@
 
 ## State of play right now — read this first
 
+**2026-11-02: external anchors, from the papers Lucas supplied**
+(`_data/new-info/`, gitignored; `findings.md`, "What the literature can and
+cannot anchor"). **Park et al. (2020) is the anchor for `n_c`**: single-cell
+time-lapse of 3D7, sibling (per-cycle) sd gives `n_c` 450 and 1009 in two
+synchronized replicates, both above the current 384. **Smith et al. (2020)
+is not**: their CoV is persistent per-parasite heterogeneity by explicit
+assumption, a mechanism the model has no term for — and Park measures it
+directly, as large as the per-cycle part. `sd_iRBC` cannot be anchored:
+Wöckner averaged the qPCR replicates before release. Open with Lucas: what,
+if anything, to do with an `n_c` anchor of 450-1009. No jobs running.
+
 **2026-11-02: fixed-pin grid read** (`findings.md`, "Single-unit fixed-pin
 grid"; `_data/unitsim-read-pins-2026-11-02.txt`). 1193 of 1200 pass. Bias
 follows the fit's spread mismatch at 168 h; the least-biased cell is the
