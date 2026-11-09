@@ -1,0 +1,37 @@
+360 truth-pin fits (gen 384, b_shape fixed, prior at the truth); 359 pass.
+
+Truth: cycle_length 42.844; R 13.866; log10_total0 -0.795; b_offset 0.226; sd_iRBC 0.315
+
+1. PER CELL. Posterior mean of each parameter, mean over passing fits.
+
+ window fit_nc  n cycle_length      R log10_total0 b_offset sd_iRBC
+    168    288 60       44.223 10.938       -0.357    0.308   0.330
+    168    384 60       43.487 11.099       -0.380    0.265   0.325
+    168    512 60       42.890 11.412       -0.425    0.256   0.326
+    192    288 60       43.845 11.789       -0.511    0.201   0.327
+    192    384 60       43.211 12.255       -0.560    0.203   0.324
+    192    512 59       42.624 12.878       -0.638    0.235   0.325
+
+2. BIAS PER CELL (posterior mean minus truth), same cells.
+
+ window fit_nc  n cycle_length      R log10_total0 b_offset sd_iRBC
+    168    288 60        1.379 -2.928        0.438    0.082   0.015
+    168    384 60        0.643 -2.767        0.415    0.039   0.010
+    168    512 60        0.046 -2.454        0.369    0.030   0.011
+    192    288 60        1.001 -2.077        0.284   -0.025   0.012
+    192    384 60        0.367 -1.611        0.235   -0.023   0.009
+    192    512 59       -0.220 -0.988        0.157    0.009   0.010
+
+3. PAIRED, identical data: each fit minus the fit-384 fit of the same
+   replicate. mean (se) over pairs; both must pass.
+
+   fit 288 - fit 384
+ window pairs   cycle_length              R   log10_total0       b_offset        sd_iRBC
+    168    60 +0.736 (0.019) -0.161 (0.035) +0.023 (0.006) +0.043 (0.008) +0.005 (0.001)
+    192    60 +0.634 (0.017) -0.467 (0.035) +0.049 (0.005) -0.002 (0.008) +0.003 (0.001)
+
+   fit 512 - fit 384
+ window pairs   cycle_length              R   log10_total0       b_offset        sd_iRBC
+    168    60 -0.597 (0.020) +0.313 (0.042) -0.046 (0.006) -0.009 (0.006) +0.001 (0.001)
+    192    59 -0.582 (0.016) +0.619 (0.036) -0.079 (0.005) +0.031 (0.003) +0.002 (0.001)
+

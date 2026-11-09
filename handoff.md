@@ -9,7 +9,10 @@ the truth is 384 shortens `cycle_length` by 0.59 h (119 of 119 pairs) and
 costs no accuracy (mean |bias| 0.69 h against 0.79 h correct); fitting at
 384 when the truth is 1024 costs +1.0 to +1.4 h of long bias. **But no cell
 generates at 1024 and fits at 512**, which is where Park's figure would put
-the real fit. Filling it is one 60-fit arm, under a day. Nothing submitted.
+the real fit. Filling it is one 60-fit arm, under a day. **The other
+parameters move the same way** (`unitsim-ncother.R`): raising the fit `n_c`
+improves `R`, `log10_total0` and `b_offset` too and leaves `sd_iRBC` flat,
+so nothing is traded away. Nothing submitted.
 
 **2026-11-09 (afternoon): starting-distribution design drafted, no code**
 (`claude/start-dist-design.md`; Lucas chose this ahead of refitting at

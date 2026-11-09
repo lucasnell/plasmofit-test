@@ -3975,6 +3975,35 @@ truth is expensive, but not what fitting at 512 does when the truth is 1024.
 Filling that cell is one arm of 60 fits at fit `n_c` 512, ~0.3 h per chain
 from the 2026-10-29 probe, well under a day.
 
+**The other parameters move the same way** (Lucas's follow-up; script
+`_scripts/unitsim-ncother.R`, output
+`_data/unitsim-read-ncother-2026-11-09.txt`, over the 360 truth-pin fits of
+block A, where `b_shape` is fixed so it cannot absorb the misfit). Bias of
+the posterior mean per cell, mean over the 59-60 passing fits:
+
+| window | fit `n_c` | `cycle_length` (h) | `R` | `log10_total0` | `b_offset` | `sd_iRBC` |
+|---|---|---|---|---|---|---|
+| 168 | 288 | +1.38 | −2.93 | +0.438 | +0.082 | +0.015 |
+| 168 | 384 | +0.64 | −2.77 | +0.415 | +0.039 | +0.010 |
+| 168 | 512 | +0.05 | −2.45 | +0.369 | +0.030 | +0.011 |
+| 192 | 288 | +1.00 | −2.08 | +0.284 | −0.025 | +0.012 |
+| 192 | 384 | +0.37 | −1.61 | +0.235 | −0.023 | +0.009 |
+| 192 | 512 | −0.22 | −0.99 | +0.157 | +0.009 | +0.010 |
+
+Paired on identical data, fit 512 − fit 384: `cycle_length` −0.60 and
+−0.58 h, **`R` +0.31 and +0.62**, `log10_total0` −0.046 and −0.079,
+`b_offset` −0.009 and +0.031, `sd_iRBC` +0.001 and +0.002 (se 0.001-0.042).
+
+**No parameter is traded away.** Every one either improves or is unchanged
+as the fit `n_c` rises: `cycle_length` and `log10_total0` monotonically,
+`R` monotonically toward its truth, `b_offset` to within 0.03 of it, and
+`sd_iRBC` flat at +0.01 throughout. `R` remains badly low everywhere
+(−1.0 to −2.9 against a truth of 13.87), as the 2026-09-24 decision says it
+must, but a higher fit `n_c` moves it UP, toward the range burst size
+implies, by +0.3 to +0.6 per step. So the usual suspicion about a setting
+that improves the headline number — that it is pushing the error into a
+nuisance — does not hold here.
+
 **Reading.** Nothing here argues against moving the real fit up. It argues
 that the risk is one-sided: if the truth is near 384 the move costs ~0.6 h
 of shortening and no accuracy, while if the truth is near 1024 staying at
