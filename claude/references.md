@@ -82,12 +82,25 @@ inoculum was prepared, known independently of any fit.
 Caveats, in order of how much they could matter:
 1. **The two-fold difference is the finding; ring selection is Park's
    speculation about it**, offered in discussion and not tested.
-2. **It may not persist.** Park measured ONE burst-to-burst interval. These
-   observations run 72-216 h, cycles 1.6 to 4.8 after injection, so the
-   window is mostly later cycles. If the reduction is transient the rate
-   would rise over the infection, and the model has no way to express that:
-   `n_c` is one constant for the whole trajectory, so a single value would
-   average over it, weighted toward the later cycles where the data are.
+2. **It may not persist, and NO AVAILABLE DATA CAN SETTLE THAT** (checked
+   2026-11-09). Park's imaging "was limited to 80+ hours because uninfected
+   red blood cells started lysing", against a ~55 h cycle, so each lineage
+   is followed for ONE burst-to-burst interval: founder's first burst to its
+   progeny's second burst, and no third burst. Their Dataset S1 (Dryad
+   doi 10.5061/dryad.7sqv9s4q0) holds exactly those three columns, so
+   downloading it would not help; "quantification of variability in the
+   timing of bursts over one asexual cycle" is their own description. A
+   within-dataset decay test is not available either: in the synchronized
+   culture all founders burst within ~10 h of release (mean 6.8, sd 4.1),
+   so time since ring selection barely varies. Smith et al.'s data are
+   under two cycles likewise. These observations run 72-216 h, cycles 1.6
+   to 4.8 after injection, so if the reduction is transient the rate would
+   rise over the infection and `n_c`, one constant for the whole
+   trajectory, would average over it, weighted toward the later cycles
+   where the data are. The decay-law test (2026-10-08, SLURM 29684) is the
+   closest the real data come, and it could not distinguish sqrt(cycles)
+   from a linear component, so they lack the power to detect it either.
+   **Treat this as a standing limitation, not an open task.**
 3. In vitro; mean periods 54-57 h under the microscope against ~39-43 h
    expected, which they attribute to culture conditions, having ruled out
    GFP burden and photo-toxicity (Fig. S4, control 48.7 +/- 5.0 h). CV is

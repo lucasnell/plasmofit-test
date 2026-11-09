@@ -4205,7 +4205,11 @@ also the worst-fitting of their five strains (model error 1.16-1.59 against
   ground is deliberately NOT the infection's observed synchrony, which would
   be circular. Both caveats in `references.md`: ring selection is their
   speculation, and the reduction may not persist past the first cycle, while
-  these data sit in cycles 1.6-4.8.
+  these data sit in cycles 1.6-4.8. **Persistence cannot be checked**:
+  Park's imaging stopped at 80+ h against a ~55 h cycle, so every lineage
+  has exactly one burst-to-burst interval and their Dryad dataset holds
+  only those; the real data's own decay-law test (2026-10-08) could not
+  distinguish sqrt(cycles) from linear either. A standing limitation.
 - **The persistent part is as large as the per-cycle part** (`sigma_i` 2.7-2.9
   h against `sigma_k` 1.7-2.7 h in the synchronized replicates). This is
   direct evidence for the component the 2026-10-08 decay-law test could not
