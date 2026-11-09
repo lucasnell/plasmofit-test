@@ -2,6 +2,15 @@
 
 ## State of play right now — read this first
 
+**2026-11-09: the inoculum's ages** (`findings.md`, "The inoculum's ages";
+`_scripts/inoculum-age-check.R`). Every QIMR-B inoculum is one donor unit of
+circulating iRBCs (drawn 6 h after fever onset, Glycerolyte-frozen, so rings
+only), shared by all 14 units. That allows at most an sd of ~5.9 h and
+nothing past ~23 h; the real-data fit instead puts 7-42% of the starting
+mass (median 20%) in sequestered compartments, because its wrapped Beta
+straddles the cycle end. Proposed, untested: one shared, one-sided start.
+Cheng et al. 1997 (donor parasitaemia, stages) not retrievable. No jobs.
+
 **2026-11-02 (afternoon): trough-depth check built and read** (`findings.md`,
 "Trough-depth predictive check"; `_scripts/unitsim-trough.R`,
 `_data/unitsim-read-trough-2026-11-02.txt`). Across the 11 grid cells it

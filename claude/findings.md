@@ -3908,6 +3908,59 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### The inoculum's ages, 2026-11-09: a circulating, ring-only, single-donor inoculum is far more constrained than the fitted start, which puts 7-42% of it in sequestered schizonts
+
+Lucas: the inoculum was circulating iRBCs, so nearly all should be under
+~18 h old. Sources traced from Wöckner et al. (`references.md`): every QIMR-B
+inoculum came from ONE donor unit drawn 13 days after mosquito bites and 6 h
+after onset of high fever, frozen in Glycerolyte 57, thawed and injected
+within 60 min, ~30% viable. Script `_scripts/inoculum-age-check.R`, output
+`_data/inoculum-age-check-2026-11-09.txt`.
+
+**What the inoculum can be.**
+- Only circulating iRBCs are in venous blood. By the model's own
+  sequestration curve (package `make_log_y_vals`, Archer et al. 2018 fitted
+  to Kriek et al. 2003) the circulating share is 0.94 at 12 h, 0.49 at the
+  half-sequestration age of 18.58 h, 0.06 at 24 h, 0.003 at 30 h.
+- Only rings survive Glycerolyte freezing (ATCC handling sheets), which can
+  only narrow that further.
+- **Loosest case**, a fully asynchronous donor: the inoculum's ages are then
+  proportional to the circulating curve, mean 9.6 h, sd 5.9 h, 99% below
+  23.0 h. Its sd corresponds to a Beta `b_shape` of 5.0-6.5 for cycle lengths
+  39-44 h. A real donor 6 h after fever onset, i.e. just after a wave of
+  rupture, is more synchronous than that, so **`b_shape` should be at least
+  ~5-6.5 and essentially no mass should sit past ~23 h**.
+- **All 14 units received the same material**, so they share one t = 0 age
+  distribution, up to the <= 60 min between thaw and injection.
+
+**What the real-data fit has.** `np_wide_total0_nc384_t` (no_pool, `n_c`
+384, `b_shape` estimated). Cells: posterior means per `grp_init` unit
+converted to the t = 0 age distribution at the trial's `cycle_length`
+(package `beta_starts` mapping, checked against the package function):
+modal age 1.1-11.7 h across units (median 5.0), sd 3.3-6.1 h, and **a share
+of 0.071-0.416 (median 0.204) placed in SEQUESTERED compartments at t = 0**,
+against a floor of 0.024 for brand-new rings. Four units (DSM265,
+SJ733IBSMCS.2300, MMV048_PartB, Piperaquine) exceed 0.27; for DSM265, 39%
+of the starting mass is at ages over 30 h (package check).
+
+**Why.** The start is a symmetric Beta over the whole cycle, wrapped. With
+the mode at 1-5 h its left half wraps to the END of the previous cycle, so
+the model reads part of the inoculum as schizonts that burst within hours
+and multiply by `R`. A ring-only inoculum cannot contain them. That share
+trades directly against `log10_total0` and `R`, which these data already
+fail to identify (2026-09-24), and against `b_shape`.
+
+**What it suggests, not yet tested.** (1) Share one t = 0 age distribution
+across all 14 units instead of 14 free ones. (2) Confine it to the
+circulating window, either by a one-sided distribution on [0, ~23 h] in
+place of the wrapped full-cycle Beta, or by priors that keep the mode near
+the middle of the ring window and the mass past ~23 h near zero. (3) Minor:
+`generate_starts` splits each starting age into circulating and sequestered
+by y(age), but an injected inoculum is all circulating at t = 0. Whether
+(1)-(2) narrow the `b_shape`/`n_c` trade-off is the open question; the
+simulations' truth (MMV048_PIB: mode 11.7 h, sd 3.3 h, 0.019 of mass past
+18.6 h) already satisfies them, so they would not change those results.
+
 ### Trough-depth predictive check, 2026-11-02: it reads the stage-spread mismatch almost perfectly across cells, and still cannot pick a model for one dataset
 
 Lucas asked for a check targeted at the oscillation rather than the total

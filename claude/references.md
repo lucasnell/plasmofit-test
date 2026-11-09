@@ -99,3 +99,38 @@ facts for anchoring, found while looking for one on `sd_iRBC`:
   hosts**, not between parasites, so it anchors neither `n_c` nor `b_shape`.
 - All inocula are 3D7 from the QIMR-B master cell bank; "the inoculum was not
   synchronized between cohorts", which is about phase, not spread.
+
+
+## The QIMR-B 3D7 inoculum: McCarthy et al. (2011), PLoS One 6:e21914;
+## Cheng et al. (1997), Am J Trop Med Hyg 57:495-500
+
+Traced 2026-11-09 from Wöckner et al. (refs 9 and 37; their Discussion says
+all IBSM inocula "were prepared from a single donor unit collected from a
+volunteer experimentally infected by mosquito bite from a single P falciparum
+3D7 in vitro culture"). McCarthy et al. 2011 (Methods, read via PMC
+PMC3159571): mosquitoes fed on 3D7 gametocytes bit a healthy volunteer; **a
+500 mL unit of blood was taken 13 days after the bites, six hours after he
+became ill with high fever**; leucocyte-depleted, mixed with **Glycerolyte
+57**, frozen in 1 mL vials in liquid nitrogen. Inocula: an aliquot thawed,
+washed, diluted; **thaw to injection <= 60 min**, on ice; "~30% of blood
+stage parasites were viable". Donor parasitaemia and stage composition are
+NOT reported there; they should be in Cheng et al. 1997, which could not be
+retrieved (publisher 403). A 2021 Malaria Journal paper on a replacement 3D7
+cell bank (doi 10.1186/s12936-021-03627-z) was also not retrievable.
+
+Two consequences for the model (`findings.md`, "The inoculum's ages"): the
+injected iRBCs are the donor's CIRCULATING iRBCs, and only rings survive
+Glycerolyte freezing (ATCC strain handling sheets: "Only young cells (rings)
+can be frozen in glycerolyte medium"); and every unit received the SAME
+donor material, so all 14 units share one t = 0 age distribution.
+
+## Cao et al. (2019), "Modeling the dynamics of Plasmodium falciparum
+## gametocytes in humans during malaria infection", eLife 8:e49058
+
+Read 2026-11-09 (eLife site; PMC blocked). Within-host model fitted to 17
+volunteers given ~2800 3D7 iRBCs (Collins et al. 2018). The inoculum's ages
+are **Gaussian with mean mu and sd sigma, estimated per volunteer with flat
+priors U(0, 35) h and U(0, 20) h**, no biological justification given;
+cycle fixed at 42 h, sequestration age fixed at 25 h. Posteriors only in
+figure supplements. Prior art for the same free initial age distribution
+this project uses, equally unconstrained.

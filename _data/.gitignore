@@ -50,3 +50,4 @@ unitsim/
 !loadbalance-full1-*.txt
 !loadbalance-full4-*.txt
 !loadbalance-unit-*.txt
+!inoculum-age-check-*.txt
