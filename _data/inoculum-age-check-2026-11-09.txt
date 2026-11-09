@@ -50,3 +50,67 @@
 
    Across the 14 units: modal age 1.1-11.7 h (median 5.0); sd 3.3-6.1 h;
    sequestered share at t = 0 0.071-0.416 (median 0.204).
+
+4. SHARE OF THE START THAT BURSTS WITHIN 24 h OF INJECTION
+   Cheng et al. fitted their 1995 volunteers with an inoculum of two broods
+   24 h apart under a 48 h cycle and found 39% dividing in the first 24 h.
+   Same quantity for each unit of the real-data fit (share of t = 0 mass at
+   ages above cycle_length - 24 h), and the most a circulating-only inoculum
+   from an asynchronous donor could have (ages weighted by y(a)):
+
+   Mefloquine.1800    cycle 42.64 h: 0.217
+   OZ439.1800         cycle 45.60 h: 0.049
+   DSM265.1800        cycle 39.62 h: 0.400
+   Piperaquine.1800   cycle 39.39 h: 0.263
+   Ferroquine.1800    cycle 39.52 h: 0.226
+   ACT451840.1800     cycle 44.28 h: 0.034
+   MMV048_PIB.1800    cycle 42.84 h: 0.016
+   OZ439/DSM265.1800  cycle 40.68 h: 0.074
+   EFITA_OZGAM.2800   cycle 40.46 h: 0.075
+   KAE609.1800        cycle 41.01 h: 0.039
+   DSMOZ_2.2800       cycle 44.49 h: 0.029
+   SJ733IBSMCS.2800   cycle 39.65 h: 0.220
+   SJ733IBSMCS.2300   cycle 39.65 h: 0.381
+   MMV048_PartB.2800  cycle 43.43 h: 0.239
+   circulating-only ceiling at cycle 39 h: 0.208 (ages above 15 h)
+   circulating-only ceiling at cycle 42 h: 0.089 (ages above 18 h)
+   circulating-only ceiling at cycle 45 h: 0.026 (ages above 21 h)
+
+5. THE INOCULUM'S SPREAD IS ITSELF A PRODUCT OF n_c
+   The donor's blood stage ran k_donor cycles before collection (first PCR
+   detection day 5.5, or ~7.5 if the day-2 bites dominated, to collection day
+   13.5-14: 6-8.5 days, ~3.5-5 cycles). Under the Erlang chain that alone
+   gives a per-lineage age variance of k_donor / n_c cycles^2, before any
+   spread in liver release (which adds) and before the circulating window and
+   freezing thin the old tail (which removes). If the start carried at least
+   that variance, a unit whose total variance at 168 h is V (from the fit, the
+   quantity the data constrain, 2026-10-09) needs
+       n_c >= (k_donor + 168 / cycle_length) / V.
+   A soft bound, not a strict one; per-lineage, not population (see
+   unitsim-spread-check.R).
+
+   unit                   V sd    k=3.5    k=4.5    k=5.0
+   Mefloquine.1800      0.1469      345      391      415
+   OZ439.1800           0.1566      293      334      354
+   DSM265.1800          0.1511      339      383      405
+   Piperaquine.1800     0.1382      407      459      485
+   Ferroquine.1800      0.1405      393      443      469
+   ACT451840.1800       0.1471      337      383      406
+   MMV048_PIB.1800      0.1276      456      517      548
+   OZ439/DSM265.1800    0.1370      406      460      486
+   EFITA_OZGAM.2800     0.1392      395      447      473
+   KAE609.1800          0.1367      406      460      487
+   DSMOZ_2.2800         0.1457      343      390      413
+   SJ733IBSMCS.2800     0.1444      371      419      443
+   SJ733IBSMCS.2300     0.1498      345      389      411
+   MMV048_PartB.2800    0.1724      248      282      298
+
+   Median over units: n_c >= 358 (k 3.5), 405 (k 4.5), 429 (k 5.0).
+
+   Thinning can be large: if the donor's rupture wave was half done at
+   collection (6 h after fever onset), the not-yet-burst half was sequestered
+   schizonts, absent from the blood, and the circulating half is a
+   half-normal with variance (1 - 2/pi) = 0.36 of the whole. Same bound with
+   the donor's contribution scaled by 0.36:
+
+   Median over units: n_c >= 255 (k 3.5), 272 (k 4.5), 280 (k 5.0); MMV048_PIB.1800 319-352.

@@ -114,20 +114,55 @@ became ill with high fever**; leucocyte-depleted, mixed with **Glycerolyte
 57**, frozen in 1 mL vials in liquid nitrogen. Inocula: an aliquot thawed,
 washed, diluted; **thaw to injection <= 60 min**, on ice; "~30% of blood
 stage parasites were viable". Donor parasitaemia and stage composition are
-NOT reported there; they should be in Cheng et al. 1997, which could not be
-retrieved (publisher 403). A 2021 Malaria Journal paper on a replacement 3D7
-cell bank (doi 10.1186/s12936-021-03627-z) was also not retrievable.
+NOT reported there; they are in Cheng et al. 1997, below.
+
+**Cheng et al. 1997, read 2026-11-09** (PDF from Lucas, `_data/malaria-inoc-x/`,
+gitignored; scanned, read as page images). Two donors, bitten on day 0 and
+again on day 2 by sporozoite-positive mosquitoes; parasites first
+PCR-detectable on day 5.5 (volunteer 2) and 6.5 (volunteer 1). 500 mL was
+taken from each "6 hr after they became ill and developed high fever (13 and
+14 days after the initial mosquito bites, respectively)"; the Results date
+the two collections to days 12.5 and 13.5. **Parasitaemia at collection, by
+microscopy: 18 per uL (volunteer 1) and 290 per uL (volunteer 2)**; the
+stored blood from volunteer 2 held 400 infected cells per uL of packed
+cells. Leucocyte-filtered, Glycerolyte 57, 1 mL aliquots; thawed into 12%
+then 1.6% saline, washed, injected. **Stage composition is not reported.**
+Their own growth model assumed "the inoculum had two broods of parasites
+separated by 24 hr and that parasites older than 24 hr would be
+sequestered", under a 48 h cycle, and estimated **39% of the parasites
+dividing in the first 24 hr**.
+
+## Woolley et al. (2021), "Development and evaluation of a new Plasmodium
+## falciparum 3D7 blood stage malaria cell bank for use in malaria volunteer
+## infection studies", Malar J 20:93, doi 10.1186/s12936-021-03627-z
+
+Read 2026-11-09 (PDF from Lucas). Confirms that the bank behind every study
+in `_data/wockner-cleaned.csv`, **3D7-V2, was produced in 1995 from Cheng et
+al.'s two volunteers**, 500 mL each "six hours following the onset of fever",
+and that 3D7-V2 was chosen over 3D7-V1 for its higher parasitaemia (0.1%
+against under 0.01% of erythrocytes). Two numbers bear on the inoculum's
+ages:
+- **Inocula are dosed on RING-STAGE parasites.** The dilution targets "the
+  number of viable ring-stage parasites in each 2 ml inoculum, taking into
+  account ... the percentage of parasitized erythrocytes, the percentage of
+  ring-stage erythrocytes, and parasite viability", and the percentage of
+  ring-stage parasites is measured by film microscopy for each bank.
+- **Their new bioreactor bank was 96% ring-stage.** That is a cultured,
+  deliberately staged bank, not the 1995 donor blood, so it is an analogue
+  rather than a measurement of 3D7-V2; the ring percentage of 3D7-V2 itself
+  is not given in either paper.
 
 Two consequences for the model (`findings.md`, "The inoculum's ages"): the
 injected iRBCs are the donor's CIRCULATING iRBCs, and only rings survive
-Glycerolyte freezing (ATCC strain handling sheets: "Only young cells (rings)
-can be frozen in glycerolyte medium"); and every unit received the SAME
-donor material, so all 14 units share one t = 0 age distribution.
+Glycerolyte freezing (ATCC product sheet 50110, read 2026-11-09: "Only young
+cells (rings) can be frozen in glycerolyte medium ... because their
+membranes are more robust"); and every unit received the SAME donor
+material, so all 14 units share one t = 0 age distribution.
 
 ## Cao et al. (2019), "Modeling the dynamics of Plasmodium falciparum
 ## gametocytes in humans during malaria infection", eLife 8:e49058
 
-Read 2026-11-09 (eLife site; PMC blocked). Within-host model fitted to 17
+Read 2026-11-09, PDF confirming the web read. Within-host model fitted to 17
 volunteers given ~2800 3D7 iRBCs (Collins et al. 2018). The inoculum's ages
 are **Gaussian with mean mu and sd sigma, estimated per volunteer with flat
 priors U(0, 35) h and U(0, 20) h**, no biological justification given;

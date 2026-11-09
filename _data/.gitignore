@@ -5,6 +5,7 @@
 *.log
 # Papers Lucas supplied 2026-11-02 (copyrighted PDFs and supplements)
 new-info/
+malaria-inoc-x/
 
 # The simulation studies' fits, logs, and frozen run copies
 simstudy/

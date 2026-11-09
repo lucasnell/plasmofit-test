@@ -3950,6 +3950,40 @@ and multiply by `R`. A ring-only inoculum cannot contain them. That share
 trades directly against `log10_total0` and `R`, which these data already
 fail to identify (2026-09-24), and against `b_shape`.
 
+**From the primary sources** (added later the same day, once Lucas supplied
+the PDFs; `references.md`). Cheng et al. 1997 give the donors: both bled 6 h
+after onset of high fever, 12.5-13.5 days after the first bites, at 18 and
+290 parasites per uL; 3D7-V2, the bank behind every study in these data, is
+volunteer 2's (Woolley et al. 2021). **Neither paper reports the stage
+composition of 3D7-V2**, so the ring-only argument still rests on the
+Glycerolyte restriction and on venous blood holding only circulating iRBCs;
+Woolley et al. do show that inocula are DOSED on ring-stage counts, and
+that their cultured replacement bank was 96% ring-stage.
+
+Cheng et al. also fitted their own growth model with "two broods of
+parasites separated by 24 hr", parasites past 24 h taken as sequestered,
+and found **39% dividing in the first 24 hr** under a 48 h cycle. The same
+quantity from this fit, the share of t = 0 mass at ages above
+`cycle_length` − 24 h, runs **0.016 to 0.400 across the 14 units**, against
+a ceiling of 0.21 (39 h cycle) to 0.03 (45 h cycle) for a circulating-only
+inoculum from an asynchronous donor. Four units sit above their ceiling, the
+same four with the largest sequestered share.
+
+**A second, independent bound on `n_c`, from the donor's own history.** The
+donor's blood stage ran from first detection (day 5.5-6.5) to collection
+(day 12.5-13.5), about 6-8 days or **3.5-5 cycles**. Under the Erlang chain
+that alone gives a per-lineage age variance of k_donor / `n_c` cycles², to
+which liver-release spread adds and the circulating window and freezing
+subtract. If the inoculum carries at least that, then a unit whose total
+variance V at 168 h is fixed by the data (2026-10-09) needs
+**`n_c` >= (k_donor + 168 / `cycle_length`) / V**. Over the 14 units the
+median is **358 (k 3.5), 405 (k 4.5), 429 (k 5.0)**; for MMV048_PIB.1800,
+456-548. Halving the donor's contribution for a half-finished rupture wave
+(a half-normal keeps 0.36 of the variance) lowers the medians to 255-280 and
+MMV048_PIB to 319-352. **Soft, and per-lineage rather than population**
+(see "The total-spread formula"), but it is the second line of evidence
+after Park et al. that points above `n_c` 384 rather than below.
+
 **What it suggests, not yet tested.** (1) Share one t = 0 age distribution
 across all 14 units instead of 14 free ones. (2) Confine it to the
 circulating window, either by a one-sided distribution on [0, ~23 h] in

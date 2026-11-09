@@ -9,7 +9,14 @@ only), shared by all 14 units. That allows at most an sd of ~5.9 h and
 nothing past ~23 h; the real-data fit instead puts 7-42% of the starting
 mass (median 20%) in sequestered compartments, because its wrapped Beta
 straddles the cycle end. Proposed, untested: one shared, one-sided start.
-Cheng et al. 1997 (donor parasitaemia, stages) not retrievable. No jobs.
+**Primary sources read the same day** from Lucas's `malaria-inoc.tar.gz`
+(Cheng 1997, Woolley 2021, McCarthy 2011, Cao 2019, ATCC sheet): donors bled
+6 h after fever onset at 18 and 290 parasites/uL, 12.5-13.5 days after the
+bites; **neither paper reports 3D7-V2's stage composition**, though inocula
+are dosed on ring counts. Two numbers added: Cheng's 39% dividing in the
+first 24 h against 0.02-0.40 in this fit, and a donor-history bound giving
+`n_c` >= ~360-430 (median over units), a second line pointing above 384
+after Park et al. No jobs running.
 
 **2026-11-02 (afternoon): trough-depth check built and read** (`findings.md`,
 "Trough-depth predictive check"; `_scripts/unitsim-trough.R`,

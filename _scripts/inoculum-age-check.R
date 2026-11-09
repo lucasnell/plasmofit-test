@@ -91,3 +91,63 @@ options(width = 150); print(out, row.names = FALSE)
 cat(sprintf("\n   Across the 14 units: modal age %.1f-%.1f h (median %.1f); sd %.1f-%.1f h;\n   sequestered share at t = 0 %.3f-%.3f (median %.3f).\n",
             min(res$mode_h), max(res$mode_h), median(res$mode_h), min(res$sd_h), max(res$sd_h),
             min(res$seq0), max(res$seq0), median(res$seq0)))
+
+## ---- added 2026-11-09 after reading Cheng et al. (1997) and Woolley et al.
+## (2021), supplied by Lucas (_data/malaria-inoc-x/, gitignored) ------------
+## The data's inoculum is the 3D7-V2 bank = Cheng et al.'s volunteer 2: bitten
+## on day 0 (3 of 25 mosquitoes sporozoite-positive) and day 2 (6 of 8), first
+## PCR-detectable on day 5.5, bled 6 h after onset of illness and high fever on
+## day 13.5-14 at 290 parasites/uL by microscopy, Glycerolyte 57.
+
+cat("\n4. SHARE OF THE START THAT BURSTS WITHIN 24 h OF INJECTION\n",
+    "   Cheng et al. fitted their 1995 volunteers with an inoculum of two broods\n",
+    "   24 h apart under a 48 h cycle and found 39% dividing in the first 24 h.\n",
+    "   Same quantity for each unit of the real-data fit (share of t = 0 mass at\n",
+    "   ages above cycle_length - 24 h), and the most a circulating-only inoculum\n",
+    "   from an asynchronous donor could have (ages weighted by y(a)):\n\n", sep = "")
+burst24 <- sapply(seq_along(lv$inoc), \(u) {
+    clu <- cl[unit_trial[u]]; age_c <- (seq_len(n_c) - 0.5) / n_c
+    w <- dbeta((age_c + bo[u]) %% 1, bs[u], bs[u]); w <- w / sum(w)
+    sum(w[age_c * clu > clu - 24])
+})
+for (u in seq_along(lv$inoc))
+    cat(sprintf("   %-18s cycle %5.2f h: %.3f\n", lv$inoc[u], cl[unit_trial[u]], burst24[u]))
+for (clx in c(39, 42, 45)) {
+    a <- seq(0, clx, length.out = 20001); w <- y_circ(a); w <- w / sum(w)
+    cat(sprintf("   circulating-only ceiling at cycle %2d h: %.3f (ages above %.0f h)\n",
+                clx, sum(w[a > clx - 24]), clx - 24))
+}
+
+cat("\n5. THE INOCULUM'S SPREAD IS ITSELF A PRODUCT OF n_c\n",
+    "   The donor's blood stage ran k_donor cycles before collection (first PCR\n",
+    "   detection day 5.5, or ~7.5 if the day-2 bites dominated, to collection day\n",
+    "   13.5-14: 6-8.5 days, ~3.5-5 cycles). Under the Erlang chain that alone\n",
+    "   gives a per-lineage age variance of k_donor / n_c cycles^2, before any\n",
+    "   spread in liver release (which adds) and before the circulating window and\n",
+    "   freezing thin the old tail (which removes). If the start carried at least\n",
+    "   that variance, a unit whose total variance at 168 h is V (from the fit, the\n",
+    "   quantity the data constrain, 2026-10-09) needs\n",
+    "       n_c >= (k_donor + 168 / cycle_length) / V.\n",
+    "   A soft bound, not a strict one; per-lineage, not population (see\n",
+    "   unitsim-spread-check.R).\n\n", sep = "")
+V <- vi(bs) + (168 / cl[unit_trial]) / n_c
+cat(sprintf("   %-18s %8s %8s %8s %8s\n", "unit", "V sd", "k=3.5", "k=4.5", "k=5.0"))
+for (u in seq_along(lv$inoc)) {
+    k_obs <- 168 / cl[unit_trial[u]]
+    cat(sprintf("   %-18s %8.4f %8.0f %8.0f %8.0f\n", lv$inoc[u], sqrt(V[u]),
+                (3.5 + k_obs) / V[u], (4.5 + k_obs) / V[u], (5.0 + k_obs) / V[u]))
+}
+cat(sprintf("\n   Median over units: n_c >= %.0f (k 3.5), %.0f (k 4.5), %.0f (k 5.0).\n",
+            median((3.5 + 168 / cl[unit_trial]) / V), median((4.5 + 168 / cl[unit_trial]) / V),
+            median((5.0 + 168 / cl[unit_trial]) / V)))
+
+cat("\n   Thinning can be large: if the donor's rupture wave was half done at\n",
+    "   collection (6 h after fever onset), the not-yet-burst half was sequestered\n",
+    "   schizonts, absent from the blood, and the circulating half is a\n",
+    "   half-normal with variance (1 - 2/pi) = 0.36 of the whole. Same bound with\n",
+    "   the donor's contribution scaled by 0.36:\n\n", sep = "")
+TH <- 1 - 2 / pi
+cat(sprintf("   Median over units: n_c >= %.0f (k 3.5), %.0f (k 4.5), %.0f (k 5.0); MMV048_PIB.1800 %.0f-%.0f.\n",
+            median((TH * 3.5 + 168 / cl[unit_trial]) / V), median((TH * 4.5 + 168 / cl[unit_trial]) / V),
+            median((TH * 5.0 + 168 / cl[unit_trial]) / V),
+            (TH * 3.5 + 168 / cl[unit_trial[7]]) / V[7], (TH * 5.0 + 168 / cl[unit_trial[7]]) / V[7]))

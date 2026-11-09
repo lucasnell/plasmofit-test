@@ -51,3 +51,4 @@ rsconnect/
 # Claude Code worktrees: other checkouts of this repo, never commit them
 .claude/worktrees/
 new-info.tar.gz
+malaria-inoc.tar.gz
