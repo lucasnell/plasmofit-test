@@ -4197,8 +4197,15 @@ also the worst-fitting of their five strains (model error 1.16-1.59 against
 | unsynchronized rep 1 | 57.5 h | 5.0 h | 8.70% | 132 | 4.9 h |
 
 - **Both synchronized replicates put `n_c` above 384** (450 and 1009), the
-  current setting. The unsynchronized replicate (132) is the odd one, and its
-  founder groups are least clean.
+  current setting; **the unsynchronized replicate gives 132**, below it.
+  The synchronized ones are the right analogue because the IBSM inoculum is
+  ring-selected (circulating-only, and Glycerolyte kills everything but
+  rings), which is the mechanism Park's own Discussion proposes for the
+  two-fold variance reduction they see under sorbitol synchronization. That
+  ground is deliberately NOT the infection's observed synchrony, which would
+  be circular. Both caveats in `references.md`: ring selection is their
+  speculation, and the reduction may not persist past the first cycle, while
+  these data sit in cycles 1.6-4.8.
 - **The persistent part is as large as the per-cycle part** (`sigma_i` 2.7-2.9
   h against `sigma_k` 1.7-2.7 h in the synchronized replicates). This is
   direct evidence for the component the 2026-10-08 decay-law test could not

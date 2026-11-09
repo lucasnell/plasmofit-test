@@ -58,12 +58,41 @@ sigma_i 2.9, sigma_k 1.7; unsynchronized rep 1 tau 57.5, sigma_i 4.9,
 sigma_k 5.0; synchronized rep 2 tau 57.3, sigma_i 2.7, sigma_k 2.7.
 
 **sigma_k is the quantity `n_c` represents**, giving `n_c` 1009 and 450 in
-the two synchronized replicates (132 unsynchronized). **sigma_i is a
-mechanism the model has no term for** and is as large as sigma_k. Caveats:
-in vitro; mean periods 54-57 h under the microscope against ~39-43 h
-expected, which they attribute to culture conditions, having ruled out GFP
-and photo-toxicity (Fig. S4, control 48.7 +/- 5.0 h); CV is scale-free but
-the stress may inflate it.
+the two synchronized replicates and **132 in the unsynchronized one**.
+**sigma_i is a mechanism the model has no term for** and is as large as
+sigma_k.
+
+**Why the synchronized replicates are the right analogue** (Lucas,
+2026-11-09, and it is Park's own explanation). Their Discussion: "artificial
+synchronization reduced both sibling and founder variation in the asexual
+cycle period by two-fold (Table 1). The mechanism for this variance
+reduction is unknown, but **selection for ring-stage parasites** could
+reduce asexual cycle variability by affecting cell physiology and/or the
+population demographics". The Wockner inoculum is ring-selected twice over
+-- venous blood holds only circulating iRBCs, and only rings survive
+Glycerolyte freezing -- so it went through the step Park names.
+
+**This ground is chosen because it is NOT circular**, and that is the whole
+point of an external anchor. The tempting alternative, "IBSM infections
+have a high sine-wave amplitude so they are synchronous so use the
+synchronized replicates", uses the data's own synchrony to pick the anchor
+that is meant to constrain synchrony. Ring selection is a fact about how the
+inoculum was prepared, known independently of any fit.
+
+Caveats, in order of how much they could matter:
+1. **The two-fold difference is the finding; ring selection is Park's
+   speculation about it**, offered in discussion and not tested.
+2. **It may not persist.** Park measured ONE burst-to-burst interval. These
+   observations run 72-216 h, cycles 1.6 to 4.8 after injection, so the
+   window is mostly later cycles. If the reduction is transient the rate
+   would rise over the infection, and the model has no way to express that:
+   `n_c` is one constant for the whole trajectory, so a single value would
+   average over it, weighted toward the later cycles where the data are.
+3. In vitro; mean periods 54-57 h under the microscope against ~39-43 h
+   expected, which they attribute to culture conditions, having ruled out
+   GFP burden and photo-toxicity (Fig. S4, control 48.7 +/- 5.0 h). CV is
+   scale-free, but culture stress could inflate it.
+4. Three replicates, no interval on sigma_k.
 
 ## Greischar, Savill, Reece & Mideo (2024), "How to quantify developmental
 ## synchrony in malaria parasites", Frontiers in Malaria,
