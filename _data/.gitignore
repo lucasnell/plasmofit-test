@@ -52,3 +52,4 @@ unitsim/
 !loadbalance-full4-*.txt
 !loadbalance-unit-*.txt
 !inoculum-age-check-*.txt
+!ring-stage-window-*.txt

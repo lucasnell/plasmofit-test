@@ -1,0 +1,58 @@
+1. SMITH ET AL. (2020) Table S6: fitted ring-to-trophozoite transition
+   phase, as a fraction of the cycle, at each strain's own period and
+   rescaled to a 48 h cycle.
+
+  strain period theta_RT ring_h_own ring_h_48
+     3D7     39    0.312       12.2      15.0
+     HB3     46    0.390       17.9      18.7
+   SA250     54    0.419       22.6      20.1
+      D6     36    0.478       17.2      22.9
+ FVO-NIH     43    0.571       24.6      27.4
+
+
+2. LLINAS ET AL. (2006) Figure 1, 3D7 panel, read off the figure.
+   Peak ring 96%; next cycle's rings reappear at 100% of the panel, taken as the IDC.
+
+                     boundary frac_of_IDC hours_at_48
+        ring % falls below 50       0.295        14.2
+ ring % crosses trophozoite %       0.299        14.4
+    ring % essentially 0 (<2)       0.326        15.6
+
+   Staging profile every 5% of the IDC (percent of parasites):
+
+ pct_IDC  h48 ring troph schiz
+       0  0.0   63    24     2
+       5  2.4   80    14     2
+      10  4.8   92     6     2
+      15  7.2   94     4     2
+      20  9.6   93     5     2
+      25 12.0   92     7     1
+      30 14.4   38    40     3
+      35 16.8    0    55     3
+      40 19.2    0    79     3
+      45 21.6    0    97     2
+      50 24.0    0    98     2
+      55 26.4    0    80    15
+      60 28.8    0    30    41
+      65 31.2    0     0    67
+      70 33.6    0     0    85
+      75 36.0    0     0   100
+      80 38.4    0     0    99
+      85 40.8    0     6    94
+      90 43.2    0    10    89
+      95 45.6    0    41    28
+     100 48.0   10    56     6
+
+
+3. THE WINDOW FOR THE STARTING AGE DISTRIBUTION.
+   The two sources agree to within ~1 h on a 48 h cycle. At the cycle
+   lengths these data fit, the ring window is:
+
+   cycle_length 39.40 h: Smith 0-12.3 h, Llinas (ring < 2%) 0-12.8 h
+   cycle_length 41.00 h: Smith 0-12.8 h, Llinas (ring < 2%) 0-13.3 h
+   cycle_length 42.84 h: Smith 0-13.4 h, Llinas (ring < 2%) 0-13.9 h
+   cycle_length 45.60 h: Smith 0-14.2 h, Llinas (ring < 2%) 0-14.8 h
+
+   Against the CIRCULATING window the design currently uses (24 h at a
+   48 h cycle; half-sequestration 18.58 h, 5% circulating 24.3 h), the
+   ring window is about 60-65% as wide.

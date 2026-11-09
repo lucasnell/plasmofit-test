@@ -211,3 +211,28 @@ priors U(0, 35) h and U(0, 20) h**, no biological justification given;
 cycle fixed at 42 h, sequestration age fixed at 25 h. Posteriors only in
 figure supplements. Prior art for the same free initial age distribution
 this project uses, equally unconstrained.
+
+
+## Llinas, Bozdech, Wong, Adai & DeRisi (2006), "Comparative whole genome
+## transcriptome analysis of three Plasmodium falciparum strains",
+## Nucleic Acids Research 34:1166-1173
+
+PDF from Lucas 2026-11-09 (repo root, gitignored). Hourly sampling of a
+highly synchronized culture through the IDC for **3D7**, Dd2 and HB3 (time
+courses 53, 50 and 48 h). **Figure 1 carries the morphological staging** --
+percent ring, trophozoite and schizont -- as a grey band above each
+phaseogram. There is no table for it, so the numbers in
+`_data/ring-stage-window-2026-11-09.txt` are READ OFF THE FIGURE by pixel
+classification (`_scripts/ring-stage-window.R`) and are approximate.
+
+For 3D7, taking the IDC as the span to the reappearance of rings: ring
+percent peaks at 96%, falls below 50% at **0.295 of the cycle**, crosses the
+trophozoite curve at 0.299, and is gone by 0.326. **At a 48 h cycle that is
+rings to about 14-16 h.** This is an independent check on Smith et al.'s
+fitted 0.312 for 3D7, which it matches to within ~1 h, and the two come from
+different cultures, different laboratories and different methods (fitted
+transition phase against raw staging).
+
+Note the IDC here is ~49 h by the same reading, against Smith's 39 h for
+3D7 and the 38.8-41.2 h these data give, so the FRACTION is the transferable
+quantity, not the hours.

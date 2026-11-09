@@ -4227,6 +4227,24 @@ inoculum's ages: 20.10 implies 99% of the first wave bursting over 16.8 h,
 assumption of 9 h implies `b_shape` ~74. Nothing in these papers measures the
 QIMR-B inoculum's stage spread.
 
+**How long the ring stage is, which sets the support** (2026-11-09;
+`_scripts/ring-stage-window.R`, `_data/ring-stage-window-2026-11-09.txt`).
+Two independent sources agree for 3D7: Smith et al.'s fitted
+ring-to-trophozoite transition at **0.312 of the cycle**, and Llinas et
+al.'s hourly staging read off their Figure 1, where ring percent crosses
+the trophozoite curve at **0.299** and is gone by 0.326. **At a 48 h cycle
+that is rings to 14-16 h**; at the cycle lengths these data fit (39.4-45.6
+h), **0-12.3 to 0-14.8 h**. 3D7 has the shortest ring stage of Smith's five
+strains, which run 0.312 to 0.571.
+
+That is **60-65% of the circulating window** the design currently uses
+(24 h), and the two are different constraints: circulating extends past the
+rings into early trophozoites, since sequestration is a trophozoite
+property and the model's own curve has half-sequestration at 18.58 h, while
+Glycerolyte freezing admits only rings. If the ring-only argument holds the
+window should be ~13 h, not 24, and the fitted starts (modal ages 1.1-11.7
+h, sd 3.3-6.1 h) sit further outside it than reported above.
+
 **`sd_iRBC` has no anchor in the released data.** Wöckner et al. ran samples
 in duplicate or triplicate and **geometrically averaged them on the log10
 scale before release**, so the technical replicate spread is not recoverable
