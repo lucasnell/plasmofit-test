@@ -2,6 +2,17 @@
 
 ## State of play right now — read this first
 
+**2026-11-09 (afternoon): starting-distribution design drafted, no code**
+(`claude/start-dist-design.md`; Lucas chose this ahead of refitting at
+higher `n_c`). A Beta on [0, ~24 h] in place of the wrapped full-cycle
+Beta, mean-and-concentration parameterised, shared across the 14 units,
+behind a `start_dist` flag that defaults to the current behaviour. The
+width is pinned from both sides and the sharing is firm; **the mode is
+not** — fever timing cannot pin it, because falciparum fever is irregular,
+and Cheng's 39% is a crude fitted device, not a measurement (the findings
+entry now says so). Four decisions await Lucas. Nothing installed; the
+package is still byte-identical to `8dde0c1`.
+
 **2026-11-09: the inoculum's ages** (`findings.md`, "The inoculum's ages";
 `_scripts/inoculum-age-check.R`). Every QIMR-B inoculum is one donor unit of
 circulating iRBCs (drawn 6 h after fever onset, Glycerolyte-frozen, so rings

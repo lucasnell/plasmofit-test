@@ -3962,12 +3962,15 @@ that their cultured replacement bank was 96% ring-stage.
 
 Cheng et al. also fitted their own growth model with "two broods of
 parasites separated by 24 hr", parasites past 24 h taken as sequestered,
-and found **39% dividing in the first 24 hr** under a 48 h cycle. The same
-quantity from this fit, the share of t = 0 mass at ages above
-`cycle_length` − 24 h, runs **0.016 to 0.400 across the 14 units**, against
-a ceiling of 0.21 (39 h cycle) to 0.03 (45 h cycle) for a circulating-only
-inoculum from an asynchronous donor. Four units sit above their ceiling, the
-same four with the largest sequestered share.
+and found **39% dividing in the first 24 hr** under a 48 h cycle. **Do not
+read that 39% as a measurement of the inoculum**: it is a two-parameter
+device fitted to five growth curves under a cycle length now known to be
+wrong by 6-9 h, and it contradicts the ring-only argument it would have to
+share a model with. The comparable quantity from this fit, the share of
+t = 0 mass at ages above `cycle_length` − 24 h, runs 0.016 to 0.400 across
+the 14 units, against 0.21 (39 h cycle) to 0.03 (45 h) for a
+circulating-only inoculum from an asynchronous donor. Recorded for the
+record, not as a constraint.
 
 **A second, independent bound on `n_c`, from the donor's own history.** The
 donor's blood stage ran from first detection (day 5.5-6.5) to collection

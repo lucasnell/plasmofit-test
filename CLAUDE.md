@@ -35,6 +35,9 @@ claude/references.md, not as authorship. -->
   - `claude/references.md` — external papers that bear on the model
   - `claude/ipm-decision.md` — the age-structure design decision: chain plus
     a parameter, or an IPM, with the floor argument that settles it
+  - `claude/start-dist-design.md` — the proposed shared, one-sided starting
+    age distribution: what the inoculum pins, what it does not, and the
+    open decisions
 
 ## How this project works
 

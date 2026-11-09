@@ -180,6 +180,15 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
+- [ ] **Shared, one-sided starting age distribution — DESIGN DRAFTED, no
+      code** (Lucas 2026-11-09, chose this before refitting at higher `n_c`).
+      `claude/start-dist-design.md`: a Beta on [0, `start_window`] in place
+      of the wrapped full-cycle Beta, parameterised by mean and
+      concentration, SHARED across the 14 units, behind a `start_dist` data
+      flag so `start_dist` = 0 reproduces every existing fit. Four decisions
+      are open at the end of that file (window width, shared or
+      hierarchical, priors, package or scratch copy). Evidence in
+      `findings.md`, "The inoculum's ages".
 - [ ] **Full-model second study (`_scripts/simstudy2.R`) — ON HOLD. Do not
       run its pilot unless Lucas explicitly says so** (2026-10-21). Built:
       one truth (posterior means of `np_wide_total0_nc384_t`), gen `n_c`
