@@ -1,0 +1,62 @@
+3360 merged fits; 3345 pass.
+
+A. FIT n_c ABOVE THE TRUTH. Truth gen n_c 384, b_shape fixed at the truth
+   (20.10), cycle_length prior centred at the truth; the fixed-pin grid.
+   Moving the fit from 384 to 512 is the move Park's figure would justify.
+
+  key fit_nc n_pass mean_bias    se cover80
+ w168    288     60     1.379 0.143   0.717
+ w168    384     60     0.643 0.146   0.800
+ w168    512     60     0.046 0.151   0.817
+ w192    288     60     1.001 0.090   0.533
+ w192    384     60     0.367 0.083   0.850
+ w192    512     59    -0.220 0.080   0.797
+
+   Paired, identical data: fit 512 minus fit 384, and fit 288 minus fit 384.
+
+ pairs  mean    se negative          contrast
+   119 -0.59 0.013      119 fit 512 - fit 384
+ pairs  mean    se negative          contrast
+   120 0.685 0.014        0 fit 288 - fit 384
+
+B. FIT n_c BELOW THE TRUTH. Gen n_c 1024 fitted at 384, main truth,
+   production prior; b_shape estimated or fixed at the truth. 'mapped' is
+   the main study (b_shape lowered to hold the total spread at 168 h);
+   'not mapped' is the bconst arm (b_shape kept at 20.10). Gen 384 at the
+   same settings is shown as the correctly specified reference.
+
+                          arm  key method n_pass mean_bias    se cover80
+     gen 1024, b_shape mapped w168    est     60     4.212 0.132   0.117
+     gen 1024, b_shape mapped w168    fix     60     3.758 0.169   0.100
+     gen 1024, b_shape mapped w192    est     59     3.204 0.158   0.169
+     gen 1024, b_shape mapped w192    fix     60     2.379 0.130   0.067
+ gen 1024, b_shape not mapped w168    est     60     4.276 0.125   0.017
+ gen 1024, b_shape not mapped w168    fix     60     3.146 0.161   0.150
+ gen 1024, b_shape not mapped w192    est     60     4.379 0.114   0.000
+ gen 1024, b_shape not mapped w192    fix     60     2.997 0.112   0.033
+            gen 384 (correct) w168    est     60     4.278 0.131   0.083
+            gen 384 (correct) w168    fix     58     2.161 0.186   0.586
+            gen 384 (correct) w192    est     60     2.288 0.145   0.250
+            gen 384 (correct) w192    fix     60     0.646 0.086   0.717
+
+   Paired, same noise draws: gen 1024 minus gen 384, both fitted at 384.
+
+ pairs  mean    se negative    arm
+   237 1.025 0.053       46 mapped
+ pairs  mean    se negative        arm
+   238 1.362 0.066       31 not mapped
+
+C. THE ASYMMETRY, which is the decision. Mean |bias| in hours over the
+   cells above, as the cost of each kind of n_c error.
+
+                                             situation mean_abs_bias
+               fit 512, truth 384 (overshoot by 1.33x)         0.685
+                          fit 384, truth 384 (correct)         0.786
+              fit 288, truth 384 (undershoot by 0.75x)         1.250
+     fit 384, truth 1024 mapped (undershoot by 0.375x)         3.389
+ fit 384, truth 1024 not mapped (undershoot by 0.375x)         3.699
+
+   NOTE the priors differ between A (centred at the truth) and B
+   (production, centred 48 h), so A and B are NOT directly comparable in
+   level; the production-prior residual at gen 384 / fit 384 is in B's own
+   first rows. The comparison that stands is WITHIN each block.

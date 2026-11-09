@@ -3908,6 +3908,80 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Choosing fit `n_c` from outside the data, checked against the simulations 2026-11-09: overshooting is cheap, undershooting is not — but the cell Park would put us in is not simulated
+
+Lucas asked for this before any decision to refit the real data at `n_c` 512
+or 1024 on Park et al.'s single-cell figure of 450-1009
+("What the literature can and cannot anchor"). Script
+`_scripts/unitsim-ncchoice.R`, output
+`_data/unitsim-read-ncchoice-2026-11-09.txt`, over the 3360 merged
+single-unit fits. Cells: bias = posterior mean `cycle_length` minus the
+truth, hours, positive = long, mean over the 58-60 passing fits of a cell;
+paired contrasts are per replicate on identical data (A) or the same noise
+draws (B), mean (se) over pairs.
+
+**A. Fitting ABOVE the truth** (truth gen `n_c` 384, `b_shape` fixed at the
+truth, `cycle_length` prior at the truth; the fixed-pin grid):
+
+| window | fit 288 | fit 384 (correct) | fit 512 |
+|---|---|---|---|
+| 168 h | +1.38 (cover 0.72) | +0.64 (0.80) | +0.05 (0.82) |
+| 192 h | +1.00 (0.53) | +0.37 (0.85) | −0.22 (0.80) |
+
+Paired: **fit 512 − fit 384 = −0.59 h (se 0.013), negative in 119 of 119
+pairs**; fit 288 − fit 384 = +0.69 h, positive in 120 of 120. Each step up
+in fit `n_c` shortens the estimate, the same direction as the 2026-10-20
+study's fit 384 − 192 of −0.55 h.
+
+**Overshooting by a third costs nothing here and happens to help.** At fit
+512 the mean |bias| is 0.69 h against 0.79 h at the correct 384, and 80%
+coverage is at nominal. That is partly luck: the residual long bias of the
+correctly specified fit and the shortening from a too-fine mesh cancel.
+
+**B. Fitting BELOW the truth** (gen `n_c` 1024 fitted at 384, production
+prior):
+
+| arm | window | `b_shape` estimated | `b_shape` fixed at truth |
+|---|---|---|---|
+| gen 384 (correct) | 168 | +4.28 | +2.16 |
+| gen 1024, mapped | 168 | +4.21 | +3.76 |
+| gen 1024, not mapped | 168 | +4.28 | +3.15 |
+| gen 384 (correct) | 192 | +2.29 | +0.65 |
+| gen 1024, mapped | 192 | +3.20 | +2.38 |
+| gen 1024, not mapped | 192 | +4.38 | +3.00 |
+
+Paired against gen 384 on the same noise: **+1.03 h (se 0.05) mapped,
++1.36 h (se 0.07) not mapped.**
+
+**The asymmetry is the decision.** Mean |bias| over the cells above:
+
+| | mean abs. bias |
+|---|---|
+| fit 512, truth 384 (overshoot 1.33x) | 0.69 |
+| fit 384, truth 384 (correct) | 0.79 |
+| fit 288, truth 384 (undershoot 0.75x) | 1.25 |
+| fit 384, truth 1024 mapped (undershoot 0.375x) | 3.39 |
+| fit 384, truth 1024 not mapped | 3.70 |
+
+A and B use different `cycle_length` priors (truth-centred against
+production), so their levels are not comparable; only the comparison within
+each block stands.
+
+**The gap.** Every grid cell generates at 384 and every gen-1024 cell is
+fitted at 384. **There is no gen 1024 / fit 512 cell**, which is exactly
+where Park's figure would put the real fit if he is right. So the
+simulations say overshooting a 384 truth is cheap, and undershooting a 1024
+truth is expensive, but not what fitting at 512 does when the truth is 1024.
+Filling that cell is one arm of 60 fits at fit `n_c` 512, ~0.3 h per chain
+from the 2026-10-29 probe, well under a day.
+
+**Reading.** Nothing here argues against moving the real fit up. It argues
+that the risk is one-sided: if the truth is near 384 the move costs ~0.6 h
+of shortening and no accuracy, while if the truth is near 1024 staying at
+384 costs 1.0-1.4 h of long bias. That is an argument for 512 on risk
+grounds, independent of what it does to the headline number, and it should
+be reported with the whole ladder either way.
+
 ### The inoculum's ages, 2026-11-09: a circulating, ring-only, single-donor inoculum is far more constrained than the fitted start, which puts 7-42% of it in sequestered schizonts
 
 Lucas: the inoculum was circulating iRBCs, so nearly all should be under

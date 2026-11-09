@@ -2,6 +2,15 @@
 
 ## State of play right now — read this first
 
+**2026-11-09 (late): the `n_c` choice checked against the simulations**
+(`findings.md`, "Choosing fit `n_c` from outside the data";
+`_scripts/unitsim-ncchoice.R`). The risk is one-sided. Fitting at 512 when
+the truth is 384 shortens `cycle_length` by 0.59 h (119 of 119 pairs) and
+costs no accuracy (mean |bias| 0.69 h against 0.79 h correct); fitting at
+384 when the truth is 1024 costs +1.0 to +1.4 h of long bias. **But no cell
+generates at 1024 and fits at 512**, which is where Park's figure would put
+the real fit. Filling it is one 60-fit arm, under a day. Nothing submitted.
+
 **2026-11-09 (afternoon): starting-distribution design drafted, no code**
 (`claude/start-dist-design.md`; Lucas chose this ahead of refitting at
 higher `n_c`). A Beta on [0, ~24 h] in place of the wrapped full-cycle
