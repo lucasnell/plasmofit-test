@@ -560,7 +560,22 @@ CONFIGS <- list(
     np_wide_total0_nc384_t = list(model = "no_pool",
                                   data = list(sd_log10_total0 = 1, n_c = 384L),
                                   control = list(adapt_delta = 0.95,
-                                                 max_treedepth = 12))
+                                                 max_treedepth = 12)),
+    ## ---- 55: windowed, shared start (start_dist = 1) ----------------------
+    ## Added 2026-11-18 (Lucas; claude/start-dist-design.md). The settings of
+    ## 54 with the 14 per-unit (b_shape, b_offset) replaced by ONE
+    ## Beta(start_alpha, start_beta) on [0, 13] h since invasion, shared by
+    ## every unit: a single inoculum, ring-only, and 13 h is the 3D7 ring
+    ## stage at these cycle lengths (Smith et al. 2020, Llinas et al. 2006;
+    ## _data/ring-stage-window-2026-11-09.txt). Flat priors on both shapes
+    ## over [1, 3]. NEEDS THE start_dist BUILD: until it is installed live,
+    ## run with WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev.
+    np_start13_nc384_t = list(model = "no_pool",
+                              data = list(sd_log10_total0 = 1, n_c = 384L,
+                                          start_dist = 1L, start_window = 13,
+                                          start_shape_cap = 3),
+                              control = list(adapt_delta = 0.95,
+                                             max_treedepth = 12))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -848,8 +863,11 @@ bshape_par_for <- function(fit) {
     if ("b_shape_free" %in% fit@model_pars) "b_shape_free" else "b_shape"
 }
 
+## start_alpha/start_beta exist only in fits from the start_dist build
+## (2026-11, claude/start-dist-design.md); zero-sized unless start_dist = 1.
+start_pars_for <- function(fit) intersect(c("start_alpha", "start_beta"), fit@model_pars)
 par_block_for <- function(model, fit, data = d) {
-    c(bshape_par_for(fit), "b_off_vec", "log10_total0",
+    c(bshape_par_for(fit), "b_off_vec", start_pars_for(fit), "log10_total0",
       r_pars_for(model), cl_pars_for(model), "z_sd_iRBC",
       anchor_pars_for(data))
 }
@@ -880,9 +898,13 @@ draw_as_list <- function(fit, pars, i = 1L) {
     ## fails with "variable does not exist". b_shape_free is zero-sized
     ## whenever b_shape was supplied as data, exactly as delta_total0 and
     ## sigma_total0 are whenever the anchor is off.
-    for (nm in intersect(c("delta_total0", "sigma_total0", "b_shape_free"),
+    ## b_off_vec is zero-sized, and start_alpha/start_beta are not, when
+    ## start_dist = 1, and the reverse when it is 0. The declared dims come
+    ## from par_dims: b_off_vec is (0, 2), not (0).
+    for (nm in intersect(c("delta_total0", "sigma_total0", "b_shape_free",
+                           "b_off_vec", "start_alpha", "start_beta"),
                          fit@model_pars)) {
-        if (!nm %in% names(out)) out[[nm]] <- array(numeric(0), 0L)
+        if (!nm %in% names(out)) out[[nm]] <- array(numeric(0), fit@par_dims[[nm]])
     }
     out
 }
@@ -921,9 +943,19 @@ fit_cond <- function(fit, max_shape, model) {
     bs <- if (!is.null(dr[[bs_nm]]) && length(dr[[bs_nm]]) > 0) {
         lg((dr[[bs_nm]] - 2) / (max_shape - 2))
     } else NULL
-    ## unit_vector[2] is rank-deficient in storage; use the angle instead
-    ang <- atan2(dr$b_off_vec[, , 2], dr$b_off_vec[, , 1])
-    colnames(ang) <- paste0("b_ang[", seq_len(ncol(ang)), "]")
+    ## unit_vector[2] is rank-deficient in storage; use the angle instead.
+    ## Absent when start_dist = 1, which has the two start shapes instead.
+    ang <- NULL
+    if (!is.null(dr$b_off_vec) && length(dr$b_off_vec) > 0) {
+        ang <- atan2(dr$b_off_vec[, , 2], dr$b_off_vec[, , 1])
+        colnames(ang) <- paste0("b_ang[", seq_len(ncol(ang)), "]")
+    }
+    st <- NULL
+    if (!is.null(dr$start_alpha) && length(dr$start_alpha) > 0) {
+        cap <- d$start_shape_cap
+        st <- cbind(start_alpha = lg((as.vector(dr$start_alpha) - 1) / (cap - 1)),
+                    start_beta  = lg((as.vector(dr$start_beta) - 1) / (cap - 1)))
+    }
     ## logit_R/logit_cl are already unconstrained scalars, so they need no
     ## further transform, unlike mu_logit_*/log(sigma_logit_*)/eta_*
     r_block <- if ("logit_R" %in% pars) {
@@ -937,7 +969,7 @@ fit_cond <- function(fit, max_shape, model) {
         cbind(mu_logit_cl = dr$mu_logit_cl, sigma_logit_cl = log(dr$sigma_logit_cl), dr$eta_cl)
     }
     ## cbind() drops a NULL, so a fixed b_shape simply leaves the block out.
-    U <- cbind(bs, ang, dr$log10_total0, r_block, cl_block, dr$z_sd_iRBC)
+    U <- cbind(bs, ang, st, dr$log10_total0, r_block, cl_block, dr$z_sd_iRBC)
     ev <- eigen(cor(U), only.values = TRUE)$values
     sqrt(max(ev) / min(ev))
 }
@@ -957,9 +989,15 @@ div_by_sigma <- function(fit, model) {
 }
 
 summarize_fit <- function(fit, data, label, model,
-                          par_names = c("b_shape", "b_offset", "R",
+                          par_names = c("b_shape", "b_offset", "start_alpha",
+                                        "start_beta", "R",
                                         "log10_total0", "cycle_length",
                                         "sd_iRBC")) {
+    ## keep only parameters this fit has and that carry draws: b_shape and
+    ## b_offset are zero-sized when start_dist = 1, start_alpha/start_beta
+    ## when it is 0, and absent altogether from fits made before the switch
+    par_names <- par_names[par_names %in% fit@model_pars &
+                           vapply(par_names, \(p) prod(fit@par_dims[[p]]) > 0, logical(1))]
     post <- rstan::extract(fit, permuted = FALSE)
     diags <- do.call(rbind, lapply(par_names, function(p) {
         sims <- rstan::extract(fit, p, permuted = FALSE)

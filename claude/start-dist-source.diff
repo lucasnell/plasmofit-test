@@ -1,0 +1,1147 @@
+diff --git a/R/archer-fit.R b/R/archer-fit.R
+index 39a9136..2aa4029 100644
+--- a/R/archer-fit.R
++++ b/R/archer-fit.R
+@@ -55,6 +55,20 @@
+ #'   b_shape))` hours. Worth fixing when the design cannot identify it, which
+ #'   is the usual case with few observations per series; `mean_log_b_shape`
+ #'   and `sd_log_b_shape` are then unused.
++#' @param start_dist Starting age distribution. `0` (the default) keeps the
++#'   wrapped symmetric Beta over the whole cycle, with one `b_shape` and
++#'   `b_offset` per `grp_init` group, exactly as before. `1` puts the
++#'   inoculum's ages at t = 0 on a Beta(`start_alpha`, `start_beta`) over
++#'   `[0, start_window]` hours since invasion, with no wrapping, and SHARES it
++#'   across every `grp_init` group, on the grounds that one inoculum was used
++#'   throughout; `b_shape` and `b_offset` are then absent from the model.
++#' @param start_window Width of that window in hours, required when
++#'   `start_dist = 1` and ignored otherwise. Must be below `min_cl`. For a
++#'   ring-only inoculum of 3D7, about 0.30-0.31 of the cycle.
++#' @param start_shape_cap Upper bound of the flat priors on `start_alpha` and
++#'   `start_beta`, whose lower bound is 1 (uniform over the window). A larger
++#'   cap pulls the prior toward narrower starts. Used only when
++#'   `start_dist = 1`.
+ #' @param mean_log_b_shape,sd_log_b_shape,mean_log10_total0,sd_log10_total0
+ #'   Per-`grp_init` priors, recycled to length `n_grp_init`. The
+ #'   `log10_total0` pair is ignored when the inoculum anchor is in use.
+@@ -125,6 +139,9 @@ archer_stan_data <- function(data,
+                              mean_log_b_shape = 2,
+                              sd_log_b_shape = 0.5,
+                              b_shape = NULL,
++                             start_dist = 0L,
++                             start_window = NULL,
++                             start_shape_cap = 3,
+                              mean_log10_total0 = 1,
+                              sd_log10_total0 = 0.25,
+                              inoc_size = NULL,
+@@ -333,6 +350,32 @@ archer_stan_data <- function(data,
+         ## sampling of everything else and is left in the data regardless.
+     }
+ 
++    ## Windowed, shared starting distribution. The Stan programs make the same
++    ## checks in transformed data; repeated here so a bad call fails before
++    ## sampling starts.
++    start_dist <- as.integer(start_dist)
++    if (length(start_dist) != 1L || !start_dist %in% c(0L, 1L)) {
++        stop("`start_dist` must be 0 or 1")
++    }
++    if (start_dist == 1L) {
++        if (b_shape_fixed == 1L) {
++            stop("`start_dist = 1` has no `b_shape`: leave `b_shape` NULL")
++        }
++        if (is.null(start_window) || length(start_window) != 1L ||
++            !is.finite(start_window) || start_window <= 0 || start_window >= min_cl) {
++            stop("`start_window` must be one positive number of hours below ",
++                 "`min_cl` (", min_cl, ") when `start_dist = 1`")
++        }
++        if (length(start_shape_cap) != 1L || !is.finite(start_shape_cap) ||
++            start_shape_cap <= 1) {
++            stop("`start_shape_cap` must be one number greater than 1")
++        }
++    } else {
++        ## unused by the model; any value inside the declared bounds will do
++        start_window <- 1
++        start_shape_cap <- 3
++    }
++
+     ## Same check archer_fit.stan makes, done here so it fails before compiling.
+     check_erlang_window(tv, n_c = n_c, min_cl = min_cl)
+ 
+@@ -394,6 +437,9 @@ archer_stan_data <- function(data,
+         b_shape_data = if (b_shape_fixed == 1L) {
+             as.numeric(rep_init(b_shape))
+         } else numeric(0),
++        start_dist = start_dist,
++        start_window = as.numeric(start_window),
++        start_shape_cap = as.numeric(start_shape_cap),
+         mean_log10_total0 = rep_init(mean_log10_total0),
+         sd_log10_total0 = rep_init(sd_log10_total0),
+         total0_anchor = total0_anchor,
+@@ -510,6 +556,14 @@ archer_fit <- function(data,
+         dots <- dots[!is_data_arg]
+     } else if (is.list(data)) {
+         stan_data <- data
++        ## Data lists saved before start_dist existed lack its three fields;
++        ## the Stan programs now require them. Fill them with the old
++        ## behaviour so those lists still fit unchanged.
++        if (is.null(stan_data$start_dist)) {
++            stan_data$start_dist <- 0L
++            stan_data$start_window <- 1
++            stan_data$start_shape_cap <- 3
++        }
+     } else {
+         stop("`data` must be a data frame or a Stan data list")
+     }
+diff --git a/inst/stan/archer_fit.stan b/inst/stan/archer_fit.stan
+index 0836906..075b21f 100644
+--- a/inst/stan/archer_fit.stan
++++ b/inst/stan/archer_fit.stan
+@@ -112,6 +112,19 @@ data {
+     */
+     int<lower=0, upper=1> b_shape_fixed;
+     vector<lower=2>[b_shape_fixed * n_grp_init] b_shape_data;
++    /*
++     Starting age distribution. 0 (the default) keeps the wrapped symmetric
++     Beta over the whole cycle, one b_shape and b_offset per grp_init group.
++     1 puts the inoculum's ages on Beta(start_alpha, start_beta) over
++     [0, start_window] HOURS since invasion, SHARED by every grp_init group
++     (one inoculum), without wrapping; b_shape and b_offset are then
++     zero-sized. start_alpha and start_beta have flat priors on
++     [1, start_shape_cap]. start_window and start_shape_cap are unused when
++     start_dist is 0. See plasmofit-test's claude/start-dist-design.md.
++    */
++    int<lower=0, upper=1> start_dist;
++    real<lower=0> start_window;
++    real<lower=1> start_shape_cap;
+     vector[n_grp_init] mean_log10_total0;
+     vector<lower=0>[n_grp_init] sd_log10_total0;
+     /*
+@@ -166,6 +179,16 @@ data {
+ 
+ transformed data {
+ 
++    if (start_dist == 1) {
++        if (b_shape_fixed == 1)
++            reject("start_dist = 1 has no b_shape: b_shape_fixed must be 0");
++        if (start_window <= 0 || start_window >= min_cl)
++            reject("start_window (", start_window,
++                   " h) must be positive and below min_cl (", min_cl, " h)");
++        if (start_shape_cap <= 1)
++            reject("start_shape_cap must exceed 1, got ", start_shape_cap);
++    }
++
+     if (n_total_obs != sum(n_obs)) reject("n_total_obs must equal sum(n_obs)");
+ 
+     if (min(ts) <= 0) reject("min(ts) must be strictly positive (tau = 0 gives log(0))");
+@@ -494,8 +517,11 @@ transformed data {
+ parameters {
+ 
+     // zero-sized when b_shape_fixed; see the data block
+-    vector<lower=2, upper=max_shape>[(1 - b_shape_fixed) * n_grp_init] b_shape_free;
+-    array[n_grp_init] unit_vector[2] b_off_vec;
++    vector<lower=2, upper=max_shape>[(1 - b_shape_fixed) * (1 - start_dist) * n_grp_init] b_shape_free;
++    array[(1 - start_dist) * n_grp_init] unit_vector[2] b_off_vec;
++    // zero-sized unless start_dist is 1; flat priors from the bounds
++    array[start_dist] real<lower=1, upper=start_shape_cap> start_alpha;
++    array[start_dist] real<lower=1, upper=start_shape_cap> start_beta;
+     vector[n_grp_init] log10_total0;
+     // zero-sized unless total0_anchor is 1; see the data block
+     array[total0_anchor] real delta_total0;
+@@ -519,22 +545,24 @@ transformed parameters {
+     // b_shape is assembled here rather than declared as a parameter, so it
+     // appears in the output and reads identically whether it was estimated
+     // or supplied as data.
+-    vector[n_grp_init] b_shape;
++    vector[(1 - start_dist) * n_grp_init] b_shape;
+ 
+-    vector[n_grp_init] b_offset;
++    vector[(1 - start_dist) * n_grp_init] b_offset;
+     vector[n_grp_R] logit_R;
+     vector[n_grp_cl] logit_cl;
+     vector[n_grp_sd] sd_iRBC;        // measurement error for iRBC
+ 
+-    if (b_shape_fixed == 1) {
+-        b_shape = b_shape_data;
+-    } else {
+-        b_shape = b_shape_free;
+-    }
++    if (start_dist == 0) {
++        if (b_shape_fixed == 1) {
++            b_shape = b_shape_data;
++        } else {
++            b_shape = b_shape_free;
++        }
+ 
+-    for (g in 1:n_grp_init) {
+-        b_offset[g] = atan2(b_off_vec[g][2], b_off_vec[g][1]) /
+-                        (2 * pi()) + 0.5;
++        for (g in 1:n_grp_init) {
++            b_offset[g] = atan2(b_off_vec[g][2], b_off_vec[g][1]) /
++                            (2 * pi()) + 0.5;
++        }
+     }
+ 
+     if (center_R) logit_R = eta_R;
+@@ -557,7 +585,7 @@ transformed parameters {
+ model {
+ 
+     // no prior when b_shape is data: b_shape_free is then zero-sized
+-    if (b_shape_fixed == 0) {
++    if (b_shape_fixed == 0 && start_dist == 0) {
+         b_shape_free ~ lognormal(mean_log_b_shape, sd_log_b_shape);
+     }
+     if (total0_anchor) {
+@@ -593,16 +621,30 @@ model {
+     // (trajectory combo, ts) pair once; see traj_combo_partial_sum in
+     // functions/plasmofit.stan. Nothing carrying parameters crosses a thread
+     // boundary as a shared argument.
+-    target += reduce_sum(traj_combo_partial_sum, traj_idx, grainsize,
+-                         traj_rep, grp_init, grp_cl, grp_R,
+-                         tcombo_start, tcombo_len,
+-                         ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
+-                         grp_sd_obs,
+-                         b_shape, b_offset, log10_total0,
+-                         n_c, cycle_length, R, mu, sd_iRBC,
+-                         u_ts, y_trans,
+-                         M, r_max, lgam, r_less1,
+-                         u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    if (start_dist == 0) {
++        target += reduce_sum(traj_combo_partial_sum, traj_idx, grainsize,
++                             traj_rep, grp_init, grp_cl, grp_R,
++                             tcombo_start, tcombo_len,
++                             ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
++                             grp_sd_obs,
++                             b_shape, b_offset, log10_total0,
++                             n_c, cycle_length, R, mu, sd_iRBC,
++                             u_ts, y_trans,
++                             M, r_max, lgam, r_less1,
++                             u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    } else {
++        target += reduce_sum(traj_combo_partial_sum_win, traj_idx, grainsize,
++                             traj_rep, grp_init, grp_cl, grp_R,
++                             tcombo_start, tcombo_len,
++                             ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
++                             grp_sd_obs,
++                             start_window, start_alpha[1], start_beta[1],
++                             log10_total0,
++                             n_c, cycle_length, R, mu, sd_iRBC,
++                             u_ts, y_trans,
++                             M, r_max, lgam, r_less1,
++                             u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    }
+ 
+ }
+ 
+@@ -636,10 +678,17 @@ generated quantities {
+         // (trajectory combo, ts), then filled out per observation by lookup.
+         for (c in 1:n_traj) {
+             int j = traj_rep[c];
+-            vector[3*n_c - 1] DC_c = make_DC(cycle_length[grp_cl[j]], n_c,
+-                                             b_shape[grp_init[j]],
+-                                             b_offset[grp_init[j]],
+-                                             log10_total0[grp_init[j]]);
++            vector[3*n_c - 1] DC_c;
++            if (start_dist == 0) {
++                DC_c = make_DC(cycle_length[grp_cl[j]], n_c,
++                               b_shape[grp_init[j]],
++                               b_offset[grp_init[j]],
++                               log10_total0[grp_init[j]]);
++            } else {
++                DC_c = make_DC_win(cycle_length[grp_cl[j]], n_c, start_window,
++                                   start_alpha[1], start_beta[1],
++                                   log10_total0[grp_init[j]]);
++            }
+             int us = tcombo_start[c];
+             int ue = us + tcombo_len[c] - 1;
+             vector[tcombo_len[c]] y_hat_c = ew_poly_eval(
+@@ -662,9 +711,16 @@ generated quantities {
+         for (c in 1:n_traj) {
+             int j = traj_rep[c];
+             real cl_j = cycle_length[grp_cl[j]];
+-            vector[2*n_c] y0 = generate_starts(cl_j, n_c, b_shape[grp_init[j]],
+-                                               b_offset[grp_init[j]],
+-                                               log10_total0[grp_init[j]]);
++            vector[2*n_c] y0;
++            if (start_dist == 0) {
++                y0 = generate_starts(cl_j, n_c, b_shape[grp_init[j]],
++                                     b_offset[grp_init[j]],
++                                     log10_total0[grp_init[j]]);
++            } else {
++                y0 = generate_starts_win(cl_j, n_c, start_window,
++                                         start_alpha[1], start_beta[1],
++                                         log10_total0[grp_init[j]]);
++            }
+             traj[, c] = full_mat_exp_series(y0, cl_j, n_c, R[grp_R[j]], mu,
+                                             dt_full, n_full);
+         }
+@@ -674,11 +730,20 @@ generated quantities {
+         for (i in 1:n_ts) {
+             int s = start_idx[i];
+             int e = end_idx[i];
+-            vector[n_obs[i]] y_hat_i = ew_poly_series(
+-                cycle_length[grp_cl[i]], n_c, b_shape[grp_init[i]],
+-                b_offset[grp_init[i]], log10_total0[grp_init[i]],
+-                R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
+-                r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            vector[n_obs[i]] y_hat_i;
++            if (start_dist == 0) {
++                y_hat_i = ew_poly_series(
++                    cycle_length[grp_cl[i]], n_c, b_shape[grp_init[i]],
++                    b_offset[grp_init[i]], log10_total0[grp_init[i]],
++                    R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
++                    r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            } else {
++                y_hat_i = ew_poly_series_win(
++                    cycle_length[grp_cl[i]], n_c, start_window,
++                    start_alpha[1], start_beta[1], log10_total0[grp_init[i]],
++                    R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
++                    r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            }
+ 
+             real mrd_i = max(abs(y_hat_i - traj[ts_idx_full[s:e], traj_id[i]])
+                              ./ y_hat_i);
+diff --git a/inst/stan/archer_fit_pooled_R.stan b/inst/stan/archer_fit_pooled_R.stan
+index 8a329ce..218b1b0 100644
+--- a/inst/stan/archer_fit_pooled_R.stan
++++ b/inst/stan/archer_fit_pooled_R.stan
+@@ -129,6 +129,19 @@ data {
+     */
+     int<lower=0, upper=1> b_shape_fixed;
+     vector<lower=2>[b_shape_fixed * n_grp_init] b_shape_data;
++    /*
++     Starting age distribution. 0 (the default) keeps the wrapped symmetric
++     Beta over the whole cycle, one b_shape and b_offset per grp_init group.
++     1 puts the inoculum's ages on Beta(start_alpha, start_beta) over
++     [0, start_window] HOURS since invasion, SHARED by every grp_init group
++     (one inoculum), without wrapping; b_shape and b_offset are then
++     zero-sized. start_alpha and start_beta have flat priors on
++     [1, start_shape_cap]. start_window and start_shape_cap are unused when
++     start_dist is 0. See plasmofit-test's claude/start-dist-design.md.
++    */
++    int<lower=0, upper=1> start_dist;
++    real<lower=0> start_window;
++    real<lower=1> start_shape_cap;
+     vector[n_grp_init] mean_log10_total0;
+     vector<lower=0>[n_grp_init] sd_log10_total0;
+     /*
+@@ -182,6 +195,16 @@ data {
+ 
+ transformed data {
+ 
++    if (start_dist == 1) {
++        if (b_shape_fixed == 1)
++            reject("start_dist = 1 has no b_shape: b_shape_fixed must be 0");
++        if (start_window <= 0 || start_window >= min_cl)
++            reject("start_window (", start_window,
++                   " h) must be positive and below min_cl (", min_cl, " h)");
++        if (start_shape_cap <= 1)
++            reject("start_shape_cap must exceed 1, got ", start_shape_cap);
++    }
++
+     if (n_total_obs != sum(n_obs)) reject("n_total_obs must equal sum(n_obs)");
+ 
+     if (min(ts) <= 0) reject("min(ts) must be strictly positive (tau = 0 gives log(0))");
+@@ -486,8 +509,11 @@ transformed data {
+ parameters {
+ 
+     // zero-sized when b_shape_fixed; see the data block
+-    vector<lower=2, upper=max_shape>[(1 - b_shape_fixed) * n_grp_init] b_shape_free;
+-    array[n_grp_init] unit_vector[2] b_off_vec;
++    vector<lower=2, upper=max_shape>[(1 - b_shape_fixed) * (1 - start_dist) * n_grp_init] b_shape_free;
++    array[(1 - start_dist) * n_grp_init] unit_vector[2] b_off_vec;
++    // zero-sized unless start_dist is 1; flat priors from the bounds
++    array[start_dist] real<lower=1, upper=start_shape_cap> start_alpha;
++    array[start_dist] real<lower=1, upper=start_shape_cap> start_beta;
+     vector[n_grp_init] log10_total0;
+     // zero-sized unless total0_anchor is 1; see the data block
+     array[total0_anchor] real delta_total0;
+@@ -509,21 +535,23 @@ transformed parameters {
+     // b_shape is assembled here rather than declared as a parameter, so it
+     // appears in the output and reads identically whether it was estimated
+     // or supplied as data.
+-    vector[n_grp_init] b_shape;
++    vector[(1 - start_dist) * n_grp_init] b_shape;
+ 
+-    vector[n_grp_init] b_offset;
++    vector[(1 - start_dist) * n_grp_init] b_offset;
+     vector[n_grp_cl] logit_cl;
+     vector[n_grp_sd] sd_iRBC;        // measurement error for iRBC
+ 
+-    if (b_shape_fixed == 1) {
+-        b_shape = b_shape_data;
+-    } else {
+-        b_shape = b_shape_free;
+-    }
++    if (start_dist == 0) {
++        if (b_shape_fixed == 1) {
++            b_shape = b_shape_data;
++        } else {
++            b_shape = b_shape_free;
++        }
+ 
+-    for (g in 1:n_grp_init) {
+-        b_offset[g] = atan2(b_off_vec[g][2], b_off_vec[g][1]) /
+-                        (2 * pi()) + 0.5;
++        for (g in 1:n_grp_init) {
++            b_offset[g] = atan2(b_off_vec[g][2], b_off_vec[g][1]) /
++                            (2 * pi()) + 0.5;
++        }
+     }
+ 
+     if (center_cl) logit_cl = eta_cl;
+@@ -549,7 +577,7 @@ transformed parameters {
+ model {
+ 
+     // no prior when b_shape is data: b_shape_free is then zero-sized
+-    if (b_shape_fixed == 0) {
++    if (b_shape_fixed == 0 && start_dist == 0) {
+         b_shape_free ~ lognormal(mean_log_b_shape, sd_log_b_shape);
+     }
+     if (total0_anchor) {
+@@ -584,16 +612,30 @@ model {
+     // (trajectory combo, ts) pair once; see traj_combo_partial_sum in
+     // functions/plasmofit.stan. Nothing carrying parameters crosses a thread
+     // boundary as a shared argument.
+-    target += reduce_sum(traj_combo_partial_sum, traj_idx, grainsize,
+-                         traj_rep, grp_init, grp_cl, grp_R,
+-                         tcombo_start, tcombo_len,
+-                         ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
+-                         grp_sd_obs,
+-                         b_shape, b_offset, log10_total0,
+-                         n_c, cycle_length, R, mu, sd_iRBC,
+-                         u_ts, y_trans,
+-                         M, r_max, lgam, r_less1,
+-                         u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    if (start_dist == 0) {
++        target += reduce_sum(traj_combo_partial_sum, traj_idx, grainsize,
++                             traj_rep, grp_init, grp_cl, grp_R,
++                             tcombo_start, tcombo_len,
++                             ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
++                             grp_sd_obs,
++                             b_shape, b_offset, log10_total0,
++                             n_c, cycle_length, R, mu, sd_iRBC,
++                             u_ts, y_trans,
++                             M, r_max, lgam, r_less1,
++                             u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    } else {
++        target += reduce_sum(traj_combo_partial_sum_win, traj_idx, grainsize,
++                             traj_rep, grp_init, grp_cl, grp_R,
++                             tcombo_start, tcombo_len,
++                             ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
++                             grp_sd_obs,
++                             start_window, start_alpha[1], start_beta[1],
++                             log10_total0,
++                             n_c, cycle_length, R, mu, sd_iRBC,
++                             u_ts, y_trans,
++                             M, r_max, lgam, r_less1,
++                             u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    }
+ 
+ }
+ 
+@@ -616,10 +658,17 @@ generated quantities {
+         // (trajectory combo, ts), then filled out per observation by lookup.
+         for (c in 1:n_traj) {
+             int j = traj_rep[c];
+-            vector[3*n_c - 1] DC_c = make_DC(cycle_length[grp_cl[j]], n_c,
+-                                             b_shape[grp_init[j]],
+-                                             b_offset[grp_init[j]],
+-                                             log10_total0[grp_init[j]]);
++            vector[3*n_c - 1] DC_c;
++            if (start_dist == 0) {
++                DC_c = make_DC(cycle_length[grp_cl[j]], n_c,
++                               b_shape[grp_init[j]],
++                               b_offset[grp_init[j]],
++                               log10_total0[grp_init[j]]);
++            } else {
++                DC_c = make_DC_win(cycle_length[grp_cl[j]], n_c, start_window,
++                                   start_alpha[1], start_beta[1],
++                                   log10_total0[grp_init[j]]);
++            }
+             int us = tcombo_start[c];
+             int ue = us + tcombo_len[c] - 1;
+             vector[tcombo_len[c]] y_hat_c = ew_poly_eval(
+@@ -642,9 +691,16 @@ generated quantities {
+         for (c in 1:n_traj) {
+             int j = traj_rep[c];
+             real cl_j = cycle_length[grp_cl[j]];
+-            vector[2*n_c] y0 = generate_starts(cl_j, n_c, b_shape[grp_init[j]],
+-                                               b_offset[grp_init[j]],
+-                                               log10_total0[grp_init[j]]);
++            vector[2*n_c] y0;
++            if (start_dist == 0) {
++                y0 = generate_starts(cl_j, n_c, b_shape[grp_init[j]],
++                                     b_offset[grp_init[j]],
++                                     log10_total0[grp_init[j]]);
++            } else {
++                y0 = generate_starts_win(cl_j, n_c, start_window,
++                                         start_alpha[1], start_beta[1],
++                                         log10_total0[grp_init[j]]);
++            }
+             traj[, c] = full_mat_exp_series(y0, cl_j, n_c, R[grp_R[j]], mu,
+                                             dt_full, n_full);
+         }
+@@ -654,11 +710,20 @@ generated quantities {
+         for (i in 1:n_ts) {
+             int s = start_idx[i];
+             int e = end_idx[i];
+-            vector[n_obs[i]] y_hat_i = ew_poly_series(
+-                cycle_length[grp_cl[i]], n_c, b_shape[grp_init[i]],
+-                b_offset[grp_init[i]], log10_total0[grp_init[i]],
+-                R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
+-                r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            vector[n_obs[i]] y_hat_i;
++            if (start_dist == 0) {
++                y_hat_i = ew_poly_series(
++                    cycle_length[grp_cl[i]], n_c, b_shape[grp_init[i]],
++                    b_offset[grp_init[i]], log10_total0[grp_init[i]],
++                    R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
++                    r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            } else {
++                y_hat_i = ew_poly_series_win(
++                    cycle_length[grp_cl[i]], n_c, start_window,
++                    start_alpha[1], start_beta[1], log10_total0[grp_init[i]],
++                    R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
++                    r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            }
+ 
+             real mrd_i = max(abs(y_hat_i - traj[ts_idx_full[s:e], traj_id[i]])
+                              ./ y_hat_i);
+diff --git a/inst/stan/archer_fit_pooled_both.stan b/inst/stan/archer_fit_pooled_both.stan
+index 2a130f8..8cace43 100644
+--- a/inst/stan/archer_fit_pooled_both.stan
++++ b/inst/stan/archer_fit_pooled_both.stan
+@@ -131,6 +131,19 @@ data {
+     */
+     int<lower=0, upper=1> b_shape_fixed;
+     vector<lower=2>[b_shape_fixed * n_grp_init] b_shape_data;
++    /*
++     Starting age distribution. 0 (the default) keeps the wrapped symmetric
++     Beta over the whole cycle, one b_shape and b_offset per grp_init group.
++     1 puts the inoculum's ages on Beta(start_alpha, start_beta) over
++     [0, start_window] HOURS since invasion, SHARED by every grp_init group
++     (one inoculum), without wrapping; b_shape and b_offset are then
++     zero-sized. start_alpha and start_beta have flat priors on
++     [1, start_shape_cap]. start_window and start_shape_cap are unused when
++     start_dist is 0. See plasmofit-test's claude/start-dist-design.md.
++    */
++    int<lower=0, upper=1> start_dist;
++    real<lower=0> start_window;
++    real<lower=1> start_shape_cap;
+     vector[n_grp_init] mean_log10_total0;
+     vector<lower=0>[n_grp_init] sd_log10_total0;
+     /*
+@@ -189,6 +202,16 @@ data {
+ 
+ transformed data {
+ 
++    if (start_dist == 1) {
++        if (b_shape_fixed == 1)
++            reject("start_dist = 1 has no b_shape: b_shape_fixed must be 0");
++        if (start_window <= 0 || start_window >= min_cl)
++            reject("start_window (", start_window,
++                   " h) must be positive and below min_cl (", min_cl, " h)");
++        if (start_shape_cap <= 1)
++            reject("start_shape_cap must exceed 1, got ", start_shape_cap);
++    }
++
+     if (n_total_obs != sum(n_obs)) reject("n_total_obs must equal sum(n_obs)");
+ 
+     if (min(ts) <= 0) reject("min(ts) must be strictly positive (tau = 0 gives log(0))");
+@@ -487,8 +510,11 @@ transformed data {
+ parameters {
+ 
+     // zero-sized when b_shape_fixed; see the data block
+-    vector<lower=2, upper=max_shape>[(1 - b_shape_fixed) * n_grp_init] b_shape_free;
+-    array[n_grp_init] unit_vector[2] b_off_vec;
++    vector<lower=2, upper=max_shape>[(1 - b_shape_fixed) * (1 - start_dist) * n_grp_init] b_shape_free;
++    array[(1 - start_dist) * n_grp_init] unit_vector[2] b_off_vec;
++    // zero-sized unless start_dist is 1; flat priors from the bounds
++    array[start_dist] real<lower=1, upper=start_shape_cap> start_alpha;
++    array[start_dist] real<lower=1, upper=start_shape_cap> start_beta;
+     vector[n_grp_init] log10_total0;
+     // zero-sized unless total0_anchor is 1; see the data block
+     array[total0_anchor] real delta_total0;
+@@ -507,20 +533,22 @@ transformed parameters {
+     // b_shape is assembled here rather than declared as a parameter, so it
+     // appears in the output and reads identically whether it was estimated
+     // or supplied as data.
+-    vector[n_grp_init] b_shape;
++    vector[(1 - start_dist) * n_grp_init] b_shape;
+ 
+-    vector[n_grp_init] b_offset;
++    vector[(1 - start_dist) * n_grp_init] b_offset;
+     vector[n_grp_sd] sd_iRBC;        // measurement error for iRBC
+ 
+-    if (b_shape_fixed == 1) {
+-        b_shape = b_shape_data;
+-    } else {
+-        b_shape = b_shape_free;
+-    }
++    if (start_dist == 0) {
++        if (b_shape_fixed == 1) {
++            b_shape = b_shape_data;
++        } else {
++            b_shape = b_shape_free;
++        }
+ 
+-    for (g in 1:n_grp_init) {
+-        b_offset[g] = atan2(b_off_vec[g][2], b_off_vec[g][1]) /
+-                        (2 * pi()) + 0.5;
++        for (g in 1:n_grp_init) {
++            b_offset[g] = atan2(b_off_vec[g][2], b_off_vec[g][1]) /
++                            (2 * pi()) + 0.5;
++        }
+     }
+ 
+     /*
+@@ -546,7 +574,7 @@ transformed parameters {
+ model {
+ 
+     // no prior when b_shape is data: b_shape_free is then zero-sized
+-    if (b_shape_fixed == 0) {
++    if (b_shape_fixed == 0 && start_dist == 0) {
+         b_shape_free ~ lognormal(mean_log_b_shape, sd_log_b_shape);
+     }
+     if (total0_anchor) {
+@@ -578,16 +606,30 @@ model {
+     // (trajectory combo, ts) pair once; see traj_combo_partial_sum in
+     // functions/plasmofit.stan. Nothing carrying parameters crosses a thread
+     // boundary as a shared argument.
+-    target += reduce_sum(traj_combo_partial_sum, traj_idx, grainsize,
+-                         traj_rep, grp_init, grp_cl, grp_R,
+-                         tcombo_start, tcombo_len,
+-                         ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
+-                         grp_sd_obs,
+-                         b_shape, b_offset, log10_total0,
+-                         n_c, cycle_length, R, mu, sd_iRBC,
+-                         u_ts, y_trans,
+-                         M, r_max, lgam, r_less1,
+-                         u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    if (start_dist == 0) {
++        target += reduce_sum(traj_combo_partial_sum, traj_idx, grainsize,
++                             traj_rep, grp_init, grp_cl, grp_R,
++                             tcombo_start, tcombo_len,
++                             ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
++                             grp_sd_obs,
++                             b_shape, b_offset, log10_total0,
++                             n_c, cycle_length, R, mu, sd_iRBC,
++                             u_ts, y_trans,
++                             M, r_max, lgam, r_less1,
++                             u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    } else {
++        target += reduce_sum(traj_combo_partial_sum_win, traj_idx, grainsize,
++                             traj_rep, grp_init, grp_cl, grp_R,
++                             tcombo_start, tcombo_len,
++                             ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
++                             grp_sd_obs,
++                             start_window, start_alpha[1], start_beta[1],
++                             log10_total0,
++                             n_c, cycle_length, R, mu, sd_iRBC,
++                             u_ts, y_trans,
++                             M, r_max, lgam, r_less1,
++                             u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    }
+ 
+ }
+ 
+@@ -610,10 +652,17 @@ generated quantities {
+         // (trajectory combo, ts), then filled out per observation by lookup.
+         for (c in 1:n_traj) {
+             int j = traj_rep[c];
+-            vector[3*n_c - 1] DC_c = make_DC(cycle_length[grp_cl[j]], n_c,
+-                                             b_shape[grp_init[j]],
+-                                             b_offset[grp_init[j]],
+-                                             log10_total0[grp_init[j]]);
++            vector[3*n_c - 1] DC_c;
++            if (start_dist == 0) {
++                DC_c = make_DC(cycle_length[grp_cl[j]], n_c,
++                               b_shape[grp_init[j]],
++                               b_offset[grp_init[j]],
++                               log10_total0[grp_init[j]]);
++            } else {
++                DC_c = make_DC_win(cycle_length[grp_cl[j]], n_c, start_window,
++                                   start_alpha[1], start_beta[1],
++                                   log10_total0[grp_init[j]]);
++            }
+             int us = tcombo_start[c];
+             int ue = us + tcombo_len[c] - 1;
+             vector[tcombo_len[c]] y_hat_c = ew_poly_eval(
+@@ -636,9 +685,16 @@ generated quantities {
+         for (c in 1:n_traj) {
+             int j = traj_rep[c];
+             real cl_j = cycle_length[grp_cl[j]];
+-            vector[2*n_c] y0 = generate_starts(cl_j, n_c, b_shape[grp_init[j]],
+-                                               b_offset[grp_init[j]],
+-                                               log10_total0[grp_init[j]]);
++            vector[2*n_c] y0;
++            if (start_dist == 0) {
++                y0 = generate_starts(cl_j, n_c, b_shape[grp_init[j]],
++                                     b_offset[grp_init[j]],
++                                     log10_total0[grp_init[j]]);
++            } else {
++                y0 = generate_starts_win(cl_j, n_c, start_window,
++                                         start_alpha[1], start_beta[1],
++                                         log10_total0[grp_init[j]]);
++            }
+             traj[, c] = full_mat_exp_series(y0, cl_j, n_c, R[grp_R[j]], mu,
+                                             dt_full, n_full);
+         }
+@@ -648,11 +704,20 @@ generated quantities {
+         for (i in 1:n_ts) {
+             int s = start_idx[i];
+             int e = end_idx[i];
+-            vector[n_obs[i]] y_hat_i = ew_poly_series(
+-                cycle_length[grp_cl[i]], n_c, b_shape[grp_init[i]],
+-                b_offset[grp_init[i]], log10_total0[grp_init[i]],
+-                R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
+-                r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            vector[n_obs[i]] y_hat_i;
++            if (start_dist == 0) {
++                y_hat_i = ew_poly_series(
++                    cycle_length[grp_cl[i]], n_c, b_shape[grp_init[i]],
++                    b_offset[grp_init[i]], log10_total0[grp_init[i]],
++                    R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
++                    r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            } else {
++                y_hat_i = ew_poly_series_win(
++                    cycle_length[grp_cl[i]], n_c, start_window,
++                    start_alpha[1], start_beta[1], log10_total0[grp_init[i]],
++                    R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
++                    r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            }
+ 
+             real mrd_i = max(abs(y_hat_i - traj[ts_idx_full[s:e], traj_id[i]])
+                              ./ y_hat_i);
+diff --git a/inst/stan/archer_fit_pooled_cl.stan b/inst/stan/archer_fit_pooled_cl.stan
+index ba9b418..373e132 100644
+--- a/inst/stan/archer_fit_pooled_cl.stan
++++ b/inst/stan/archer_fit_pooled_cl.stan
+@@ -130,6 +130,19 @@ data {
+     */
+     int<lower=0, upper=1> b_shape_fixed;
+     vector<lower=2>[b_shape_fixed * n_grp_init] b_shape_data;
++    /*
++     Starting age distribution. 0 (the default) keeps the wrapped symmetric
++     Beta over the whole cycle, one b_shape and b_offset per grp_init group.
++     1 puts the inoculum's ages on Beta(start_alpha, start_beta) over
++     [0, start_window] HOURS since invasion, SHARED by every grp_init group
++     (one inoculum), without wrapping; b_shape and b_offset are then
++     zero-sized. start_alpha and start_beta have flat priors on
++     [1, start_shape_cap]. start_window and start_shape_cap are unused when
++     start_dist is 0. See plasmofit-test's claude/start-dist-design.md.
++    */
++    int<lower=0, upper=1> start_dist;
++    real<lower=0> start_window;
++    real<lower=1> start_shape_cap;
+     vector[n_grp_init] mean_log10_total0;
+     vector<lower=0>[n_grp_init] sd_log10_total0;
+     /*
+@@ -185,6 +198,16 @@ data {
+ 
+ transformed data {
+ 
++    if (start_dist == 1) {
++        if (b_shape_fixed == 1)
++            reject("start_dist = 1 has no b_shape: b_shape_fixed must be 0");
++        if (start_window <= 0 || start_window >= min_cl)
++            reject("start_window (", start_window,
++                   " h) must be positive and below min_cl (", min_cl, " h)");
++        if (start_shape_cap <= 1)
++            reject("start_shape_cap must exceed 1, got ", start_shape_cap);
++    }
++
+     if (n_total_obs != sum(n_obs)) reject("n_total_obs must equal sum(n_obs)");
+ 
+     if (min(ts) <= 0) reject("min(ts) must be strictly positive (tau = 0 gives log(0))");
+@@ -489,8 +512,11 @@ transformed data {
+ parameters {
+ 
+     // zero-sized when b_shape_fixed; see the data block
+-    vector<lower=2, upper=max_shape>[(1 - b_shape_fixed) * n_grp_init] b_shape_free;
+-    array[n_grp_init] unit_vector[2] b_off_vec;
++    vector<lower=2, upper=max_shape>[(1 - b_shape_fixed) * (1 - start_dist) * n_grp_init] b_shape_free;
++    array[(1 - start_dist) * n_grp_init] unit_vector[2] b_off_vec;
++    // zero-sized unless start_dist is 1; flat priors from the bounds
++    array[start_dist] real<lower=1, upper=start_shape_cap> start_alpha;
++    array[start_dist] real<lower=1, upper=start_shape_cap> start_beta;
+     vector[n_grp_init] log10_total0;
+     // zero-sized unless total0_anchor is 1; see the data block
+     array[total0_anchor] real delta_total0;
+@@ -512,21 +538,23 @@ transformed parameters {
+     // b_shape is assembled here rather than declared as a parameter, so it
+     // appears in the output and reads identically whether it was estimated
+     // or supplied as data.
+-    vector[n_grp_init] b_shape;
++    vector[(1 - start_dist) * n_grp_init] b_shape;
+ 
+-    vector[n_grp_init] b_offset;
++    vector[(1 - start_dist) * n_grp_init] b_offset;
+     vector[n_grp_R] logit_R;
+     vector[n_grp_sd] sd_iRBC;        // measurement error for iRBC
+ 
+-    if (b_shape_fixed == 1) {
+-        b_shape = b_shape_data;
+-    } else {
+-        b_shape = b_shape_free;
+-    }
++    if (start_dist == 0) {
++        if (b_shape_fixed == 1) {
++            b_shape = b_shape_data;
++        } else {
++            b_shape = b_shape_free;
++        }
+ 
+-    for (g in 1:n_grp_init) {
+-        b_offset[g] = atan2(b_off_vec[g][2], b_off_vec[g][1]) /
+-                        (2 * pi()) + 0.5;
++        for (g in 1:n_grp_init) {
++            b_offset[g] = atan2(b_off_vec[g][2], b_off_vec[g][1]) /
++                            (2 * pi()) + 0.5;
++        }
+     }
+ 
+     if (center_R) logit_R = eta_R;
+@@ -555,7 +583,7 @@ transformed parameters {
+ model {
+ 
+     // no prior when b_shape is data: b_shape_free is then zero-sized
+-    if (b_shape_fixed == 0) {
++    if (b_shape_fixed == 0 && start_dist == 0) {
+         b_shape_free ~ lognormal(mean_log_b_shape, sd_log_b_shape);
+     }
+     if (total0_anchor) {
+@@ -591,16 +619,30 @@ model {
+     // (trajectory combo, ts) pair once; see traj_combo_partial_sum in
+     // functions/plasmofit.stan. Nothing carrying parameters crosses a thread
+     // boundary as a shared argument.
+-    target += reduce_sum(traj_combo_partial_sum, traj_idx, grainsize,
+-                         traj_rep, grp_init, grp_cl, grp_R,
+-                         tcombo_start, tcombo_len,
+-                         ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
+-                         grp_sd_obs,
+-                         b_shape, b_offset, log10_total0,
+-                         n_c, cycle_length, R, mu, sd_iRBC,
+-                         u_ts, y_trans,
+-                         M, r_max, lgam, r_less1,
+-                         u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    if (start_dist == 0) {
++        target += reduce_sum(traj_combo_partial_sum, traj_idx, grainsize,
++                             traj_rep, grp_init, grp_cl, grp_R,
++                             tcombo_start, tcombo_len,
++                             ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
++                             grp_sd_obs,
++                             b_shape, b_offset, log10_total0,
++                             n_c, cycle_length, R, mu, sd_iRBC,
++                             u_ts, y_trans,
++                             M, r_max, lgam, r_less1,
++                             u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    } else {
++        target += reduce_sum(traj_combo_partial_sum_win, traj_idx, grainsize,
++                             traj_rep, grp_init, grp_cl, grp_R,
++                             tcombo_start, tcombo_len,
++                             ocombo_start, ocombo_len_fit, ocombo_obs, yh_local,
++                             grp_sd_obs,
++                             start_window, start_alpha[1], start_beta[1],
++                             log10_total0,
++                             n_c, cycle_length, R, mu, sd_iRBC,
++                             u_ts, y_trans,
++                             M, r_max, lgam, r_less1,
++                             u_r_lo, u_r_hi, u_m_lo, u_m_hi);
++    }
+ 
+ }
+ 
+@@ -623,10 +665,17 @@ generated quantities {
+         // (trajectory combo, ts), then filled out per observation by lookup.
+         for (c in 1:n_traj) {
+             int j = traj_rep[c];
+-            vector[3*n_c - 1] DC_c = make_DC(cycle_length[grp_cl[j]], n_c,
+-                                             b_shape[grp_init[j]],
+-                                             b_offset[grp_init[j]],
+-                                             log10_total0[grp_init[j]]);
++            vector[3*n_c - 1] DC_c;
++            if (start_dist == 0) {
++                DC_c = make_DC(cycle_length[grp_cl[j]], n_c,
++                               b_shape[grp_init[j]],
++                               b_offset[grp_init[j]],
++                               log10_total0[grp_init[j]]);
++            } else {
++                DC_c = make_DC_win(cycle_length[grp_cl[j]], n_c, start_window,
++                                   start_alpha[1], start_beta[1],
++                                   log10_total0[grp_init[j]]);
++            }
+             int us = tcombo_start[c];
+             int ue = us + tcombo_len[c] - 1;
+             vector[tcombo_len[c]] y_hat_c = ew_poly_eval(
+@@ -649,9 +698,16 @@ generated quantities {
+         for (c in 1:n_traj) {
+             int j = traj_rep[c];
+             real cl_j = cycle_length[grp_cl[j]];
+-            vector[2*n_c] y0 = generate_starts(cl_j, n_c, b_shape[grp_init[j]],
+-                                               b_offset[grp_init[j]],
+-                                               log10_total0[grp_init[j]]);
++            vector[2*n_c] y0;
++            if (start_dist == 0) {
++                y0 = generate_starts(cl_j, n_c, b_shape[grp_init[j]],
++                                     b_offset[grp_init[j]],
++                                     log10_total0[grp_init[j]]);
++            } else {
++                y0 = generate_starts_win(cl_j, n_c, start_window,
++                                         start_alpha[1], start_beta[1],
++                                         log10_total0[grp_init[j]]);
++            }
+             traj[, c] = full_mat_exp_series(y0, cl_j, n_c, R[grp_R[j]], mu,
+                                             dt_full, n_full);
+         }
+@@ -661,11 +717,20 @@ generated quantities {
+         for (i in 1:n_ts) {
+             int s = start_idx[i];
+             int e = end_idx[i];
+-            vector[n_obs[i]] y_hat_i = ew_poly_series(
+-                cycle_length[grp_cl[i]], n_c, b_shape[grp_init[i]],
+-                b_offset[grp_init[i]], log10_total0[grp_init[i]],
+-                R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
+-                r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            vector[n_obs[i]] y_hat_i;
++            if (start_dist == 0) {
++                y_hat_i = ew_poly_series(
++                    cycle_length[grp_cl[i]], n_c, b_shape[grp_init[i]],
++                    b_offset[grp_init[i]], log10_total0[grp_init[i]],
++                    R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
++                    r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            } else {
++                y_hat_i = ew_poly_series_win(
++                    cycle_length[grp_cl[i]], n_c, start_window,
++                    start_alpha[1], start_beta[1], log10_total0[grp_init[i]],
++                    R[grp_R[i]], mu, n_obs[i], ts[s:e], M, r_max, lgam, r_less1,
++                    r_lo[s:e], r_hi[s:e], m_lo[s:e], m_hi[s:e]);
++            }
+ 
+             real mrd_i = max(abs(y_hat_i - traj[ts_idx_full[s:e], traj_id[i]])
+                              ./ y_hat_i);
+diff --git a/inst/stan/functions/plasmofit.stan b/inst/stan/functions/plasmofit.stan
+index 69a1542..805763e 100644
+--- a/inst/stan/functions/plasmofit.stan
++++ b/inst/stan/functions/plasmofit.stan
+@@ -580,3 +580,157 @@ real traj_combo_partial_sum(array[] int combo_slice, int start, int end,
+     }
+     return lp;
+ }
++
++
++/*
++ ---------------------------------------------------------------------------
++ Windowed starting distribution (start_dist = 1). Added 2026-11 for
++ plasmofit-test's claude/start-dist-design.md; everything above is
++ untouched, so start_dist = 0 runs exactly the code it ran before.
++ ---------------------------------------------------------------------------
++
++ The inoculum's ages at t = 0 follow Beta(a, b) on [0, w] in CYCLE units,
++ w = start_window / cycle_length with start_window in hours. Unlike
++ beta_starts() it does not wrap round the cycle: compartments past the
++ window get exactly zero. Age is measured from merozoite invasion, so
++ compartment i covers [(i - 1) / n_c, i / n_c] cycles.
++
++ Each compartment's mass is the Beta probability of its overlap with
++ [0, w], by 5-point Gauss-Legendre over that overlap. Tested against exact
++ pbeta differences (plasmofit-test, _scripts/start-dist-validate.R,
++ 2026-11-18): exact to machine precision at integer shapes (1, 2, 3), and at
++ worst 4e-5 in absolute compartment weight for shapes strictly between 1 and
++ 2 (7e-6 at n_c 384), where the density's edge behaviour is not polynomial. The
++ compartment straddling w is integrated over its overlap only, so the
++ result is continuous in w and therefore in cycle_length.
++
++ Requires a, b >= 1 (below 1 the density is unbounded at an edge) and
++ 0 < w < 1. The 1/w and Beta-function constants cancel in the
++ normalisation and are not computed.
++*/
++vector windowed_beta_starts(int n_c, real w, real a, real b, real total0) {
++    array[5] real gx = {-0.9061798459386640, -0.5384693101056831, 0.0,
++                        0.5384693101056831, 0.9061798459386640};
++    array[5] real lgw = {log(0.2369268850561891), log(0.4786286704993665),
++                         log(0.5688888888888889), log(0.4786286704993665),
++                         log(0.2369268850561891)};
++    real h = 1.0 / n_c;
++    vector[n_c] lcell = rep_vector(0, n_c);
++    int m = 0;                       // compartments that overlap the window
++    for (i in 1:n_c) {
++        real lo = (i - 1) * h;
++        if (lo >= w) break;
++        real hi = fmin(i * h, w);
++        real mid = 0.5 * (lo + hi);
++        real half = 0.5 * (hi - lo);
++        vector[5] lp;
++        for (k in 1:5) {
++            real x = (mid + half * gx[k]) / w;
++            lp[k] = lgw[k] + (a - 1) * log(x) + (b - 1) * log1m(x);
++        }
++        lcell[i] = log(half) + log_sum_exp(lp);
++        m = i;
++    }
++    vector[n_c] W = rep_vector(0, n_c);
++    W[1:m] = total0 * softmax(lcell[1:m]);
++    return W;
++}
++
++/*
++ make_DC() with the windowed start. The D/C construction below is a copy
++ of make_DC()'s, so the split of the start into circulating (y .* W) and
++ sequestered ((1 - y) .* W) at t = 0 is the same convention.
++*/
++vector make_DC_win(real cycle_length, int n_c, real start_window,
++                   real a, real b, real log10_total0) {
++
++    real total0 = pow(10, log10_total0);
++
++    vector[n_c] log_y = make_log_y_vals(cycle_length, n_c);
++    vector[n_c] q_v   = make_q_vals_from_log_y(n_c, log_y);
++    vector[n_c] c_k   = make_c_vals_from_log_y(n_c, log_y);
++
++    vector[n_c] W  = windowed_beta_starts(n_c, start_window / cycle_length,
++                                          a, b, total0);
++    vector[n_c] Nc = exp(log_y[1]) * (1 - q_v) .* W;   // = N_j(0)/c_j
++
++    vector[3*n_c - 1] DC;
++    for (d in 0:(n_c - 1)) {
++        DC[d + 1]             = dot_product(Nc[1:(n_c - d)], c_k[(d + 1):n_c]);
++        DC[n_c + n_c + d]     = dot_product(W[1:(n_c - d)],  c_k[(d + 1):n_c]);
++    }
++    for (d in 1:(n_c - 1))
++        DC[n_c + n_c - d]     = dot_product(W[(d + 1):n_c], c_k[1:(n_c - d)]);
++
++    return DC;
++}
++
++/* generate_starts() with the windowed start, for the matrix_exp cross-check. */
++vector generate_starts_win(real cycle_length, int n_c, real start_window,
++                           real a, real b, real log10_total0) {
++    real total0 = pow(10, log10_total0);
++    vector[n_c] y_vals = make_y_vals(cycle_length, n_c);
++    vector[n_c] wi = windowed_beta_starts(n_c, start_window / cycle_length,
++                                          a, b, total0);
++    vector[2*n_c] starts;
++    starts[1:n_c] = y_vals .* wi;
++    starts[(n_c+1):(2*n_c)] = (1 - y_vals) .* wi;
++    return starts;
++}
++
++/* ew_poly_series() with the windowed start. */
++vector ew_poly_series_win(real cycle_length, int n_c, real start_window,
++                          real a, real b, real log10_total0, real R, real mu,
++                          int n_obs, array[] real ts, int M, int r_max,
++                          vector lgam, vector r_less1, array[] int r_lo,
++                          array[] int r_hi, array[] int m_lo, array[] int m_hi) {
++    return ew_poly_eval(
++        make_DC_win(cycle_length, n_c, start_window, a, b, log10_total0),
++        n_c, cycle_length, R, mu, n_obs, ts, M, r_max, lgam, r_less1,
++        r_lo, r_hi, m_lo, m_hi);
++}
++
++/*
++ traj_combo_partial_sum() with the windowed start: identical except that
++ the start is one shared (start_window, a, b) instead of per-grp_init
++ b_shape and b_offset. A separate function rather than a branch inside the
++ original, so start_dist = 0 runs byte-identical Stan code.
++*/
++real traj_combo_partial_sum_win(array[] int combo_slice, int start, int end,
++                                data array[] int traj_rep, data array[] int grp_init,
++                                data array[] int grp_cl, data array[] int grp_R,
++                                data array[] int tcombo_start, data array[] int tcombo_len,
++                                data array[] int ocombo_start, data array[] int ocombo_len_fit,
++                                data array[] int ocombo_obs, data array[] int yh_local,
++                                data array[] int grp_sd_obs,
++                                data real start_window, real start_a, real start_b,
++                                vector log10_total0,
++                                int n_c, vector cycle_length, vector R, data real mu,
++                                vector sd_iRBC,
++                                data array[] real u_ts, data vector y_trans,
++                                int M, int r_max, data vector lgam, data vector r_less1,
++                                data array[] int u_r_lo, data array[] int u_r_hi,
++                                data array[] int u_m_lo, data array[] int u_m_hi) {
++    real lp = 0;
++    for (k in 1:size(combo_slice)) {
++        int c = combo_slice[k];
++        int j = traj_rep[c];
++        if (ocombo_len_fit[c] == 0) continue;     // whole combo held out
++        vector[3*n_c - 1] DC_c = make_DC_win(cycle_length[grp_cl[j]], n_c,
++                                             start_window, start_a, start_b,
++                                             log10_total0[grp_init[j]]);
++        int us = tcombo_start[c];
++        int ue = us + tcombo_len[c] - 1;
++        vector[tcombo_len[c]] y_hat_c = ew_poly_eval(
++            DC_c, n_c, cycle_length[grp_cl[j]], R[grp_R[j]], mu,
++            tcombo_len[c], u_ts[us:ue], M, r_max, lgam, r_less1,
++            u_r_lo[us:ue], u_r_hi[us:ue], u_m_lo[us:ue], u_m_hi[us:ue]);
++
++        int os = ocombo_start[c];
++        int oe = os + ocombo_len_fit[c] - 1;
++        array[ocombo_len_fit[c]] int ks = ocombo_obs[os:oe];
++        lp += normal_lpdf(y_trans[ks] | log10(y_hat_c[yh_local[ks]] + 1),
++                          sd_iRBC[grp_sd_obs[ks]]);
++    }
++    return lp;
++}
+diff --git a/man/archer_stan_data.Rd b/man/archer_stan_data.Rd
+index 58e5987..def7768 100644
+--- a/man/archer_stan_data.Rd
++++ b/man/archer_stan_data.Rd
+@@ -24,9 +24,14 @@ archer_stan_data(
+   mean_log_b_shape = 2,
+   sd_log_b_shape = 0.5,
+   b_shape = NULL,
++  start_dist = 0L,
++  start_window = NULL,
++  start_shape_cap = 3,
+   mean_log10_total0 = 1,
+   sd_log10_total0 = 0.25,
+   inoc_size = NULL,
++  hold_out = NULL,
++  sd_iRBC = NULL,
+   blood_volume_ml = 5000,
+   anchor_log10_total0 = NULL,
+   mean_delta_total0 = 0,
+@@ -89,6 +94,23 @@ stages are clustered: the central 99\% of the distribution spans roughly
+ is the usual case with few observations per series; \code{mean_log_b_shape}
+ and \code{sd_log_b_shape} are then unused.}
+ 
++\item{start_dist}{Starting age distribution. \code{0} (the default) keeps the
++wrapped symmetric Beta over the whole cycle, with one \code{b_shape} and
++\code{b_offset} per \code{grp_init} group, exactly as before. \code{1} puts the
++inoculum's ages at t = 0 on a Beta(\code{start_alpha}, \code{start_beta}) over
++\verb{[0, start_window]} hours since invasion, with no wrapping, and SHARES it
++across every \code{grp_init} group, on the grounds that one inoculum was used
++throughout; \code{b_shape} and \code{b_offset} are then absent from the model.}
++
++\item{start_window}{Width of that window in hours, required when
++\code{start_dist = 1} and ignored otherwise. Must be below \code{min_cl}. For a
++ring-only inoculum of 3D7, about 0.30-0.31 of the cycle.}
++
++\item{start_shape_cap}{Upper bound of the flat priors on \code{start_alpha} and
++\code{start_beta}, whose lower bound is 1 (uniform over the window). A larger
++cap pulls the prior toward narrower starts. Used only when
++\code{start_dist = 1}.}
++
+ \item{inoc_size}{Optional column name giving the inoculum size, constant
+ within each \code{grp_init} group. Supplying it switches \code{log10_total0} from
+ its own prior to an anchored hierarchy centred on
+@@ -96,6 +118,20 @@ its own prior to an anchored hierarchy centred on
+ group. Use it when the inoculum is known and you want the initial
+ densities tied to it rather than estimated freely.}
+ 
++\item{hold_out}{Optional per-observation 0/1 mask for cross-validation.
++1 means the observation is held out: it takes no part in the likelihood,
++but its \code{log_lik} is still computed in \verb{generated quantities}, so it can
++be scored against a posterior that never saw it. Give a column name in
++\code{data}, or a vector with one entry per row of \code{data}; either way it is
++reordered to match the sorted observations. \code{NULL} (the default) holds
++nothing out and reproduces an unmasked fit exactly.}
++
++\item{sd_iRBC}{Fix the observation-error scale at a known value instead of
++estimating it, one value per \code{grp_sd} group or a scalar recycled over
++them. \code{NULL} (the default) estimates it as before. This is a diagnostic
++for simulation, where the generating value is known; on real data no
++such value exists and estimating it is the point.}
++
+ \item{blood_volume_ml}{Blood volume used to turn an inoculum count into a
+ density in the units of \code{abundance}. Defaults to 5000 (5 L, an adult).
+ Its exact value does not matter much: an error in it is absorbed by the

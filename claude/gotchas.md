@@ -728,3 +728,17 @@ way reproduced the same wrong numbers. Use new names (`n_pass`,
 `mean_bias`), and cross-check a table against one computed by a different
 route, e.g. `filter(pass)` first, then summarise.
 
+
+
+## Data lists saved before `start_dist` need its three fields
+
+The `start_dist` build (2026-11, `claude/start-dist-design.md`) adds
+`start_dist`, `start_window` and `start_shape_cap` to the data block of all
+four `archer_fit*` programs. Stan rejects a data list missing a declared
+field, so **every `wock-data-*.rds` and every unitsim chain file's `d` made
+before then fails against the new build** -- including `rstan::gqs()` calls
+like `unitsim-diag.R`'s. `archer_fit()` fills the three in (0, 1, 3) when
+handed a list; anything calling `rstan::sampling()` or `gqs()` directly must
+add them itself. Until the build is installed live it is reached only
+through `WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev`, so nothing existing
+is affected yet.

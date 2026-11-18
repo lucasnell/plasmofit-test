@@ -2,6 +2,19 @@
 
 ## State of play right now — read this first
 
+**2026-11-18: windowed, shared start BUILT AND VALIDATED in a scratch
+clone; nothing sampled, nothing installed live** (`claude/start-dist-design.md`,
+"Status"). Lucas's choices: 13 h window, shared, flat priors on the two
+shapes over [1, cap], cap = 3 as a data constant, run only the 13 h arm.
+Scratch clone `/home2/lan68/plasmofit/plasmofit-dev` (branch `start-dist`,
+d39b20e), scratch library `/home2/lan68/plasmofit/.Rlib-dev`; the live
+package and library are untouched. `start_dist` = 0 reproduces the old
+build's log density and gradient exactly (difference 0 at 8 points on the
+production data). `wockner-fit.R` gained entry 55 (`np_start13_nc384_t`) and
+summary-helper support for the new parameters (old configs unaffected).
+**Waiting on Lucas to submit entry 55** (command in `TODO.md`). No jobs
+running.
+
 **2026-11-09 (late): the `n_c` choice checked against the simulations**
 (`findings.md`, "Choosing fit `n_c` from outside the data";
 `_scripts/unitsim-ncchoice.R`). The risk is one-sided. Fitting at 512 when

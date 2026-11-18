@@ -180,8 +180,19 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
-- [ ] **Shared, one-sided starting age distribution — DESIGN DRAFTED, no
-      code** (Lucas 2026-11-09, chose this before refitting at higher `n_c`).
+- [ ] **SUBMIT ON LUCAS'S SAY-SO: `wockner-fit.R` entry 55,
+      `np_start13_nc384_t`** — production settings of entry 54 (no_pool,
+      `n_c` 384, `sd_log10_total0` 1, adapt_delta 0.95, max_treedepth 12)
+      with the windowed, shared start (13 h, cap 3). Runs against the
+      SCRATCH build:
+      `sbatch --array=55 --export=ALL,WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev _scripts/wockner-fit-pinned.sh`
+      (40 CPUs, 32G; entry 54 took ~24 h per pinned chain at tree depth
+      11-12). **Do not edit `_scripts/wockner-fit.R` while it runs.** Built
+      and validated 2026-11-18 (`claude/start-dist-design.md`, "Status").
+- [x] **Shared, one-sided starting age distribution — built and validated
+      in scratch 2026-11-18** (`claude/start-dist-design.md`, "Status").
+      The design, as first drafted (Lucas 2026-11-09, chose this before
+      refitting at higher `n_c`).
       `claude/start-dist-design.md`: a Beta on [0, `start_window`] in place
       of the wrapped full-cycle Beta, parameterised by mean and
       concentration, SHARED across the 14 units, behind a `start_dist` data

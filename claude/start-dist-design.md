@@ -1,7 +1,8 @@
 # Design: a shared, one-sided starting age distribution
 
 *Drafted 2026-11-09 with Lucas, after `findings.md`, "The inoculum's ages".
-Nothing is built. The decisions at the end are his.*
+**Built and validated 2026-11-18 in a scratch clone; not installed live, not
+yet fitted.** Status and the decisions taken are at the end.*
 
 ## What is wrong with the current start
 
@@ -108,3 +109,72 @@ Work, in order:
    package is byte-identical to `8dde0c1` and nothing needs reinstalling
    right now; a reinstall recompiles the Stan models and invalidates the
    anchor regression null.
+
+
+## Status, 2026-11-18: built in scratch and validated
+
+**Decisions (Lucas, 2026-11-09 to 11-18).** Window **13 h**, from the 3D7
+ring stage (0.30-0.31 of the cycle; `findings.md`, "How long the ring stage
+is"), not the 24 h circulating bound first proposed. **Shared** across the
+14 units. **Flat priors** on the two Beta shapes, `start_alpha`,
+`start_beta` ~ Uniform(1, `start_shape_cap`), with the **cap = 3**; window and
+cap are both data constants. A flat prior on the shapes is not flat on the
+width: on a 13 h window a cap of 3 gives prior sd of the starting ages 2.87
+h on average and P(sd > 3 h) = 0.27, against 3.75 h for a uniform start. Run
+only the 13 h arm. Build in a scratch copy first.
+
+**Where it lives.** Scratch clone `/home2/lan68/plasmofit/plasmofit-dev`,
+branch `start-dist`, commit d39b20e on top of the live package's bba580f;
+installed into the scratch library `/home2/lan68/plasmofit/.Rlib-dev` (every
+other package symlinked from the live library). **The live package repo and
+the live library are untouched.** Source-only diff:
+`claude/start-dist-source.diff` (the commit also carries the stanExports
+headers rstantools regenerates). Install log
+`_data/install-start-dist-2026-11-18.log`.
+
+**What changed.** New Stan functions `windowed_beta_starts`, `make_DC_win`,
+`generate_starts_win`, `ew_poly_series_win`, `traj_combo_partial_sum_win`; the
+four `archer_fit*` programs gain data `start_dist`, `start_window`,
+`start_shape_cap` and parameters `start_alpha`, `start_beta`, and branch on
+the flag. `archer_fit_single.stan` is unchanged. `archer_stan_data()` gains
+the three arguments and checks them; `archer_fit()` fills them in for data
+lists saved before they existed. **The old code path is untouched text**, a
+separate partial-sum function rather than a branch inside the old one.
+
+Two departures from the plan above:
+- **5-point Gauss-Legendre**, not the 3-point of `beta_starts()`, so the
+  shapes can go down to 1 (uniform) without the numerical guard setting the
+  biological ceiling. Its worst error is 4e-5 in absolute compartment weight,
+  for shapes strictly between 1 and 2.
+- **The t = 0 circulating/sequestered split is NOT changed.** An injected
+  inoculum is all circulating at t = 0, but the windowed start keeps the
+  existing convention (circulating = y x W). Inside a 13 h window y >= 0.93,
+  so it moves at most ~7% of the starting mass and less on average;
+  deferred, not done.
+
+**Validation** (`_scripts/start-dist-validate.R`,
+`_data/start-dist-validate-2026-11-18.txt`; no sampling, the compiled model
+evaluated at fixed points):
+1. `windowed_beta_starts()` against exact `pbeta` differences: machine
+   precision at shapes 1, 2, 3; worst 3.9e-5 over n_c {96, 384, 512} x three
+   cycle lengths x six shapes; continuous as the window edge crosses a
+   compartment boundary.
+2. **`start_dist` = 0 is identical to the old build**: on the production
+   data (`np_wide_total0_nc384_t`), log_prob and its gradient at 8 fixed
+   points differ from the live build by exactly 0 (904 gradient entries).
+3. `start_dist` = 1, 13 h, cap 3, production data: 73 unconstrained
+   parameters (113 minus 14 `b_shape_free` and 14 x 2 `b_off_vec`, plus 2);
+   `b_shape` and `b_offset` zero-sized; log_prob and gradient finite; the
+   gradient in `start_alpha`, `start_beta` matches central differences to
+   8.8e-10.
+4. The matrix_exp cross-check at n_c 96: max_rel_diff 6.0e-13 with the
+   windowed start against 5.9e-13 for the old one, so the fast likelihood
+   path and an independent matrix exponential of the same windowed starting
+   state agree.
+5. `wockner-fit.R` entry 55 builds the same data list as entry 54 apart from
+   the three new fields, a missing window is refused, and the script's own
+   `draw_as_list()` + `unconstrain_pars()` round trip works for both flags.
+
+**Not yet done:** any sampling; installing live (needs `--preclean` and a
+check of the installed binary, `gotchas.md`); porting d39b20e to the real
+package repo.
