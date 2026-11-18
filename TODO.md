@@ -180,15 +180,24 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
-- [ ] **SUBMIT ON LUCAS'S SAY-SO: `wockner-fit.R` entry 55,
-      `np_start13_nc384_t`** — production settings of entry 54 (no_pool,
-      `n_c` 384, `sd_log10_total0` 1, adapt_delta 0.95, max_treedepth 12)
-      with the windowed, shared start (13 h, cap 3). Runs against the
-      SCRATCH build:
-      `sbatch --array=55 --export=ALL,WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev _scripts/wockner-fit-pinned.sh`
-      (40 CPUs, 32G; entry 54 took ~24 h per pinned chain at tree depth
-      11-12). **Do not edit `_scripts/wockner-fit.R` while it runs.** Built
-      and validated 2026-11-18 (`claude/start-dist-design.md`, "Status").
+- [ ] **SLURM 35287 — `wockner-fit.R` entry 55, `np_start13_nc384_t`,
+      RUNNING** (submitted 2026-11-18, Lucas). Production settings of entry
+      54 (no_pool, `n_c` 384, `sd_log10_total0` 1, adapt_delta 0.95,
+      max_treedepth 12) with the windowed, shared, all-circulating start
+      (13 h, cap 3), on the LIVE library (build 037fb6b installed the same
+      day). Pinned, 40 CPUs, 32G; entry 54 took ~24 h per chain. **Do not
+      edit `_scripts/wockner-fit.R` or `wockner-fit-pinned.sh`, and do not
+      reinstall plasmofit, while it runs.** Chain logs
+      `_data/wock-pin-55-chain{1..4}.log`; it merges itself and writes
+      `wock-fit-`, `wock-data-`, `wock-fit-LOO-` and
+      `wock-fit-RES-np_start13_nc384_t.rds`. To read: the R-hat gate first
+      (per-chain lp__), then `cycle_length` against entry 54's 41.82 h,
+      `start_alpha`/`start_beta` and the implied starting-age sd, and elpd
+      against entry 54 (`loo_compare` on the `observation` element of the
+      two LOO files).
+- [ ] **Bring the start_dist build onto the package repo** (Lucas's call):
+      the live library runs plasmofit-dev branch `start-dist` at 037fb6b;
+      the package repo's `main` is still bba580f.
 - [x] **Shared, one-sided starting age distribution — built and validated
       in scratch 2026-11-18** (`claude/start-dist-design.md`, "Status").
       The design, as first drafted (Lucas 2026-11-09, chose this before

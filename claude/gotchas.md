@@ -739,6 +739,7 @@ field, so **every `wock-data-*.rds` and every unitsim chain file's `d` made
 before then fails against the new build** -- including `rstan::gqs()` calls
 like `unitsim-diag.R`'s. `archer_fit()` fills the three in (0, 1, 3) when
 handed a list; anything calling `rstan::sampling()` or `gqs()` directly must
-add them itself. Until the build is installed live it is reached only
-through `WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev`, so nothing existing
-is affected yet.
+add them itself. **The build has been live since 2026-11-18**, so this now
+bites: `unitsim-diag.R` and `unitsim-trough.R` (both `gqs()` on chain
+files' `d`) and `start-dist-validate.R`'s `old` mode will fail as they
+stand until the three fields are added to the lists they read.

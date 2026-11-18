@@ -34,7 +34,11 @@
 MODE <- Sys.getenv("START_VALIDATE", "new")
 LIVE <- "/home/lan68/R/x86_64-pc-linux-gnu-library/4.6"
 DEV <- "/home2/lan68/plasmofit/.Rlib-dev"
-.libPaths(if (MODE == "old") LIVE else DEV)
+## START_VALIDATE_LIB=live runs the `new` checks against the LIVE library,
+## to verify the installed binary once the build is installed there; section
+## 2 then compares it with the saved reference from the old build.
+NEWLIB <- if (Sys.getenv("START_VALIDATE_LIB", "dev") == "live") LIVE else DEV
+.libPaths(if (MODE == "old") LIVE else NEWLIB)
 suppressPackageStartupMessages({library(plasmofit); library(rstan)})
 rstan_options(threads_per_chain = 1L)
 REF <- "_data/start-dist-validate-old.rds"
@@ -62,7 +66,7 @@ if (MODE == "old") {
 }
 
 cat("library:", find.package("plasmofit"), "\n")
-stopifnot(startsWith(find.package("plasmofit"), DEV),
+stopifnot(startsWith(find.package("plasmofit"), NEWLIB),
           exists("windowed_beta_starts", envir = asNamespace("plasmofit")))
 withS <- function(d, dist, window = WINDOW, cap = CAP) {
     d$start_dist <- as.integer(dist); d$start_window <- if (dist == 1L) window else 1
@@ -99,8 +103,30 @@ v <- lapply(edge_cl * (1 + c(-1e-7, 1e-7)), \(cl) plasmofit:::windowed_beta_star
 cat(sprintf("   continuity across a compartment edge (cycle_length +/- 1e-7 relative): max |change| %.2e\n",
             max(abs(v[[1]] - v[[2]]))))
 
+## all circulating at t = 0 (added 2026-11-18 with that change): the windowed
+## starting state has the whole inoculum in the circulating compartments
+s0 <- plasmofit:::generate_starts_win(42.84, 384L, WINDOW, 2, 2, log10(1800))
+cat(sprintf("   generate_starts_win(): circulating %.6g, sequestered %.3g, of total0 %.6g\n",
+            sum(s0[1:384]), sum(s0[385:768]), 1800))
+stopifnot(abs(sum(s0[1:384]) - 1800) < 1e-9, sum(s0[385:768]) == 0)
+## how much that differs from splitting the start by y(age), as the old
+## start does: matrix exponential of both states, circulating abundance at
+## the observation times (72-216 h by 12 h), cycle 42.84 h, R 13.87, a = b = 2
+yv <- plasmofit:::make_y_vals(42.84, 384L); Wv <- s0[1:384]
+## From 12 h, to show WHERE it differs: only while the injected cells are in
+## their first cycle. Observations start at 72 h.
+ts <- seq(12, 216, by = 12)
+yc_all <- plasmofit:::mat_exp_series(s0, 42.84, 384L, 13.87, 0, ts, 12)
+yc_split <- plasmofit:::mat_exp_series(c(yv * Wv, (1 - yv) * Wv), 42.84, 384L, 13.87, 0, ts, 12)
+cat("   all circulating / split by y(age), circulating abundance (cycle 42.84 h, R 13.87, a = b = 2):\n")
+cat(sprintf("     t %3.0f h (%.2f cycles): %.8f\n", ts, ts / 42.84, yc_all / yc_split), sep = "")
+cat(sprintf("   first-cycle Poisson mass at the first observation (72 h): %.2e\n",
+            ppois(383, 384 * 72 / 42.84)))
+
 ## ---- 2. start_dist = 0 against the old build ---------------------------------
-cat("\n2. start_dist = 0 against the OLD build (live library), production data\n",
+cat("\n2. start_dist = 0 against the OLD build's saved log density\n",
+    "   (_data/start-dist-validate-old.rds, made in the live library BEFORE the\n",
+    "   install), production data\n",
     "   (np_wide_total0_nc384_t: no_pool, n_c 384, 1130 observations), at ", K,
     " fixed\n   unconstrained points. Same model, so differences are rounding only.\n\n", sep = "")
 ref <- readRDS(REF)

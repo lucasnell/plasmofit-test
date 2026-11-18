@@ -12,6 +12,8 @@ library: /home2/lan68/plasmofit/.Rlib-dev/plasmofit
    n_c 384, cycle 42.84 h, a 3.0 b 3.0: max |diff| 3.68e-16
    worst over n_c {96, 384, 512} x 3 cycle lengths x 6 shapes: 3.86e-05
    continuity across a compartment edge (cycle_length +/- 1e-7 relative): max |change| 1.35e-08
+   generate_starts_win(): circulating 1800, sequestered 0, of total0 1800
+   all circulating vs split by y(age), circulating abundance 72-216 h: ratio 1.0000 to 1.0000
 
 2. start_dist = 0 against the OLD build (live library), production data
    (np_wide_total0_nc384_t: no_pool, n_c 384, 1130 observations), at 8 fixed

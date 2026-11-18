@@ -1,6 +1,6 @@
 # plasmofit — malaria within-host dynamics — index
 
-**Status as of 2026-11-02.** No jobs running. The single-unit fixed-pin grid is read: bias follows the stage-spread mismatch, and elpd cannot pick the less-biased fixed (`b_shape`, `n_c`) model (`findings.md`). Single-unit wider-prior arm (32435) read; the grid is built, checked, and frozen, not submitted (`TODO.md`). No `cycle_length` number is final.
+**Status as of 2026-11-18.** SLURM 35287 running: entry 55, the real-data fit with the new windowed, shared starting distribution (13 h ring window), on the plasmofit build installed live today (`TODO.md`, `claude/start-dist-design.md`). No `cycle_length` number is final.
 
 **Age structure: answered.** The data constrain only the total stage spread at
 the end of the window, not its split between initial synchrony and accumulated

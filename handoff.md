@@ -12,8 +12,12 @@ package and library are untouched. `start_dist` = 0 reproduces the old
 build's log density and gradient exactly (difference 0 at 8 points on the
 production data). `wockner-fit.R` gained entry 55 (`np_start13_nc384_t`) and
 summary-helper support for the new parameters (old configs unaffected).
-**Waiting on Lucas to submit entry 55** (command in `TODO.md`). No jobs
-running.
+Later the same day, at Lucas's request: the whole inoculum is now
+circulating at t = 0 (037fb6b; correct, but no effect on these data, since
+observations start after every injected parasite has burst once); the
+build is **installed live** and the installed binary re-validated; and
+**entry 55 is running as SLURM 35287** (`TODO.md`). The live library is
+NOT on the package repo's `main`.
 
 **2026-11-09 (late): the `n_c` choice checked against the simulations**
 (`findings.md`, "Choosing fit `n_c` from outside the data";

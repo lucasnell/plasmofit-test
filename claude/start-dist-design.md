@@ -1,8 +1,8 @@
 # Design: a shared, one-sided starting age distribution
 
 *Drafted 2026-11-09 with Lucas, after `findings.md`, "The inoculum's ages".
-**Built and validated 2026-11-18 in a scratch clone; not installed live, not
-yet fitted.** Status and the decisions taken are at the end.*
+**Built, validated, installed LIVE, and first fitted (entry 55, SLURM
+35287) on 2026-11-18.** Status and the decisions taken are at the end.*
 
 ## What is wrong with the current start
 
@@ -146,11 +146,17 @@ Two departures from the plan above:
   shapes can go down to 1 (uniform) without the numerical guard setting the
   biological ceiling. Its worst error is 4e-5 in absolute compartment weight,
   for shapes strictly between 1 and 2.
-- **The t = 0 circulating/sequestered split is NOT changed.** An injected
-  inoculum is all circulating at t = 0, but the windowed start keeps the
-  existing convention (circulating = y x W). Inside a 13 h window y >= 0.93,
-  so it moves at most ~7% of the starting mass and less on average;
-  deferred, not done.
+- **The whole inoculum is circulating at t = 0** (added the same day at
+  Lucas's request, commit 037fb6b). The old start splits each starting stage
+  by y(age), the composition of a population that aged into it; an
+  injected inoculum was drawn from venous blood, so it is all circulating
+  and only later ageing sequesters it. In ew_poly_series()'s derivation that
+  is N_j(0) = W_j, so D_d uses W_j / c_j and C_d (the total) is unchanged.
+  **It has no effect on the fit to these data**: it raises predicted
+  circulating parasites by ~2.7% for the first half-cycle and is identical
+  to 8 decimals from ~36 h, because by then every injected parasite has
+  burst once and its progeny enter circulation regardless. Observations
+  start at 72 h, where the first cycle carries 3.5e-29 of the mass.
 
 **Validation** (`_scripts/start-dist-validate.R`,
 `_data/start-dist-validate-2026-11-18.txt`; no sampling, the compiled model
@@ -175,6 +181,16 @@ evaluated at fixed points):
    the three new fields, a missing window is refused, and the script's own
    `draw_as_list()` + `unconstrain_pars()` round trip works for both flags.
 
-**Not yet done:** any sampling; installing live (needs `--preclean` and a
-check of the installed binary, `gotchas.md`); porting d39b20e to the real
-package repo.
+**Installed live 2026-11-18** from the scratch clone at commit **037fb6b**
+(`R CMD INSTALL --preclean` into the live library
+`/home/lan68/R/x86_64-pc-linux-gnu-library/4.6`; log
+`_data/install-start-dist-live-2026-11-18.log`), and the INSTALLED binary
+re-validated (`_data/start-dist-validate-live-2026-11-18.txt`): start_dist =
+0 matches the old build's saved log density and gradient exactly, and the
+windowed cross-check is 6.0e-13 with the all-circulating start. **The live
+library therefore runs plasmofit-dev 037fb6b, which is NOT on the package
+repo's `main` (still bba580f).** Porting the branch is Lucas's call. Do not
+delete `/home2/lan68/plasmofit/plasmofit-dev`.
+
+**First fit: entry 55, `np_start13_nc384_t`, SLURM 35287**, submitted
+2026-11-18 (pinned, 40 CPUs; ~19 ms per gradient at the start).
