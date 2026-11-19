@@ -1,0 +1,90 @@
+1. GATE. max R-hat over all monitored quantities (pass < 1.05), bulk ESS
+   minimum, divergent post-warmup iterations of 4000, leapfrog steps per
+   iteration, longest chain in hours, and per-chain mean lp__ (4 chains x
+   1000 draws). lp__ is comparable within an entry, not across entries.
+
+   54: max R-hat  1.024 (log10_total0[7]   ) PASS | ESS min  112 | div  10 | leapfrog 1631.1 | longest chain 62.79 h | lp__ -880.1, -880.0, -884.7, -881.5
+   55: max R-hat 18.318 (cycle_length[1]   ) FAIL | ESS min    2 | div   9 | leapfrog   89.9 | longest chain  0.74 h | lp__ -996.3, -832.7, -897.2, -856.0
+   56: max R-hat 19.378 (cycle_length[1]   ) FAIL | ESS min    2 | div  55 | leapfrog   62.6 | longest chain  0.84 h | lp__ -858.8, -1057.2, -955.8, -861.3
+   57: max R-hat 13.793 (cycle_length[9]   ) FAIL | ESS min    2 | div  27 | leapfrog   73.7 | longest chain  0.85 h | lp__ -873.9, -870.2, -1017.0, -1040.3
+
+2. PER CHAIN. sum_log_lik = mean over the chain's draws of the pointwise
+   log-likelihood summed over 1130 observations (priors excluded; comparable
+   across entries; entry 54 is -807.2 in every chain). at_bound = trials whose
+   chain-mean cycle_length is within 0.5 h of 35 or 50 h. cl_mean13 = chain
+   mean of the mean cycle_length over 13 trials (hours).
+
+   54 chain 1: sum_log_lik  -807.4 | cl_mean13 41.87 | at_bound: none
+   54 chain 2: sum_log_lik  -807.0 | cl_mean13 41.77 | at_bound: none
+   54 chain 3: sum_log_lik  -807.2 | cl_mean13 41.76 | at_bound: none
+   54 chain 4: sum_log_lik  -807.2 | cl_mean13 41.86 | at_bound: none
+   55 chain 1: sum_log_lik  -937.0 | cl_mean13 41.96 | at_bound: Mefloquine 35.1, OZ439/DSM265 49.7, MMV048_PartB 49.7
+   55 chain 2: sum_log_lik  -819.5 | cl_mean13 41.11 | at_bound: none
+   55 chain 3: sum_log_lik  -863.0 | cl_mean13 41.60 | at_bound: none
+   55 chain 4: sum_log_lik  -836.6 | cl_mean13 40.96 | at_bound: none
+   56 chain 1: sum_log_lik  -824.1 | cl_mean13 41.54 | at_bound: none
+   56 chain 2: sum_log_lik  -989.4 | cl_mean13 41.32 | at_bound: Ferroquine 49.6
+   56 chain 3: sum_log_lik  -879.3 | cl_mean13 41.48 | at_bound: Mefloquine 35.3, MMV048_PartB 49.6
+   56 chain 4: sum_log_lik  -824.2 | cl_mean13 41.53 | at_bound: none
+   57 chain 1: sum_log_lik  -825.3 | cl_mean13 41.30 | at_bound: none
+   57 chain 2: sum_log_lik  -824.8 | cl_mean13 41.31 | at_bound: none
+   57 chain 3: sum_log_lik  -931.9 | cl_mean13 41.22 | at_bound: Mefloquine 35.5
+   57 chain 4: sum_log_lik  -954.6 | cl_mean13 40.84 | at_bound: Mefloquine 35.4
+
+3. TRIALS WHOSE cycle_length SPLITS THE CHAINS (between-chain range of
+   chain means > 2 h), chain means in hours.
+
+   55: 5 of 13 trials split: Mefloquine [35.1 43.3 43.3 43.4]; DSM265 [41.3 41.2 49.2 41.2]; OZ439/DSM265 [49.7 40.8 40.6 40.5]; KAE609 [40.9 40.7 40.6 38.8]; MMV048_PartB [49.7 40.4 39.4 40.2]
+   56: 5 of 13 trials split: Mefloquine [43.7 43.8 35.3 43.7]; Piperaquine [40.9 36.0 40.8 40.9]; Ferroquine [40.9 49.6 40.8 40.9]; OZ439/DSM265 [41.3 36.1 41.1 41.2]; MMV048_PartB [40.7 39.8 49.6 40.7]
+   57: 4 of 13 trials split: Mefloquine [43.2 43.2 35.5 35.4]; Piperaquine [40.8 40.7 40.6 35.9]; Ferroquine [40.7 40.8 40.6 49.3]; EFITA_OZGAM [41.1 41.1 49.5 41.0]
+
+4. STARTS. Per unit, posterior mean of the mode in hours (start_mode x 13),
+   pooled over all chains; ALSO the between-chain range of chain means, since
+   pooling chains that disagree hides the disagreement. Entry 54's per-unit
+   modal ages (posterior means, _data/inoculum-age-check-2026-11-09.txt) for
+   comparison.
+
+   entry 56
+              unit mode_h chain_range_h e54_modal_h
+   Mefloquine.1800   6.28          5.50       3.651
+        OZ439.1800   5.18          1.64      10.922
+       DSM265.1800   4.82          1.90       1.129
+  Piperaquine.1800   5.81          1.36       2.278
+   Ferroquine.1800   5.44          1.54       2.829
+    ACT451840.1800   6.48          0.08      10.957
+   MMV048_PIB.1800   7.29          0.82      11.739
+ OZ439/DSM265.1800   6.30          0.82       5.322
+  EFITA_OZGAM.2800   4.91          1.98       5.464
+       KAE609.1800   5.85          0.65       6.503
+      DSMOZ_2.2800   6.64          0.29      10.891
+  SJ733IBSMCS.2800   6.80          0.18       3.109
+  SJ733IBSMCS.2300   4.65          1.91       1.324
+ MMV048_PartB.2800   4.78          4.27       4.620
+   shared start_conc: pooled mean 2.29; chain means 2.19, 2.15, 2.65, 2.19 (prior flat on [2, 6])
+   Spearman, pooled mode against entry 54's modal age over 14 units: 0.54
+
+   entry 57
+              unit mode_h chain_range_h e54_modal_h conc conc_chain_range
+   Mefloquine.1800   6.30          8.20       3.651 3.73             0.38
+        OZ439.1800   3.10          0.63      10.922 3.64             0.18
+       DSM265.1800   2.79          0.22       1.129 3.70             0.04
+  Piperaquine.1800   4.64          1.33       2.278 3.15             0.82
+   Ferroquine.1800   3.92          2.82       2.829 3.39             0.46
+    ACT451840.1800   6.11          0.62      10.957 3.64             0.07
+   MMV048_PIB.1800   7.50          0.14      11.739 4.43             0.10
+ OZ439/DSM265.1800   5.16          0.49       5.322 3.68             0.25
+  EFITA_OZGAM.2800   3.22          2.38       5.464 2.90             0.15
+       KAE609.1800   5.13          0.67       6.503 3.37             0.30
+      DSMOZ_2.2800   6.57          1.30      10.891 3.93             0.07
+  SJ733IBSMCS.2800   5.48          0.39       3.109 3.26             0.04
+  SJ733IBSMCS.2300   2.86          0.26       1.324 3.86             0.13
+ MMV048_PartB.2800   4.53          1.28       4.620 2.87             0.60
+   Spearman, pooled mode against entry 54's modal age over 14 units: 0.56
+
+5. PSIS-LOO elpd over the same 1130 observations. NOT a model comparison for
+   any entry that fails the gate: there it averages over separate modes.
+
+   54: elpd_loo  -854.7 (se 28.4), p_loo  84.9, Pareto k > 0.7: 2
+   55: elpd_loo  -941.0 (se 28.1), p_loo 137.3, Pareto k > 0.7: 10
+   56: elpd_loo  -965.5 (se 28.2), p_loo 151.6, Pareto k > 0.7: 2
+   57: elpd_loo  -975.9 (se 27.7), p_loo 160.5, Pareto k > 0.7: 2

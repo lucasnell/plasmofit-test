@@ -180,7 +180,13 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
-- [ ] **SLURM 35288 — entries 56 and 57, RUNNING** (submitted 2026-11-19,
+- [x] **SLURM 35288 — read 2026-11-19: BOTH FAIL the gate** (56 max R-hat
+      19.4, 57 13.8; `findings.md`, "Entries 56 and 57";
+      `_data/read-entry5657-2026-11-19.txt`). By the reading rule the window,
+      not the sharing, is suspect; 57's best region fits 17-18 summed
+      log-likelihood units below entry 54 with the same number of start
+      parameters. Next step is Lucas's. Record follows.
+- [x] **SLURM 35288 — entries 56 and 57** (submitted 2026-11-19,
       Lucas: "do 1-2"), testing why 55 failed. 56 `np_start13mode_nc384_t`
       (`start_dist` 2: a mode per unit, shared concentration) and 57
       `np_start13unit_nc384_t` (`start_dist` 3: both per unit), otherwise

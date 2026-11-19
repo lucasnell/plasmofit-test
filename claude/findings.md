@@ -3908,6 +3908,78 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Entries 56 and 57, read 2026-11-19: per-unit starts inside the 13 h window fail too -- the window, not the sharing
+
+Lucas's test of the phase hypothesis behind entry 55's failure ("do 1-2").
+SLURM 35288, plasmofit scratch build fc7db77; script
+`_scripts/read-entry5657.R`, output `_data/read-entry5657-2026-11-19.txt`.
+Both are entry 55's settings with more per-unit freedom in the start:
+56 (`np_start13mode_nc384_t`, `start_dist` 2) a mode per unit and one shared
+concentration; 57 (`np_start13unit_nc384_t`, `start_dist` 3) mode and
+concentration per unit, which gives it as many start parameters as entry 54
+(14 + 14). The reading rule was set before the runs (`TODO.md`): 56 passing
+would confirm the phase hypothesis; only 57 passing, that sharing the
+concentration also matters; neither, that the window itself is suspect.
+
+**Neither passes.** Cells: max R-hat over all monitored quantities; bulk ESS
+minimum; leapfrog steps per post-warmup iteration; per-chain mean `lp__`
+(comparable within an entry only):
+
+| entry | start | max R-hat | ESS min | leapfrog | per-chain `lp__` |
+|---|---|---|---|---|---|
+| 54 | per-unit, wrapped, whole cycle | **1.024** | 112 | 1631 | -880.1, -880.0, -884.7, -881.5 |
+| 55 | one shared, 13 h window | 18.3 | 2 | 90 | -996.3, -832.7, -897.2, -856.0 |
+| 56 | mode per unit, 13 h window | 19.4 | 2 | 63 | -858.8, -1057.2, -955.8, -861.3 |
+| 57 | mode and concentration per unit, 13 h window | 13.8 | 2 | 74 | -873.9, -870.2, -1017.0, -1040.3 |
+
+**Same failure each time.** Per chain, mean over its 1000 draws of the
+pointwise log-likelihood summed over 1130 observations (priors excluded, so
+comparable across entries; entry 54 is -807.2 in every chain), and any
+trial whose chain-mean `cycle_length` is within 0.5 h of the 35 or 50 h
+bound:
+
+| entry | chain 1 | chain 2 | chain 3 | chain 4 |
+|---|---|---|---|---|
+| 56 | -824.1 | -989.4 (Ferroquine 49.6) | -879.3 (Mefloquine 35.3, MMV048_PartB 49.6) | -824.2 |
+| 57 | -825.3 | -824.8 | -931.9 (Mefloquine 35.5) | -954.6 (Mefloquine 35.4) |
+
+- In both, **two chains find the same best region** (56: -824.1, -824.2;
+  57: -825.3, -824.8, `cycle_length` mean over trials 41.53 and 41.31 h)
+  and the others are stuck with trials pinned at a bound. Mefloquine splits
+  the chains in all three windowed entries; 4-5 of 13 trials split in each.
+- **Even the best region fits worse than entry 54**: 57's two agreeing
+  chains are 17-18 summed log-likelihood units below 54's -807.2 with the
+  SAME number of start parameters. That is the cleanest comparison these
+  runs allow, and it says the window costs fit, not just mixing.
+- The start's own bounds are not what binds: 57's per-unit modes run
+  2.8-7.5 h and concentrations 2.9-4.4, all inside [0, 13] h and [2, 6];
+  56's shared concentration sits near 2 (2.15-2.65 by chain), nearly
+  uniform. The modes correlate with entry 54's per-unit modal ages only
+  loosely (Spearman 0.54 and 0.56 over 14 units).
+- elpd (54 -854.7, 55 -941.0, 56 -965.5, 57 -975.9) is recorded only:
+  for 55-57 it averages over separate regions and is not a comparison.
+
+**What this says.** Sharing was not the problem: giving every unit its own
+mode, and then its own spread, changes nothing. What 55-57 have in common
+and 54 lacks is the **13 h window**. (The all-circulating start is also
+common to them but is identical to the split start from ~36 h on, so it
+cannot matter at 72 h and later.)
+
+**Mechanism, a hypothesis consistent with all three.** The window confines
+every unit's starting ages to the first 13 h of a ~41 h cycle, so the
+OSCILLATION PHASE in the observation window can take only about a third of
+its possible values. Entry 54's wrapped start can place it anywhere on the
+cycle, and in units with an early modal age it does so by putting mass
+just before age 0 (wrapped to the cycle's end: the 7-42% "sequestered"
+share, "The inoculum's ages"). A unit whose data want a phase outside the
+allowed arc can reach it only by bending `cycle_length` over the window,
+which is the aliasing that pins trials at the bounds. That would make the
+13 h window, i.e. the ring-only premise, the thing in conflict with these
+data. Cheng et al.'s own fit also wanted 39% of their inoculum dividing in
+the first 24 h, the same direction from different data and a different
+model. Untested; the direct test is a wider window, which is a data
+constant and needs no rebuild.
+
 ### Entry 55, the windowed shared start on the real data, read 2026-11-19: FAILS the gate, with boundary modes in individual trials' `cycle_length`
 
 `wockner-fit.R` entry 55, `np_start13_nc384_t` (SLURM 35287, 2026-11-18,

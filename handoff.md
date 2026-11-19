@@ -2,6 +2,16 @@
 
 ## State of play right now — read this first
 
+**2026-11-19 (evening): entries 56 and 57 BOTH FAIL the gate**
+(`findings.md`, "Entries 56 and 57"): per-unit modes, and per-unit modes
+and spreads, inside the 13 h window fail exactly as the shared start did,
+with two chains agreeing and the rest stuck with trials' `cycle_length` at
+35 or 50 h. So the window, not the sharing, is the suspect; even 57's best
+region fits 17-18 log-likelihood units worse than entry 54 with as many
+start parameters. Hypothesis: the window restricts each unit's oscillation
+phase to a third of the cycle. A wider window needs no rebuild. No jobs
+running; the scratch library holds fc7db77, live and package `main` 13db2bd.
+
 **2026-11-19 (later): entries 56 and 57 running as SLURM 35288**, testing
 why 55 failed: 56 gives each unit its own mode with a shared concentration
 (`start_dist` 2), 57 both per unit (`start_dist` 3). New build fc7db77 is in

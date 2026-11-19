@@ -1,6 +1,6 @@
 # plasmofit — malaria within-host dynamics — index
 
-**Status as of 2026-11-19.** SLURM 35288 running: entries 56 and 57, testing why entry 55 (shared windowed start) failed the gate, by giving each unit its own mode (56) or its own mode and concentration (57). No `cycle_length` number is final.
+**Status as of 2026-11-19.** No jobs running. All three windowed starts (55 shared, 56 per-unit mode, 57 per-unit mode and spread) fail the convergence gate; the 13 h window, not sharing, is the suspect (`findings.md`). No `cycle_length` number is final.
 
 **Age structure: answered.** The data constrain only the total stage spread at
 the end of the window, not its split between initial synchrony and accumulated
