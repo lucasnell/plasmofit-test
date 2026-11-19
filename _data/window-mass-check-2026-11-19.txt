@@ -1,0 +1,23 @@
+Share of each unit's t = 0 age distribution by band (entry 54, posterior means).
+Bands in hours since invasion; 'last 6 h' = the final 6 h of the cycle, i.e.
+schizonts bursting within 6 h of injection. Rows sum to 1.
+
+              unit  cycle 0-13h 13-24h 24h-to-last6 last 6h circ_share_13_24
+   Mefloquine.1800 42.638 0.765  0.018        0.015   0.202            0.862
+        OZ439.1800 45.603 0.613  0.357        0.007   0.023            0.673
+       DSM265.1800 39.620 0.599  0.002        0.049   0.351            0.892
+  Piperaquine.1800 39.388 0.736  0.001        0.008   0.255            0.898
+   Ferroquine.1800 39.518 0.772  0.002        0.007   0.219            0.895
+    ACT451840.1800 44.276 0.652  0.337        0.002   0.009            0.715
+   MMV048_PIB.1800 42.844 0.651  0.349        0.000   0.000            0.794
+ OZ439/DSM265.1800 40.682 0.911  0.016        0.000   0.073            0.875
+  EFITA_OZGAM.2800 40.461 0.905  0.021        0.001   0.073            0.873
+       KAE609.1800 41.011 0.924  0.038        0.000   0.038            0.863
+      DSMOZ_2.2800 44.485 0.655  0.334        0.002   0.009            0.722
+  SJ733IBSMCS.2800 39.646 0.776  0.004        0.009   0.211            0.886
+  SJ733IBSMCS.2300 39.646 0.617  0.002        0.042   0.339            0.892
+ MMV048_PartB.2800 43.425 0.676  0.089        0.040   0.195            0.779
+
+Median over 14 units: 0-13 h 0.71, 13-24 h 0.02, 24 h to last 6 h 0.01, last 6 h 0.13
+Units with more mass in the last 6 h than in 13-24 h: 10 of 14
+Circulating share of a cohort, by the model's curve: 0.92 at 13 h, 0.49 at 18.6 h, 0.06 at 24 h

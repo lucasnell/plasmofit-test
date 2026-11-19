@@ -3977,8 +3977,30 @@ which is the aliasing that pins trials at the bounds. That would make the
 13 h window, i.e. the ring-only premise, the thing in conflict with these
 data. Cheng et al.'s own fit also wanted 39% of their inoculum dividing in
 the first 24 h, the same direction from different data and a different
-model. Untested; the direct test is a wider window, which is a data
-constant and needs no rebuild.
+model. Untested.
+
+**Would a 24 h window test it? Probably not** (checked 2026-11-19 after
+Lucas asked whether a 24 h window still means circulating only;
+`_scripts/window-mass-check.R`, `_data/window-mass-check-2026-11-19.txt`).
+Cells: share of each unit's t = 0 age distribution in entry 54 (posterior
+means of `b_shape`, `b_offset`, n_c 384, its trial's `cycle_length`) by band
+of hours since invasion. The out-of-window mass sits mostly in the LAST 6 h
+of the cycle -- schizonts bursting within 6 h of injection -- not at
+13-24 h: median over 14 units 0.13 against 0.02, and more in the last 6 h
+than at 13-24 h in 10 of 14 units, including every unit that split the
+chains in 55-57 (Mefloquine 0.20 against 0.02; DSM265 0.35 against 0.00;
+Piperaquine 0.26; Ferroquine 0.22; MMV048_PartB 0.20 against 0.09). Only
+the four units with modal ages near 11 h (OZ439, ACT451840, MMV048_PIB,
+DSMOZ_2) use the 13-24 h band (0.33-0.36). A 24 h window adds 13-24 h, so
+it would not give the troublesome units what entry 54 does. It would also
+drop the ring-only premise (rings end ~13 h), and its upper ages are ones a
+circulating inoculum barely contains: by the model's own curve 0.92 of a
+cohort circulates at 13 h, 0.49 at 18.6 h, 0.06 at 24 h (the windowed model
+still STARTS everything circulating, at any window).
+
+In phase terms, mass in the cycle's last 6 h bursts into a ring cohort a
+few hours AFTER injection: what the data appear to want is rings slightly
+"younger than age 0", which no window starting at 0 can supply.
 
 ### Entry 55, the windowed shared start on the real data, read 2026-11-19: FAILS the gate, with boundary modes in individual trials' `cycle_length`
 
