@@ -3908,6 +3908,64 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Entry 55, the windowed shared start on the real data, read 2026-11-19: FAILS the gate, with boundary modes in individual trials' `cycle_length`
+
+`wockner-fit.R` entry 55, `np_start13_nc384_t` (SLURM 35287, 2026-11-18,
+plasmofit 13db2bd live): entry 54's settings (no_pool, `n_c` 384,
+`sd_log10_total0` 1, adapt_delta 0.95, max_treedepth 12, same seed) with
+the 14 per-unit (`b_shape`, `b_offset`) replaced by ONE Beta(`start_alpha`,
+`start_beta`) on [0, 13] h since invasion, shared by every unit, all
+circulating at t = 0, flat priors on the shapes over [1, 3]
+(`claude/start-dist-design.md`). Script `_scripts/read-entry55.R`, output
+`_data/read-entry55-2026-11-19.txt`.
+
+**It is not a posterior.** Max R-hat **18.3** (`cycle_length[1]`), bulk ESS
+min 2, per-chain mean `lp__` -996.3, -832.7, -897.2, -856.0 (spread 163.6;
+entry 54: spread 4.7, max R-hat 1.024). All four chains apart, so a general
+failure, not one stuck chain. It ran in 0.45-0.74 h per chain at 90
+leapfrog steps per iteration, against 52-63 h and 1631 for entry 54; that is
+chains sitting in separate modes, not a usable speed-up. **No number from it
+is a result, including its mean over 13 trials of 41.41 h.**
+
+**Where the chains sit.** Per chain, mean over its 1000 draws; summed
+log-likelihood is the pointwise `log_lik` summed over the 1130
+observations, priors excluded, so unlike `lp__` it compares across the two
+models:
+
+| chain | summed log-lik | Mefloquine | DSM265 | OZ439/DSM265 | MMV048_PartB | `start_alpha` | `start_beta` |
+|---|---|---|---|---|---|---|---|
+| 55-1 | -937.0 | **35.14** | 41.31 | **49.69** | **49.71** | 1.04 | 1.55 |
+| 55-2 | -819.5 | 43.30 | 41.18 | 40.78 | 40.38 | 1.05 | 1.81 |
+| 55-3 | -863.0 | 43.32 | **49.23** | 40.63 | 39.43 | 1.05 | 1.91 |
+| 55-4 | -836.6 | 43.39 | 41.22 | 40.52 | 40.17 | 1.05 | 1.69 |
+| entry 54, each chain | -807.0 to -807.4 | 42.6-42.7 | 39.6-39.7 | 40.6-40.8 | 43.3-43.6 | | |
+
+`cycle_length` columns in hours; its bounds are 35 and 50, so the bold
+values are **trials pinned at a bound**, in chain 1 three of them.
+
+- **Every chain fits worse than entry 54**, the best (55-2, no trial at a
+  bound) by 12.3 summed log-likelihood units. Entry 54 has 28 more free
+  parameters, which can buy that much, so this does not by itself say the
+  per-unit start predicts better; the elpd that would (-86.3, se 9.8,
+  `loo_compare`) is computed from a mixture of separate modes and is **not
+  a valid comparison**.
+- **The start itself is the one stable thing**: `start_alpha` at its lower
+  bound (1.04-1.05) in all four chains, `start_beta` 1.55-1.91, i.e. a
+  density falling from age 0 (mean age ~5 h, sd ~3.2 h, mode under 1 h).
+  Youngest rings dominating fits blood drawn 6 h after fever onset, but it
+  is a boundary estimate from a run that is not a posterior.
+
+**Why, as a hypothesis not yet tested.** Entry 54's per-unit `b_offset` is
+a PHASE parameter: each unit can place its starting ages to match its own
+oscillation. The shared start removes that, so the only per-trial freedom
+left to fit phase is `cycle_length`, which then has to place the peaks as
+well as set the period, and several values that roughly align the observed
+peaks compete, including ones at the bounds. Wöckner et al. fitted their
+sine-wave model with a **cohort-level random effect on the phase**, noting
+"the inoculum was not synchronized between cohorts", which says these data
+need per-group phase freedom whatever the inoculum's origin. Separating
+"shared" from "windowed" needs a fit with only one of the two changes.
+
 ### Choosing fit `n_c` from outside the data, checked against the simulations 2026-11-09: overshooting is cheap, undershooting is not — but the cell Park would put us in is not simulated
 
 Lucas asked for this before any decision to refit the real data at `n_c` 512

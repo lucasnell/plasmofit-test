@@ -1,6 +1,6 @@
 # plasmofit — malaria within-host dynamics — index
 
-**Status as of 2026-11-18.** SLURM 35287 running: entry 55, the real-data fit with the new windowed, shared starting distribution (13 h ring window), on the plasmofit build installed live today (`TODO.md`, `claude/start-dist-design.md`). No `cycle_length` number is final.
+**Status as of 2026-11-19.** No jobs running. Entry 55 (real data, windowed shared start) failed the convergence gate with boundary modes in some trials' `cycle_length` (`findings.md`, "Entry 55"). No `cycle_length` number is final.
 
 **Age structure: answered.** The data constrain only the total stage spread at
 the end of the window, not its split between initial synchrony and accumulated

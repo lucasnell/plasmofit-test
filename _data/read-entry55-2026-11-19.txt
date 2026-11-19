@@ -1,0 +1,88 @@
+1. SAMPLER HEALTH (4 chains x 1000 post-warmup draws each)
+
+entry 55 (windowed, shared start): max R-hat 18.318 (cycle_length[1]) -> FAILS the gate; divergent 9 of 4000 post-warmup iterations;
+   at treedepth cap 12: 0.0%; leapfrog steps per iteration 89.9; chain hours 0.65, 0.52, 0.45, 0.74
+   per-chain mean lp__: -996.3, -832.7, -897.2, -856.0 (spread 163.59)
+   bulk ESS min 2, tail ESS min 11
+
+entry 54 (per-unit b_shape, b_offset): max R-hat 1.024 (log10_total0[7]) -> PASSES the gate; divergent 10 of 4000 post-warmup iterations;
+   at treedepth cap 12: 0.1%; leapfrog steps per iteration 1631.1; chain hours 62.79, 59.13, 51.63, 62.63
+   per-chain mean lp__: -880.1, -880.0, -884.7, -881.5 (spread 4.68)
+   bulk ESS min 112, tail ESS min 80
+
+2. CYCLE LENGTH. Per trial: posterior mean and sd of cycle_length (hours).
+   'mean over trials' = posterior mean (sd) of the per-draw mean over the 13
+   trials. 55 - 54 = difference of posterior means; unpaired (different fits
+   of the same data).
+
+        trial e55_mean e55_sd e54_mean e54_sd  diff
+   Mefloquine    41.29   3.56    42.64   1.49 -1.35
+        OZ439    41.80   0.30    45.60   2.43 -3.81
+       DSM265    43.24   3.47    39.62   0.89  3.62
+  Piperaquine    40.57   0.23    39.39   1.17  1.18
+   Ferroquine    40.55   0.25    39.52   1.17  1.03
+    ACT451840    41.13   0.49    44.28   1.90 -3.15
+   MMV048_PIB    40.85   0.27    42.84   1.36 -1.99
+ OZ439/DSM265    42.90   3.97    40.68   2.11  2.22
+  EFITA_OZGAM    40.90   0.23    40.46   1.11  0.44
+       KAE609    40.26   1.50    41.01   1.57 -0.75
+      DSMOZ_2    41.43   0.54    44.49   2.07 -3.05
+  SJ733IBSMCS    40.98   0.22    39.65   1.04  1.33
+ MMV048_PartB    42.42   4.26    43.43   2.10 -1.00
+
+   mean over trials: entry 55 41.41 h (sd 0.44), entry 54 41.82 h (sd 0.58); 55 - 54 = -0.41 h
+   trials with 55 shorter than 54: 7 of 13; range of 55 - 54 -3.81 to +3.62 h
+
+3. THE STARTING AGE DISTRIBUTION (entry 55, one for all units).
+   start_alpha, start_beta: posterior mean and 90% interval; flat prior on
+   [1, 3]. Implied start, hours since invasion on [0, 13], per draw:
+   mean age W a/(a+b), sd W sqrt(ab/((a+b)^2(a+b+1))), mode W (a-1)/(a+b-2).
+
+   start_alpha 1.05 [1.00, 1.15]
+   start_beta  1.74 [1.28, 2.35]
+   share of draws within 0.1 of a bound: alpha 0.87 (at 1) 0.00 (at 3); beta 0.00 (at 1) 0.00 (at 3)
+   mean age (h) 4.96 [4.04, 5.85]
+   sd of ages (h) 3.24 [2.87, 3.55]
+   mode (h)     0.87 [0.05, 2.51]
+   (a uniform start on [0, 13] has mean 6.50 h and sd 3.75 h)
+   For comparison, entry 54's 14 per-unit starts (posterior means; from
+   _data/inoculum-age-check-2026-11-09.txt): modal age 1.1-11.7 h, sd 3.3-6.1 h,
+   with 7-42% of the starting mass in sequestered compartments.
+
+4. R (per trial) AND log10_total0 (per unit): posterior means, 55 against 54.
+
+   R: entry 55 12.73 to 16.56 (median 14.32); entry 54 12.73 to 15.57 (median 14.05); 55 - 54 median +0.56
+   log10_total0: entry 55 -1.27 to -0.36 (median -0.84); entry 54 -1.83 to -0.63 (median -0.98); 55 - 54 median +0.31
+   sd_iRBC: median over 27 cohorts entry 55 0.559, entry 54 0.472; 55 - 54 median +0.009
+
+5. PSIS-LOO over the same 1130 observations (the 'observation' element of
+   each LOO file). elpd_diff is relative to the better model; positive
+   elpd is better.
+
+                  model elpd_diff se_diff p_worse diag_diff       diag_elpd
+ entry54_per_unit_start       0.0     0.0      NA            2 k_psis > 0.7
+ entry55_windowed_start     -86.3     9.8    1.00           10 k_psis > 0.7
+
+Diagnostic flags present.
+See ?`loo-glossary` (sections `diag_diff` and `diag_elpd`)
+or https://mc-stan.org/loo/reference/loo-glossary.html.
+
+   elpd_loo: entry 55 -941.0 (se 28.1), entry 54 -854.7 (se 28.4)
+   p_loo: entry 55 137.3, entry 54 84.9; Pareto k > 0.7: entry 55 10, entry 54 2
+
+6. PER CHAIN. lp__ and summed log_lik: mean over the chain's 1000 draws.
+   cycle_length columns: chain mean, hours.
+
+   entry 55
+ chain     lp sum_log_lik cl_mean13 start_alpha start_beta Mefloquine DSM265 OZ439/DSM265 KAE609 MMV048_PartB
+     1 -996.3      -937.0     41.96        1.04       1.55      35.14  41.31        49.69  40.85        49.71
+     2 -832.7      -819.5     41.11        1.05       1.81      43.30  41.18        40.78  40.75        40.38
+     3 -897.2      -863.0     41.60        1.05       1.91      43.32  49.23        40.63  40.65        39.43
+     4 -856.0      -836.6     40.96        1.05       1.69      43.39  41.22        40.52  38.79        40.17
+
+   entry 54 (converged)
+ chain     lp sum_log_lik cl_mean13 Mefloquine DSM265 OZ439/DSM265 KAE609 MMV048_PartB
+     1 -880.1      -807.4     41.87      42.63  39.60        40.56  40.93        43.63
+     2 -880.0      -807.0     41.77      42.61  39.59        40.71  41.06        43.30
+     3 -884.7      -807.2     41.76      42.62  39.66        40.79  41.03        43.27
+     4 -881.5      -807.2     41.86      42.70  39.64        40.67  41.02        43.50

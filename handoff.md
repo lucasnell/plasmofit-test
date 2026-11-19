@@ -2,6 +2,14 @@
 
 ## State of play right now — read this first
 
+**2026-11-19: entry 55 FAILED the gate** (`findings.md`, "Entry 55"):
+max R-hat 18.3, chains apart, some trials' `cycle_length` pinned at the 35
+and 50 h bounds, every chain's summed log-likelihood below entry 54's.
+Hypothesis: the shared start removed the per-unit phase (`b_offset`), so
+`cycle_length` has to fit phase as well as period. Package `main`
+fast-forwarded to the live build (13db2bd, not pushed); the two `gqs`
+scripts patched for old data lists. No jobs running. Next step is Lucas's.
+
 **2026-11-18: windowed, shared start BUILT AND VALIDATED in a scratch
 clone; nothing sampled, nothing installed live** (`claude/start-dist-design.md`,
 "Status"). Lucas's choices: 13 h window, shared, flat priors on the two

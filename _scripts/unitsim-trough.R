@@ -50,6 +50,15 @@ MODE <- Sys.getenv("UNITSIM_TROUGH", "read")
 MATCH <- Sys.getenv("UNITSIM_TROUGH_MATCH", "-g384-fix-rep[0-9]+(-pin[a-z0-9]+)?(-f(288|512))?-ptruth$")
 SEED <- 20261102L
 mod <- plasmofit:::stanmodels[["archer_fit_pooled_both"]]
+## Data lists saved before plasmofit's start_dist build (live 2026-11-18)
+## lack its three fields, which the Stan programs now require; give them
+## the old behaviour (claude/gotchas.md).
+with_start_fields <- function(d) {
+    if (is.null(d$start_dist)) {
+        d$start_dist <- 0L; d$start_window <- 1; d$start_shape_cap <- 3
+    }
+    d
+}
 trough_path <- function(nm) sprintf("%strough-%s.rds", D, nm)
 
 ## resid of y_trans after removing an OLS line in time; the design matrix is
@@ -85,6 +94,7 @@ trough_of <- function(nm) {
     f <- readRDS(sprintf("%sfit-%s.rds", D, nm))
     d <- readRDS(sprintf("%schain-%s-c1.rds", D, nm))$d
     d$calc_log_lik <- 1L
+    d <- with_start_fields(d)
     dr <- as.matrix(f)
     g <- rstan::gqs(mod, data = d, draws = dr)
     ll <- rstan::extract(g, "log_lik")$log_lik
@@ -112,6 +122,7 @@ if (MODE == "check") {
     nm <- "w192-g384-fix-rep1-ptruth"
     f <- readRDS(sprintf("%sfit-%s.rds", D, nm))
     d <- readRDS(sprintf("%schain-%s-c1.rds", D, nm))$d; d$calc_log_lik <- 1L
+    d <- with_start_fields(d)
     dr <- as.matrix(f)[1:3, , drop = FALSE]
     g <- rstan::gqs(mod, data = d, draws = dr)
     ll <- rstan::extract(g, "log_lik")$log_lik

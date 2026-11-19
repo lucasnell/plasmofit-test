@@ -50,12 +50,22 @@ options(width = 150)
 DIR <- "_data/unitsim/study/"
 MODE <- Sys.getenv("UNITSIM_DIAG", "read")
 mod <- plasmofit:::stanmodels[["archer_fit_pooled_both"]]
+## Data lists saved before plasmofit's start_dist build (live 2026-11-18)
+## lack its three fields, which the Stan programs now require; give them
+## the old behaviour (claude/gotchas.md).
+with_start_fields <- function(d) {
+    if (is.null(d$start_dist)) {
+        d$start_dist <- 0L; d$start_window <- 1; d$start_shape_cap <- 3
+    }
+    d
+}
 diag_path <- function(nm) sprintf("%sdiag-%s.rds", DIR, nm)
 
 log_lik_of <- function(nm) {
     f <- readRDS(sprintf("%sfit-%s.rds", DIR, nm))
     d <- readRDS(sprintf("%schain-%s-c1.rds", DIR, nm))$d
     d$calc_log_lik <- 1L
+    d <- with_start_fields(d)
     dr <- as.matrix(f)
     g <- rstan::gqs(mod, data = d, draws = dr)
     ll <- rstan::extract(g, "log_lik", permuted = FALSE)    # iter x chain x obs
