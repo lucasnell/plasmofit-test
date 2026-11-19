@@ -2,6 +2,12 @@
 
 ## State of play right now — read this first
 
+**2026-11-19 (later): entries 56 and 57 running as SLURM 35288**, testing
+why 55 failed: 56 gives each unit its own mode with a shared concentration
+(`start_dist` 2), 57 both per unit (`start_dist` 3). New build fc7db77 is in
+the SCRATCH library only; live and package `main` stay at 13db2bd. How to
+read them: `TODO.md`.
+
 **2026-11-19: entry 55 FAILED the gate** (`findings.md`, "Entry 55"):
 max R-hat 18.3, chains apart, some trials' `cycle_length` pinned at the 35
 and 50 h bounds, every chain's summed log-likelihood below entry 54's.

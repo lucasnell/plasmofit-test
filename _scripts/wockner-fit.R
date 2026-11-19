@@ -575,7 +575,29 @@ CONFIGS <- list(
                                           start_dist = 1L, start_window = 13,
                                           start_shape_cap = 3),
                               control = list(adapt_delta = 0.95,
-                                             max_treedepth = 12))
+                                             max_treedepth = 12)),
+    ## ---- 56-57: why 55 failed (Lucas, 2026-11-19) ---------------------------
+    ## 55 failed the gate (max R-hat 18.3) with trials' cycle_length at the
+    ## 35 and 50 h bounds. Hypothesis: sharing the start took away the
+    ## per-unit PHASE that entry 54's b_offset supplied. Both keep 55's 13 h
+    ## window, cap 3 and all-circulating start; start_dist 2 and 3 are in the
+    ## plasmofit start-dist build (claude/start-dist-design.md).
+    ## 56: a MODE per unit, one CONCENTRATION shared -- per-unit phase back,
+    ##     the shape of the spread still shared. Tests the hypothesis.
+    np_start13mode_nc384_t = list(model = "no_pool",
+                                  data = list(sd_log10_total0 = 1, n_c = 384L,
+                                              start_dist = 2L, start_window = 13,
+                                              start_shape_cap = 3),
+                                  control = list(adapt_delta = 0.95,
+                                                 max_treedepth = 12)),
+    ## 57: a mode AND a concentration per unit -- the window kept, sharing
+    ##     dropped. With 56 this separates "shared" from "windowed".
+    np_start13unit_nc384_t = list(model = "no_pool",
+                                  data = list(sd_log10_total0 = 1, n_c = 384L,
+                                              start_dist = 3L, start_window = 13,
+                                              start_shape_cap = 3),
+                                  control = list(adapt_delta = 0.95,
+                                                 max_treedepth = 12))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -865,7 +887,8 @@ bshape_par_for <- function(fit) {
 
 ## start_alpha/start_beta exist only in fits from the start_dist build
 ## (2026-11, claude/start-dist-design.md); zero-sized unless start_dist = 1.
-start_pars_for <- function(fit) intersect(c("start_alpha", "start_beta"), fit@model_pars)
+start_pars_for <- function(fit) intersect(c("start_alpha", "start_beta", "start_mode", "start_conc"),
+                                          fit@model_pars)
 par_block_for <- function(model, fit, data = d) {
     c(bshape_par_for(fit), "b_off_vec", start_pars_for(fit), "log10_total0",
       r_pars_for(model), cl_pars_for(model), "z_sd_iRBC",
@@ -902,7 +925,8 @@ draw_as_list <- function(fit, pars, i = 1L) {
     ## start_dist = 1, and the reverse when it is 0. The declared dims come
     ## from par_dims: b_off_vec is (0, 2), not (0).
     for (nm in intersect(c("delta_total0", "sigma_total0", "b_shape_free",
-                           "b_off_vec", "start_alpha", "start_beta"),
+                           "b_off_vec", "start_alpha", "start_beta",
+                           "start_mode", "start_conc"),
                          fit@model_pars)) {
         if (!nm %in% names(out)) out[[nm]] <- array(numeric(0), fit@par_dims[[nm]])
     }
@@ -951,10 +975,16 @@ fit_cond <- function(fit, max_shape, model) {
         colnames(ang) <- paste0("b_ang[", seq_len(ncol(ang)), "]")
     }
     st <- NULL
+    cap <- d$start_shape_cap
     if (!is.null(dr$start_alpha) && length(dr$start_alpha) > 0) {
-        cap <- d$start_shape_cap
         st <- cbind(start_alpha = lg((as.vector(dr$start_alpha) - 1) / (cap - 1)),
                     start_beta  = lg((as.vector(dr$start_beta) - 1) / (cap - 1)))
+    }
+    if (!is.null(dr$start_mode) && length(dr$start_mode) > 0) {
+        m <- lg(as.matrix(dr$start_mode)); colnames(m) <- paste0("start_mode[", seq_len(ncol(m)), "]")
+        k <- lg((as.matrix(dr$start_conc) - 2) / (2 * cap - 2))
+        colnames(k) <- paste0("start_conc[", seq_len(ncol(k)), "]")
+        st <- cbind(m, k)
     }
     ## logit_R/logit_cl are already unconstrained scalars, so they need no
     ## further transform, unlike mu_logit_*/log(sigma_logit_*)/eta_*
@@ -990,7 +1020,7 @@ div_by_sigma <- function(fit, model) {
 
 summarize_fit <- function(fit, data, label, model,
                           par_names = c("b_shape", "b_offset", "start_alpha",
-                                        "start_beta", "R",
+                                        "start_beta", "start_mode", "start_conc", "R",
                                         "log10_total0", "cycle_length",
                                         "sd_iRBC")) {
     ## keep only parameters this fit has and that carry draws: b_shape and

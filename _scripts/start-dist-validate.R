@@ -38,7 +38,7 @@ DEV <- "/home2/lan68/plasmofit/.Rlib-dev"
 ## to verify the installed binary once the build is installed there; section
 ## 2 then compares it with the saved reference from the old build.
 NEWLIB <- if (Sys.getenv("START_VALIDATE_LIB", "dev") == "live") LIVE else DEV
-.libPaths(if (MODE == "old") LIVE else NEWLIB)
+.libPaths(if (MODE %in% c("old", "ref1")) LIVE else NEWLIB)
 suppressPackageStartupMessages({library(plasmofit); library(rstan)})
 rstan_options(threads_per_chain = 1L)
 REF <- "_data/start-dist-validate-old.rds"
@@ -50,6 +50,25 @@ handle <- function(d, model = "archer_fit")
     suppressWarnings(rstan::sampling(plasmofit:::stanmodels[[model]], data = d,
                                      chains = 1, iter = 1, refresh = 0, seed = 1,
                                      algorithm = "Fixed_param"))
+
+## ref1 (added 2026-11-19, before start_dist 2 and 3): in the LIVE library,
+## which then held the start_dist 0/1 build (13db2bd), log_prob and gradient of
+## start_dist = 1 (13 h, cap 3) at K fixed points, so the generalised build
+## can be checked to leave start_dist = 1 unchanged.
+REF1 <- "_data/start-dist-validate-ref1.rds"
+if (MODE == "ref1") {
+    cat("library:", find.package("plasmofit"), "\n")
+    d <- d0; d$start_dist <- 1L; d$start_window <- WINDOW; d$start_shape_cap <- CAP
+    f <- handle(d)
+    np <- rstan::get_num_upars(f)
+    set.seed(20261119)
+    U <- matrix(rnorm(K * np, 0, 0.3), K, np)
+    lp <- apply(U, 1, \(u) rstan::log_prob(f, u))
+    gr <- t(apply(U, 1, \(u) rstan::grad_log_prob(f, u)))
+    saveRDS(list(U = U, lp = lp, gr = gr, np = np), REF1)
+    cat(sprintf("start_dist 1 reference: %d parameters, %d points, written to %s\n", np, K, REF1))
+    quit(save = "no")
+}
 
 if (MODE == "old") {
     cat("library:", find.package("plasmofit"), "\n")
@@ -227,4 +246,67 @@ for (dist in 1:0) {
     cat(sprintf("   start_dist %d: draw_as_list + unconstrain_pars round trip, %d coordinates; b_off_vec dims %s\n",
                 dist, length(u), paste(dim(init$b_off_vec), collapse = "x")))
     stopifnot(length(u) == rstan::get_num_upars(fh))
+}
+
+
+## ---- 6. start_dist 2 and 3 (added 2026-11-19) ---------------------------------
+## 2: a mode per unit and one shared concentration; 3: both per unit. Checks:
+## start_dist 1 unchanged by the generalisation (against REF1 from the
+## 13db2bd build), the parameter layout, the (mode, conc) -> (a, b) map, finite
+## log_prob and gradient with spot finite differences, the matrix_exp
+## cross-check, and wockner-fit.R entries 56-57's data lists and helpers.
+if (file.exists(REF1)) {
+    cat("\n6a. start_dist = 1 against the 13db2bd build (REF1), same 8 points.\n")
+    r1 <- readRDS(REF1)
+    f1b <- handle(withS(d0, 1L))
+    stopifnot(rstan::get_num_upars(f1b) == r1$np)
+    lpb <- apply(r1$U, 1, \(u) rstan::log_prob(f1b, u))
+    grb <- t(apply(r1$U, 1, \(u) rstan::grad_log_prob(f1b, u)))
+    cat(sprintf("   log_prob: max |new - ref| %.2e; gradient: max |new - ref| / max(1, |ref|) %.2e\n",
+                max(abs(lpb - r1$lp)), max(abs(grb - r1$gr) / pmax(1, abs(r1$gr)))))
+}
+for (dist in 2:3) {
+    cat(sprintf("\n6%s. start_dist = %d, window %g h, cap %g.\n", c("", "", "b", "c")[dist + 1], dist, WINDOW, CAP))
+    fd <- handle(withS(d0, dist))
+    npd <- rstan::get_num_upars(fd)
+    expect <- ref$np - 42 + 14 + if (dist == 2) 1 else 14
+    cat(sprintf("   parameters: %d (expected %d: old %d minus 42 start parameters, plus 14 modes and %d concentration%s)\n",
+                npd, expect, ref$np, if (dist == 2) 1 else 14, if (dist == 2) "" else "s"))
+    stopifnot(npd == expect)
+    set.seed(10 + dist)
+    Ud <- matrix(rnorm(K * npd, 0, 0.3), K, npd)
+    lpd <- apply(Ud, 1, \(u) rstan::log_prob(fd, u))
+    grd <- t(apply(Ud, 1, \(u) rstan::grad_log_prob(fd, u)))
+    cat(sprintf("   log_prob finite at %d of %d points; gradient finite in %d of %d entries\n",
+                sum(is.finite(lpd)), K, sum(is.finite(grd)), length(grd)))
+    cp <- rstan::constrain_pars(fd, Ud[1, ])
+    kk <- if (dist == 2) rep(cp$start_conc, 14) else cp$start_conc
+    mode_back <- (cp$start_a - 1) / (cp$start_a + cp$start_b - 2)
+    cat(sprintf("   map: max |mode from (a, b) - start_mode| %.2e; max |a + b - conc| %.2e; min(a, b) %.3f\n",
+                max(abs(mode_back - cp$start_mode)), max(abs(cp$start_a + cp$start_b - kk)),
+                min(c(cp$start_a, cp$start_b))))
+    coords <- if (dist == 2) c(1, 7, 15) else c(1, 15, 28)
+    err <- c()
+    for (p in coords) for (q in 1:2) {
+        u <- Ud[q, ]; e <- 1e-5; up <- u; up[p] <- up[p] + e; dn <- u; dn[p] <- dn[p] - e
+        fdv <- (rstan::log_prob(fd, up) - rstan::log_prob(fd, dn)) / (2 * e)
+        err <- c(err, abs(fdv - grd[q, p]) / max(1, abs(grd[q, p])))
+    }
+    cat(sprintf("   mode/conc gradient against central differences (coordinates %s, 2 points): max relative error %.2e\n",
+                paste(coords, collapse = ", "), max(err)))
+    dc <- withS(d0, dist); dc$n_c <- 96L; dc$run_check <- 1L
+    cat(sprintf("   run_check at n_c 96: max_rel_diff %.2e\n",
+                as.matrix(handle(dc), pars = "max_rel_diff")[1, 1]))
+    dd <- archer_stan_data(paras_df, series = "id", time = "time", abundance = "para",
+                           grp_init = "inoc", grp_R = "trial", grp_cl = "trial",
+                           grp_sd = "obs_error", calc_log_lik = 1L, sd_log10_total0 = 1,
+                           n_c = 384L, start_dist = dist, start_window = 13, start_shape_cap = 3)
+    same <- vapply(names(d0), \(n) isTRUE(all.equal(d0[[n]], dd[[n]])), logical(1))
+    H$d <- dd
+    fh <- handle(dd)
+    init <- H$draw_as_list(fh, H$par_block_for("no_pool", fh, dd), 1L)
+    u <- rstan::unconstrain_pars(fh, init)
+    cat(sprintf("   wockner-fit.R entry %d: data differs from entry 54's only in the start fields: %s; helper round trip %d coordinates\n",
+                if (dist == 2) 56 else 57, all(same), length(u)))
+    stopifnot(all(same), length(u) == npd)
 }

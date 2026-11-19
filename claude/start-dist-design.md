@@ -194,3 +194,46 @@ delete `/home2/lan68/plasmofit/plasmofit-dev`.
 
 **First fit: entry 55, `np_start13_nc384_t`, SLURM 35287**, submitted
 2026-11-18 (pinned, 40 CPUs; ~19 ms per gradient at the start).
+
+
+## start_dist 2 and 3, 2026-11-19: testing why entry 55 failed
+
+Entry 55 (`start_dist` 1) failed the gate with trials' `cycle_length` at
+the bounds (`findings.md`, "Entry 55"). Hypothesis: sharing the start took
+away the per-unit PHASE that entry 54's `b_offset` supplied. Lucas chose to
+test it two ways ("do 1-2"):
+
+- **`start_dist` 2: a mode per unit, one concentration shared.** A shift
+  of a 13 h-wide shape inside a 13 h window is impossible, so "shared shape,
+  per-unit shift" became per-unit MODE with shared CONCENTRATION.
+- **`start_dist` 3: mode and concentration per unit** -- the window kept,
+  the sharing dropped. With 2, this separates "shared" from "windowed".
+
+**Parameterisation.** a = 1 + m (k - 2), b = 1 + (1 - m)(k - 2), with mode
+m = `start_mode` in [0, 1] (a fraction of the window) and concentration
+k = `start_conc` = a + b in [2, 2 `start_shape_cap`]: both shapes stay >= 1
+for any m, the mode of Beta(a, b) is exactly m, and k = 2 is uniform. Flat
+priors on m and k. The upper bound 2 x cap makes a symmetric start (m = 0.5)
+carry the same cap on a and b as `start_dist` 1, but this is a different
+prior from 1's flat prior on (a, b), not the same model with a constraint
+lifted. Entry 55 put a at its floor of 1, i.e. m = 0; here m = 0 is inside
+the allowed range rather than on a boundary of a shape parameter.
+
+**Build.** Scratch clone commit **fc7db77** (branch `start-dist`), installed
+ONLY into the scratch library; the live library and the package repo's
+`main` stay at 13db2bd. `traj_combo_partial_sum_win` now takes per-group
+shape vectors. Validation (`_scripts/start-dist-validate.R`, section 6;
+`_data/start-dist-validate-23-2026-11-19.txt`):
+- `start_dist` 0 identical to the old build (difference 0);
+- `start_dist` 1 against the 13db2bd build at 8 fixed points: log_prob
+  within 7.3e-12 (on values ~5e4) and gradient within 4.8e-16 -- rounding
+  from the vectorised call, same model;
+- 2: 86 parameters, 3: 99; the (m, k) -> (a, b) map exact (1e-16); finite
+  log_prob and gradient; spot finite differences within 5e-7; the
+  matrix_exp cross-check 6.6e-13 (2) and 1.0e-12 (3);
+- `wockner-fit.R` entries 56 and 57 build entry 54's data plus the start
+  fields, and the script's helpers round-trip both.
+
+**Runs.** Entries 56 (`np_start13mode_nc384_t`, `start_dist` 2) and 57
+(`np_start13unit_nc384_t`, `start_dist` 3), SLURM 35288, submitted
+2026-11-19 with `WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev`.

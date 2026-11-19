@@ -180,6 +180,21 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
+- [ ] **SLURM 35288 — entries 56 and 57, RUNNING** (submitted 2026-11-19,
+      Lucas: "do 1-2"), testing why 55 failed. 56 `np_start13mode_nc384_t`
+      (`start_dist` 2: a mode per unit, shared concentration) and 57
+      `np_start13unit_nc384_t` (`start_dist` 3: both per unit), otherwise
+      55's settings. They load the SCRATCH library (fc7db77) through
+      `WOCKFIT_LIB`, so **do not reinstall into
+      `/home2/lan68/plasmofit/.Rlib-dev`, nor edit `_scripts/wockner-fit.R`,
+      while they run.** To read, for each: the gate and per-chain lp__
+      first; whether any trial's `cycle_length` sits at 35 or 50 h; summed
+      log-likelihood per chain against entry 54's -807.2; then
+      `cycle_length`, the per-unit modes against entry 54's per-unit modal
+      ages (1.1-11.7 h), and elpd against 54 only if the gate passes. If 56
+      passes, the phase hypothesis holds; if only 57 passes, sharing the
+      concentration also matters; if neither, the window itself is suspect.
+      Design: `claude/start-dist-design.md`, "start_dist 2 and 3".
 - [x] **SLURM 35287 — read 2026-11-19: FAILS the gate** (max R-hat 18.3,
       four chains apart, trials' `cycle_length` pinned at 35 and 50 h in
       some chains; `findings.md`, "Entry 55"; `_data/read-entry55-2026-11-19.txt`).
