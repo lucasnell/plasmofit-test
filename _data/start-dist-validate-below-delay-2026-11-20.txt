@@ -68,13 +68,13 @@ library: /home2/lan68/plasmofit/.Rlib-dev/plasmofit
    start_dist 0: draw_as_list + unconstrain_pars round trip, 113 coordinates; b_off_vec dims 14x2
 
 6a. start_dist = 1 against the 13db2bd build (REF1), same 8 points.
-   log_prob: max |new - ref| 1.46e-11; gradient: max |new - ref| / max(1, |ref|) 4.82e-16
+   log_prob: max |new - ref| 0.00e+00; gradient: max |new - ref| / max(1, |ref|) 4.82e-16
 
 6b. start_dist = 2, window 13 h, cap 3.
    parameters: 86 (expected 86: old 113 minus 42 start parameters, plus 14 modes and 1 concentration)
    log_prob finite at 8 of 8 points; gradient finite in 688 of 688 entries
    map: max |mode from (a, b) - start_mode| 1.11e-16; max |a + b - conc| 4.44e-16; min(a, b) 1.720
-   mode/conc gradient against central differences (coordinates 1, 7, 15, 2 points): max relative error 3.85e-08
+   mode/conc gradient against central differences (coordinates 1, 7, 15, 2 points): max relative error 2.67e-08
    run_check at n_c 96: max_rel_diff 6.50e-13
    wockner-fit.R entry 56: data differs from entry 54's only in the start fields: TRUE; helper round trip 86 coordinates
 
@@ -89,7 +89,7 @@ library: /home2/lan68/plasmofit/.Rlib-dev/plasmofit
 7a. start_dist 2 and 3 against the fc7db77 build (REF23, made in the scratch
     library before this build replaced it), 8 points each, 13 h window.
    start_dist 2: log_prob max |new - ref| 0.00e+00; gradient max |new - ref| / max(1, |ref|) 0.00e+00
-   start_dist 3: log_prob max |new - ref| 7.28e-12; gradient max |new - ref| / max(1, |ref|) 0.00e+00
+   start_dist 3: log_prob max |new - ref| 0.00e+00; gradient max |new - ref| / max(1, |ref|) 0.00e+00
 
 7b. windowed_beta_starts_below() against exact pbeta differences over each
     compartment's overlap with [0, w] (age = position) and [1 - wb, 1]
@@ -98,7 +98,7 @@ library: /home2/lan68/plasmofit/.Rlib-dev/plasmofit
 
    worst |below - exact| over n_c {96, 384} x 3 cycle lengths x 6 shapes: 1.43e-05
    worst |below with wb = 0 - windowed_beta_starts()| over the same: 9.71e-17
-   continuity as the lower edge crosses a compartment edge (cycle_length 115.20 h +/- 1e-7 relative): max |change| 4.59e-08
+   continuity as the lower edge crosses a compartment edge (cycle_length 42.67 h +/- 1e-7 relative): max |change| 2.95e-08
    share of the start below age 0 (last 6 h of the cycle), a 1.5 b 3, cycle 42.84 h: 0.515 (exact pbeta(6/19) = 0.515)
 
 7c. All circulating against split by y(age) at t = 0 when part of the start

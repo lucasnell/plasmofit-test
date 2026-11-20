@@ -234,6 +234,82 @@ shape vectors. Validation (`_scripts/start-dist-validate.R`, section 6;
 - `wockner-fit.R` entries 56 and 57 build entry 54's data plus the start
   fields, and the script's helpers round-trip both.
 
+*Correction, 2026-11-20:* the script's `withS()` set a 1 h window for any
+`start_dist` other than 1, so the log_prob, finite-difference and
+matrix_exp numbers above for 2 and 3 were at a 1 h window, not 13 h. The
+fits were unaffected: their data come from `archer_stan_data()` with 13 h,
+which the last bullet checks. Rerun at 13 h
+(`_data/start-dist-validate-below-delay-2026-11-20.txt`, 6b-6c): finite
+differences within 3.9e-8, matrix_exp cross-check 6.5e-13 (2) and 9.9e-13
+(3).
+
 **Runs.** Entries 56 (`np_start13mode_nc384_t`, `start_dist` 2) and 57
 (`np_start13unit_nc384_t`, `start_dist` 3), SLURM 35288, submitted
 2026-11-19 with `WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev`.
+
+
+## Below age 0 and a delay, 2026-11-20: entries 58 and 59
+
+**Why.** Entries 55-57 all fail the gate the same way, and 57's best region
+fits 17-18 summed log-likelihood units below entry 54 with as many start
+parameters. Entry 54's start mass outside [0, 13] h sits in the cycle's last
+6 h (`findings.md`, "Entries 56 and 57"), so the data seem to want parasites
+"younger than age 0". Two ways to give the start that phase (Lucas: "do
+both"):
+
+| | 58 `np_start13below6unit_nc384_t` | 59 `np_start13delay12_nc384_t` |
+|---|---|---|
+| start | per-unit mode and concentration (`start_dist` 3) | one Beta shared (`start_dist` 1) |
+| window | [-6, 13] h (`start_below` 6) | [0, 13] h |
+| ages below 0 | the cycle's end: late schizonts bursting within 6 h | none |
+| delay | none | per unit, flat on [0, 12] h (`start_delay`, `delay_max` 12) |
+| ring-only premise | broken on purpose | kept |
+| new parameters vs 57 / 55 | none | 14 delays |
+
+Everything else is 55-57's: no_pool, `n_c` 384, `sd_log10_total0` 1, cap 3,
+whole inoculum circulating at t = 0, adapt_delta 0.95, max_treedepth 12,
+seed 538065874. 59 shares the start so that the delay alone carries each
+unit's phase: a per-unit mode and a per-unit delay would trade off.
+
+**How.** Package commit cda47a0 on the scratch clone's `start-dist` branch,
+installed in the scratch library only. New data `start_below`,
+`start_delay`, `delay_max` in all four `archer_fit*` programs, with new
+functions (`windowed_beta_starts_below`, `make_DC_gen`,
+`traj_combo_partial_sum_gen`, ...) reached only when either is on, so
+entries 54-57 run the code they ran before.
+- An age of -x h is the compartments in the cycle's last x hours. Those
+  cells are circulating at t = 0 too, which is not biology for late
+  schizonts but makes no difference at the observation times (7c below).
+- A delay reads the trajectory at `ts - delay` (no mortality during the
+  pause; `mu` is 0). The Erlang-window truncation bounds are computed from
+  `ts - delay_max`, so they cover every delay the prior allows.
+- `run_check` with a delay is impractically slow (`gotchas.md`); the
+  equivalent comparison is section 7f.
+
+**Validation** (`_scripts/start-dist-validate.R` sections 2-7,
+`_data/start-dist-validate-below-delay-2026-11-20.txt`):
+- unchanged paths: `start_dist` 0 against the pre-start_dist build,
+  difference 0; 1 against 13db2bd, 1.5e-11 on log densities of ~5e4;
+  2 and 3 against fc7db77, 0 and 7.3e-12; gradients within 5e-16 relative;
+- below-zero starting weights against exact pbeta, worst 1.4e-5 in
+  compartment weight (shapes between 1 and 2; exact at integer shapes);
+  with no below-zero part identical to the old weights (1e-16); continuous
+  as cycle_length moves the lower edge across a compartment (3e-8 for a
+  1e-7 relative step);
+- all circulating against split by y(age) at t = 0, with half the start
+  below age 0: circulating abundance at 72-216 h identical to 1.4e-15;
+- layouts: 58 has 99 parameters (as 57), 59 has 87 (55's 73 plus 14);
+  finite log density and gradient at 8 points; gradients against central
+  differences within 1.7e-7; delay to 0 recovers 55's density, linearly
+  (1.1e-3 at 1e-6 h, 1.1e-6 at 1e-9 h); `log_lik` in generated quantities
+  moves exactly with the model block (differences 0 and 1.5e-11);
+- fast path against a matrix exponential at the off-grid read times, 5
+  layouts x `n_c` 96 and 384 x cycle lengths 35.2, 42.84 and 49.8 h,
+  delays 0 to 11.5 h: worst relative difference 2.5e-12;
+- `archer_stan_data()` builds both entries' data as entry 54's plus the
+  start fields, `wockner-fit.R`'s helpers round-trip both, and bad inputs
+  are refused.
+
+**Runs.** SLURM 35290, array 58-59, submitted 2026-11-20 with
+`WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev`. Reader:
+`_scripts/read-entry5859.R`.

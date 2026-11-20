@@ -2,6 +2,15 @@
 
 ## State of play right now — read this first
 
+**2026-11-20: entries 58 and 59 running as SLURM 35290** (Lucas: "do
+both"). 58 lets the per-unit windowed start reach 6 h below age 0
+([-6, 13] h: late schizonts bursting soon after injection); 59 keeps 55's
+shared ring-only start on [0, 13] h and adds a per-unit delay of 0-12 h
+before development. New build cda47a0 (`start_below`, `start_delay`) is in
+the SCRATCH library only, validated
+(`_data/start-dist-validate-below-delay-2026-11-20.txt`); live and package
+`main` stay at 13db2bd. How to read them: `TODO.md`.
+
 **2026-11-19 (evening): entries 56 and 57 BOTH FAIL the gate**
 (`findings.md`, "Entries 56 and 57"): per-unit modes, and per-unit modes
 and spreads, inside the 13 h window fail exactly as the shared start did,

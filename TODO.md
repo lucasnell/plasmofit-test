@@ -180,6 +180,22 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
+- [ ] **SLURM 35290 — entries 58 and 59** (submitted 2026-11-20, Lucas:
+      "do both"), testing whether 55-57 fail because the 13 h window cannot
+      reach the phase the data want. 58 `np_start13below6unit_nc384_t`:
+      57 (per-unit mode and concentration) on [-6, 13] h, ages below 0 being
+      late schizonts that burst soon after injection (`start_below` 6).
+      59 `np_start13delay12_nc384_t`: 55 (one Beta on [0, 13] h shared)
+      plus a per-unit post-injection delay flat on [0, 12] h (`start_delay`).
+      Both load the SCRATCH library (cda47a0) through `WOCKFIT_LIB`, so **do
+      not reinstall into `/home2/lan68/plasmofit/.Rlib-dev`, nor edit
+      `_scripts/wockner-fit.R`, while they run.** To read:
+      `Rscript --vanilla _scripts/read-entry5859.R > _data/read-entry5859-<date>.txt`
+      (gate, per-chain summed log-likelihood against 54's -807.2, trials at
+      the `cycle_length` bounds, 58's modes and share below age 0, 59's
+      delays and whether they sit at 0 or 12 h, `cycle_length` only if the
+      gate passes). Design and validation: `claude/start-dist-design.md`,
+      "Below age 0 and a delay".
 - [x] **SLURM 35288 — read 2026-11-19: BOTH FAIL the gate** (56 max R-hat
       19.4, 57 13.8; `findings.md`, "Entries 56 and 57";
       `_data/read-entry5657-2026-11-19.txt`). By the reading rule the window,

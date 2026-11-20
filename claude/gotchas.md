@@ -743,3 +743,28 @@ add them itself. **The build has been live since 2026-11-18**, so this now
 bites: `unitsim-diag.R` and `unitsim-trough.R` (both `gqs()` on chain
 files' `d`) and `start-dist-validate.R`'s `old` mode will fail as they
 stand until the three fields are added to the lists they read.
+
+**The 2026-11-20 build (cda47a0, scratch only so far) adds three more:**
+`start_below`, `start_delay` and `delay_max`, off values 0, 0, 0.
+`archer_fit()` and the two scripts' `with_start_fields()` fill them;
+anything else calling `sampling()` or `gqs()` on an old list must add them
+once that build is live. Builds that do not declare them ignore them.
+
+## A zero-sized parameter still has its bounds checked
+
+Stan checks `lower < upper` on a declared parameter even when its size is
+zero. `delay` was first declared `vector<lower=0, upper=delay_max>[start_delay
+* n_grp_init]`, and with the delay off `delay_max` is 0, so EVERY model
+without a delay failed at initialisation ("lub_constrain: lb is 0, but must
+be less than 0"). The bound is now `start_delay == 1 ? delay_max : 1`. Any
+new optional parameter whose bound is a data value that is 0 when the
+option is off needs the same guard.
+
+## `run_check` is impractically slow with a delay
+
+With `start_delay` on, the read times `ts - delay` are off the `dt_full`
+grid, so `run_check` takes one matrix-exponential action per observation
+(`mat_exp_at`) instead of one grid trajectory per combo. One Fixed_param
+draw on the production data at `n_c` 96 had not finished in 72 minutes
+(2026-11-20). The comparison is made instead per series in R in
+`start-dist-validate.R` section 7f. Leave `run_check` off with a delay.

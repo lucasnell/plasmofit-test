@@ -394,7 +394,7 @@ for (nc in c(96L, 384L)) for (cl in c(39.4, 42.84, 45.6))
     }
 cat(sprintf("   worst |below - exact| over n_c {96, 384} x 3 cycle lengths x 6 shapes: %.2e\n", worst))
 cat(sprintf("   worst |below with wb = 0 - windowed_beta_starts()| over the same: %.2e\n", worst0))
-nc <- 384L; edge_cl <- BELOW / (20 / nc)            # 1 - wb exactly on a compartment edge
+nc <- 384L; edge_cl <- BELOW / (1 - 330 / nc)      # 1 - wb exactly on edge 330, cycle 42.67 h
 v <- lapply(edge_cl * (1 + c(-1e-7, 1e-7)), \(cl) plasmofit:::windowed_beta_starts_below(nc, BELOW / cl, WINDOW / cl, 1.5, 3, 1))
 cat(sprintf("   continuity as the lower edge crosses a compartment edge (cycle_length %.2f h +/- 1e-7 relative): max |change| %.2e\n",
             edge_cl, max(abs(v[[1]] - v[[2]]))))
