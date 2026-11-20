@@ -1,0 +1,19 @@
+CHECK. The R likelihood, with each draw's own sd_iRBC, summed over 13 trials,
+against the Stan fit's summed log_lik for the same draw (1130 observations).
+Cells: the two sums and their difference, 3 draws per entry.
+
+   entry 54 draw    1: R -795.769542 | Stan -795.769542 | difference -1.48e-12
+   entry 54 draw 1500: R -791.087451 | Stan -791.087451 | difference 6.82e-13
+   entry 54 draw 3999: R -810.568888 | Stan -810.568888 | difference -1.71e-12
+   entry 55 draw    1: R -947.588863 | Stan -947.588863 | difference -1.82e-12
+   entry 55 draw 1500: R -817.434628 | Stan -817.434628 | difference -1.48e-12
+   entry 55 draw 3999: R -820.641247 | Stan -820.641247 | difference -1.93e-12
+   entry 57 draw    1: R -832.635684 | Stan -832.635684 | difference -3.64e-12
+   entry 57 draw 1500: R -827.717075 | Stan -827.717075 | difference -2.16e-12
+   entry 57 draw 3999: R -952.679773 | Stan -952.679773 | difference 2.61e-12
+   entry 58 draw    1: R -904.151317 | Stan -904.151317 | difference -1.25e-12
+   entry 58 draw 1500: R -964.112346 | Stan -964.112346 | difference -3.41e-12
+   entry 58 draw 3999: R -1012.454880 | Stan -1012.454880 | difference -5.34e-12
+   entry 59 draw    1: R -875.225542 | Stan -875.225542 | difference -2.73e-12
+   entry 59 draw 1500: R -957.177823 | Stan -957.177823 | difference -1.02e-12
+   entry 59 draw 3999: R -891.258227 | Stan -891.258227 | difference -1.14e-12
