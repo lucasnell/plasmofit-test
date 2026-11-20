@@ -2,6 +2,10 @@
 
 ## State of play right now — read this first
 
+**2026-11-20 (evening): SLURM 35292 running**, maximum likelihood of the
+start models by multistart optimiser (`_scripts/start-ml.R`; how to merge:
+`TODO.md`).
+
 **2026-11-20 (later): entries 58 and 59 BOTH FAIL the gate**
 (`findings.md`, "Entries 58 and 59"): more freedom in the start's phase
 (a window reaching 6 h below age 0; a per-unit delay) makes the

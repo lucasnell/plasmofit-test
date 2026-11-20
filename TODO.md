@@ -180,6 +180,16 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
+- [ ] **SLURM 35292 — maximum likelihood of the start models** (submitted
+      2026-11-20, Lucas: "do 2"). `_scripts/start-ml.R` / `.sh`: entries
+      54, 55, 57, 58, 59 maximised by optimiser from many starts per trial
+      (55 and 59 profiled over an 8 x 8 (alpha, beta) grid), priors
+      ignored, sds profiled; answers how well each model CAN fit without
+      relying on chains moving between regions. Reading rule in the script
+      header, fixed before the run. R likelihood equals Stan's log_lik to
+      5e-12 (`_data/start-ml-check-2026-11-20.txt`). Reads the scratch
+      library (cda47a0): do not reinstall it while this runs. When it ends:
+      `SML_MODE=merge Rscript --vanilla _scripts/start-ml.R > _data/start-ml-2026-11-20.txt`.
 - [x] **SLURM 35290 — read 2026-11-20: BOTH FAIL the gate** (58 max R-hat
       10.1, 59 9.7; `findings.md`, "Entries 58 and 59"). Stuck chains put
       trials at the 50 h bound. 59 contains 55 yet its best draw is 58
