@@ -236,3 +236,52 @@ transition phase against raw staging).
 Note the IDC here is ~49 h by the same reading, against Smith's 39 h for
 3D7 and the 38.8-41.2 h these data give, so the FRACTION is the transferable
 quantity, not the hours.
+
+## Is there a post-inoculation developmental delay? Literature search, 2026-11-20
+
+Lucas asked for evidence that blood-stage parasites pause after experimental
+(or vector) inoculation, to judge entry 59's per-unit delay (fitted 2.6-11.6
+h, posterior means; `findings.md`, "Entries 58 and 59"). Own library first
+(`_data/malaria-inoc-x/malaria-inoc/`, `mmc1.pdf`, `mmcm.pdf`,
+`llinas-2006.pdf`), then web and Consensus searches. Most entries below are
+read from ABSTRACTS or search summaries only, marked so.
+
+**No direct evidence found** of a pause of hours in blood-stage development
+after IBSM inoculation or after natural infection. IBSM growth analyses
+anchor the intercept at the inoculum and model growth from there; none I
+found includes a delay term.
+
+What bears on it:
+- **Handling of the inoculum (own library, McCarthy et al. 2011, full
+  text):** thaw to injection <= 60 min, syringes kept on ice. Development
+  stops in the cold, so this is a pause, but of at most about an hour.
+- **Short temperature excursions do not matter; long ones slow development
+  (Singhaboot et al. 2019, AJTMH, abstract):** 2 h at 32-40 C did not change
+  the multiplication rate; 48 h at 32-34 C or 40 C cut it (9.1 at 37 C
+  against 2.3-2.4 and 0.4) and delayed development.
+- **Cold arrest is reversible and used for synchronisation** (search
+  summary of a Thai method paper, 8-24 h at low temperature; not read).
+- **Rings can enter reversible arrest under stress, but no inoculation
+  trigger is documented:** artemisinin-induced ring dormancy lasting days
+  (several papers, abstracts; Nature Communications 2024 on a ~5-day
+  maturation of dormancy); isoleucine starvation slows development
+  reversibly, parasites viable 72 h (Babbitt et al. 2012, PNAS, abstract; a
+  2020 Malaria Journal follow-up finds slow growth, not true arrest).
+- **Freeze-thaw effects on timing are unmeasured:** Thiam et al. 2022
+  (Front Cell Infect Microbiol, search summary) measured multiplication per
+  48 h over three cycles after thawing clinical isolates and report minimal
+  effects on invasion; no developmental timing. Rodent P. berghei from frozen
+  donors became patent a day later than from fresh (Apsari et al. 2025,
+  abstract), which a smaller viable dose explains as well as a delay.
+- **Host rhythms shift timing gradually, by SHORTENING, in rodents
+  (O'Donnell, Greischar and Reece 2021, Parasite Immunology,
+  doi:10.1111/pim.12898, abstract and summaries):** P. chabaudi mistimed by
+  12 h relative to host feeding realigns over 5-7 cycles by speeding up 2-3
+  h per cycle. A phase shift spread over cycles, the opposite sign to a
+  pause, and not shown for P. falciparum in humans. P. falciparum responds
+  to melatonin in culture (Garcia lab; abstracts).
+- **Natural (vector) route:** the blood stage starts from liver merozoites;
+  in P. chabaudi liver egress is timed to host feeding, after a fixed
+  pre-erythrocytic period in clockless hosts (Herbert-Mainero et al. 2026,
+  Commun Biol, abstract). Timing is set before the blood stage begins, so it
+  does not imply a blood-stage pause.
