@@ -2,9 +2,14 @@
 
 ## State of play right now — read this first
 
-**2026-11-20 (evening): SLURM 35292 running**, maximum likelihood of the
-start models by multistart optimiser (`_scripts/start-ml.R`; how to merge:
-`TODO.md`).
+**2026-11-20 (evening): start-model maximum likelihood READ**
+(`findings.md`, "Maximum likelihood of the start models"; SLURM 35292).
+Priors ignored: the ring-only [0, 13] h window costs 29.8 log-likelihood
+units against entry 54 at equal parameter count; letting it reach 6 h below
+age 0 (late schizonts) recovers 20.4; a per-unit delay on a shared start
+gains 15.0 for 14 parameters. 58 and 59's chains never got within ~90
+units of their own maxima. Entry 54's maximum puts OZ439 at 50 h and KAE609
+at 35 h: its posterior holds them in through the priors. No jobs running.
 
 **2026-11-20 (later): entries 58 and 59 BOTH FAIL the gate**
 (`findings.md`, "Entries 58 and 59"): more freedom in the start's phase

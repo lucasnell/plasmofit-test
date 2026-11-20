@@ -3908,6 +3908,75 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Maximum likelihood of the start models, 2026-11-20: the [0, 13] h window costs fit; reaching 6 h below age 0 recovers two-thirds of it; a delay barely earns its parameters
+
+Lucas: "do 2", after entries 58 and 59 failed the gate. SLURM 35292;
+`_scripts/start-ml.R` (design and reading rule fixed in its header before
+the run), `_scripts/start-ml-cl.R`; outputs `_data/start-ml-2026-11-20.txt`,
+`_data/start-ml-cl-2026-11-20.txt`, check `_data/start-ml-check-2026-11-20.txt`
+(R likelihood equals the fits' log_lik to 5e-12). Each model's likelihood is
+maximised by optimiser (Nelder-Mead then BFGS) from 54 starts per trial
+(50 random, cycle_length stratified over 35.5-49.5 h, plus the best draw of
+each fitted chain), with the same parameter bounds as the Stan programs,
+PRIORS IGNORED and each trial x cohort sd profiled. 55 and 59 share
+(alpha, beta), profiled on an 8 x 8 grid with 17 starts per trial per grid
+point, then refined. Every value is a lower bound on the true maximum; in
+54, 57 and 58 between 5 and 52 of 54 starts per trial reached within 0.5
+units of the trial's best.
+
+**Maxima.** Summed log-likelihood over 1130 observations at the best found
+point; npar = free parameters including the 27 sds; 'MCMC best' = the
+fitted entry's best single draw re-scored with profiled sds. Higher is
+better.
+
+| entry | start | npar | maximum | MCMC best | max - MCMC best |
+|---|---|---|---|---|---|
+| 54 | per-unit wrapped Beta, whole cycle | 95 | -747.16 | -772.19 | +25.0 |
+| 58 | per-unit Beta on [-6, 13] h | 95 | -756.54 | -865.00 | +108.5 |
+| 59 | shared Beta on [0, 13] h + per-unit delay | 83 | -766.26 | -853.67 | +87.4 |
+| 57 | per-unit Beta on [0, 13] h | 95 | -776.94 | -796.26 | +19.3 |
+| 55 | shared Beta on [0, 13] h | 69 | -781.23 | -795.19 | +14.0 |
+
+Differences of maxima (log-likelihood units, first minus second; parameter
+difference in brackets): 57 - 54 -29.8 (0); 58 - 54 -9.4 (0); 58 - 57
++20.4 (0); 59 - 55 +15.0 (+14); 59 - 54 -19.1 (-12); 55 - 54 -34.1 (-26).
+55's best shared start is (alpha, beta) = (1.00, 2.00), 59's (1.00, 1.65):
+the youngest shapes allowed, density highest at age 0.
+
+By the reading rule:
+- a. **The [0, 13] h window costs fit**: 57 is 29.8 units below 54 at the
+  same parameter count. This no longer rests on which regions chains found.
+- c. **Reaching 6 h below age 0 recovers 20.4 of those 29.8 units** at no
+  extra parameters (58), leaving 58 9.4 below 54. Per trial, 58 matches 54
+  to within 0.6 units in 9 of 13 trials; the remaining gap is MMV048_PartB
+  (-2.7), OZ439 (-2.7), MMV048_PIB (-1.7) and KAE609 (-1.0). The test does
+  not separate "below age 0" from "a 19 h rather than 13 h span", but entry
+  54's extra mass lies in the cycle's last 6 h, not at 13-24 h
+  (`_data/window-mass-check-2026-11-19.txt`).
+- b. **The delay is at AIC's break-even**: +15.0 for 14 parameters over 55.
+  It does not clearly earn them. 59 is a shared start plus delays; a
+  per-unit start plus delays was not run (the two would trade off).
+- d. **The bound regions are real local maxima, far below the best in the
+  windowed models**: best start ending at cycle_length >= 49.5 h is 7-102
+  units below the trial's best (58: 11-85; 57: 26-100). So the stuck chains
+  of 55-59 sit in genuinely worse regions they cannot leave. In 54 the same
+  regions are 0-23 below.
+
+**The MCMC gaps.** 58's and 59's chains never came within 87-108 units of
+their models' maxima, against 14-25 for 54, 55 and 57 (where the gap is the
+cost of the priors and hierarchy plus posterior spread). So 58 and 59
+failed to sample regions that fit almost as well as 54, which is what
+"Entries 58 and 59" below inferred from nesting alone.
+
+**Two trials at the cycle_length bounds even in entry 54's maximum**
+(`_data/start-ml-cl-2026-11-20.txt`; hours at the per-trial maximum against
+54's posterior mean): OZ439 50.00 (posterior 45.60), KAE609 35.00
+(posterior 41.01); MMV048_PartB 47.04 (posterior 43.43). The windowed
+models' maxima put every trial between 37.4 and 43.5 h. So entry 54's
+posterior cycle lengths for these three trials are held in by the priors
+and the cycle_length hierarchy, not by their own likelihood. Not a
+reported number; a flag for "how much of the estimate is assumption".
+
 ### Entries 58 and 59, read 2026-11-20: more phase freedom makes it worse; their chains do not even find regions their own models contain
 
 Lucas's test of whether 55-57 fail because the 13 h window cannot reach the

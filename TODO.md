@@ -180,7 +180,13 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
-- [ ] **SLURM 35292 — maximum likelihood of the start models** (submitted
+- [x] **SLURM 35292 — read 2026-11-20** (`findings.md`, "Maximum
+      likelihood of the start models"): maxima 54 -747.2, 58 -756.5, 59
+      -766.3, 57 -776.9, 55 -781.2. The [0, 13] h window costs 29.8 units at
+      equal parameters; reaching 6 h below age 0 recovers 20.4; the delay
+      gains 15.0 for 14 parameters. Entry 54's own maximum puts OZ439 and
+      KAE609 at the cycle_length bounds. Next step is Lucas's. Record follows.
+- [x] **SLURM 35292 — maximum likelihood of the start models** (submitted
       2026-11-20, Lucas: "do 2"). `_scripts/start-ml.R` / `.sh`: entries
       54, 55, 57, 58, 59 maximised by optimiser from many starts per trial
       (55 and 59 profiled over an 8 x 8 (alpha, beta) grid), priors
