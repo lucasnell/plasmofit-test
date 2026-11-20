@@ -3908,6 +3908,36 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### The cycle_length hierarchy splits the chains of 55-59, 2026-11-20
+
+`_scripts/sigma-cl-chains.R`, `_data/sigma-cl-chains-2026-11-20.txt`. All of
+54-59 are no_pool: 13 per-trial cycle lengths, CENTRED (`center_cl` 1),
+logit_cl ~ normal(mu_logit_cl, sigma_logit_cl), mu_logit_cl ~ normal(1.872,
+1) (48 h), sigma_logit_cl ~ half-normal(0, 0.5), cycle_length = 35 + 15
+inv_logit(logit_cl). Cells: per chain, posterior mean of sigma_logit_cl;
+mu_logit_cl as hours; trials whose chain-mean cycle_length is within 0.5 h
+of a bound.
+
+| entry | sigma, chains 1-4 | mu (h) | trials at a bound |
+|---|---|---|---|
+| 54 (passes) | 0.81 0.76 0.76 0.76 | 42.3 42.1 42.1 42.2 | 0 0 0 0 |
+| 55 | 1.70 0.24 0.94 0.46 | 43.6 41.2 42.4 41.0 | 3 0 0 0 |
+| 56 | 0.24 1.31 1.33 0.24 | 41.6 42.3 42.4 41.6 | 0 1 2 0 |
+| 57 | 0.24 0.24 1.26 1.35 | 41.3 41.3 42.1 41.4 | 0 0 1 1 |
+| 58 | 1.48 2.08 1.44 1.99 | 44.6 48.0 43.9 47.5 | 2 5 1 4 |
+| 59 | 1.41 1.75 1.57 1.54 | 42.8 47.7 44.1 44.1 | 1 4 1 1 |
+
+In 55-57 the best chains (summed log-lik -819 to -825) are the ones with
+sigma 0.24-0.46: every trial near 41 h. The stuck chains have sigma 0.9-1.7
+and trials at the bounds. In 58 and 59 NO chain found the tight mode (sigma
+1.4-2.1, 3-4 prior sds out), which matches their chains never coming within
+~90 units of their models' maxima, whose cycle lengths all lie in
+37.4-43.5 h. So the windowed models' posteriors have (at least) two regions
+told apart by the hierarchy's spread: a tight one that fits and a loose one
+where a trial's period can run to a bound instead of matching phase. With
+the centred parameterisation, moving between them means moving sigma and all
+13 logit_cl together. Entry 54 converged at sigma 0.76, between the two.
+
 ### Maximum likelihood of the start models, 2026-11-20: the [0, 13] h window costs fit; reaching 6 h below age 0 recovers two-thirds of it; a delay barely earns its parameters
 
 Lucas: "do 2", after entries 58 and 59 failed the gate. SLURM 35292;

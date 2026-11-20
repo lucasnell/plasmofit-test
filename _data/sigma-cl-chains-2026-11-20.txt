@@ -1,0 +1,14 @@
+Hierarchy settings (same data list fields in all six entries): center_cl 1, n_grp_cl 13,
+  mu_logit_cl ~ normal(1.872, 1.000), sigma_logit_cl ~ half-normal(0, 0.500); cycle_length = 35 + 15 inv_logit(logit_cl)
+  prior centre: 48.00 h
+
+Per chain (4 x 1000 draws): posterior mean of sigma_logit_cl and of mu_logit_cl
+converted to hours (35 + 15 inv_logit), and the number of trials whose chain-mean
+cycle_length is within 0.5 h of 35 or 50 h.
+
+   54: sigma  0.81  0.76  0.76  0.76 | mu (h) 42.25 42.08 42.08 42.23 | trials at a bound 0 0 0 0
+   55: sigma  1.70  0.24  0.94  0.46 | mu (h) 43.64 41.15 42.41 41.03 | trials at a bound 3 0 0 0
+   56: sigma  0.24  1.31  1.33  0.24 | mu (h) 41.56 42.32 42.37 41.56 | trials at a bound 0 1 2 0
+   57: sigma  0.24  0.24  1.26  1.35 | mu (h) 41.34 41.34 42.05 41.44 | trials at a bound 0 0 1 1
+   58: sigma  1.48  2.08  1.44  1.99 | mu (h) 44.63 48.03 43.92 47.45 | trials at a bound 2 5 1 4
+   59: sigma  1.41  1.75  1.57  1.54 | mu (h) 42.80 47.66 44.12 44.05 | trials at a bound 1 4 1 1
