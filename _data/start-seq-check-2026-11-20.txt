@@ -1,0 +1,45 @@
+1. seq_log_y() against plasmofit:::make_log_y_vals() at the default p3.
+   Cells: max |difference| in log y over the n_c compartments.
+
+   cycle 35.2 h: 1.02e-15
+   cycle 42.0 h: 1.78e-15
+   cycle 49.8 h: 3.55e-15
+
+2. The R D/C path against the package's own series at the default p3.
+   Cells: max relative |difference| over t = 72-216 h by 12 h, cycle 42 h, R 12.
+
+   entry 54's start (b_shape 25, b_offset 0.3): 4.41e-16
+   windowed [0, 13] h start (a 1.2, b 2.5): 3.76e-16
+
+3. This script's likelihood at the DEFAULT p3 against start-ml.R's own best,
+   evaluated at start-ml's best parameter vector for the same (model, trial).
+   Cells: the two per-trial log-likelihoods and their difference.
+
+   entry 54 trial Mefloquine   : here  -100.0767 | start-ml  -100.0767 | difference 0.00e+00
+   entry 54 trial MMV048_PIB   : here    -3.8750 | start-ml    -3.8750 | difference -3.55e-15
+   entry 54 trial MMV048_PartB : here   -97.8978 | start-ml   -97.8978 | difference -1.42e-14
+   entry 57 trial Mefloquine   : here  -103.1267 | start-ml  -103.1267 | difference 0.00e+00
+   entry 57 trial MMV048_PIB   : here    -4.3202 | start-ml    -4.3202 | difference 1.78e-15
+   entry 57 trial MMV048_PartB : here  -104.7098 | start-ml  -104.7098 | difference -1.42e-14
+   entry 59 trial Mefloquine   : here  -102.2668 | start-ml  -102.2668 | difference 0.00e+00
+   entry 59 trial MMV048_PIB   : here    -4.3936 | start-ml    -4.3936 | difference 0.00e+00
+   entry 59 trial MMV048_PartB : here  -103.1470 | start-ml  -103.1470 | difference 1.42e-14
+
+4. Duty cycle (mean y over one cycle, cycle 42 h) across the p3 grid.
+
+   p3 12.00 h: 0.2776
+   p3 13.00 h: 0.3008
+   p3 14.00 h: 0.3240
+   p3 15.00 h: 0.3472
+   p3 16.00 h: 0.3704
+   p3 17.00 h: 0.3936
+   p3 18.00 h: 0.4169
+   p3 18.58 h: 0.4303
+   p3 19.00 h: 0.4401
+   p3 20.00 h: 0.4633
+   p3 21.00 h: 0.4866
+   p3 22.00 h: 0.5098
+   p3 23.00 h: 0.5330
+   p3 24.00 h: 0.5562
+   p3 25.00 h: 0.5795
+   p3 26.00 h: 0.6027
