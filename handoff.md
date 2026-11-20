@@ -2,6 +2,16 @@
 
 ## State of play right now — read this first
 
+**2026-11-20 (night): SLURM 35357 running**, profile of the sequestration
+midpoint p3 (fixed at 18.5802 h since Archer, never estimated) under entries
+54, 57 and 59's starts. Motivation: the start carries all of the phase, so a
+wrong schedule would be absorbed by the start and the ring-only window would
+be rejected for the wrong reason. `_scripts/start-seq.R`; how to merge and
+the reading rule: `TODO.md` and the script header. Closed on the way:
+a free-phase ring-only start would be entry 54 with extra steps (phase and
+ring identity live on the same age axis), and entry 54's start family
+reproduces entry 59's trajectories to 0.02-0.06 log10 units.
+
 **2026-11-20 (evening): start-model maximum likelihood READ**
 (`findings.md`, "Maximum likelihood of the start models"; SLURM 35292).
 Priors ignored: the ring-only [0, 13] h window costs 29.8 log-likelihood

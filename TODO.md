@@ -180,6 +180,23 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
+- [ ] **SLURM 35357 — profile of the sequestration midpoint p3** (submitted
+      2026-11-20, Lucas: "1-2"). `_scripts/start-seq.R` / `.sh`: p3, the
+      half-sequestration age fixed at 18.5802 h since Archer and never
+      estimated, profiled over 12-26 h under entry 54's whole-cycle start,
+      57's ring-only [0, 13] h start, and 59's shared start plus per-unit
+      delay; p3 shared by every trial and unit, p4 fixed, priors ignored,
+      sds profiled, 13 per-trial maxima summed per grid point. Asks whether
+      the ring-only start's 29.8-unit deficit is really about the START or
+      about the SCHEDULE the start has to compensate for. Reading rule in
+      the script header, fixed before the run; FLATNESS is checked first,
+      since a start free over the whole cycle may leave p3 unidentified.
+      Verified (`_data/start-seq-check-2026-11-20.txt`): the R forward map
+      with free p3 equals the package's series to 4e-16 and reproduces
+      `start-ml.R`'s per-trial likelihood at the default p3 to 1e-14.
+      Reads the scratch library (cda47a0): do not reinstall it while this
+      runs. When it ends:
+      `SSQ_MODE=merge Rscript --vanilla _scripts/start-seq.R > _data/start-seq-2026-11-20.txt`.
 - [x] **SLURM 35292 — read 2026-11-20** (`findings.md`, "Maximum
       likelihood of the start models"): maxima 54 -747.2, 58 -756.5, 59
       -766.3, 57 -776.9, 55 -781.2. The [0, 13] h window costs 29.8 units at
