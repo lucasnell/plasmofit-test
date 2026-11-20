@@ -1,0 +1,165 @@
+library: /home2/lan68/plasmofit/.Rlib-dev/plasmofit 
+
+1. windowed_beta_starts() against exact pbeta differences over each
+   compartment's overlap with the window. Cells: max |difference| in
+   compartment weight (weights sum to 1).
+
+   n_c 384, cycle 42.84 h, a 1.0 b 1.0: max |diff| 1.27e-16
+   n_c 384, cycle 42.84 h, a 1.2 b 1.2: max |diff| 6.95e-06
+   n_c 384, cycle 42.84 h, a 1.5 b 3.0: max |diff| 3.28e-06
+   n_c 384, cycle 42.84 h, a 2.0 b 2.0: max |diff| 1.94e-16
+   n_c 384, cycle 42.84 h, a 3.0 b 1.0: max |diff| 1.10e-15
+   n_c 384, cycle 42.84 h, a 3.0 b 3.0: max |diff| 3.68e-16
+   worst over n_c {96, 384, 512} x 3 cycle lengths x 6 shapes: 3.86e-05
+   continuity across a compartment edge (cycle_length +/- 1e-7 relative): max |change| 1.35e-08
+   generate_starts_win(): circulating 1800, sequestered 0, of total0 1800
+   all circulating / split by y(age), circulating abundance (cycle 42.84 h, R 13.87, a = b = 2):
+     t  12 h (0.28 cycles): 1.02718123
+     t  24 h (0.56 cycles): 1.02566865
+     t  36 h (0.84 cycles): 1.00000008
+     t  48 h (1.12 cycles): 1.00000000
+     t  60 h (1.40 cycles): 1.00000000
+     t  72 h (1.68 cycles): 1.00000000
+     t  84 h (1.96 cycles): 1.00000000
+     t  96 h (2.24 cycles): 1.00000000
+     t 108 h (2.52 cycles): 1.00000000
+     t 120 h (2.80 cycles): 1.00000000
+     t 132 h (3.08 cycles): 1.00000000
+     t 144 h (3.36 cycles): 1.00000000
+     t 156 h (3.64 cycles): 1.00000000
+     t 168 h (3.92 cycles): 1.00000000
+     t 180 h (4.20 cycles): 1.00000000
+     t 192 h (4.48 cycles): 1.00000000
+     t 204 h (4.76 cycles): 1.00000000
+     t 216 h (5.04 cycles): 1.00000000
+   first-cycle Poisson mass at the first observation (72 h): 3.48e-29
+
+2. start_dist = 0 against the OLD build's saved log density
+   (_data/start-dist-validate-old.rds, made in the live library BEFORE the
+   install), production data
+   (np_wide_total0_nc384_t: no_pool, n_c 384, 1130 observations), at 8 fixed
+   unconstrained points. Same model, so differences are rounding only.
+
+   parameters: 113, as the old build
+   log_prob: max |new - old| 0.00e+00 (values -92624.4 to -47964.1)
+   gradient: max |new - old| / max(1, |old|) 0.00e+00 over 904 entries
+
+3. start_dist = 1, window 13 h, cap 3, production data.
+
+   parameters: 73 (old 113: minus 14 b_shape_free and 14 x 2 b_off_vec, plus start_alpha and start_beta)
+   output dims: b_shape 0, b_offset 0, start_alpha 1, start_beta 1
+   log_prob finite at 8 of 8 points; gradient finite in 584 of 584 entries
+   start_alpha, start_beta gradient against central differences (3 points each): max relative error 8.83e-10
+   at point 1: start_alpha 2.330, start_beta 2.023 (both inside [1, 3])
+
+4. run_check at n_c 96: max_rel_diff between the Erlang-window
+   likelihood path and an independent matrix exponential of the same
+   starting state, at the Fixed_param initial point.
+
+   start_dist 0: max_rel_diff 5.92e-13
+   start_dist 1: max_rel_diff 6.03e-13
+
+5. wockner-fit.R entry 55 (np_start13_nc384_t) through archer_stan_data().
+
+   fields of entry 54's saved data that differ in entry 55's: none 
+   fields only in entry 55's: start_dist, start_window, start_shape_cap, start_below, start_delay, delay_max 
+   start_dist = 1 without a window is refused: `start_window` must be one positive number of hours below `min_cl` (35) when `start_dist >= 1` 
+   start_dist 1: draw_as_list + unconstrain_pars round trip, 73 coordinates; b_off_vec dims 0x2
+   start_dist 0: draw_as_list + unconstrain_pars round trip, 113 coordinates; b_off_vec dims 14x2
+
+6a. start_dist = 1 against the 13db2bd build (REF1), same 8 points.
+   log_prob: max |new - ref| 1.46e-11; gradient: max |new - ref| / max(1, |ref|) 4.82e-16
+
+6b. start_dist = 2, window 13 h, cap 3.
+   parameters: 86 (expected 86: old 113 minus 42 start parameters, plus 14 modes and 1 concentration)
+   log_prob finite at 8 of 8 points; gradient finite in 688 of 688 entries
+   map: max |mode from (a, b) - start_mode| 1.11e-16; max |a + b - conc| 4.44e-16; min(a, b) 1.720
+   mode/conc gradient against central differences (coordinates 1, 7, 15, 2 points): max relative error 3.85e-08
+   run_check at n_c 96: max_rel_diff 6.50e-13
+   wockner-fit.R entry 56: data differs from entry 54's only in the start fields: TRUE; helper round trip 86 coordinates
+
+6c. start_dist = 3, window 13 h, cap 3.
+   parameters: 99 (expected 99: old 113 minus 42 start parameters, plus 14 modes and 14 concentrations)
+   log_prob finite at 8 of 8 points; gradient finite in 792 of 792 entries
+   map: max |mode from (a, b) - start_mode| 1.11e-16; max |a + b - conc| 0.00e+00; min(a, b) 1.659
+   mode/conc gradient against central differences (coordinates 1, 15, 28, 2 points): max relative error 1.10e-08
+   run_check at n_c 96: max_rel_diff 9.93e-13
+   wockner-fit.R entry 57: data differs from entry 54's only in the start fields: TRUE; helper round trip 99 coordinates
+
+7a. start_dist 2 and 3 against the fc7db77 build (REF23, made in the scratch
+    library before this build replaced it), 8 points each, 13 h window.
+   start_dist 2: log_prob max |new - ref| 0.00e+00; gradient max |new - ref| / max(1, |ref|) 0.00e+00
+   start_dist 3: log_prob max |new - ref| 7.28e-12; gradient max |new - ref| / max(1, |ref|) 0.00e+00
+
+7b. windowed_beta_starts_below() against exact pbeta differences over each
+    compartment's overlap with [0, w] (age = position) and [1 - wb, 1]
+    (age = position - 1), window [-6, 13] h. Cells: max |difference| in
+    compartment weight (weights sum to 1).
+
+   worst |below - exact| over n_c {96, 384} x 3 cycle lengths x 6 shapes: 1.43e-05
+   worst |below with wb = 0 - windowed_beta_starts()| over the same: 9.71e-17
+   continuity as the lower edge crosses a compartment edge (cycle_length 115.20 h +/- 1e-7 relative): max |change| 4.59e-08
+   share of the start below age 0 (last 6 h of the cycle), a 1.5 b 3, cycle 42.84 h: 0.515 (exact pbeta(6/19) = 0.515)
+
+7c. All circulating against split by y(age) at t = 0 when part of the start
+    is late schizonts (window [-6, 13] h, a 1.5 b 3, cycle 42.84 h, R 13.87,
+    n_c 384): circulating abundance by matrix exponential, ratio all/split.
+
+     t  12 h: 1.0012422584
+     t  24 h: 1.0001595286
+     t  36 h: 1.0000006720
+     t  48 h: 1.0000000000
+     t  60 h: 1.0000000000
+     t  72 h: 1.0000000000
+     t  84 h: 1.0000000000
+     t  96 h: 1.0000000000
+     t 108 h: 1.0000000000
+     t 120 h: 1.0000000000
+     t 132 h: 1.0000000000
+     t 144 h: 1.0000000000
+     t 156 h: 1.0000000000
+     t 168 h: 1.0000000000
+     t 180 h: 1.0000000000
+     t 192 h: 1.0000000000
+     t 204 h: 1.0000000000
+     t 216 h: 1.0000000000
+   max |ratio - 1| over the observation times 72-216 h: 1.44e-15
+
+7d. Entry 58's layout: start_dist 3, window [-6, 13] h, cap 3.
+   parameters: 99 (start_dist 3 without start_below: 99)
+   log_prob finite at 8 of 8 points; gradient finite in 792 of 792 entries
+   log_prob minus start_dist 3 on [0, 13] h at the same points (should be nonzero): -41616.0, -44596.3, -44429.2, -36245.0, -42017.0, -50378.2, -47187.0, -39969.7
+   mode/conc gradient against central differences (coordinates 1, 15, 28; 2 points): max relative error 2.84e-09
+
+7e. Entry 59's layout: start_dist 1 on [0, 13] h plus a delay per unit on [0, 12] h.
+   parameters: 87 (start_dist 1 without the delay 73, plus 14)
+   log_prob finite at 8 of 8 points; gradient finite in 696 of 696 entries
+   at point 1, delay (h): 5.21 6.42 4.79 6.74 4.30 7.07 6.35 5.66 6.18 7.72 5.85 6.55 6.85 5.82
+   start_alpha and delay gradient against central differences (coordinates 1, 3, 9, 16; 2 points): max relative error 1.69e-07
+   log density at delay 1e-6 h and 1e-9 h minus start_dist 1 without a delay (Jacobian off): 1.07e-03, 1.07e-06
+   change in sum(log_lik) -1.577611 against change in log density -1.577611 (difference -7.3e-12)
+   entry 58: change in sum(log_lik) 1788.262809 against change in log density 1788.262809 (difference -1.5e-11)
+
+7f. Erlang-window path against matrix exponential, per series in R:
+    max over 7 read times (72-216 h by 24 h) of |fast - matrix_exp| / fast,
+    log10_total0 1, R 12, mu 0. delay_max 12 when a delay is on.
+
+   58: [-6, 13] h, no delay         n_c  96, cycle 35.2 / 42.84 / 49.8 h: 2.08e-13 / 3.49e-13 / 3.46e-13
+   58: [-6, 13] h, no delay         n_c 384, cycle 35.2 / 42.84 / 49.8 h: 1.85e-12 / 1.16e-12 / 1.77e-12
+   59: [0, 13] h, delay 0.5 h       n_c  96, cycle 35.2 / 42.84 / 49.8 h: 1.25e-13 / 1.60e-13 / 3.45e-13
+   59: [0, 13] h, delay 0.5 h       n_c 384, cycle 35.2 / 42.84 / 49.8 h: 2.54e-12 / 3.93e-13 / 1.73e-12
+   59: [0, 13] h, delay 6.5 h       n_c  96, cycle 35.2 / 42.84 / 49.8 h: 2.93e-13 / 2.68e-13 / 2.65e-13
+   59: [0, 13] h, delay 6.5 h       n_c 384, cycle 35.2 / 42.84 / 49.8 h: 1.46e-12 / 7.21e-13 / 9.33e-13
+   59: [0, 13] h, delay 11.5 h      n_c  96, cycle 35.2 / 42.84 / 49.8 h: 1.85e-13 / 2.89e-13 / 4.24e-13
+   59: [0, 13] h, delay 11.5 h      n_c 384, cycle 35.2 / 42.84 / 49.8 h: 2.40e-12 / 6.08e-13 / 1.54e-12
+   both: [-6, 13] h, delay 6.5 h    n_c  96, cycle 35.2 / 42.84 / 49.8 h: 2.51e-13 / 2.49e-13 / 1.96e-13
+   both: [-6, 13] h, delay 6.5 h    n_c 384, cycle 35.2 / 42.84 / 49.8 h: 1.52e-12 / 7.75e-13 / 9.42e-13
+   worst: 2.54e-12
+
+7g. wockner-fit.R entries 58 and 59 through archer_stan_data(), and refusals.
+   entry 58: fields differing from entry 54's saved data: ; helper round trip 99 coordinates (expected 99)
+   entry 59: fields differing from entry 54's saved data: ; helper round trip 87 coordinates (expected 87)
+   refused: start_dist = 0, start_below = 6 -> `start_below` and `start_delay` need `start_dist >= 1` 
+   refused: start_dist = 1, start_delay = 1, delay_max = 72 -> `delay_max` must be one positive number of hours below the earliest observation time (72) when `start_delay` is TRUE 
+   refused: start_dist = 1, start_delay = 1 -> `delay_max` must be one positive number of hours below the earliest observation time (72) when `start_delay` is TRUE 
+   refused: start_dist = 3, start_below = 30 -> `start_below + start_window` must be below `min_cl` (35) 

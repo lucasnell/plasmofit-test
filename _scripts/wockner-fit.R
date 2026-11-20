@@ -597,7 +597,36 @@ CONFIGS <- list(
                                               start_dist = 3L, start_window = 13,
                                               start_shape_cap = 3),
                                   control = list(adapt_delta = 0.95,
-                                                 max_treedepth = 12))
+                                                 max_treedepth = 12)),
+    ## ---- 58-59: does the 13 h window fail because it cannot reach the ------
+    ## ---- phase the data want? (Lucas, 2026-11-20, "do both") --------------
+    ## 55-57 all failed with trials at the cycle_length bounds, 57's best
+    ## region 18 summed log-lik units below 54, and entry 54's out-of-window
+    ## start mass sits in the cycle's LAST 6 h (read-entry5657, window-mass-
+    ## check). Two ways to give the start that phase; both need the plasmofit
+    ## start-dist build with start_below/start_delay (scratch, until live):
+    ## 58: 57 with the window reaching 6 h BELOW age 0, [-6, 13] h: part of
+    ##     the inoculum may be late schizonts that burst soon after injection.
+    ##     Breaks the ring-only premise on purpose, to ask whether the data
+    ##     demand an early burst.
+    np_start13below6unit_nc384_t = list(model = "no_pool",
+                                        data = list(sd_log10_total0 = 1, n_c = 384L,
+                                                    start_dist = 3L, start_window = 13,
+                                                    start_shape_cap = 3, start_below = 6),
+                                        control = list(adapt_delta = 0.95,
+                                                       max_treedepth = 12)),
+    ## 59: 55 (one Beta on [0, 13] h shared by all units, ring-only and
+    ##     circulating) plus a per-unit post-injection DELAY, flat on
+    ##     [0, 12] h, before development starts: y_obs(t) = y_model(t - delay).
+    ##     The start is shared so the delay, not the start, carries each
+    ##     unit's phase (a per-unit mode and a per-unit delay would trade off).
+    np_start13delay12_nc384_t = list(model = "no_pool",
+                                     data = list(sd_log10_total0 = 1, n_c = 384L,
+                                                 start_dist = 1L, start_window = 13,
+                                                 start_shape_cap = 3, start_delay = TRUE,
+                                                 delay_max = 12),
+                                     control = list(adapt_delta = 0.95,
+                                                    max_treedepth = 12))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -887,7 +916,8 @@ bshape_par_for <- function(fit) {
 
 ## start_alpha/start_beta exist only in fits from the start_dist build
 ## (2026-11, claude/start-dist-design.md); zero-sized unless start_dist = 1.
-start_pars_for <- function(fit) intersect(c("start_alpha", "start_beta", "start_mode", "start_conc"),
+start_pars_for <- function(fit) intersect(c("start_alpha", "start_beta", "start_mode", "start_conc",
+                                            "delay"),
                                           fit@model_pars)
 par_block_for <- function(model, fit, data = d) {
     c(bshape_par_for(fit), "b_off_vec", start_pars_for(fit), "log10_total0",
@@ -926,7 +956,7 @@ draw_as_list <- function(fit, pars, i = 1L) {
     ## from par_dims: b_off_vec is (0, 2), not (0).
     for (nm in intersect(c("delta_total0", "sigma_total0", "b_shape_free",
                            "b_off_vec", "start_alpha", "start_beta",
-                           "start_mode", "start_conc"),
+                           "start_mode", "start_conc", "delay"),
                          fit@model_pars)) {
         if (!nm %in% names(out)) out[[nm]] <- array(numeric(0), fit@par_dims[[nm]])
     }
@@ -986,6 +1016,12 @@ fit_cond <- function(fit, max_shape, model) {
         colnames(k) <- paste0("start_conc[", seq_len(ncol(k)), "]")
         st <- cbind(m, k)
     }
+    ## per-unit delay (start_delay = 1), flat on [0, delay_max]
+    if (!is.null(dr$delay) && length(dr$delay) > 0) {
+        dl <- lg(as.matrix(dr$delay) / d$delay_max)
+        colnames(dl) <- paste0("delay[", seq_len(ncol(dl)), "]")
+        st <- cbind(st, dl)
+    }
     ## logit_R/logit_cl are already unconstrained scalars, so they need no
     ## further transform, unlike mu_logit_*/log(sigma_logit_*)/eta_*
     r_block <- if ("logit_R" %in% pars) {
@@ -1020,7 +1056,7 @@ div_by_sigma <- function(fit, model) {
 
 summarize_fit <- function(fit, data, label, model,
                           par_names = c("b_shape", "b_offset", "start_alpha",
-                                        "start_beta", "start_mode", "start_conc", "R",
+                                        "start_beta", "start_mode", "start_conc", "delay", "R",
                                         "log10_total0", "cycle_length",
                                         "sd_iRBC")) {
     ## keep only parameters this fit has and that carry draws: b_shape and

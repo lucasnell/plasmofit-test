@@ -57,6 +57,11 @@ with_start_fields <- function(d) {
     if (is.null(d$start_dist)) {
         d$start_dist <- 0L; d$start_window <- 1; d$start_shape_cap <- 3
     }
+    ## start_below/start_delay (plasmofit build of 2026-11-20); off values,
+    ## ignored by builds that do not declare them
+    if (is.null(d$start_below)) {
+        d$start_below <- 0; d$start_delay <- 0L; d$delay_max <- 0
+    }
     d
 }
 diag_path <- function(nm) sprintf("%sdiag-%s.rds", DIR, nm)
