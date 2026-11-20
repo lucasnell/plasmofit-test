@@ -2,6 +2,15 @@
 
 ## State of play right now — read this first
 
+**2026-11-20 (later): entries 58 and 59 BOTH FAIL the gate**
+(`findings.md`, "Entries 58 and 59"): more freedom in the start's phase
+(a window reaching 6 h below age 0; a per-unit delay) makes the
+multimodality worse, with stuck chains at `cycle_length` 50 h. 59 contains
+55 but never found 55's best region, so it is a search failure. Hypothesis:
+phase on an interval rather than a circle traps chains. No jobs running;
+scratch library cda47a0, live and package `main` 13db2bd. Next step is
+Lucas's.
+
 **2026-11-20: entries 58 and 59 running as SLURM 35290** (Lucas: "do
 both"). 58 lets the per-unit windowed start reach 6 h below age 0
 ([-6, 13] h: late schizonts bursting soon after injection); 59 keeps 55's

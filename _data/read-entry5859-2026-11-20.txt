@@ -1,0 +1,93 @@
+1. GATE. max R-hat over all monitored quantities (pass < 1.05), bulk ESS
+   minimum, divergent post-warmup iterations of 4000, leapfrog steps per
+   iteration, longest chain in hours, and per-chain mean lp__ (4 chains x
+   1000 draws). lp__ is comparable within an entry, not across entries.
+
+   54: max R-hat  1.024 (log10_total0[7]   ) PASS | ESS min  112 | div  10 | leapfrog 1631.1 | longest chain 62.79 h | lp__ -880.1, -880.0, -884.7, -881.5
+   55: max R-hat 18.318 (cycle_length[1]   ) FAIL | ESS min    2 | div   9 | leapfrog   89.9 | longest chain  0.74 h | lp__ -996.3, -832.7, -897.2, -856.0
+   57: max R-hat 13.793 (cycle_length[9]   ) FAIL | ESS min    2 | div  27 | leapfrog   73.7 | longest chain  0.85 h | lp__ -873.9, -870.2, -1017.0, -1040.3
+   58: max R-hat 10.148 (cycle_length[3]   ) FAIL | ESS min    2 | div   4 | leapfrog  124.0 | longest chain  1.47 h | lp__ -1011.5, -1085.7, -994.2, -1106.9
+   59: max R-hat  9.717 (cycle_length[5]   ) FAIL | ESS min    2 | div   3 | leapfrog  141.8 | longest chain  1.69 h | lp__ -919.1, -1017.9, -948.7, -934.3
+
+2. PER CHAIN. sum_log_lik = mean over the chain's draws of the pointwise
+   log-likelihood summed over 1130 observations (priors excluded; comparable
+   across entries; entry 54 is -807.2 in every chain; 57's best chains -825).
+   at_bound = trials whose chain-mean cycle_length is within 0.5 h of 35 or
+   50 h. cl_mean13 = chain mean of the mean cycle_length over 13 trials (h).
+
+   58 chain 1: sum_log_lik  -916.1 | cl_mean13 42.68 | at_bound: DSM265 49.7, MMV048_PartB 49.5
+   58 chain 2: sum_log_lik  -968.7 | cl_mean13 44.70 | at_bound: Ferroquine 49.8, ACT451840 49.8, MMV048_PIB 49.9, OZ439/DSM265 49.9, DSMOZ_2 49.8
+   58 chain 3: sum_log_lik  -898.4 | cl_mean13 41.94 | at_bound: EFITA_OZGAM 49.7
+   58 chain 4: sum_log_lik -1000.4 | cl_mean13 44.16 | at_bound: Piperaquine 49.9, Ferroquine 49.8, OZ439/DSM265 49.9, DSMOZ_2 49.8
+   59 chain 1: sum_log_lik  -879.4 | cl_mean13 41.10 | at_bound: OZ439 49.6
+   59 chain 2: sum_log_lik  -957.2 | cl_mean13 45.24 | at_bound: Piperaquine 49.6, OZ439/DSM265 49.8, EFITA_OZGAM 49.6, DSMOZ_2 49.7
+   59 chain 3: sum_log_lik  -902.0 | cl_mean13 41.88 | at_bound: ACT451840 49.7
+   59 chain 4: sum_log_lik  -888.9 | cl_mean13 41.93 | at_bound: OZ439/DSM265 49.7
+
+3. TRIALS WHOSE cycle_length SPLITS THE CHAINS (between-chain range of
+   chain means > 2 h), chain means in hours.
+
+   58: 11 of 13 trials split: DSM265 [49.7 40.0 40.0 39.9]; Piperaquine [39.8 40.0 39.6 49.9]; Ferroquine [39.4 49.8 39.5 49.8]; ACT451840 [40.9 49.8 40.9 40.8]; MMV048_PIB [41.0 49.9 41.2 41.7]; OZ439/DSM265 [40.0 49.9 39.9 49.9]; EFITA_OZGAM [40.2 40.1 49.7 40.2]; KAE609 [40.3 49.0 40.2 40.1]; DSMOZ_2 [41.1 49.8 41.0 49.8]; SJ733IBSMCS [48.9 39.9 39.9 49.2]; MMV048_PartB [49.5 38.8 49.5 38.9]
+   59: 9 of 13 trials split: OZ439 [49.6 40.4 40.3 40.2]; DSM265 [39.1 49.5 39.0 39.0]; Piperaquine [39.2 49.6 39.2 39.2]; Ferroquine [39.2 49.4 39.1 49.2]; ACT451840 [39.7 39.8 49.7 39.7]; OZ439/DSM265 [39.0 49.8 38.9 49.7]; DSMOZ_2 [40.2 49.7 40.1 40.1]; SJ733IBSMCS [39.3 39.3 49.4 39.3]; MMV048_PartB [37.8 49.2 37.8 37.8]
+
+4a. ENTRY 58 STARTS. Per unit, pooled over all chains: posterior mean of the
+   modal age in hours (start_mode x 19 - 6; negative = before bursting),
+   the between-chain range of chain means of that mode (h), the posterior
+   mean share of the start below age 0 (pbeta(6/19, a, b) per draw), and
+   start_conc (prior flat on [2, 6]). e54_modal_h: entry 54's
+   per-unit modal ages (posterior means, _data/inoculum-age-check-2026-11-09.txt).
+
+              unit mode_h mode_chain_range_h share_below0 conc e54_modal_h
+   Mefloquine.1800   5.80               0.67        0.180 3.98       3.651
+        OZ439.1800   6.07               0.81        0.187 3.90      10.922
+       DSM265.1800   2.51               4.85        0.314 3.72       1.129
+  Piperaquine.1800   2.07              11.23        0.372 5.06       2.278
+   Ferroquine.1800   0.40               6.26        0.420 4.32       2.829
+    ACT451840.1800   5.31              12.53        0.249 4.80      10.957
+   MMV048_PIB.1800   6.26              17.32        0.254 5.48      11.739
+ OZ439/DSM265.1800  -0.63              10.29        0.530 5.26       5.322
+  EFITA_OZGAM.2800   4.28               8.18        0.267 4.68       5.464
+       KAE609.1800   5.86               1.98        0.190 4.30       6.503
+      DSMOZ_2.2800   2.53              11.59        0.361 4.52      10.891
+  SJ733IBSMCS.2800   5.29               1.74        0.238 3.57       3.109
+  SJ733IBSMCS.2300   5.02               4.79        0.268 3.35       1.324
+ MMV048_PartB.2800   5.27               4.87        0.260 3.07       4.620
+
+4b. ENTRY 59 DELAYS AND SHARED START. Per unit, pooled over chains: posterior
+   mean and 90% interval of the delay (hours, prior flat on [0, 12]), the
+   between-chain range of chain means (h), and the share of draws within
+   0.25 h of either bound.
+
+              unit delay_h   q05   q95 chain_range_h at_0 at_max
+   Mefloquine.1800    5.39  0.76 10.70          0.29 0.02   0.01
+        OZ439.1800    7.24  1.16 11.84          5.71 0.01   0.07
+       DSM265.1800    9.28  4.93 11.80          2.09 0.00   0.06
+  Piperaquine.1800    6.93  1.00 11.91          6.28 0.01   0.12
+   Ferroquine.1800    8.51  1.57 11.93          5.79 0.01   0.15
+    ACT451840.1800    6.11  0.41 11.89          7.45 0.03   0.11
+   MMV048_PIB.1800    2.64  0.16  7.26          0.22 0.08   0.00
+ OZ439/DSM265.1800    8.84  1.51 11.95          5.54 0.01   0.21
+  EFITA_OZGAM.2800   11.63 10.97 11.98          0.12 0.00   0.47
+       KAE609.1800    2.69  0.21  6.91          0.22 0.06   0.00
+      DSMOZ_2.2800    5.84  0.35 11.81          7.44 0.03   0.07
+  SJ733IBSMCS.2800    7.03  1.59 11.80          5.69 0.01   0.06
+  SJ733IBSMCS.2300    8.33  3.28 11.85          4.10 0.00   0.08
+ MMV048_PartB.2800    7.31  1.32 11.86          5.43 0.01   0.08
+
+   shared start: start_alpha 1.05 [1.00, 1.15], start_beta 1.95 [1.54, 2.44] (posterior mean [90%]; flat on [1, 3])
+   Spearman, unit delay against entry 54's modal age over 14 units: -0.51
+
+5. CYCLE LENGTH, entries that pass the gate only. Per trial: posterior mean
+   (hours); 'mean13' = posterior mean of the per-draw mean over 13 trials;
+   diff = this entry minus entry 54, difference of posterior means, unpaired.
+
+   58: fails the gate; not reported
+   59: fails the gate; not reported
+6. PSIS-LOO elpd over the same 1130 observations. NOT a model comparison for
+   any entry that fails the gate: there it averages over separate modes.
+
+   54: elpd_loo  -854.7 (se 28.4), p_loo  84.9, Pareto k > 0.7: 2
+   55: elpd_loo  -941.0 (se 28.1), p_loo 137.3, Pareto k > 0.7: 10  (fails the gate)
+   57: elpd_loo  -975.9 (se 27.7), p_loo 160.5, Pareto k > 0.7: 2  (fails the gate)
+   58: elpd_loo -1058.2 (se 26.3), p_loo 199.1, Pareto k > 0.7: 1  (fails the gate)
+   59: elpd_loo  -982.6 (se 27.2), p_loo 135.2, Pareto k > 0.7: 2  (fails the gate)

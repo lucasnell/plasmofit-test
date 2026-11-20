@@ -180,7 +180,12 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
-- [ ] **SLURM 35290 — entries 58 and 59** (submitted 2026-11-20, Lucas:
+- [x] **SLURM 35290 — read 2026-11-20: BOTH FAIL the gate** (58 max R-hat
+      10.1, 59 9.7; `findings.md`, "Entries 58 and 59"). Stuck chains put
+      trials at the 50 h bound. 59 contains 55 yet its best draw is 58
+      log-likelihood units below 55's, so its failure is a search failure,
+      not a verdict on the delay. Next step is Lucas's. Record follows.
+- [x] **SLURM 35290 — entries 58 and 59** (submitted 2026-11-20, Lucas:
       "do both"), testing whether 55-57 fail because the 13 h window cannot
       reach the phase the data want. 58 `np_start13below6unit_nc384_t`:
       57 (per-unit mode and concentration) on [-6, 13] h, ages below 0 being

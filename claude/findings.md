@@ -3908,6 +3908,81 @@ headline.
 KAE609 (control), with `b_shape` fixed at 15 and free; reading rule fixed
 before the run. Read with `_scripts/cl-profile-read.R`.
 
+### Entries 58 and 59, read 2026-11-20: more phase freedom makes it worse; their chains do not even find regions their own models contain
+
+Lucas's test of whether 55-57 fail because the 13 h window cannot reach the
+phase the data want ("do both"). SLURM 35290, plasmofit scratch build
+cda47a0; scripts `_scripts/read-entry5859.R` and
+`_scripts/read-entry5859-maxll.R`, outputs
+`_data/read-entry5859-2026-11-20.txt` and
+`_data/read-entry5859-maxll-2026-11-20.txt`. Both are no_pool, `n_c` 384,
+`sd_log10_total0` 1, cap 3, whole inoculum circulating at t = 0,
+adapt_delta 0.95, max_treedepth 12, seed 538065874, 4 x 1000 draws:
+58 (`np_start13below6unit_nc384_t`) is 57 (per-unit mode and concentration)
+on [-6, 13] h, ages below 0 being late schizonts; 59
+(`np_start13delay12_nc384_t`) is 55 (one Beta on [0, 13] h shared) plus a
+per-unit post-injection delay flat on [0, 12] h
+(`claude/start-dist-design.md`, "Below age 0 and a delay").
+
+**Both fail the gate**, worse than 55-57: max R-hat 10.1 (58) and 9.7 (59),
+bulk ESS minimum 2. The stuck chains put trials' `cycle_length` at the
+UPPER bound, 49.5-49.9 h, against 38-41 h in the other chains: 11 of 13
+trials split the chains in 58, 9 of 13 in 59 (chain means differing by
+more than 2 h). In 55-57 the stuck trials were mostly Mefloquine at 35 h.
+
+**Summed log-likelihood per chain**, 1130 observations, priors excluded.
+Mean = mean over the chain's 1000 draws; max = best single draw. The mean
+sits roughly p/2 below the best fit for a model with p parameters, so
+across entries with different parameter counts (54: 113 unconstrained, 55:
+73, 57 and 58: 99, 59: 87) the max is the fairer column; both are shown.
+
+| entry | chain means | chain maxima |
+|---|---|---|
+| 54 (converged) | -807.4, -807.0, -807.2, -807.2 | -780.7, -786.1, -786.5, -789.1 |
+| 55 | -937.0, -819.5, -863.0, -836.6 | -921.7, -805.9, -847.3, -802.9 |
+| 57 | -825.3, -824.8, -931.9, -954.6 | -808.5, -808.1, -912.4, -933.5 |
+| 58 | -916.1, -968.7, -898.4, -1000.4 | -896.5, -913.7, -873.9, -979.2 |
+| 59 | -879.4, -957.2, -902.0, -888.9 | -860.7, -937.1, -884.5, -872.1 |
+
+**59 contains 55** (delay -> 0 recovers 55's density exactly;
+`start-dist-validate.R` 7e), so 59 contains points as good as 55's best
+draw, -802.9. 59's best draw is -860.7, 58 units short. Its chains did not
+find a region its own model contains, so **59's failure is a failure to
+search, not evidence that a delay fits worse**, and it says nothing about
+whether a delay helps. 58 does not contain 57 (its Beta always spans the
+whole [-6, 13] h, so with concentration capped at 6 every unit's start is
+wide and at least partly below 0: 18-53% of the start below age 0, posterior
+means by unit), so 58's lower values may be the model's or the search's;
+these runs cannot tell which.
+
+What the runs do show:
+- 59's delays are poorly identified and the chains disagree: posterior
+  means 2.6-11.6 h, 90% intervals mostly spanning 1-12 h, chain means
+  differing by 5-7 h for 9 of 14 units; EFITA_OZGAM sits at the 12 h
+  bound (47% of draws within 0.25 h of it). The shared start went to its
+  youngest shape, start_alpha 1.05 [1.00, 1.15] (lower bound 1),
+  start_beta 1.95 [1.54, 2.44] (posterior mean [90%]). Units with an older
+  modal age in entry 54 got shorter delays (Spearman -0.51 over 14 units),
+  the direction a phase lag would take.
+- 58's modes also disagree between chains, by up to 17 h for a unit.
+- Adding phase freedom on a bounded interval (a delay, a wider window)
+  made the multimodality worse, not better.
+
+**Revised reading of 55-59 together.** At its best, the windowed start
+reaches within about 22 summed log-likelihood units of entry 54 (55's best
+draw -802.9 against 54's -780.7; 54 has 40 more parameters, which lowers
+its best draw, not raises it). But no windowed variant converges, and the
+more phase parameters it has, the less reliably chains find the good
+region. A hypothesis that fits all six entries (not tested): in entry 54
+the start's phase is an angle on a circle (`b_offset`, a unit vector), so
+a chain can move a unit's phase continuously through a whole cycle. In
+55-59 the phase lives on an interval (a mode in a window, a delay in
+[0, 12] h), so a chain that starts a unit at the wrong phase cannot move
+round the cycle and changes `cycle_length` instead, until it lands on
+another `cycle_length` that lines the peaks up with the observations,
+often at a bound. That would make every bounded-phase parameterisation
+multimodal regardless of whether its best region fits.
+
 ### Entries 56 and 57, read 2026-11-19: per-unit starts inside the 13 h window fail too -- the window, not the sharing
 
 Lucas's test of the phase hypothesis behind entry 55's failure ("do 1-2").
