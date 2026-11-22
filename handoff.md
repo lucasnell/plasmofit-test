@@ -2,6 +2,15 @@
 
 ## State of play right now — read this first
 
+**2026-11-22: the sequestration midpoint does NOT rescue the ring-only
+start** (`findings.md`). Freeing p3 leaves entry 57 24.67 log-likelihood
+units below entry 54 at equal parameter count, against 29.78 with p3 fixed:
+only 5.1 units of the deficit were the schedule. p3 is barely identified
+under 54's free start and strongly identified under 57's constrained one,
+which confirms the start-absorbs-the-schedule mechanism without rescuing the
+window. Entry 59's column awaits SLURM 35396 (`TODO.md`), a split rerun of
+the one task that hit the 24 h wall.
+
 **2026-11-20 (night): SLURM 35357 running**, profile of the sequestration
 midpoint p3 (fixed at 18.5802 h since Archer, never estimated) under entries
 54, 57 and 59's starts. Motivation: the start carries all of the phase, so a

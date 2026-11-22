@@ -100,6 +100,16 @@ if (nzchar(Sys.getenv("SSQ_SMOKE"))) {          # quick end-to-end test of run m
     OUTDIR <- paste0(Sys.getenv("SSQ_SMOKE"), "/"); N_RAND <- 2; N_RAND_G <- 2
     P3_GRID <- c(15, P3_DEF); GRID_A <- c(1, 1.5); GRID_B <- 2
 }
+## SSQ_P3ONLY=<i> restricts run mode to the i-th grid point and writes
+## task-<model>-<trial>-p<p3>.rds instead of the whole-grid file, so one trial
+## can be spread over the grid as parallel tasks. Added 2026-11-22 after task
+## 38 (entry 59, SJ733IBSMCS) hit the 24 h wall at 14 of 16 points having saved
+## nothing. Everything else is unchanged, except that there is then no warm
+## start from the previous grid point, so such a run can only be equal to or
+## very slightly below the whole-grid one; merge mode reports which trials
+## were rebuilt this way.
+P3_ONLY <- Sys.getenv("SSQ_P3ONLY", "")
+if (nzchar(P3_ONLY)) P3_GRID <- P3_GRID[as.integer(P3_ONLY)]
 
 d <- readRDS("_data/wock-data-np_start13unit_nc384_t.rds")
 lv <- attr(d, "levels")
@@ -293,7 +303,8 @@ if (MODE == "run") {
     stopifnot(!is.na(task), task >= 1, task <= length(MODELS) * d$n_grp_cl)
     m <- MODELS[(task - 1) %/% d$n_grp_cl + 1]; c <- (task - 1) %% d$n_grp_cl + 1
     dir.create(OUTDIR, showWarnings = FALSE, recursive = TRUE)
-    OUT <- sprintf("%stask-%s-%02d.rds", OUTDIR, m, c)
+    OUT <- if (nzchar(P3_ONLY)) sprintf("%stask-%s-%02d-p%s.rds", OUTDIR, m, c, sprintf("%g", P3_GRID[1]))
+           else sprintf("%stask-%s-%02d.rds", OUTDIR, m, c)
     if (file.exists(OUT)) stop(OUT, " exists; refusing to overwrite")
     set.seed(20261120 + 1000 + task)
     td <- trial_data(c, DMAX[[m]]); nu <- length(td$units)
@@ -349,50 +360,107 @@ if (MODE == "run") {
 }
 
 ## ---- merge ---------------------------------------------------------------------
+## Entry 59's (alpha, beta) is SHARED by every trial, so its profile at a given
+## p3 is max over (alpha, beta) of the SUM over trials, not the sum of each
+## trial's own best (alpha, beta). Entries 54 and 57 share nothing across
+## trials, so for them the two agree.
+##
+## A trial whose whole-grid file is absent is rebuilt from per-point files
+## written by SSQ_P3ONLY runs; section 1 names any trial rebuilt that way and
+## any grid point still missing.
 if (MODE == "merge") {
     nT <- d$n_grp_cl; TR <- lv$trial
-    best_sub <- function(sub) max(vapply(sub, \(r) max(vapply(r, `[[`, 0, "ll")), 0))
-    Rz <- lapply(MODELS, \(m) lapply(seq_len(nT), \(c) readRDS(sprintf("%stask-%s-%02d.rds", OUTDIR, m, c))))
-    names(Rz) <- MODELS
-    keys <- names(Rz[[1]][[1]]$runs)
-    p3v <- as.numeric(keys)
-    PROF <- vapply(MODELS, \(m) vapply(keys, \(k) sum(vapply(Rz[[m]], \(x) best_sub(x$runs[[k]]), 0)), 0), numeric(length(keys)))
+    kk <- function(x) sprintf("%g", P3_GRID[vapply(x, \(v) which.min(abs(P3_GRID - v)), 1L)])
+    allk <- kk(P3_GRID); dkey <- kk(P3_DEF)
+    best_starts <- function(r) max(vapply(r, `[[`, 0, "ll"))
+    rebuilt <- character()
+    ## runs_of(m, c): list by p3 key of (named vector over sub-keys of the best
+    ## over starts). Sub-key is "none" for entries 54 and 57, "<a>_<b>" for 59.
+    runs_of <- function(m, c) {
+        f <- sprintf("%stask-%s-%02d.rds", OUTDIR, m, c)
+        if (file.exists(f)) return(lapply(readRDS(f)$runs, \(sub) vapply(sub, best_starts, 0)))
+        pf <- list.files(OUTDIR, sprintf("^task-%s-%02d-p.*\\.rds$", m, c), full.names = TRUE)
+        if (!length(pf)) stop("no saved run for entry ", m, " trial ", c)
+        rebuilt <<- c(rebuilt, sprintf("entry %s, trial %s: %d of %d points from per-point runs",
+                                       m, TR[c], length(pf), length(P3_GRID)))
+        out <- list()
+        for (q in pf) { x <- readRDS(q)
+                        for (k in names(x$runs)) out[[k]] <- vapply(x$runs[[k]], best_starts, 0) }
+        out
+    }
+    LL <- lapply(MODELS, \(m) lapply(seq_len(nT), \(c) runs_of(m, c)))
+    names(LL) <- MODELS
+    ## profile: per p3 key present for every trial, max over shared sub-keys of
+    ## the summed per-trial best. Also keep which sub-key attained it.
+    prof_of <- function(m) {
+        keys <- Reduce(intersect, lapply(LL[[m]], names))
+        v <- numeric(length(keys)); sk <- character(length(keys)); names(v) <- keys
+        for (j in seq_along(keys)) {
+            subs <- Reduce(intersect, lapply(LL[[m]], \(x) names(x[[keys[j]]])))
+            tot <- vapply(subs, \(sb) sum(vapply(LL[[m]], \(x) x[[keys[j]]][[sb]], 0)), 0)
+            v[j] <- max(tot); sk[j] <- subs[which.max(tot)]
+        }
+        list(v = v, sub = setNames(sk, keys))
+    }
+    PR <- lapply(MODELS, prof_of); names(PR) <- MODELS
+    PROF <- lapply(PR, `[[`, "v")
+    ## start-ml.R's maximum, with (alpha, beta) shared the same way
+    ml_shared <- function(m) {
+        per <- lapply(seq_len(nT), \(c) { f <- sprintf("%stask-%s-%02d.rds", MLDIR, m, c)
+            if (!file.exists(f)) return(NULL)
+            vapply(readRDS(f)$runs, best_starts, 0) })
+        if (any(vapply(per, is.null, TRUE))) return(NA_real_)
+        subs <- Reduce(intersect, lapply(per, names))
+        max(vapply(subs, \(sb) sum(vapply(per, \(x) x[[sb]], 0)), 0))
+    }
     npar <- c(`54` = 95, `57` = 95, `59` = 83)
     cat("1. PROFILE of the sequestration midpoint p3. Cells: maximum log-likelihood\n",
         "   over 1130 observations at that p3, summed over 13 trials, sd per trial x\n",
         "   cohort profiled, priors ignored, p4 fixed at 0.2242. p3 is SHARED by every\n",
-        "   trial and unit. Higher is better; every value is a lower bound on the true\n",
-        "   maximum. The row at 18.5802 h is the value the model has always used.\n\n", sep = "")
-    tab <- cbind(p3_h = round(p3v, 4), round(PROF, 2))
-    print(tab[order(p3v), ], row.names = FALSE)
+        "   trial and unit, and so is entry 59's start shape (alpha, beta), which is\n",
+        "   therefore chosen once for all 13 trials at each p3. Higher is better; every\n",
+        "   value is a lower bound on the true maximum. The row at 18.5802 h is the\n",
+        "   value the model has always used. NA = that grid point is not available for\n",
+        "   every trial in that model.\n\n", sep = "")
+    if (length(rebuilt)) cat("   rebuilt from per-point runs: ", paste(unique(rebuilt), collapse = "; "), "\n\n", sep = "")
+    tab <- data.frame(p3_h = P3_GRID)
+    for (m in MODELS) tab[[m]] <- round(unname(PROF[[m]][match(allk, names(PROF[[m]]))]), 2)
+    print(tab, row.names = FALSE)
     cat("\n2. PEAKS and FLATNESS (reading rule d first).\n\n")
     for (m in MODELS) {
-        v <- PROF[, m]; i <- which.max(v); j <- which(abs(p3v - P3_DEF) < 1e-6)
-        cat(sprintf("   entry %s (npar %d): peak %.2f at p3 = %.4f h | at the default p3 %.2f | gain %+.2f | range over the grid %.2f\n",
-                    m, npar[[m]], v[i], p3v[i], v[j], v[i] - v[j], diff(range(v))))
+        v <- PROF[[m]]; i <- which.max(v)
+        cat(sprintf("   entry %s (npar %d): peak %.2f at p3 = %s h | at the default p3 %s | gain %s | range over %d points (%s-%s h) %.2f\n",
+                    m, npar[[m]], v[i], names(v)[i],
+                    if (dkey %in% names(v)) sprintf("%.2f", v[[dkey]]) else "NA",
+                    if (dkey %in% names(v)) sprintf("%+.2f", v[i] - v[[dkey]]) else "NA",
+                    length(v), names(v)[1], names(v)[length(v)], diff(range(v))))
     }
     cat("\n   FLAT (range < 2 units) means p3 is not identified under that start.\n")
+    cat(sprintf("\n   entry 59's shared start at its peak p3: (alpha, beta) = %s\n",
+                sub("_", ", ", PR[["59"]]$sub[[names(PROF[["59"]])[which.max(PROF[["59"]])]]])))
     cat("\n3. BETWEEN MODELS at each model's own peak, and at a COMMON p3 (reading\n",
         "   rule a and c). Differences in log-likelihood units; parameter difference\n",
         "   in brackets. 57 - 54 was -29.78 (0) with p3 fixed at 18.5802 h.\n\n", sep = "")
-    pk <- vapply(MODELS, \(m) max(PROF[, m]), 0)
+    pk <- vapply(MODELS, \(m) max(PROF[[m]]), 0)
     for (pr in list(c("57", "54"), c("59", "54"), c("59", "57")))
         cat(sprintf("   %s - %s at each peak: %+7.2f (%+d parameters)\n", pr[1], pr[2],
-                    pk[pr[1]] - pk[pr[2]], npar[[pr[1]]] - npar[[pr[2]]]))
-    i54 <- which.max(PROF[, "54"])
-    cat(sprintf("\n   at entry 54's peak p3 = %.4f h: 57 - 54 %+.2f, 59 - 54 %+.2f\n",
-                p3v[i54], PROF[i54, "57"] - PROF[i54, "54"], PROF[i54, "59"] - PROF[i54, "54"]))
-    cat("\n4. PER TRIAL at each model's peak p3: maximum log-likelihood (best found).\n\n")
-    pt <- vapply(MODELS, \(m) { k <- keys[which.max(PROF[, m])]
-        vapply(Rz[[m]], \(x) best_sub(x$runs[[k]]), 0) }, numeric(nT))
+                    pk[[pr[1]]] - pk[[pr[2]]], npar[[pr[1]]] - npar[[pr[2]]]))
+    for (m in MODELS) if (dkey %in% names(PROF[[m]]))
+        cat(sprintf("   at the DEFAULT p3, %s - 54: %+7.2f (%+d parameters)\n", m,
+                    PROF[[m]][[dkey]] - PROF[["54"]][[dkey]], npar[[m]] - npar[["54"]]))
+    cat("\n4. PER TRIAL at each model's peak p3 (entry 59 at its peak shared start):\n",
+        "   maximum log-likelihood, best found.\n\n", sep = "")
+    pt <- vapply(MODELS, \(m) { k <- names(PROF[[m]])[which.max(PROF[[m]])]; sb <- PR[[m]]$sub[[k]]
+        vapply(LL[[m]], \(x) x[[k]][[sb]], 0) }, numeric(nT))
     rownames(pt) <- TR
     print(round(pt, 2))
-    cat("\n5. CONSISTENCY with start-ml.R at the default p3: this profile's value at\n",
-        "   18.5802 h against start-ml.R's maximum for the same model, summed over\n",
-        "   trials. This profile has extra starts, so it should be equal or higher.\n\n", sep = "")
-    j <- which(abs(p3v - P3_DEF) < 1e-6)
-    for (m in MODELS) {
-        mlsum <- sum(vapply(Rz[[m]], \(x) x$ml_best, 0))
-        cat(sprintf("   entry %s: here %.2f | start-ml %.2f | difference %+.2f\n", m, PROF[j, m], mlsum, PROF[j, m] - mlsum))
+    cat("\n5. CONSISTENCY with start-ml.R at the default p3, both with (alpha, beta)\n",
+        "   shared across trials. This profile has extra starts, so it should be equal\n",
+        "   or higher; entry 59's shape grid here is 5 x 5 against start-ml's 8 x 8, so\n",
+        "   a small shortfall there is the coarser grid, not a disagreement.\n\n", sep = "")
+    for (m in MODELS) if (dkey %in% names(PROF[[m]])) {
+        ms <- ml_shared(m)
+        cat(sprintf("   entry %s: here %.2f | start-ml %.2f | difference %+.2f\n",
+                    m, PROF[[m]][[dkey]], ms, PROF[[m]][[dkey]] - ms))
     }
 }

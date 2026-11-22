@@ -180,7 +180,27 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
-- [ ] **SLURM 35357 — profile of the sequestration midpoint p3** (submitted
+- [ ] **SLURM 35396 — rerun of 35357's task 38** (entry 59, SJ733IBSMCS),
+      which hit the 24 h wall at 14 of 16 p3 points having saved nothing.
+      Split one array task per grid point (`SSQ_P3ONLY`, ~2 h each);
+      merge mode stitches the per-point files and names the trial it
+      rebuilt. **`_data/start-seq-2026-11-22.txt` is PROVISIONAL until this
+      lands**: its 54 and 57 columns are final, its 59 column was computed
+      with a bug (below) and must not be read. When it ends, rerun
+      `SSQ_MODE=merge Rscript --vanilla _scripts/start-seq.R > _data/start-seq-2026-11-22.txt`.
+- [x] **SLURM 35357 — read 2026-11-22, entries 54 and 57** (`findings.md`,
+      "Profile of the sequestration midpoint"): freeing p3 does NOT rescue
+      the ring-only start. 57's peak is 24.67 log-likelihood units below
+      54's at equal parameter count, against 29.78 with p3 fixed, so only
+      5.1 units of the deficit were the schedule. p3 is barely identified
+      under 54's whole-cycle start (2.9 units from 12 to 18.58 h, peak at
+      the grid's lower edge) and strongly identified under 57's ring-only
+      start (range 118.6, peak at 21 h). Entry 59 pending the rerun.
+      **Bug found and fixed in merge mode (2026-11-22):** entry 59's
+      (alpha, beta) is shared by all 13 trials, but the first merge let each
+      trial pick its own, inflating 59's profile. Entries 54 and 57 share
+      nothing across trials and were unaffected.
+- [x] **SLURM 35357 — profile of the sequestration midpoint p3** (submitted
       2026-11-20, Lucas: "1-2"). `_scripts/start-seq.R` / `.sh`: p3, the
       half-sequestration age fixed at 18.5802 h since Archer and never
       estimated, profiled over 12-26 h under entry 54's whole-cycle start,
