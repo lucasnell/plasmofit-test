@@ -662,7 +662,25 @@ CONFIGS <- list(
                                             ## is: the pinned script chdirs there
                                             init_file = "start-ml-init-59.rds",
                                             control = list(adapt_delta = 0.95,
-                                                           max_treedepth = 12))
+                                                           max_treedepth = 12)),
+    ## ---- 62: can the good mode be FOUND, not just occupied? ---------------
+    ## (Lucas, 2026-11-23.) Entry 61 showed the delay model has a converged
+    ## mode that ties entry 54 on elpd with 12 fewer parameters and puts
+    ## cycle_length at 39.97 h against 41.82 h -- but its chains were started
+    ## there. Entry 60 reached the same mode from RANDOM inits in 2 of 4
+    ## chains under the non-centred cycle_length hierarchy. This is entry 60
+    ## with 8 chains and adapt_delta 0.99, asking how often dispersed starts
+    ## arrive. If most do, 39.97 h stops being conditional on initialisation.
+    ## MUST be run with WOCKFIT_CHAINS=8 (and --cpus-per-task=64, so eight
+    ## whole L3 groups are available to pin to).
+    np_start13delay12_ncp_ad99_nc384_t = list(model = "no_pool",
+                                              chains = 8L,
+                                              data = list(sd_log10_total0 = 1, n_c = 384L,
+                                                          start_dist = 1L, start_window = 13,
+                                                          start_shape_cap = 3, start_delay = TRUE,
+                                                          delay_max = 12, center_cl = 0L),
+                                              control = list(adapt_delta = 0.99,
+                                                             max_treedepth = 12))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -688,7 +706,13 @@ if (nzchar(seed_env)) {
     cat("sampler seed overridden:", SEED, "\n")
 }
 
-N_CHAINS <- 4L
+## 4 unless WOCKFIT_CHAINS says otherwise (added 2026-11-23 for entry 62,
+## which needs more chains to see how often the good mode is found from
+## dispersed starts). _scripts/wockner-fit-pinned.sh reads the same variable,
+## and a config may record the count it is meant to run with; they are checked
+## against each other below.
+N_CHAINS <- as.integer(Sys.getenv("WOCKFIT_CHAINS", "4"))
+if (is.na(N_CHAINS) || N_CHAINS < 1L) stop("WOCKFIT_CHAINS must be a positive integer")
 WARMUP <- 700L
 ITER <- 1000L + WARMUP
 
@@ -718,6 +742,10 @@ if (nzchar(fit_suffix)) {
     cat("output suffix:", fit_suffix, "-> writing as", cfg_name, "\n")
 }
 cfg <- CONFIGS[[curr_idx]]
+if (!is.null(cfg$chains) && cfg$chains != N_CHAINS) {
+    stop("config ", cfg_name, " is meant to run with ", cfg$chains,
+         " chains but WOCKFIT_CHAINS gives ", N_CHAINS)
+}
 
 # THREADS. A chain process runs as many threads as CPUs it is allowed, whatever
 # threads_per_chain says: neither rstan's setting, STAN_NUM_THREADS, nor

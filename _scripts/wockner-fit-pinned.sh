@@ -20,6 +20,10 @@
 #   cd _data && WOCKFIT_MODE=merge SLURM_ARRAY_TASK_ID=<i> SLURM_CPUS_PER_TASK=4 \
 #       WOCKFIT_SEED=<seed> WOCKFIT_SUFFIX=<suffix> Rscript --vanilla ../_scripts/wockner-fit.R
 #
+# WOCKFIT_CHAINS=<n> runs n chains instead of 4; n whole L3 groups must be in
+# the allocation, so pass --cpus-per-task=8n on the sbatch line as well
+# (8 CPUs per L3 group here). Used by config 62 with n = 8 and 64 CPUs.
+#
 # FOOTPRINT. 40 CPUs and 32G per task: at most 3 at once inside the
 # 128 CPU / 515,670 MB half-node budget (M = floor(min(128/40, 515670/32768)) = 3).
 # Pass --array=<i>%3 or fewer for several configs.
@@ -41,7 +45,7 @@
 #SBATCH --mail-type=END,FAIL
 
 set -u
-N_CHAINS=4
+N_CHAINS=${WOCKFIT_CHAINS:-4}
 
 ## PIN_PLAN="cfg:seed cfg:seed ..." runs several (config, seed) pairs as one
 ## array, --array=1-<n>%3: task i takes the i-th pair, fits config `cfg` of
