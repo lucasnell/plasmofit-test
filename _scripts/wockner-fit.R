@@ -680,7 +680,31 @@ CONFIGS <- list(
                                                           start_shape_cap = 3, start_delay = TRUE,
                                                           delay_max = 12, center_cl = 0L),
                                               control = list(adapt_delta = 0.99,
-                                                             max_treedepth = 12))
+                                                             max_treedepth = 12)),
+    ## ---- 63: is the delay really just a PHASE? ----------------------------
+    ## (Lucas, 2026-11-23.) Entry 61's per-unit delay shifts the whole
+    ## trajectory in TIME, so by observation time t that unit has had
+    ## t - delay hours to desynchronise and to burst. start_dist 4 slides the
+    ## same shared window to a per-unit PHASE in AGE, wrapping past the
+    ## cycle's end, with development running from t = 0, so it has had the
+    ## full t hours. The phase comes from a unit_vector, as entry 54's
+    ## b_offset does, so a chain can carry it right round the cycle instead
+    ## of hitting an interval bound. Same sampler settings as entry 62, so
+    ## 62 and 63 differ only in delay against phase.
+    ## Reading: equal fit and equal cycle_length means the delay is only
+    ## setting phase and should be described as such, which matters because
+    ## no post-injection pause beyond about an hour has any support in the
+    ## literature (claude/references.md). It gives up the ring-only premise
+    ## by construction, so it is a null, not a biological proposal.
+    ## NEEDS the start_dist 4 build: WOCKFIT_LIB=/home2/lan68/plasmofit/.Rlib-dev2.
+    ## MUST be run with WOCKFIT_CHAINS=8 and --cpus-per-task=64.
+    np_start13phase_ncp_ad99_nc384_t = list(model = "no_pool",
+                                            chains = 8L,
+                                            data = list(sd_log10_total0 = 1, n_c = 384L,
+                                                        start_dist = 4L, start_window = 13,
+                                                        start_shape_cap = 3, center_cl = 0L),
+                                            control = list(adapt_delta = 0.99,
+                                                           max_treedepth = 12))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -1015,7 +1039,7 @@ bshape_par_for <- function(fit) {
 ## start_alpha/start_beta exist only in fits from the start_dist build
 ## (2026-11, claude/start-dist-design.md); zero-sized unless start_dist = 1.
 start_pars_for <- function(fit) intersect(c("start_alpha", "start_beta", "start_mode", "start_conc",
-                                            "delay"),
+                                            "delay", "phase_vec"),
                                           fit@model_pars)
 par_block_for <- function(model, fit, data = d) {
     c(bshape_par_for(fit), "b_off_vec", start_pars_for(fit), "log10_total0",
@@ -1054,7 +1078,7 @@ draw_as_list <- function(fit, pars, i = 1L) {
     ## from par_dims: b_off_vec is (0, 2), not (0).
     for (nm in intersect(c("delta_total0", "sigma_total0", "b_shape_free",
                            "b_off_vec", "start_alpha", "start_beta",
-                           "start_mode", "start_conc", "delay"),
+                           "start_mode", "start_conc", "delay", "phase_vec"),
                          fit@model_pars)) {
         if (!nm %in% names(out)) out[[nm]] <- array(numeric(0), fit@par_dims[[nm]])
     }
@@ -1114,6 +1138,12 @@ fit_cond <- function(fit, max_shape, model) {
         colnames(k) <- paste0("start_conc[", seq_len(ncol(k)), "]")
         st <- cbind(m, k)
     }
+    ## per-unit phase (start_dist 4): the angle, as for b_off_vec above
+    if (!is.null(dr$phase_vec) && length(dr$phase_vec) > 0) {
+        ph <- atan2(dr$phase_vec[, , 2], dr$phase_vec[, , 1])
+        colnames(ph) <- paste0("phase_ang[", seq_len(ncol(ph)), "]")
+        st <- cbind(st, ph)
+    }
     ## per-unit delay (start_delay = 1), flat on [0, delay_max]
     if (!is.null(dr$delay) && length(dr$delay) > 0) {
         dl <- lg(as.matrix(dr$delay) / d$delay_max)
@@ -1154,7 +1184,8 @@ div_by_sigma <- function(fit, model) {
 
 summarize_fit <- function(fit, data, label, model,
                           par_names = c("b_shape", "b_offset", "start_alpha",
-                                        "start_beta", "start_mode", "start_conc", "delay", "R",
+                                        "start_beta", "start_mode", "start_conc", "delay",
+                                        "start_phase", "R",
                                         "log10_total0", "cycle_length",
                                         "sd_iRBC")) {
     ## keep only parameters this fit has and that carry draws: b_shape and
