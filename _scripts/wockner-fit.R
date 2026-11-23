@@ -657,7 +657,10 @@ CONFIGS <- list(
                                                         start_dist = 1L, start_window = 13,
                                                         start_shape_cap = 3, start_delay = TRUE,
                                                         delay_max = 12),
-                                            init_file = "_data/start-ml-init-59.rds",
+                                            ## path relative to _data/, as
+                                            ## read_csv("wockner-cleaned.csv")
+                                            ## is: the pinned script chdirs there
+                                            init_file = "start-ml-init-59.rds",
                                             control = list(adapt_delta = 0.95,
                                                            max_treedepth = 12))
 )
