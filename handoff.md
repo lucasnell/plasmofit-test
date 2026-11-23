@@ -2,6 +2,18 @@
 
 ## State of play right now — read this first
 
+**2026-11-23 (evening): the delay model is nearly as good as entry 54 once
+the sampler can reach its good region** (`findings.md`, "Entry 60"). The
+non-centred cycle_length hierarchy let two of four chains find a tight region
+(`sigma_logit_cl` 0.15, trials near 40 h, nothing at a bound) fitting within
+3-5 log-likelihood units of entry 54 with 12 FEWER parameters; entry 59's
+chains never came within 70. The gate still fails (max R-hat 16.1) because
+the other two chains went to the loose region. Separately, freeing the
+sequestration SLOPE as well as the midpoint changes the 59 - 54 gap by 0.58
+units, so the remaining deficit is not schedule-shaped. Entry 61 (chains
+started at the maximum-likelihood point) is running as SLURM 35505 after the
+first attempt died on a path bug (`TODO.md`).
+
 **2026-11-23 (later): three follow-ups running** (Lucas: "1-3"). SLURM
 35412, entries 60 (non-centred cycle_length hierarchy) and 61 (chains
 started at entry 59's maximum-likelihood point, a DIAGNOSTIC only), both

@@ -180,7 +180,26 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
-- [ ] **SLURM 35412 — entries 60 and 61** (submitted 2026-11-23, Lucas:
+- [ ] **SLURM 35505 — entry 61 rerun** (2026-11-23). The first attempt
+      (35412_61) FAILED before sampling: `init_file` was written as
+      `_data/start-ml-init-59.rds`, but `wockner-fit-pinned.sh` chdirs to
+      `_data/`, where paths are relative (`read_csv("wockner-cleaned.csv")`).
+      Fixed to `start-ml-init-59.rds` and resubmitted; the log now shows
+      "initial values from start-ml-init-59.rds (chain 1 exactly there;
+      log-likelihood -766.28)". Read with `_scripts/read-entry6061.R`, which
+      skips whichever entry is missing.
+- [x] **SLURM 35414 — read 2026-11-23** (`findings.md`, "Freeing the
+      sequestration SLOPE as well"): the slope changes the 59 - 54 gap by
+      0.58 units, so what remains of the ring-only deficit is not
+      schedule-shaped. Entry 54's preferred midpoint moves 3 h when the
+      slope is freed and must not be quoted alone.
+- [x] **SLURM 35412 — entry 60 read 2026-11-23** (`findings.md`, "Entry 60"):
+      fails the gate (max R-hat 16.1, 140 divergences), but chains 3 and 4
+      found a tight-hierarchy region (`sigma_logit_cl` 0.15, every trial near
+      40 h, nothing at a bound) fitting within 3-5 log-likelihood units of
+      entry 54 with 12 fewer parameters, which no chain of entry 59 reached.
+      Direct support for "the sampler, not the model".
+- [x] **SLURM 35412 — entries 60 and 61** (submitted 2026-11-23, Lucas:
       "1-3"), asking whether entry 59's failure is the SAMPLER or the MODEL.
       Both are otherwise exactly entry 59 (shared Beta on [0, 13] h plus a
       per-unit delay, n_c 384, cap 3, adapt_delta 0.95, max_treedepth 12).
@@ -198,7 +217,7 @@ match where a thread exists. This file is the actionable layer. -->
       59's best draw (-860.7) and its maximum (-766.28), trials at the
       cycle_length bounds, and `sigma_logit_cl` per chain.
       They load the SCRATCH library (cda47a0) through `WOCKFIT_LIB`.
-- [ ] **SLURM 35414 — 2-D profile of the sequestration schedule** (submitted
+- [x] **SLURM 35414 — 2-D profile of the sequestration schedule** (submitted
       2026-11-23, Lucas: "1-3"). `_scripts/start-seq2.R` / `.sh`: midpoint
       p3 in {15, 17, 18.5802, 20, 22} h x slope p4 in {0.1121, 0.1682,
       0.2242, 0.3363, 0.4484}, both shared, under entries 54, 57 and 59.

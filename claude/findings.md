@@ -4007,6 +4007,94 @@ posterior cycle lengths for these three trials are held in by the priors
 and the cycle_length hierarchy, not by their own likelihood. Not a
 reported number; a flag for "how much of the estimate is assumption".
 
+### Freeing the sequestration SLOPE as well, read 2026-11-23: it changes nothing, so what remains of the ring-only deficit is not schedule-shaped
+
+SLURM 35414; `_scripts/start-seq2.R` / `.sh`, shared core
+`_scripts/start-seq-core.R`; output `_data/start-seq2-2026-11-23.txt`, check
+`_data/start-seq2-check-2026-11-23.txt`. The midpoint profile freed the
+schedule's POSITION only. The slope `p4` sets how sharply parasites leave
+circulation: over the grid used here it narrows the transition from 8.4 h to
+2.1 h while leaving the fraction of the cycle spent circulating at 0.430,
+where the midpoint moves that fraction from 0.28 to 0.60. So it is a
+genuinely different degree of freedom, and it had never been free. Grid: `p3`
+in {15, 17, 18.5802, 20, 22} h x `p4` in {0.1121, 0.1682, 0.2242, 0.3363,
+0.4484}, both shared by every trial and unit. The core was extracted from
+`start-seq.R` with that script's check and merge output verified
+byte-identical before and after.
+
+| model | 2-D peak | at (`p3`, `p4`) | 1-D peak | gain | slope range at that midpoint |
+|---|---|---|---|---|---|
+| 54 whole cycle | -743.83 | 15 h, 0.4484 | -744.25 | +0.42 | 4.51 |
+| 57 ring-only | -767.04 | 22 h, 0.4484 | -768.93 | +1.89 | 12.49 |
+| 59 ring-only + delay | -764.81 | 18.58 h, 0.4484 | -765.81 | +1.00 | 10.01 |
+
+**Rule f, the headline: the slope adds nothing.** 59 - 54 moves from -21.55
+to -20.97, a change of 0.58 units, and 57 - 54 from -24.67 to -23.21. What
+remains of the ring-only deficit is not schedule-shaped, in position or in
+sharpness.
+
+**Rule h.** The slope is identified under all three starts, and again the
+free start is the least sensitive to it: a range of 4.5 units for 54 against
+12.5 for 57 and 10.0 for 59, the same ordering the midpoint gave.
+
+**Rule g.** Entry 57's preferred midpoint moves +1.0 h and 59's +0.58 h when
+the slope is freed, so those are robust; entry 54's moves +3.0 h, from the
+grid's edge at 12 h to 15 h, so **entry 54's preferred midpoint should not be
+quoted on its own** -- it was an edge value and it moves with the slope.
+
+**Rule i.** Entry 59's 3 x 3 shared-start grid costs -0.01 units against
+`start-seq.R`'s 5 x 5 at the reference point, within optimiser noise, so its
+numbers are comparable across models.
+
+**Caveat.** All three peak at the steepest slope on the grid, twice the
+inherited value, so the slope is at a boundary and the grid would have to be
+extended to locate it. The conclusion is unaffected: all three move together
+and the gap between them barely changes.
+
+### Entry 60, read 2026-11-23: the NON-CENTRED hierarchy reaches a region where the delay model fits almost as well as entry 54, but the gate still fails
+
+SLURM 35412; `_scripts/read-entry6061.R`, output
+`_data/read-entry6061-2026-11-23.txt`. Entry 60 is entry 59 -- one Beta on
+[0, 13] h shared by all units plus a per-unit delay flat on [0, 12] h, whole
+inoculum circulating, no_pool, `n_c` 384, cap 3, adapt_delta 0.95,
+max_treedepth 12, seed 538065874 -- with the cycle_length hierarchy
+NON-CENTRED (`center_cl` 0) instead of centred.
+
+**It fails the gate, and by the usual measures worse than 59:** max R-hat
+16.1 (on `lp__`), 140 divergent iterations of 4000 against 3, and all 13 of
+13 trials split the chains against 9 of 13.
+
+**But two of its four chains found a region no chain of entry 59 reached.**
+Cells: chain mean and best single draw of the summed pointwise
+log-likelihood over 1130 observations, priors excluded; `sigma` is the chain
+mean of `sigma_logit_cl`, the between-trial spread of cycle_length on the
+logit scale.
+
+| chains | `sigma` | mean cycle_length | mean log-lik | best draw | trials at a bound |
+|---|---|---|---|---|---|
+| 54, all four (passes) | 0.76-0.81 | 41.8 h | -807.0 to -807.4 | -780.7 to -789.1 | none |
+| **60, chains 3 and 4** | **0.15** | **40.0 h** | **-809.9, -812.0** | **-792.7, -793.9** | **none** |
+| 60, chains 1 and 2 | 1.81, 1.86 | 46.0, 47.3 h | -966.6, -1123.2 | -949.0, -1102.4 | 6 and 9 of 13 |
+| 59, best chain | 1.41 | 41.1 h | -879.4 | -860.7 | 1 of 13 |
+
+**So the delay model's good region fits within about 3 to 5 log-likelihood
+units of entry 54 on the chain mean, with 12 FEWER parameters** -- and entry
+59's chains never came within 70 units of it. That region is the tight one:
+`sigma_logit_cl` 0.15, every trial near 40 h, nothing at a bound. The
+non-centred parameterisation is what let a chain reach it, which is direct
+support for the reading that **entry 59's failure was the sampler, not the
+model**. It is not yet a posterior: chains 1 and 2 went the other way, to a
+loose hierarchy with most trials pinned at 50 h.
+
+**What chains 3 and 4 say about the parameters** (2000 draws, that region
+only): mean cycle_length over 13 trials 40.01 h, exactly the multistart
+optimiser's 40.01 and 1.8 h below entry 54's posterior 41.82; per-trial
+Spearman against the optimiser 0.87 with a largest difference of 2.27 h;
+shared start (alpha, beta) 1.18 and 1.58 against the optimiser's 1.00 and
+1.75. The per-unit delays agree with the optimiser only loosely (Spearman
+0.28, posterior means 2.6-10.4 h against 0.0-9.4 h), which is the expected
+signature of a parameter the data barely constrain.
+
 ### Profile of the sequestration midpoint, read 2026-11-22: freeing it does not rescue the ring-only start, and both ring-only models prefer the published value
 
 Lucas: "1-2", after the start-model maxima showed the ring-only [0, 13] h

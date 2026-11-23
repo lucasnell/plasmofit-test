@@ -1,0 +1,52 @@
+1. PROFILE over the sequestration midpoint p3 (rows) and slope p4 (columns).
+   Cells: maximum log-likelihood over 1130 observations at that (p3, p4),
+   summed over 13 trials, sd per trial x cohort profiled, priors ignored.
+   Both are SHARED by every trial and unit; so is entry 59's start shape,
+   here chosen once for all trials from a 3 x 3 grid. Higher is better; every
+   value is a lower bound on the true maximum. p4 = 0.2242 and p3 = 18.5802
+   are the inherited values. NA = grid point missing for some trial.
+
+   entry 54 (npar 95)
+           p4=0.1121 p4=0.1682 p4=0.2242 p4=0.3363 p4=0.4484
+p3=15        -748.34   -745.48   -744.80   -744.11   -743.83
+p3=17        -751.64   -746.57   -745.46   -744.94   -744.59
+p3=18.5802   -755.78   -749.16   -747.16   -746.12   -745.80
+p3=20        -760.51   -752.91   -750.44   -748.73   -748.24
+p3=22        -768.45   -759.49   -756.11   -753.88   -753.12
+
+   entry 57 (npar 95)
+           p4=0.1121 p4=0.1682 p4=0.2242 p4=0.3363 p4=0.4484
+p3=15        -786.21   -803.88   -819.91   -838.89   -848.02
+p3=17        -778.01   -783.87   -790.47   -799.56   -804.09
+p3=18.5802   -774.92   -775.14   -776.94   -780.21   -782.19
+p3=20        -775.02   -771.11   -770.71   -771.22   -771.65
+p3=22        -779.53   -772.19   -769.34   -767.61   -767.04
+
+   entry 59 (npar 83)
+           p4=0.1121 p4=0.1682 p4=0.2242 p4=0.3363 p4=0.4484
+p3=15        -769.20   -768.92   -772.64   -778.73   -781.93
+p3=17        -771.71   -766.76   -766.15   -767.22   -768.16
+p3=18.5802   -774.82   -768.47   -766.28   -765.08   -764.81
+p3=20        -779.23   -771.39   -768.49   -766.69   -766.11
+p3=22        -787.30   -779.77   -776.07   -773.11   -772.03
+
+2. PEAKS, and reading rules g, h and i.
+
+   entry 54: peak -743.83 at p3 = 15 h, p4 = 0.4484 | 1-D peak -744.25 at p3 = 12 h | gain +0.42 | midpoint moved +3.00 h
+      across the slope axis at that midpoint: range 4.51 over 5 points -> slope identified
+   entry 57: peak -767.04 at p3 = 22 h, p4 = 0.4484 | 1-D peak -768.93 at p3 = 21 h | gain +1.89 | midpoint moved +1.00 h
+      across the slope axis at that midpoint: range 12.49 over 5 points -> slope identified
+   entry 59: peak -764.81 at p3 = 18.5802 h, p4 = 0.4484 | 1-D peak -765.81 at p3 = 18 h | gain +1.00 | midpoint moved +0.58 h
+      across the slope axis at that midpoint: range 10.01 over 5 points -> slope identified
+
+   rule i, entry 59's 3 x 3 shape grid at the reference point: -766.28 here against -766.29 in start-seq.R, cost -0.01 units -> acceptable, comparable across models
+
+3. BETWEEN MODELS at each model's own 2-D peak (reading rule f). Differences
+   in log-likelihood units, parameter difference in brackets. With the slope
+   fixed the same comparisons were 57 - 54 -24.67, 59 - 54 -21.55, 59 - 57 +3.12.
+
+   57 - 54:  -23.21 (+0 parameters)
+   59 - 54:  -20.97 (-12 parameters)
+   59 - 57:   +2.23 (-12 parameters)
+
+   rule f: 59 - 54 is -20.97 against -21.55 with the slope fixed, a change of 0.58 -> the slope adds nothing; what remains is NOT schedule-shaped

@@ -1,0 +1,78 @@
+NOT YET AVAILABLE: 61 
+
+1. GATE. max R-hat over all monitored quantities (pass < 1.05), bulk ESS
+   minimum, divergent post-warmup iterations of 4000, longest chain in hours.
+
+   54: max R-hat   1.024 (log10_total0[7]   ) PASS | ESS min  112 | div  10 | longest chain 62.79 h
+   59: max R-hat   9.717 (cycle_length[5]   ) FAIL | ESS min    2 | div   3 | longest chain  1.69 h
+   60: max R-hat  16.103 (lp__              ) FAIL | ESS min    2 | div 140 | longest chain  1.86 h
+
+2. PER CHAIN. sum_log_lik = the pointwise log-likelihood summed over 1130
+   observations (priors excluded), as a chain mean and as the best single
+   draw. For reference: entry 54 means -807, entry 59's best draw -860.7,
+   and the multistart optimiser's maximum for this model -766.28
+   (profiled sds, so the draws cannot exceed it). sigma = chain mean of
+   sigma_logit_cl, the between-trial spread of cycle_length on the logit
+   scale. at_bound = trials whose chain-mean cycle_length is within 0.5 h
+   of 35 or 50 h.
+
+   54 chain 1: mean   -807.4 | best   -780.7 | gap to max   14.4 | sigma  0.81 | cl_mean13 41.87 | at_bound: none
+   54 chain 2: mean   -807.0 | best   -786.1 | gap to max   19.8 | sigma  0.76 | cl_mean13 41.77 | at_bound: none
+   54 chain 3: mean   -807.2 | best   -786.5 | gap to max   20.2 | sigma  0.76 | cl_mean13 41.76 | at_bound: none
+   54 chain 4: mean   -807.2 | best   -789.1 | gap to max   22.8 | sigma  0.76 | cl_mean13 41.86 | at_bound: none
+   59 chain 1: mean   -879.4 | best   -860.7 | gap to max   94.4 | sigma  1.41 | cl_mean13 41.10 | at_bound: OZ439 49.6
+   59 chain 2: mean   -957.2 | best   -937.1 | gap to max  170.8 | sigma  1.75 | cl_mean13 45.24 | at_bound: Piperaquine 49.6, OZ439/DSM265 49.8, EFITA_OZGAM 49.6, DSMOZ_2 49.7
+   59 chain 3: mean   -902.0 | best   -884.5 | gap to max  118.2 | sigma  1.57 | cl_mean13 41.88 | at_bound: ACT451840 49.7
+   59 chain 4: mean   -888.9 | best   -872.1 | gap to max  105.9 | sigma  1.54 | cl_mean13 41.93 | at_bound: OZ439/DSM265 49.7
+   60 chain 1: mean  -1123.2 | best  -1102.4 | gap to max  336.1 | sigma  1.86 | cl_mean13 47.27 | at_bound: Mefloquine 49.7, OZ439 49.8, DSM265 49.6, Piperaquine 49.7, ACT451840 49.8, MMV048_PIB 49.9, EFITA_OZGAM 49.7, KAE609 49.8, SJ733IBSMCS 49.7
+   60 chain 2: mean   -966.6 | best   -949.0 | gap to max  182.7 | sigma  1.81 | cl_mean13 45.99 | at_bound: DSM265 49.5, Piperaquine 49.6, MMV048_PIB 49.9, OZ439/DSM265 49.8, EFITA_OZGAM 49.6, DSMOZ_2 49.7
+   60 chain 3: mean   -812.0 | best   -792.7 | gap to max   26.4 | sigma  0.15 | cl_mean13 40.04 | at_bound: none
+   60 chain 4: mean   -809.9 | best   -793.9 | gap to max   27.6 | sigma  0.15 | cl_mean13 39.99 | at_bound: none
+
+3. TRIALS WHOSE cycle_length SPLITS THE CHAINS (between-chain range of chain
+   means > 2 h), chain means in hours.
+
+   54: 0 of 13 trials split
+   59: 9 of 13 trials split: OZ439 [49.6 40.4 40.3 40.2]; DSM265 [39.1 49.5 39.0 39.0]; Piperaquine [39.2 49.6 39.2 39.2]; Ferroquine [39.2 49.4 39.1 49.2]; ACT451840 [39.7 39.8 49.7 39.7]; OZ439/DSM265 [39.0 49.8 38.9 49.7]; DSMOZ_2 [40.2 49.7 40.1 40.1]; SJ733IBSMCS [39.3 39.3 49.4 39.3]; MMV048_PartB [37.8 49.2 37.8 37.8]
+   60: 13 of 13 trials split: Mefloquine [49.7 41.9 40.7 40.6]; OZ439 [49.8 40.3 40.1 40.1]; DSM265 [49.6 49.5 39.8 39.7]; Piperaquine [49.7 49.6 39.7 39.8]; Ferroquine [49.5 49.4 39.9 39.8]; ACT451840 [49.8 39.8 40.0 40.1]; MMV048_PIB [49.9 49.9 40.2 40.1]; OZ439/DSM265 [39.2 49.8 39.9 39.9]; EFITA_OZGAM [49.7 49.6 40.0 40.0]; KAE609 [49.8 39.8 40.2 40.1]; DSMOZ_2 [40.3 49.7 40.1 40.1]; SJ733IBSMCS [49.7 39.3 40.0 39.8]; MMV048_PartB [37.8 49.2 39.7 39.7]
+
+4. DELAYS, for entries that have them. Per unit, pooled over chains:
+   posterior mean (hours, prior flat on [0, 12]) and the between-chain range
+   of chain means. ml = the maximum-likelihood delay (_data/start-ml-init-59.rds).
+
+              unit   ml   e59 e59_rng  e60 e60_rng
+   Mefloquine.1800 4.69  5.39    0.29 9.31    5.82
+        OZ439.1800 6.97  7.24    5.71 8.00    5.29
+       DSM265.1800 9.39  9.28    2.09 8.87    3.69
+  Piperaquine.1800 4.71  6.93    6.28 7.77    7.77
+   Ferroquine.1800 5.76  8.51    5.79 7.57    7.41
+    ACT451840.1800 0.00  6.11    7.45 6.10    7.51
+   MMV048_PIB.1800 0.00  2.64    0.22 7.30    8.94
+ OZ439/DSM265.1800 8.28  8.84    5.54 6.25    7.56
+  EFITA_OZGAM.2800 4.36 11.63    0.12 8.10    6.85
+       KAE609.1800 0.11  2.69    0.22 4.78    8.95
+      DSMOZ_2.2800 0.00  5.84    7.44 6.22    7.66
+  SJ733IBSMCS.2800 5.76  7.03    5.69 6.31    7.02
+  SJ733IBSMCS.2300 7.33  8.33    4.10 7.58    5.46
+ MMV048_PartB.2800 6.06  7.31    5.43 6.18    7.14
+
+5. CYCLE LENGTH, only for entries that PASS the gate. Posterior mean per
+   trial (hours); e54 = entry 54's posterior mean; ml = the maximum-likelihood
+   value. mean13 = posterior mean of the per-draw mean over 13 trials.
+
+        trial    ml   e54
+   Mefloquine 42.09 42.64
+        OZ439 40.23 45.60
+       DSM265 39.09 39.62
+  Piperaquine 39.54 39.39
+   Ferroquine 39.25 39.52
+    ACT451840 41.39 44.28
+   MMV048_PIB 40.91 42.84
+ OZ439/DSM265 38.55 40.68
+  EFITA_OZGAM 39.94 40.46
+       KAE609 40.62 41.01
+      DSMOZ_2 41.72 44.49
+  SJ733IBSMCS 39.38 39.65
+ MMV048_PartB 37.43 43.43
+   54 mean13 41.82 h (sd 0.58)
+   not reported (fails the gate): 59, 60 
