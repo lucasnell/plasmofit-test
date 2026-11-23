@@ -626,7 +626,40 @@ CONFIGS <- list(
                                                  start_shape_cap = 3, start_delay = TRUE,
                                                  delay_max = 12),
                                      control = list(adapt_delta = 0.95,
-                                                    max_treedepth = 12))
+                                                    max_treedepth = 12)),
+    ## ---- 60-61: is entry 59's failure the SAMPLER or the MODEL? -----------
+    ## (Lucas, 2026-11-23, "1-3".) Entry 59's chains sat ~87 summed
+    ## log-likelihood units below its own maximum, which the multistart
+    ## optimiser found at -766.28 (claude/findings.md, "Maximum likelihood of
+    ## the start models"), so they never reached a region its own model
+    ## contains. Two ways to ask why; both are otherwise exactly entry 59.
+    ## 60: NON-CENTRED cycle_length hierarchy. The 13 per-trial cycle lengths
+    ##     are drawn around mu_logit_cl with spread sigma_logit_cl, and in
+    ##     the centred form a chain must move sigma and all 13 together to
+    ##     change regions. 54-59's good and stuck chains are told apart by
+    ##     exactly that spread (findings.md, "The cycle_length hierarchy
+    ##     splits the chains of 55-59"), so the centred form is the suspect.
+    np_start13delay12_ncp_nc384_t = list(model = "no_pool",
+                                         data = list(sd_log10_total0 = 1, n_c = 384L,
+                                                     start_dist = 1L, start_window = 13,
+                                                     start_shape_cap = 3, start_delay = TRUE,
+                                                     delay_max = 12, center_cl = 0L),
+                                         control = list(adapt_delta = 0.95,
+                                                        max_treedepth = 12)),
+    ## 61: chains STARTED AT the maximum-likelihood point
+    ##     (_scripts/start-ml-init.R, _data/start-ml-init-59.rds), chain 1
+    ##     exactly there and chains 2-4 jittered. DIAGNOSTIC ONLY: chains
+    ##     started in one place can agree without having explored anything,
+    ##     so a passing R-hat here does NOT license reporting this posterior.
+    ##     It licenses a statement about why the ordinary fit failed.
+    np_start13delay12_mlinit_nc384_t = list(model = "no_pool",
+                                            data = list(sd_log10_total0 = 1, n_c = 384L,
+                                                        start_dist = 1L, start_window = 13,
+                                                        start_shape_cap = 3, start_delay = TRUE,
+                                                        delay_max = 12),
+                                            init_file = "_data/start-ml-init-59.rds",
+                                            control = list(adapt_delta = 0.95,
+                                                           max_treedepth = 12))
 )
 
 # log_lik is needed for loo/waic but roughly triples the size of a stored fit.
@@ -807,6 +840,36 @@ cat(sprintf("  cycle_length in (%g, %g), prior centred at %.2f h, sd_bs_cl %g\n"
 
 chain_path <- function(k) sprintf("wock-chain-%s-%d.rds", cfg_name, k)
 
+## Optional explicit initial values (cfg$init_file, added 2026-11-23 for
+## entry 61). The file holds one Stan init list; chain 1 starts exactly
+## there and later chains are jittered, so the chains are not identical and
+## R-hat still measures something. The jitter is applied on the CONSTRAINED
+## scale with explicit clamping, and the hierarchical means and spreads are
+## recomputed from the jittered per-group values so the init stays coherent.
+make_init <- function(k) {
+    x <- readRDS(cfg$init_file)$init
+    if (k == 1L) return(x)
+    set.seed(SEED + 1000L * k)
+    jit <- function(v, s) v + rnorm(length(v), 0, s)
+    cap <- d$start_shape_cap
+    x$delay <- pmin(pmax(jit(x$delay, 0.3), 0.01), d$delay_max - 0.01)
+    x$log10_total0 <- jit(x$log10_total0, 0.05)
+    x$start_alpha <- array(min(max(jit(x$start_alpha, 0.02), 1.001), cap - 0.001), 1)
+    x$start_beta  <- array(min(max(jit(x$start_beta, 0.02), 1.001), cap - 0.001), 1)
+    x$eta_R  <- jit(x$eta_R, 0.05)
+    x$eta_cl <- jit(x$eta_cl, 0.05)
+    x$mu_logit_R <- mean(x$eta_R);  x$sigma_logit_R <- max(sd(x$eta_R), 0.05)
+    x$mu_logit_cl <- mean(x$eta_cl); x$sigma_logit_cl <- max(sd(x$eta_cl), 0.05)
+    x$z_sd_iRBC <- jit(x$z_sd_iRBC, 0.05)
+    x
+}
+init_arg <- NULL
+if (!is.null(cfg$init_file)) {
+    if (!file.exists(cfg$init_file)) stop("init_file not found: ", cfg$init_file)
+    cat("  initial values from", cfg$init_file,
+        sprintf("(chain 1 exactly there; log-likelihood %.2f)\n", readRDS(cfg$init_file)$ll))
+}
+
 if (WOCKFIT_MODE == "chain") {
     k <- suppressWarnings(as.integer(Sys.getenv("WOCKFIT_CHAIN")))
     if (is.na(k) || k < 1L || k > N_CHAINS)
@@ -815,9 +878,11 @@ if (WOCKFIT_MODE == "chain") {
                 threads_per_chain,
                 sub(".*:\\s*", "", grep("Cpus_allowed_list",
                                         readLines("/proc/self/status"), value = TRUE))))
-    fk <- archer_fit(d, model = cfg$model, chains = 1L, iter = ITER,
-                     warmup = WARMUP, seed = SEED, chain_id = k,
-                     threads_per_chain = threads_per_chain, control = cfg$control)
+    fk <- do.call(archer_fit, c(
+        list(d, model = cfg$model, chains = 1L, iter = ITER,
+             warmup = WARMUP, seed = SEED, chain_id = k,
+             threads_per_chain = threads_per_chain, control = cfg$control),
+        if (!is.null(cfg$init_file)) list(init = list(make_init(k)))))
     write_rds(list(fit = fk, data = d, chain = k, seed = SEED), chain_path(k))
     cat("\nFinished chain", k, "of", cfg_name, "\n")
     print(rstan::get_elapsed_time(fk))
@@ -837,9 +902,11 @@ if (WOCKFIT_MODE == "merge") {
     rm(parts)
     cat("merge mode: combined", N_CHAINS, "chain files\n")
 } else {
-    f <- archer_fit(d, model = cfg$model, chains = N_CHAINS, iter = ITER,
-                    warmup = WARMUP, seed = SEED,
-                    threads_per_chain = threads_per_chain, control = cfg$control)
+    f <- do.call(archer_fit, c(
+        list(d, model = cfg$model, chains = N_CHAINS, iter = ITER,
+             warmup = WARMUP, seed = SEED,
+             threads_per_chain = threads_per_chain, control = cfg$control),
+        if (!is.null(cfg$init_file)) list(init = lapply(seq_len(N_CHAINS), make_init))))
 }
 
 write_rds(f, sprintf("wock-fit-%s.rds", cfg_name))
