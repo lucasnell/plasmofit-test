@@ -2,6 +2,16 @@
 
 ## State of play right now — read this first
 
+**2026-11-23 (later): three follow-ups running** (Lucas: "1-3"). SLURM
+35412, entries 60 (non-centred cycle_length hierarchy) and 61 (chains
+started at entry 59's maximum-likelihood point, a DIAGNOSTIC only), both
+asking whether entry 59's ~87-unit sampling gap is the sampler or the model.
+SLURM 35414, the 2-D profile of the sequestration schedule over midpoint and
+slope, since only the position was free before. How to read: `TODO.md`.
+Also done: the shared core of the profile scripts was extracted to
+`_scripts/start-seq-core.R`, with start-seq.R's check and merge output
+verified byte-identical before and after.
+
 **2026-11-23: the sequestration midpoint does NOT rescue the ring-only
 start, but both ring-only models prefer the published value** (`findings.md`,
 "Profile of the sequestration midpoint"; SLURM 35357 and 35396, complete).

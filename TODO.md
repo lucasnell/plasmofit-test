@@ -180,6 +180,37 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
+- [ ] **SLURM 35412 — entries 60 and 61** (submitted 2026-11-23, Lucas:
+      "1-3"), asking whether entry 59's failure is the SAMPLER or the MODEL.
+      Both are otherwise exactly entry 59 (shared Beta on [0, 13] h plus a
+      per-unit delay, n_c 384, cap 3, adapt_delta 0.95, max_treedepth 12).
+      60 `np_start13delay12_ncp_nc384_t`: NON-CENTRED cycle_length
+      hierarchy (`center_cl = 0`), since the good and stuck chains of 54-59
+      are told apart by that hierarchy's spread.
+      61 `np_start13delay12_mlinit_nc384_t`: chains STARTED AT the
+      maximum-likelihood point (`_scripts/start-ml-init.R`,
+      `_data/start-ml-init-59.rds`, summed log-likelihood -766.28), chain 1
+      exactly there and 2-4 jittered. **DIAGNOSTIC ONLY**: chains started in
+      one place can agree without exploring, so a passing R-hat does NOT
+      license reporting entry 61's posterior; it licenses a statement about
+      why the ordinary fit failed. Read both with `_scripts/read-entry5859.R`
+      adapted, or at minimum: gate, per-chain summed log-likelihood against
+      59's best draw (-860.7) and its maximum (-766.28), trials at the
+      cycle_length bounds, and `sigma_logit_cl` per chain.
+      They load the SCRATCH library (cda47a0) through `WOCKFIT_LIB`.
+- [ ] **SLURM 35414 — 2-D profile of the sequestration schedule** (submitted
+      2026-11-23, Lucas: "1-3"). `_scripts/start-seq2.R` / `.sh`: midpoint
+      p3 in {15, 17, 18.5802, 20, 22} h x slope p4 in {0.1121, 0.1682,
+      0.2242, 0.3363, 0.4484}, both shared, under entries 54, 57 and 59.
+      Only the schedule's POSITION was free before; the slope changes the
+      transition's width (8.4 h down to 2.1 h) at an essentially constant
+      duty cycle, so it is a different degree of freedom. Reading rule in
+      the script header, fixed before the run. Entry 59 is conditioned on a
+      3 x 3 shared-start grid, whose cost is measured at the reference
+      point (rule i). Verified (`_data/start-seq2-check-2026-11-23.txt`).
+      Throttled to 24 at once so 80 CPUs of pinned fits plus 48 here is
+      exactly the half-node budget. When it ends:
+      `SSQ2_MODE=merge Rscript --vanilla _scripts/start-seq2.R > _data/start-seq2-2026-11-23.txt`.
 - [x] **SLURM 35396 — rerun of 35357's task 38** (entry 59, SJ733IBSMCS),
       which hit the 24 h wall at 14 of 16 p3 points having saved nothing.
       Split one array task per grid point (`SSQ_P3ONLY`, ~2 h each);
