@@ -180,7 +180,22 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
-- [ ] **SLURM 35505 — entry 61 rerun** (2026-11-23). The first attempt
+- [ ] **Make the delay model's good mode reachable from dispersed starts.**
+      Entry 61 shows the mode is a converged posterior that ties entry 54 on
+      elpd with 12 fewer parameters and gives cycle_length 39.97 h against
+      41.82 h (`findings.md`, "Entry 61"), but its chains were started
+      there. Entry 60 reached it from random inits in 2 of 4 chains under
+      the non-centred hierarchy. Candidate next run: entry 60's
+      specification with 8 chains and/or adapt_delta 0.99, and the gate
+      applied only if most chains arrive. Until then **39.97 h is not
+      reportable**.
+- [x] **SLURM 35505 — entry 61 read 2026-11-23: PASSES the gate**
+      (`findings.md`, "Entry 61"): max R-hat 1.017, all four chains at
+      `sigma_logit_cl` 0.15-0.18 and cycle_length ~39.97 h, nothing at a
+      bound, 63 divergences. Same region entry 60's chains 3-4 found from
+      random inits (delays Pearson 0.997, cycle_length mean |difference|
+      0.05 h). elpd_diff against entry 54 -4.0 (se 7.8): indistinguishable.
+      The first attempt
       (35412_61) FAILED before sampling: `init_file` was written as
       `_data/start-ml-init-59.rds`, but `wockner-fit-pinned.sh` chdirs to
       `_data/`, where paths are relative (`read_csv("wockner-cleaned.csv")`).

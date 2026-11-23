@@ -2,6 +2,18 @@
 
 ## State of play right now — read this first
 
+**2026-11-23 (night): the delay model CONVERGES and ties entry 54 on
+prediction, with a cycle length 1.85 h shorter** (`findings.md`, "Entry
+61"). Entry 61 (entry 59 started at its maximum-likelihood point) passes the
+gate: max R-hat 1.017, all chains at `sigma_logit_cl` ~0.16, every trial near
+40 h, nothing at a bound. elpd_diff against entry 54 is -4.0 (se 7.8) in the
+delay model's favour with 12 FEWER parameters, and its cycle_length is
+39.97 h (sd 0.27) against 41.82 h (sd 0.58). The mode is credible because
+entry 60's chains 3-4 reached it independently from random inits (delays
+Pearson 0.997). **But 39.97 h is not reportable yet**: entry 61's chains were
+started in that mode, so the next step is a run that finds it from dispersed
+starts (`TODO.md`). No jobs running.
+
 **2026-11-23 (evening): the delay model is nearly as good as entry 54 once
 the sampler can reach its good region** (`findings.md`, "Entry 60"). The
 non-centred cycle_length hierarchy let two of four chains find a tight region

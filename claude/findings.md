@@ -4007,6 +4007,63 @@ posterior cycle lengths for these three trials are held in by the priors
 and the cycle_length hierarchy, not by their own likelihood. Not a
 reported number; a flag for "how much of the estimate is assumption".
 
+### Entry 61, read 2026-11-23: the delay model converges, predicts as well as entry 54, and puts the cycle length 1.85 h shorter
+
+SLURM 35505 (35412_61 died first on a path bug; `TODO.md`).
+`_scripts/read-entry6061.R`, output `_data/read-entry6061-2026-11-23.txt`.
+Entry 61 is entry 59 -- one Beta on [0, 13] h shared by all 14 units plus a
+per-unit delay flat on [0, 12] h, whole inoculum circulating, no_pool,
+`n_c` 384, cap 3, adapt_delta 0.95, max_treedepth 12, seed 538065874 --
+with all four chains STARTED at the multistart optimiser's maximum
+(`_scripts/start-ml-init.R`), chain 1 exactly there and 2-4 jittered.
+
+**It passes the gate**: max R-hat 1.017 (on `sigma_logit_cl`), bulk ESS
+minimum 261, 0 of 13 trials splitting the chains. 63 divergent iterations of
+4000, against entry 54's 10, so it is not clean. All four chains sit
+together: summed log-likelihood -809.7 to -810.0 as a chain mean,
+`sigma_logit_cl` 0.15-0.18, mean cycle_length 39.94-39.99 h, nothing at a
+bound.
+
+**The region is not an artefact of where the chains were started.** Entry
+60's chains 3 and 4 reached it from RANDOM inits under a DIFFERENT
+parameterisation of the same hierarchy, and the two agree closely: per-unit
+delays Pearson 0.997 and mean absolute difference 0.18 h over 14 units,
+per-trial cycle_length mean absolute difference 0.05 h over 13 trials. Two
+independent routes to the same place.
+
+**Predictively it is indistinguishable from entry 54.** PSIS-LOO over the
+same 1130 observations, 2 observations with Pareto k > 0.7 in each:
+
+| entry | start | parameters | elpd_loo (se) | p_loo |
+|---|---|---|---|---|
+| 61 | ring-only [0, 13] h, shared, plus a per-unit delay | 83 | -850.6 (28.4) | 74.2 |
+| 54 | per-unit wrapped Beta over the whole cycle | 95 | -854.7 (28.4) | 84.9 |
+
+Paired `loo_compare`, over the 1130 pointwise differences: elpd_diff **-4.0
+with se 7.8** in entry 61's favour, i.e. half a standard error. The two
+models predict equally well, and the ring-only one does it with 12 fewer
+parameters.
+
+**And they disagree about the answer.** Posterior mean of the per-draw mean
+cycle_length over 13 trials: **entry 61 39.97 h (sd 0.27), entry 54 41.82 h
+(sd 0.58)**, a difference of 1.85 h. Per trial, entry 61 spans 39.65-40.68 h
+against entry 54's 39.39-45.60 h: the delay model puts every trial near 40 h
+and lets the delays absorb what entry 54 absorbs with per-trial period.
+This is the project's own question answered on itself -- two models that the
+data cannot tell apart give cycle lengths 1.85 h apart -- and it is a
+sharper demonstration of assumption-dependence than the `n_c` and `b_shape`
+ladders, because here BOTH models converge and their elpds tie.
+
+**What entry 61 is NOT.** Its chains were all started in this mode, so
+passing R-hat shows they stayed, not that they explored; entries 59 and 60
+show the posterior also has loose-hierarchy regions with trials pinned at
+50 h. So this is a posterior CONDITIONAL on the good mode, not the model's
+full posterior, and the cycle length above is not yet reportable. What makes
+the mode credible rather than constructed is entry 60's independent arrival
+at it. The remaining step is a run that finds this mode from dispersed
+starts often enough to be a posterior in its own right: 2 of 4 chains
+already did under the non-centred parameterisation.
+
 ### Freeing the sequestration SLOPE as well, read 2026-11-23: it changes nothing, so what remains of the ring-only deficit is not schedule-shaped
 
 SLURM 35414; `_scripts/start-seq2.R` / `.sh`, shared core
