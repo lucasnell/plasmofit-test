@@ -2,6 +2,16 @@
 
 ## State of play right now — read this first
 
+**2026-11-24: two fits running.** SLURM 35506, entry 62: the non-centred
+delay model with 8 chains and adapt_delta 0.99, asking how often dispersed
+starts find the good mode (2 of 4 did at 0.95). SLURM 35507, entry 63: the
+per-unit PHASE model, `start_dist` 4, new in the package and built into a
+SEPARATE library `.Rlib-dev2` so entry 62's library could not be disturbed.
+Together they test whether the delay does anything a phase cannot. How to
+read: `TODO.md`. Validation of `start_dist` 4 caught a sizing bug
+(`start_mode` was `start_dist >= 2`, so value 4 silently carried 14 unused
+parameters); fixed before anything sampled.
+
 **2026-11-23 (night): the delay model CONVERGES and ties entry 54 on
 prediction, with a cycle length 1.85 h shorter** (`findings.md`, "Entry
 61"). Entry 61 (entry 59 started at its maximum-likelihood point) passes the

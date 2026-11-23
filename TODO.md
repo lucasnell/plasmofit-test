@@ -180,6 +180,25 @@ match where a thread exists. This file is the actionable layer. -->
       `sd_logit_cl` differs. When it ends: `UNITSIM_MODE=merge Rscript
       --vanilla _data/unitsim/unitsim-run-8.R`, then `_scripts/unitsim-read.R`
       (adds wide - production prior).
+- [ ] **SLURM 35506 — entry 62** (submitted 2026-11-23), the non-centred
+      delay model with **8 chains** and adapt_delta 0.99, asking how often
+      dispersed starts find the good mode. If most arrive, entry 61's
+      39.97 h stops being conditional on initialisation. Reads the
+      `.Rlib-dev` library (cda47a0): **do not reinstall there while it
+      runs** -- an install was started there in error on 2026-11-23 and
+      stopped before it touched the library (verified: the library still
+      shows the 2026-11-20 build and the job sampled throughout). The
+      start_dist 4 build went to a SEPARATE `.Rlib-dev2` for that reason.
+      Read with `_scripts/read-entry6061.R` extended to 62-63.
+- [ ] **SLURM 35507 — entry 63** (submitted 2026-11-23), the per-unit PHASE
+      model (`start_dist` 4): the same shared window slid round the cycle
+      instead of the trajectory shifted in time, entry 62's sampler
+      settings otherwise, so 62 and 63 differ only in delay against phase.
+      Reads `.Rlib-dev2`. Reading: equal fit and equal cycle_length means
+      the delay is only setting phase and should be described that way.
+      101 unconstrained parameters against entry 61's 87, because a phase
+      costs a unit_vector[2] per unit where a delay costs one real; the
+      effective count is the same and `p_loo` is the thing to compare.
 - [ ] **Make the delay model's good mode reachable from dispersed starts.**
       Entry 61 shows the mode is a converged posterior that ties entry 54 on
       elpd with 12 fewer parameters and gives cycle_length 39.97 h against

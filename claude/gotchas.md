@@ -768,3 +768,30 @@ grid, so `run_check` takes one matrix-exponential action per observation
 draw on the production data at `n_c` 96 had not finished in 72 minutes
 (2026-11-20). The comparison is made instead per series in R in
 `start-dist-validate.R` section 7f. Leave `run_check` off with a delay.
+
+
+## A new `start_dist` value breaks every `>=` condition written before it
+
+`start_dist` 4 (per-unit phase, 2026-11-23) was silently given 14 unused
+parameters because `start_mode` was sized
+`[(start_dist >= 2) * n_grp_init]`, written when 3 was the largest value.
+The likelihood was unaffected -- nothing reads `start_mode` on that branch --
+so it would not have shown up as an error: the parameters would simply have
+been sampled from their prior, slowing every gradient and making `p_loo` and
+any elpd comparison against entry 61 wrong. It was caught only because the
+validation script asserts the expected parameter count.
+**When adding a value at the top of `start_dist`'s range, grep for
+`start_dist >=` and `start_dist <=` in all four `archer_fit*` programs and
+decide each one explicitly**, and assert the parameter count in validation
+rather than merely checking that the gradient is finite.
+
+## Do not reinstall a library a running job is reading
+
+`WOCKFIT_LIB` points a fit at a scratch library, and `R CMD INSTALL`
+replaces files in place. A running chain has the `.so` mapped, but R's
+lazy-load database is read on demand, so a function the process has not yet
+called can come back from a half-written file. On 2026-11-23 an install into
+`.Rlib-dev` was started while entry 62 was sampling from it and stopped
+before the install step (the library kept its 2026-11-20 build and the job
+was unaffected). **Build into a new library directory instead** -- here
+`.Rlib-dev2` -- and point the new fit at that.
