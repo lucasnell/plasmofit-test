@@ -1,0 +1,26 @@
+1. The shared core reproduces the package's forward map at the inherited
+   schedule, and the slope argument is wired through. Cells: max relative
+   |difference| in y_hat over t = 72-216 h by 12 h, cycle 42 h, R 12.
+
+   p3 default, p4 default (must match the package): 3.76e-16
+   p4 omitted vs p4 given explicitly (must be 0): 0.00e+00
+
+2. The slope changes the curve, and in a different way from the midpoint.
+   Cells: age at which the circulating fraction falls to 0.25 and to 0.75 of
+   its maximum, and the duty cycle (mean over one 42 h cycle).
+
+   p4 0.1121: 75% at 14.45 h, 25% at 22.88 h (width 8.43 h), duty cycle 0.4309
+   p4 0.1682: 75% at 15.75 h, 25% at 21.42 h (width 5.67 h), duty cycle 0.4304
+   p4 0.2242: 75% at 16.45 h, 25% at 20.71 h (width 4.26 h), duty cycle 0.4303
+   p4 0.3363: 75% at 17.16 h, 25% at 20.00 h (width 2.84 h), duty cycle 0.4303
+   p4 0.4484: 75% at 17.52 h, 25% at 19.64 h (width 2.13 h), duty cycle 0.4303
+
+3. At the reference point this must reproduce start-ml.R's per-trial maxima,
+   as start-seq.R's check does. Cells: the two log-likelihoods and the difference.
+
+   entry 54 trial Mefloquine   : here  -100.0767 | start-ml  -100.0767 | difference 0.00e+00
+   entry 54 trial MMV048_PartB : here   -97.8978 | start-ml   -97.8978 | difference -1.42e-14
+   entry 57 trial Mefloquine   : here  -103.1267 | start-ml  -103.1267 | difference 0.00e+00
+   entry 57 trial MMV048_PartB : here  -104.7098 | start-ml  -104.7098 | difference -1.42e-14
+   entry 59 trial Mefloquine   : here  -102.2668 | start-ml  -102.2668 | difference 0.00e+00
+   entry 59 trial MMV048_PartB : here  -103.1470 | start-ml  -103.1470 | difference 1.42e-14
