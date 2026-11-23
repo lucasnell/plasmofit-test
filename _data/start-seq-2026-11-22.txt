@@ -1,0 +1,76 @@
+1. PROFILE of the sequestration midpoint p3. Cells: maximum log-likelihood
+   over 1130 observations at that p3, summed over 13 trials, sd per trial x
+   cohort profiled, priors ignored, p4 fixed at 0.2242. p3 is SHARED by every
+   trial and unit, and so is entry 59's start shape (alpha, beta), which is
+   therefore chosen once for all 13 trials at each p3. Higher is better; every
+   value is a lower bound on the true maximum. The row at 18.5802 h is the
+   value the model has always used. NA = that grid point is not available for
+   every trial in that model.
+
+   rebuilt from per-point runs: entry 59, trial SJ733IBSMCS: 16 of 16 points from per-point runs
+
+    p3_h      54      57      59
+ 12.0000 -744.25 -887.52 -795.85
+ 13.0000 -744.34 -862.13 -785.84
+ 14.0000 -744.52 -839.49 -777.99
+ 15.0000 -744.80 -819.91 -772.19
+ 16.0000 -745.22 -803.54 -768.35
+ 17.0000 -745.46 -790.47 -766.37
+ 18.0000 -746.33 -780.93 -765.81
+ 18.5802 -747.16 -776.94 -766.29
+ 19.0000 -747.94 -774.71 -766.88
+ 20.0000 -750.44 -770.71 -768.36
+ 21.0000 -752.99 -768.93 -770.02
+ 22.0000 -756.11 -769.34 -772.31
+ 23.0000 -760.01 -772.15 -775.76
+ 24.0000 -764.54 -776.76 -780.28
+ 25.0000 -769.70 -781.84 -785.63
+ 26.0000 -775.53 -787.56 -791.58
+
+2. PEAKS and FLATNESS (reading rule d first).
+
+   entry 54 (npar 95): peak -744.25 at p3 = 12 h | at the default p3 -747.16 | gain +2.91 | range over 16 points (12-26 h) 31.28
+   entry 57 (npar 95): peak -768.93 at p3 = 21 h | at the default p3 -776.94 | gain +8.02 | range over 16 points (12-26 h) 118.59
+   entry 59 (npar 83): peak -765.81 at p3 = 18 h | at the default p3 -766.29 | gain +0.48 | range over 16 points (12-26 h) 30.04
+
+   FLAT (range < 2 units) means p3 is not identified under that start.
+
+   entry 59's shared start at its peak p3: (alpha, beta) = 1, 1.5
+
+3. BETWEEN MODELS at each model's own peak, and at a COMMON p3 (reading
+   rule a and c). Differences in log-likelihood units; parameter difference
+   in brackets. 57 - 54 was -29.78 (0) with p3 fixed at 18.5802 h.
+
+   57 - 54 at each peak:  -24.67 (+0 parameters)
+   59 - 54 at each peak:  -21.55 (-12 parameters)
+   59 - 57 at each peak:   +3.12 (-12 parameters)
+   at the DEFAULT p3, 54 - 54:   +0.00 (+0 parameters)
+   at the DEFAULT p3, 57 - 54:  -29.78 (+0 parameters)
+   at the DEFAULT p3, 59 - 54:  -19.12 (-12 parameters)
+
+4. PER TRIAL at each model's peak p3 (entry 59 at its peak shared start):
+   maximum log-likelihood, best found.
+
+                  54      57      59
+Mefloquine   -100.71 -101.42 -102.99
+OZ439         -84.77  -89.08  -89.03
+DSM265        -25.62  -29.27  -26.89
+Piperaquine  -126.07 -126.55 -126.05
+Ferroquine    -24.15  -25.92  -25.06
+ACT451840     -31.36  -31.55  -31.83
+MMV048_PIB     -3.70   -5.18   -5.70
+OZ439/DSM265  -48.27  -49.50  -48.97
+EFITA_OZGAM   -58.56  -59.39  -59.52
+KAE609        -25.93  -29.33  -28.45
+DSMOZ_2       -37.82  -37.90  -38.41
+SJ733IBSMCS   -79.25  -80.62  -79.40
+MMV048_PartB  -98.05 -103.22 -103.51
+
+5. CONSISTENCY with start-ml.R at the default p3, both with (alpha, beta)
+   shared across trials. This profile has extra starts, so it should be equal
+   or higher; entry 59's shape grid here is 5 x 5 against start-ml's 8 x 8, so
+   a small shortfall there is the coarser grid, not a disagreement.
+
+   entry 54: here -747.16 | start-ml -747.16 | difference +0.00
+   entry 57: here -776.94 | start-ml -776.94 | difference +0.00
+   entry 59: here -766.29 | start-ml -766.28 | difference -0.00

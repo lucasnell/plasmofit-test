@@ -4007,6 +4007,91 @@ posterior cycle lengths for these three trials are held in by the priors
 and the cycle_length hierarchy, not by their own likelihood. Not a
 reported number; a flag for "how much of the estimate is assumption".
 
+### Profile of the sequestration midpoint, read 2026-11-22: freeing it does not rescue the ring-only start, and both ring-only models prefer the published value
+
+Lucas: "1-2", after the start-model maxima showed the ring-only [0, 13] h
+window costing 29.8 log-likelihood units against entry 54's whole-cycle
+start at equal parameter count. SLURM 35357 (and 35396, a split rerun of the
+one task that hit the 24 h wall); `_scripts/start-seq.R` / `.sh` /
+`start-seq-p38.sh`; output `_data/start-seq-2026-11-22.txt`, checks
+`_data/start-seq-check-2026-11-20.txt`.
+
+**What was freed.** The circulating fraction is a fixed logistic in
+developmental age with midpoint `p3` = 18.5802 h, inherited from Archer and
+never estimated. The start carries all of the phase, so a wrong `p3` would be
+absorbed by the start and the ring-only window could be rejected for the
+wrong reason. `p3` is profiled over 12-26 h, SHARED by every trial and unit,
+under three starts; `p4` (the slope) stays fixed, so this is the schedule's
+POSITION only. Priors ignored, sds profiled, 13 per-trial maxima summed per
+grid point, as in `start-ml.R`. The R forward map with free `p3` reproduces
+the package's series to 4e-16 and `start-ml.R`'s per-trial likelihood at the
+default `p3` to 1e-14.
+
+**Profile.** Maximum log-likelihood over 1130 observations, summed over 13
+trials, at each `p3`. Higher is better; every value is a lower bound on the
+true maximum. 54 and 57 have 95 free parameters, 59 has 83.
+
+| `p3` (h) | 54 whole cycle | 57 ring-only | 59 ring-only + delay |
+|---|---|---|---|
+| 12 | **-744.25** | -887.52 | -795.85 |
+| 15 | -744.80 | -819.91 | -772.19 |
+| 18 | -746.33 | -780.93 | **-765.81** |
+| 18.5802 (default) | -747.16 | -776.94 | -766.29 |
+| 21 | -752.99 | **-768.93** | -770.02 |
+| 24 | -764.54 | -776.76 | -780.28 |
+| 26 | -775.53 | -787.56 | -791.58 |
+
+| comparison | at each model's peak | at the default `p3` |
+|---|---|---|
+| 57 - 54 (same parameters) | -24.67 | -29.78 |
+| 59 - 54 (12 fewer) | -21.55 | -19.12 |
+| 59 - 57 (12 fewer) | +3.12 | +10.65 |
+
+**a. Freeing the schedule does not rescue the ring-only start.** 57's peak is
+24.67 units below 54's at equal parameter count, against 29.78 with `p3`
+fixed: 5.1 units of the 29.8, 17%, were the schedule. The rest is the start.
+The conclusion is robust to the grid, since 54's peak sits at the lower edge
+and extending the grid downward could only widen the gap.
+
+**d. How well `p3` is identified depends entirely on the start, which is the
+mechanism this test was built to look for.** Under 54's free start the
+profile moves only 2.9 units between 12 and 18.58 h and its maximum runs to
+the grid's edge: the start absorbs the schedule, as predicted. Under 57's
+ring-only start `p3` is sharply identified, range 118.6 with an interior peak
+at 21 h. Under 59 it is identified but almost irrelevant, range 30.0 with a
+peak at 18 h worth only +0.48 over the default: the per-unit delay has
+already absorbed whatever `p3` would have done.
+
+**The two ring-only models independently prefer a biologically sensible
+midpoint; the unconstrained one does not.** 57 peaks at 21 h and 59 at 18 h,
+both near the published 18.58 h, while 54 drifts to 12 h along a nearly flat
+ridge. Half-sequestration at 12 h would put rings in the deep vasculature,
+which sequestration is not: it is a trophozoite property
+(`claude/references.md`). So entry 54's better fit is bought partly with a
+schedule that is not defensible, and its preference is weak (2.9 units) where
+the ring-only models' preference is strong. This does not close the 24.7-unit
+gap, but it is the one result in this thread that favours the ring-only
+premise.
+
+**b and c.** Rule b does not fire: it anticipated the CONSTRAINED start
+wandering while the free one stayed put, and the opposite happened. Rule c
+holds in substance: the peaks differ (12, 21 and 18 h) and most of the
+deficit survives, so it is about the start.
+
+**Entry 59 is the best ring-only-compatible model by a clear margin.** It
+beats 57 by 3.12 units at each peak and by 10.65 at the default `p3`, with 12
+FEWER parameters; by AIC at the peaks it is 30.2 units better than 57 and
+19.1 worse than 54. Its best shared start is (alpha, beta) = (1, 1.5), the
+youngest shapes on the grid, density highest at age 0.
+
+**Caveats.** Maxima without priors or hierarchy, `p4` fixed, and the best
+`p3` is a diagnostic, not a reportable sequestration time. Entry 59's shape
+grid is 5 x 5 here against `start-ml.R`'s 8 x 8, worth 0.00 units at the
+default `p3` (consistency section of the output). A bug in the first merge
+let each trial choose its own shared start shape, inflating 59's profile; it
+was fixed before any number above was read, and 54 and 57, which share
+nothing across trials, were never affected.
+
 ### Entries 58 and 59, read 2026-11-20: more phase freedom makes it worse; their chains do not even find regions their own models contain
 
 Lucas's test of whether 55-57 fail because the 13 h window cannot reach the
